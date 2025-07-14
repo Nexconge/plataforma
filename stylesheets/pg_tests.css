@@ -1,0 +1,42 @@
+.loader {
+    border: 4px solid #1772CB;
+    border-top: 4px solid #C1C1C1;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 4s linear infinite;   
+    margin: auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none;
+}
+
+#meuShimmer {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(
+        to left,
+        #eeeeee 0%,
+        #dddddd 20%,
+        #eeeeee 40%,
+        #eeeeee 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+    border-radius: 10px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
