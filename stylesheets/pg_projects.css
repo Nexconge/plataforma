@@ -1,0 +1,49 @@
+label {
+    height: 22px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+}
+
+#empreendimentoSelect {
+    width: 260px;
+    height: 40px;
+    padding: 0px 10px;
+    border: 1px solid #C7C7C7;
+    border-radius: 4px;
+    background-color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    color: black;
+}
+
+#empreendimentoSelect:hover {
+    border: 1px solid #1772CB;
+    background-color: #D5E5FB;
+}
+
+#empreendimentoSelect:focus {
+    border: 1px solid #1772CB;
+}
+
+.custom-select {
+    appearance: none; /* Remove a seta padrão */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-linecap='butt' stroke-linejoin='mitter' stroke-width='2.5' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1px center;
+    background-size: 13px 13px;
+    padding-right: 15px; /* espaço para a seta */
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    height: 30px;
+    font-family: 'Nunito', sans-serif;
+}
+
+#empreendimentoSelect option {
+    font-family: 'Nunito', sans-serif;
+}
+
+* {
+    outline: 0px solid red;
+}
