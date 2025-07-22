@@ -1,235 +1,235 @@
+/* ==========================================================================
+   Estilos Globais e Reset Básico
+   ========================================================================== */
 html {
-    overflow-y: scroll;
+    overflow-y: scroll; /* Garante que a barra de rolagem esteja sempre presente, evitando saltos na tela. */
 }
 
 body {
     font-family: 'Nunito', sans-serif;
 }
 
-table {
-    width: 1480px;
-    border-collapse: collapse;
-    font-size: 14px;
-    vertical-align: middle;
-}
-
-table tbody tr {
-    height: 30px;
-    border-bottom: 1px solid #F7F7F7;
-}
-
-table tbody tr:nth-last-child(n+3):hover {
-    background-color: #F7F7F7;
-}
-
-.cabecalho {
-    height: 30px;
-    background-color: #1772CB;
-    color: white;
-    font-weight: bold;
-}
-
-.cabecalho td:first-child {
-    border-top-left-radius: 10px;
-}
-
-.cabecalho td:last-child {
-    border-top-right-radius: 10px;
-}
-
-td, th {
-    vertical-align: middle;
-    text-align: right;
-}
-
-td:first-child {
-    width: 300px;
-    text-align: left;
-    padding-left: 10px;
-}
-
-td:nth-child(n+2):nth-child(-n+13),
-th:nth-child(n+2):nth-child(-n+13) {
-    width: 90px;
-}
-
-td:nth-child(14),
-th:nth-child(14) {
-    width: 100px;
-    padding-right: 10px;
-}
-
-#tabelaMatriz .linhatotal {
-    font-weight: bold;
-    border-top: 2px solid #F2F2F2;
-    border-bottom: 0px;
-}
-
-.linhaSaldo {
-    height: 30px;
-    font-weight: bold;
-    color: white;
-    border-bottom: 0px solid #F7F7F7;
-    background-color: #1772CB;
-}
-
-table tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 10px;
-}
-
-table tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 10px;
-}
-
-.idented {
-    padding-left: 20px !important;
-}
-
-.linhaclasse {
-    background-color: white;
-}
-
-.linhaBranco {
-    height: 30px;
-}
-
-.hidden { 
-    display: none;
-}
-
-.expand-btn {
-    cursor: pointer; color: #1772CB;
-}
-
-.idented2 {
-    padding-left: 50px !important;
-}
-
-#tabelaCustos .linha-depto {
-    background-color: white;
-}
-
-#tabelaCustos .linha-lancamento {
-    font-size: 12px;
-}
-
-#tabelaCustos .linha-lancamento {
-    background-color: white;
-}
-
-#tabelaCustos .linha-lancamento td:first-child {
-    padding-left: 40px;
-}
-
-#tabelaCustos tbody tr:hover {
-    background-color: #F7F7F7;
-}
-
-#tabelaCustos .linhaSaldo:hover {
-    background-color: #1772CB;
-}
-
-#tabelaCustos {
-    border-bottom: 1px solid #F7F7F7;
-}
-
-#tabelaMatriz tbody tr:nth-child(n+16):nth-child(-n+19) {
-    display: none;
-}
-
-/* ***************************** */
-
+/* Remove margens e paddings padrão para um controle mais preciso. */
 div, label, select {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+
+/* ==========================================================================
+   Estilos dos Filtros (Selects)
+   ========================================================================== */
 label {
     text-align: left;
-}
-label[for="modoSelect"] {
-    width: 100px;
-}
-label[for="anoSelect"] {
-    width: 100px;
+    margin-right: 5px; /* Adicionado um pequeno espaçamento para melhor visualização. */
 }
 
+/* Estilo base para os dropdowns (selects) */
 .custom-select {
-    width: 300px;
+    width: 250px; /* Reduzido um pouco para melhor alinhamento. */
     height: 30px;
     border: 1px solid #C7C7C7;
     border-radius: 4px;
     background-color: white;
     text-align: center;
-}
-
-.custom-select option {
     font-family: 'Nunito', sans-serif;
-    text-align: center;
+    
+    /* Remove a aparência padrão do select para customização */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    /* Adiciona uma seta customizada como imagem de fundo */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 15px;
+    padding-right: 30px; /* Espaço para a seta não sobrepor o texto */
+    padding-left: 5px;
 }
 
+/* Estilo para os selects de múltipla escolha */
 .multiSelectCustom {
     width: 300px;
     height: 85px;
     border: 1px solid #C7C7C7;
     border-radius: 4px;
     background-color: white;
+    font-family: 'Nunito', sans-serif;
 }
 
 .multiSelectCustom option {
     padding: 5px;
-    font-family: 'Nunito', sans-serif;
 }
 
+/* Estilização da barra de rolagem para selects de múltipla escolha */
 .multiSelectCustom::-webkit-scrollbar {
     width: 8px;
 }
-
 .multiSelectCustom::-webkit-scrollbar-track {
-    background: white;
+    background: #f1f1f1;
     border-radius: 4px;
 }
-
 .multiSelectCustom::-webkit-scrollbar-thumb {
     background: #C7C7C7;
     border-radius: 4px;
 }
 
-.custom-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 5px center;
-    background-size: 15px 15px;
-    padding-right: 15px;
-    border: 1px solid #C7C7C7;
-    border-radius: 4px;
+
+/* ==========================================================================
+   Estilos Gerais das Tabelas
+   ========================================================================== */
+table {
+    width: 100%; /* Usa 100% para ser mais responsivo ao container. */
+    max-width: 1480px; /* Define uma largura máxima. */
+    border-collapse: collapse;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+/* Cabeçalho padrão para ambas as tabelas */
+.cabecalho {
     height: 30px;
-    font-family: 'Nunito', sans-serif;
+    background-color: #1772CB;
+    color: white;
+    font-weight: bold;
+}
+.cabecalho th:first-child { /* Usa 'th' para cabeçalhos semânticos */
+    border-top-left-radius: 10px;
+}
+.cabecalho th:last-child {
+    border-top-right-radius: 10px;
 }
 
-/* ***************************** */
-
-.loader {
-    border: 4px solid #F7F7F7;
-    border-top: 4px solid #C7C7C7;
-    border-radius: 50%;
-    width: 100%;
-    height: 100%;
-    animation: spin 2s linear infinite;   
-    margin: auto;
+/* Células padrão (cabeçalho e corpo) */
+td, th {
+    vertical-align: middle;
+    text-align: right;
+    padding: 0 5px; /* Adicionado padding horizontal para espaçamento. */
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* Primeira coluna sempre alinhada à esquerda e com largura fixa */
+td:first-child, th:first-child {
+    width: 300px;
+    text-align: left;
+    padding-left: 10px;
 }
 
-/* ***************************** */
+/* Colunas de valores (meses ou anos) */
+td:not(:first-child):not(:last-child),
+th:not(:first-child):not(:last-child) {
+    width: 90px;
+}
 
-* {
-    outline: 0px solid red;
+/* Última coluna (TOTAL) */
+td:last-child, th:last-child {
+    width: 100px;
+    font-weight: bold;
+    padding-right: 10px;
+}
+
+/* Efeito hover para as linhas do corpo da tabela */
+table tbody tr:hover {
+    background-color: #F7F7F7;
+}
+
+/* Linha usada apenas para criar um espaçamento visual */
+.linhaBranco {
+    height: 10px; /* Reduzido para um espaçamento mais sutil. */
+    border: none;
+}
+.linhaBranco:hover {
+    background-color: transparent; /* Remove o hover de linhas em branco. */
+}
+
+
+/* ==========================================================================
+   Estilos Específicos da Tabela DRE (#tabelaMatriz)
+   ========================================================================== */
+
+/* Linhas de totalização, como "(=) Receita Líquida" */
+#tabelaMatriz .linhatotal {
+    font-weight: bold;
+    border-top: 2px solid #F2F2F2;
+}
+
+/* Linhas de saldo, como "Caixa Inicial" e "Caixa Final" */
+#tabelaMatriz .linhaSaldo {
+    font-weight: bold;
+    color: white;
+    background-color: #1772CB;
+}
+#tabelaMatriz .linhaSaldo:hover {
+    background-color: #1772CB; /* Mantém a cor no hover. */
+}
+
+/* Arredonda os cantos inferiores da última linha visível */
+#tabelaMatriz tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+}
+#tabelaMatriz tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 10px;
+}
+
+/* Recuo para itens hierárquicos */
+#tabelaMatriz .idented {
+    padding-left: 25px !important;
+}
+
+
+/* ==========================================================================
+   Estilos Específicos da Tabela de Departamentos (#tabelaCustos)
+   ========================================================================== */
+
+/* Linhas de total de classe (ex: "(-) Custos") */
+#tabelaCustos .linhaSaldo {
+    font-weight: bold;
+    color: white;
+    background-color: #1772CB;
+}
+#tabelaCustos .linhaSaldo:hover {
+    background-color: #1772CB;
+}
+
+/* Linhas de total de departamento */
+#tabelaCustos .linhatotal {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Linhas de categoria, filhas de um departamento */
+#tabelaCustos .linha-categoria {
+    cursor: pointer;
+}
+#tabelaCustos .linha-categoria td:first-child {
+    padding-left: 25px !important;
+}
+
+/* Linhas de lançamento (fornecedor), filhas de uma categoria */
+#tabelaCustos .linha-lancamento {
+    font-size: 13px;
+    color: #555;
+}
+#tabelaCustos .linha-lancamento td:first-child {
+    padding-left: 50px !important;
+}
+
+
+/* ==========================================================================
+   Estilos de Utilidades (aplicados via JS)
+   ========================================================================== */
+
+/* Esconde elementos (usado para expandir/recolher linhas) */
+.hidden {
+    display: none;
+}
+
+/* Ícone de expandir/recolher ([+]) */
+.expand-btn {
+    cursor: pointer;
+    color: #1772CB;
+    font-weight: bold;
+    display: inline-block;
+    width: 20px; /* Garante alinhamento consistente. */
 }

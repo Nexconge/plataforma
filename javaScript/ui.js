@@ -1,5 +1,3 @@
-// ui.js
-
 // --- CORREÇÃO --- Importa as funções de processamento que serão usadas pela UI
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processing.js';
 
@@ -200,7 +198,9 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
-    if (modo.toLowerCase() === 'mensal') {
+    if (modo.toLowerCase() === 'mensal'){
+        atualizarCSStabelas('mensal');
+
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
             option.value = ano; option.textContent = ano;
@@ -208,6 +208,8 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
         });
         anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
     } else { // anual
+        atualizarCSStabelas('anual')
+
         const periodos = new Set();
         anosDisponiveis.forEach(ano => {
             const anoNum = Number(ano);
@@ -222,6 +224,23 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
             anoSelect.appendChild(option);
         });
     }
+}
+
+function atualizarCSStabelas(detalhamento){
+        const tabelaDRE = document.getElementById('tabelaMatriz');
+        const tabelaCustos = document.getElementById('tabelaCustos');
+
+        if(detalhamento === 'mensal'){
+            tabelaDRE.classList.add('dreMensal')
+            tabelaDRE.classList.remove('dreAnual')
+            tabelaCustos.classList.add('custosMensal')
+            tabelaCustos.classList.remove('custosAnual')
+        }else{
+            tabelaDRE.classList.add('dreAnual')
+            tabelaDRE.classList.remove('dreMensal')
+            tabelaCustos.classList.add('custosAnual')
+            tabelaCustos.classList.remove('custosMensal')
+        }
 }
 
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
