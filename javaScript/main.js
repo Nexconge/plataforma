@@ -1,12 +1,11 @@
 // main.js
 
-// --- CORREÇÃO ---
-// Importa TODAS as funções necessárias dos outros módulos.
+// --- Importa as funções de cada módulo especializado ---
 import { buscarDadosOMIE, obterDataAtualizacaoArquivo } from './api.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processing.js';
 import { configurarFiltros, atualizarVisualizacoes } from './ui.js';
 
-// O cache e as funções de serialização vivem aqui, no módulo principal.
+// --- O cache em memória e as funções de serialização ---
 let appCache = {
     userId: null, userType: null, dataAtualizacao: null, lancamentos: null,
     categoriasMap: new Map(), fornecedoresMap: new Map(), classesMap: new Map(),
@@ -30,6 +29,9 @@ function reviver(key, value) {
 // PONTOS DE ENTRADA PARA O BUBBLE
 // =======================================================
 
+/**
+ * [PRIMEIRA CHAMADA] Apenas verifica os metadados do cache.
+ */
 window.TentarCache = async function(id, urlDados) {
     console.log("Verificando cache...");
     const dataAtualizacao = await obterDataAtualizacaoArquivo(urlDados);
@@ -41,10 +43,11 @@ window.TentarCache = async function(id, urlDados) {
 
     const cacheString = localStorage.getItem(`appCache_${id}`);
     if (cacheString) {
-        const cachedData = JSON.parse(cacheString, reviver);
-        if (cachedData.userId === id && cachedData.dataAtualizacao === dataAtualizacao) {
+        // --- ALTERAÇÃO ---
+        // Apenas verifica os metadados, não carrega o cache inteiro na memória ainda.
+        const cachedMetaData = JSON.parse(cacheString, reviver);
+        if (cachedMetaData.userId === id && cachedMetaData.dataAtualizacao === dataAtualizacao) {
             console.log("Cache válido. Acionando fluxo rápido.");
-            appCache = cachedData; // Carrega o cache na memória
             window.bubble_fn_cache("valido");
             return;
         }
@@ -53,17 +56,45 @@ window.TentarCache = async function(id, urlDados) {
     window.bubble_fn_cache("invalido");
 };
 
-window.IniciarComCache = function() {
+/**
+ * [CHAMADO PELO WORKFLOW RÁPIDO]
+ */
+window.IniciarComCache = async function(id, urlDados) {
     console.log("Iniciando com dados do cache...");
-    configurarFiltros(appCache, () => atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE));
+    try {
+        // 1. Carrega o cache PARCIAL (sem os lançamentos) do localStorage
+        const cacheString = localStorage.getItem(`appCache_${id}`);
+        appCache = JSON.parse(cacheString, reviver);
+
+        // --- ALTERAÇÃO ---
+        // 2. Busca os dados de lançamentos que não estavam no cache
+        console.log("Buscando apenas os lançamentos...");
+        const dadosOMIE = await buscarDadosOMIE(urlDados);
+        appCache.lancamentos = dadosOMIE.lancamentos;
+        // É uma boa prática recarregar estes também, caso o arquivo OMIE tenha sido atualizado
+        dadosOMIE.fornecedores.forEach(f => appCache.fornecedoresMap.set(f.codigo, f.nome));
+        dadosOMIE.departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
+        dadosOMIE.categorias.forEach(c => appCache.categoriasMap.set(c.codigo, c.descricao));
+
+        // 3. Recalcula os anos disponíveis com base nos lançamentos recém-buscados
+        const anos = new Set(appCache.lancamentos.map(l => l.DataLancamento.split('/')[2]));
+        appCache.anosDisponiveis = Array.from(anos).sort();
+
+        // 4. Configura a UI com o appCache agora completo
+        configurarFiltros(appCache, () => atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE));
+    } catch (error) {
+        console.error("Erro ao iniciar com cache:", error);
+    }
 };
 
+/**
+ * [CHAMADO PELO WORKFLOW LENTO]
+ */
 window.IniciarDoZero = async function(id, type, urlDados, contasJson, classesJson, projetosJson) {
     console.log("Iniciando do zero...");
     const dataAtualizacao = await obterDataAtualizacaoArquivo(urlDados);
     
-    // --- CORREÇÃO ---
-    // Limpa e recria completamente o objeto appCache para evitar dados antigos.
+    // Recria o objeto appCache limpo
     appCache = {
         userId: null, userType: null, dataAtualizacao: null, lancamentos: null,
         categoriasMap: new Map(), fornecedoresMap: new Map(), classesMap: new Map(),
@@ -78,27 +109,31 @@ window.IniciarDoZero = async function(id, type, urlDados, contasJson, classesJso
     dadosOMIE.departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
     dadosOMIE.categorias.forEach(c => appCache.categoriasMap.set(c.codigo, c.descricao));
     
-    // --- CORREÇÃO ---
-    // Processa os dados do Bubble que estavam faltando.
+    // 2. Processa dados do Bubble
     const classes = JSON.parse(classesJson);
     classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
-
     const projetos = JSON.parse(projetosJson);
     projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: p.contas.map(String) }));
-
     const contas = JSON.parse(contasJson);
     contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
-
+    
     // 3. Calcula dados derivados
     const anos = new Set(appCache.lancamentos.map(l => l.DataLancamento.split('/')[2]));
     appCache.anosDisponiveis = Array.from(anos).sort();
 
-    // 4. Salva no cache
+    // 4. Prepara e salva o cache PARCIAL
     appCache.userId = id;
     appCache.userType = type;
     appCache.dataAtualizacao = dataAtualizacao;
-    localStorage.setItem(`appCache_${id}`, JSON.stringify(appCache, replacer));
-    console.log("Novos dados salvos no cache.");
+    
+    // --- ALTERAÇÃO ---
+    // Cria uma cópia do appCache para remover os lançamentos antes de salvar
+    const cacheParaSalvar = { ...appCache };
+    delete cacheParaSalvar.lancamentos;
+    delete cacheParaSalvar.anosDisponiveis;
+    
+    localStorage.setItem(`appCache_${id}`, JSON.stringify(cacheParaSalvar, replacer));
+    console.log("Cache parcial (sem lançamentos) salvo com sucesso.");
 
     // 5. Configura a UI
     configurarFiltros(appCache, () => atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE));
