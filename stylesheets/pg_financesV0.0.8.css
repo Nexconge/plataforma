@@ -185,12 +185,12 @@ td:last-child, th:last-child {
 /* ==========================================================================
    Estilos Específicos da Tabela de Departamentos (#tabelaCustos)
    ========================================================================== */
-#tabelaCustos.custosMensal{
+.custosMensal{
     font-weight: bold;
     color: red;
     background-color: #2c5a8b; /* Azul mais escuro */
 }
-#tabelaCustos.custosAnual{
+.custosAnual{
     font-weight: bold;
     color: white;
     background-color: #2c5a8b; /* Azul mais escuro */
@@ -198,12 +198,12 @@ td:last-child, th:last-child {
 /* ==========================================================================
    Estilos Específicos da Tabela de DER (#tabelaMatriz)
    ========================================================================== */
-#tabelaMatriz.dreMensal{
+.dreMensal{
     font-weight: bold;
     color: red;
     background-color: #2c5a8b; /* Azul mais escuro */
 }
-#tabelaMatriz.dreAnual{
+.dreAnual{
     font-weight: bold;
     color: white;
     background-color: #2c5a8b; /* Azul mais escuro */
