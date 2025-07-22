@@ -109,7 +109,7 @@ function renderizarTabelaDRE(matrizDRE, colunas) {
  * @param {object} dadosAgrupados - Os dados processados e agrupados por classe, com totais.
  * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
  */
-function renderizarTabelaDepartamentos(dadosAgrupados, colunas) {
+function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
