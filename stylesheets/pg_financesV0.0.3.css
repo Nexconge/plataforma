@@ -88,6 +88,12 @@ table {
     vertical-align: middle;
 }
 
+/*Estilo padrão para linhas da tabela*/
+table tbody tr{
+    height: 30px;
+    border-bottom: 1px solid #F7F7F7;
+}
+
 /* Cabeçalho padrão para ambas as tabelas */
 .cabecalho {
     height: 30px;
