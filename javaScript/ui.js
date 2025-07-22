@@ -231,15 +231,15 @@ function atualizarCSStabelas(detalhamento){
         const tabelaCustos = document.getElementById('tabelaCustos');
 
         if(detalhamento === 'mensal'){
-            tabelaDRE.classList.add('dreMensal')
-            tabelaDRE.classList.remove('dreAnual')
-            tabelaCustos.classList.add('custosMensal')
-            tabelaCustos.classList.remove('custosAnual')
+            tabelaDRE.classList.add('dreMensal');
+            tabelaDRE.classList.remove('dreAnual');
+            tabelaCustos.classList.add('custosMensal');
+            tabelaCustos.classList.remove('custosAnual');
         }else{
-            tabelaDRE.classList.add('dreAnual')
-            tabelaDRE.classList.remove('dreMensal')
-            tabelaCustos.classList.add('custosAnual')
-            tabelaCustos.classList.remove('custosMensal')
+            tabelaDRE.classList.add('dreAnual');
+            tabelaDRE.classList.remove('dreMensal');
+            tabelaCustos.classList.add('custosAnual');
+            tabelaCustos.classList.remove('custosMensal');
         }
 }
 

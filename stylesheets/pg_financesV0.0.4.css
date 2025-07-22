@@ -154,31 +154,46 @@ table tbody tr:hover {
    Estilos Específicos da Tabela DRE (#tabelaMatriz)
    ========================================================================== */
 
-/* Linhas de totalização, como "(=) Receita Líquida" */
-#tabelaMatriz .linhatotal {
+/* --- Estilos para a Visualização MENSAL --- */
+
+#tabelaMatriz.view-mensal .linhatotal {
     font-weight: bold;
     border-top: 2px solid #F2F2F2;
 }
 
-/* Linhas de saldo, como "Caixa Inicial" e "Caixa Final" */
-#tabelaMatriz .linhaSaldo {
+#tabelaMatriz.view-mensal .linhaSaldo {
     font-weight: bold;
     color: white;
+    background-color: #1772CB; /* Azul padrão para mensal */
+}
+#tabelaMatriz.view-mensal .linhaSaldo:hover {
     background-color: #1772CB;
 }
-#tabelaMatriz .linhaSaldo:hover {
-    background-color: #1772CB; /* Mantém a cor no hover. */
+
+/* --- Estilos para a Visualização ANUAL --- */
+
+#tabelaMatriz.view-anual .linhatotal {
+    font-weight: bold;
+    border-top: 2px solid #e0e0e0;
 }
 
-/* Arredonda os cantos inferiores da última linha visível */
+#tabelaMatriz.view-anual .linhaSaldo {
+    font-weight: bold;
+    color: white;
+    background-color: #2c5a8b; /* Tom de azul mais escuro para anual */
+}
+#tabelaMatriz.view-anual .linhaSaldo:hover {
+    background-color: #2c5a8b;
+}
+
+/* --- Estilos Comuns para Ambas as Visualizações --- */
+
 #tabelaMatriz tbody tr:last-child td:first-child {
     border-bottom-left-radius: 10px;
 }
 #tabelaMatriz tbody tr:last-child td:last-child {
     border-bottom-right-radius: 10px;
 }
-
-/* Recuo para itens hierárquicos */
 #tabelaMatriz .idented {
     padding-left: 25px !important;
 }
@@ -188,23 +203,44 @@ table tbody tr:hover {
    Estilos Específicos da Tabela de Departamentos (#tabelaCustos)
    ========================================================================== */
 
+/* --- Estilos para a Visualização MENSAL --- */
+
 /* Linhas de total de classe (ex: "(-) Custos") */
-#tabelaCustos .linhaSaldo {
+#tabelaCustos.view-mensal .linhaSaldo {
     font-weight: bold;
     color: white;
-    background-color: #1772CB;
+    background-color: #1772CB; /* Azul padrão */
 }
-#tabelaCustos .linhaSaldo:hover {
+#tabelaCustos.view-mensal .linhaSaldo:hover {
     background-color: #1772CB;
 }
 
 /* Linhas de total de departamento */
-#tabelaCustos .linhatotal {
+#tabelaCustos.view-mensal .linhatotal {
     font-weight: bold;
     cursor: pointer;
+    background-color: #fafafa;
 }
 
-/* Linhas de categoria, filhas de um departamento */
+/* --- Estilos para a Visualização ANUAL --- */
+
+#tabelaCustos.view-anual .linhaSaldo {
+    font-weight: bold;
+    color: white;
+    background-color: #2c5a8b; /* Azul mais escuro */
+}
+#tabelaCustos.view-anual .linhaSaldo:hover {
+    background-color: #2c5a8b;
+}
+
+#tabelaCustos.view-anual .linhatotal {
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #f5f5f5; /* Fundo um pouco mais escuro para diferenciar */
+}
+
+/* --- Estilos Comuns para Ambas as Visualizações --- */
+
 #tabelaCustos .linha-categoria {
     cursor: pointer;
 }
@@ -212,7 +248,6 @@ table tbody tr:hover {
     padding-left: 25px !important;
 }
 
-/* Linhas de lançamento (fornecedor), filhas de uma categoria */
 #tabelaCustos .linha-lancamento {
     font-size: 13px;
     color: #555;
@@ -220,7 +255,6 @@ table tbody tr:hover {
 #tabelaCustos .linha-lancamento td:first-child {
     padding-left: 50px !important;
 }
-
 
 /* ==========================================================================
    Estilos de Utilidades (aplicados via JS)
