@@ -143,7 +143,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
             const rowDepto = tbody.insertRow();
             rowDepto.className = 'linhatotal';
             rowDepto.onclick = () => toggleLinha(deptoId);
-            cellDepto = rowDepto.insertCell();
+            const cellDepto = rowDepto.insertCell();
             cellDepto.innerHTML = `<span class="expand-btn">[+]</span> ${nome}`;
 
             const totaisDepartamento = Array(colunas.length).fill(0); // LOOP CORRIGIDO
@@ -166,7 +166,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
                 rowCat.onclick = (e) => { e.stopPropagation(); toggleLinha(catId); };
                 const cellCat = rowCat.insertCell();
                 cellCat.className = 'idented';
-                cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${appCache.categoriasMap.get(codCategoria) || 'Categoria desconhecida'}`;
+                cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${categoriasMap.get(codCategoria) || 'Categoria desconhecida'}`;
 
                 let totalCategoria = 0;
                 colunas.forEach(coluna => { // LOOP CORRIGIDO
