@@ -139,7 +139,21 @@ td:last-child, th:last-child {
 table tbody tr:hover {
     background-color: #F7F7F7;
 }
-
+#tabelaMatriz tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+}
+#tabelaMatriz tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 10px;
+}
+/* ==========================================================================
+   Formatação para linhas da tabela
+   ========================================================================== */
+.idented {
+    padding-left: 25px !important;
+}
+.idented2{
+    padding-left: 50px !important;
+}
 /* Linha usada apenas para criar um espaçamento visual */
 .linhaBranco {
     height: 10px; /* Reduzido para um espaçamento mais sutil. */
@@ -148,112 +162,55 @@ table tbody tr:hover {
 .linhaBranco:hover {
     background-color: transparent; /* Remove o hover de linhas em branco. */
 }
-
-
-/* ==========================================================================
-   Estilos Específicos da Tabela DRE (#tabelaMatriz)
-   ========================================================================== */
-
-/* --- Estilos para a Visualização MENSAL --- */
-
-#tabelaMatriz.dreMensal .linhatotal {
-    font-weight: bold;
-    border-top: 2px solid #F2F2F2;
-}
-
-#tabelaMatriz.dreMensal .linhaSaldo {
-    font-weight: bold;
-    color: white;
-    background-color: #1772CB; /* Azul padrão para mensal */
-}
-#tabelaMatriz.dreMensal .linhaSaldo:hover {
-    background-color: #1772CB;
-}
-
-/* --- Estilos para a Visualização ANUAL --- */
-
-#tabelaMatriz.dreAnual .linhatotal {
-    font-weight: bold;
-    border-top: 2px solid #e0e0e0;
-}
-
-#tabelaMatriz.dreAnual .linhaSaldo {
-    font-weight: bold;
-    color: white;
-    background-color: #2c5a8b; /* Tom de azul mais escuro para anual */
-}
-#tabelaMatriz.dreAnual .linhaSaldo:hover {
-    background-color: #2c5a8b;
-}
-
-/* --- Estilos Comuns para Ambas as Visualizações --- */
-
-#tabelaMatriz tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 10px;
-}
-#tabelaMatriz tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 10px;
-}
-#tabelaMatriz .idented {
-    padding-left: 25px !important;
-}
-
-
-/* ==========================================================================
-   Estilos Específicos da Tabela de Departamentos (#tabelaCustos)
-   ========================================================================== */
-
-/* --- Estilos para a Visualização MENSAL --- */
-
-/* Linhas de total de classe (ex: "(-) Custos") */
-#tabelaCustos.custosMensal .linhaSaldo {
+.linhaSaldo {
     font-weight: bold;
     color: white;
     background-color: #1772CB; /* Azul padrão */
 }
-#tabelaCustos.custosMensal .linhaSaldo:hover {
-    background-color: #1772CB;
-}
-
-/* Linhas de total de departamento */
-#tabelaCustos.custosMensal .linhatotal {
+.linhatotal {
     font-weight: bold;
     cursor: pointer;
     background-color: #fafafa;
 }
+.linha-categoria {
+    cursor: pointer;
+}
+.linha-categoria td:first-child {
+    padding-left: 25px !important;
+}
+.linha-lancamento {
+    font-size: 13px;
+    color: #555;
+}
+.linha-lancamento td:first-child {
+    padding-left: 50px !important;
+}
 
-/* --- Estilos para a Visualização ANUAL --- */
-
-#tabelaCustos.custosAnual .linhaSaldo {
+/* ==========================================================================
+   Estilos Específicos da Tabela de Departamentos (#tabelaCustos)
+   ========================================================================== */
+#tabelaCustos.custosMensal{
     font-weight: bold;
     color: white;
     background-color: #2c5a8b; /* Azul mais escuro */
 }
-#tabelaCustos.custosAnual .linhaSaldo:hover {
-    background-color: #2c5a8b;
-}
-
-#tabelaCustos.custosAnual .linhatotal {
+#tabelaCustos.custosAnual{
     font-weight: bold;
-    cursor: pointer;
-    background-color: #f5f5f5; /* Fundo um pouco mais escuro para diferenciar */
+    color: white;
+    background-color: #2c5a8b; /* Azul mais escuro */
 }
-
-/* --- Estilos Comuns para Ambas as Visualizações --- */
-
-#tabelaCustos .linha-categoria {
-    cursor: pointer;
+/* ==========================================================================
+   Estilos Específicos da Tabela de DER (#tabelaMatriz)
+   ========================================================================== */
+#tabelaMatriz.dreMensal{
+    font-weight: bold;
+    color: white;
+    background-color: #2c5a8b; /* Azul mais escuro */
 }
-#tabelaCustos .linha-categoria td:first-child {
-    padding-left: 25px !important;
-}
-
-#tabelaCustos .linha-lancamento {
-    font-size: 13px;
-    color: #555;
-}
-#tabelaCustos .linha-lancamento td:first-child {
-    padding-left: 50px !important;
+#tabelaMatriz.dreAnual{
+    font-weight: bold;
+    color: white;
+    background-color: #2c5a8b; /* Azul mais escuro */
 }
 
 /* ==========================================================================
