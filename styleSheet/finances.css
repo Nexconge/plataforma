@@ -7,7 +7,7 @@ body {
 }
 
 table {
-    width: 1450px;
+    width: 1390px;
     border-collapse: collapse;
     font-size: 14px;
     vertical-align: middle;
@@ -50,7 +50,7 @@ td:first-child {
 
 td:nth-child(n+2):nth-child(-n+13),
 th:nth-child(n+2):nth-child(-n+13) {
-    width: 90px;
+    width: 85px;
 }
 
 td:nth-child(14),
