@@ -7,7 +7,7 @@ body {
 }
 
 table {
-    width: 1390px;
+    width: 1400px;
     border-collapse: collapse;
     font-size: 14px;
     vertical-align: middle;
@@ -43,7 +43,7 @@ td, th {
 }
 
 td:first-child {
-    width: 280px;
+    width: 290px;
     text-align: left;
     padding-left: 10px;
 }
