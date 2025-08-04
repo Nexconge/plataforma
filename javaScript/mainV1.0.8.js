@@ -64,7 +64,7 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     };
 
     // 1. Recebe os lançamentos diretamente como parâmetro
-    appCache.lancamentos = lancamentos;
+    appCache.lancamentos = JSON.parse(lancamentos);
     
     // --- MODIFICAÇÃO ---
     // 2. Popula os maps de categorias, fornecedores e departamentos a partir dos lançamentos
