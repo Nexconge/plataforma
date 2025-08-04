@@ -52,6 +52,10 @@ window.IniciarComCache = async function() {
  * Agora recebe os lançamentos diretamente do Bubble.
  * Assinatura: async function(lancamentos, id, type, contasJson, classesJson, projetosJson)
  */
+/**
+ * [CHAMADO PELO WORKFLOW LENTO] - CORRIGIDO
+ * Adicionada verificação para projetos sem contas associadas.
+ */
 window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classesJson, projetosJson) {
     console.log("Iniciando do zero com dados do banco de dados Bubble...");
     
@@ -63,25 +67,20 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
         anosDisponiveis: []
     };
 
-    // 1. Recebe os lançamentos diretamente como parâmetro
+    // 1. Recebe os lançamentos e converte o texto JSON em um objeto JavaScript
     appCache.lancamentos = JSON.parse(lancamentos);
     
-    // --- MODIFICAÇÃO ---
     // 2. Popula os maps de categorias, fornecedores e departamentos a partir dos lançamentos
     console.log("Populando maps de suporte a partir dos lançamentos...");
     appCache.lancamentos.forEach(l => {
         if (l.CODCategoria) {
-            // Usa o próprio código como descrição, pode ser melhorado no futuro
             appCache.categoriasMap.set(l.CODCategoria, l.CODCategoria);
         }
         if (l.CODCliente) {
-            // Cria um nome de fornecedor genérico
             appCache.fornecedoresMap.set(l.CODCliente, `Fornecedor ${l.CODCliente}`);
         }
         if (l.Departamentos && Array.isArray(l.Departamentos)) {
             l.Departamentos.forEach(d => {
-                // Cria um nome de departamento genérico
-                // O valor 0 é tratado como "Não especificado"
                 const deptoDesc = d.CODDepto === 0 ? 'Não especificado' : `Departamento ${d.CODDepto}`;
                 appCache.departamentosMap.set(d.CODDepto, deptoDesc);
             });
@@ -90,10 +89,15 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
 
     // 3. Processa dados do Bubble (JSONs)
     const classes = JSON.parse(classesJson);
-    classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
     const projetos = JSON.parse(projetosJson);
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: p.contas.map(String) }));
     const contas = JSON.parse(contasJson);
+    
+    classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
+
+    // --- CORREÇÃO APLICADA AQUI ---
+    // Garante que p.contas seja um array antes de usar .map(), evitando erro em projetos sem contas.
+    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
+    
     contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
     
     // 4. Calcula dados derivados
