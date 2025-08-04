@@ -111,18 +111,14 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     try {
         // 2. Processa dados auxiliares (passados como JSON pelo Bubble)
         // A adição de '|| "[]"' torna o código seguro caso o Bubble envie um valor vazio.
-        const classes = JSON.parse(classesJson || '[]');
-        classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
+        const classes = JSON.parse(classesJson);
+        classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
 
-        const contas = JSON.parse(contasJson || '[]');
-        contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
+        const projetos = JSON.parse(projetosJson);
+        projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: p.contas.map(String) }));
 
-        const projetos = JSON.parse(projetosJson || '[]');
-        projetos.forEach(p => {
-            // CORREÇÃO DE SEGURANÇA (MANTIDA): Evita erro se um projeto não tiver contas.
-            const contasDoProjeto = Array.isArray(p.contas) ? p.contas.map(String) : [];
-            appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: contasDoProjeto });
-        });
+        const contas = JSON.parse(contasJson);
+        contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
 
         // 3. Processa o array principal de Lançamentos
         const anos = new Set();
