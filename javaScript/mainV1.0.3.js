@@ -104,7 +104,7 @@ window.IniciarDoZero = async function(lancamentos, id, type, urlDados, contasJso
 
     // 1. Carrega dados externos
     const dadosOMIE = await buscarDadosOMIE(urlDados);
-    appCache.lancamentos = lancamentos;
+    appCache.lancamentos = lancamentos.JSON();
     console.log(lancamentos);
 
     dadosOMIE.fornecedores.forEach(f => appCache.fornecedoresMap.set(f.codigo, f.nome));
