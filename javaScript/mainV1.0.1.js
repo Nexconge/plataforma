@@ -90,9 +90,9 @@ window.IniciarComCache = async function(id, urlDados) {
 /**
  * [CHAMADO PELO WORKFLOW LENTO]
  */
-window.IniciarDoZero = async function(id, type, urlDados, contasJson, classesJson, projetosJson) {
+window.IniciarDoZero = async function(lancamentos, id, type, urlDados, contasJson, classesJson, projetosJson) {
     console.log("Iniciando do zero...");
-    const dataAtualizacao = await obterDataAtualizacaoArquivo(urlDados);
+    //const dataAtualizacao = await obterDataAtualizacaoArquivo(urlDados);
     
     // Recria o objeto appCache limpo
     appCache = {
@@ -104,7 +104,9 @@ window.IniciarDoZero = async function(id, type, urlDados, contasJson, classesJso
 
     // 1. Carrega dados externos
     const dadosOMIE = await buscarDadosOMIE(urlDados);
-    appCache.lancamentos = dadosOMIE.lancamentos;
+    appCache.lancamentos = lancamentos;
+    console.log("Dados OMIE carregados:", lancamentos);
+
     dadosOMIE.fornecedores.forEach(f => appCache.fornecedoresMap.set(f.codigo, f.nome));
     dadosOMIE.departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
     dadosOMIE.categorias.forEach(c => appCache.categoriasMap.set(c.codigo, c.descricao));
