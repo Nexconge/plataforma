@@ -91,78 +91,82 @@ window.IniciarComCache = async function(id, urlDados) {
  * [CHAMADO PELO WORKFLOW LENTO]
  */
 window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classesJson, projetosJson) {
-    console.log("Iniciando do zero...");
+    console.log("Iniciando do zero com dados do Bubble...");
 
-    // Recria o objeto appCache limpo
+    // 1. Inicializa o cache
     let appCache = {
-        userId: null,
-        userType: null,
-        dataAtualizacao: new Date().toISOString(), // Grava a data atual da carga
-        lancamentos: null,
+        userId: id,
+        userType: type,
+        dataAtualizacao: new Date().toISOString(),
+        lancamentos: lancamentos || [],
         categoriasMap: new Map(),
-        fornecedoresMap: new Map(), // Presumi que estes virão dos lançamentos
+        fornecedoresMap: new Map(),
         classesMap: new Map(),
         projetosMap: new Map(),
         contasMap: new Map(),
-        departamentosMap: new Map(), // Presumi que estes virão dos lançamentos
+        departamentosMap: new Map(),
         anosDisponiveis: []
     };
 
-    // 1. Carrega os lançamentos (CORREÇÃO APLICADA AQUI)
-    // A variável 'lancamentos' já é um array de objetos, não precisa de .json()
-    appCache.lancamentos = lancamentos;
-    console.log("Lançamentos recebidos do Bubble:", appCache.lancamentos);
-
-    // 2. Processa dados adicionais do Bubble (passados como strings JSON)
     try {
-        const classes = JSON.parse(classesJson);
+        // 2. Processa dados auxiliares (passados como JSON pelo Bubble)
+        // A adição de '|| "[]"' torna o código seguro caso o Bubble envie um valor vazio.
+        const classes = JSON.parse(classesJson || '[]');
         classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
 
-        const projetos = JSON.parse(projetosJson);
-        projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: p.contas.map(String) }));
-
-        const contas = JSON.parse(contasJson);
+        const contas = JSON.parse(contasJson || '[]');
         contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
+
+        const projetos = JSON.parse(projetosJson || '[]');
+        projetos.forEach(p => {
+            // CORREÇÃO DE SEGURANÇA (MANTIDA): Evita erro se um projeto não tiver contas.
+            const contasDoProjeto = Array.isArray(p.contas) ? p.contas.map(String) : [];
+            appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: contasDoProjeto });
+        });
+
+        // 3. Processa o array principal de Lançamentos
+        const anos = new Set();
+        appCache.lancamentos.forEach(l => {
+            // Calcula anos disponíveis
+            const ano = l.DataLancamento.split('/')[2];
+            if (ano) anos.add(ano);
+
+            // --- LÓGICA DE CONSISTÊNCIA (REINTRODUZIDA) ---
+            // Popula os Maps a partir dos dados encontrados nos próprios lançamentos.
+            // Isso garante que os maps não fiquem vazios, mantendo a consistência com a lógica antiga.
+            if (l.CODCategoria && !appCache.categoriasMap.has(l.CODCategoria)) {
+                appCache.categoriasMap.set(l.CODCategoria, `Categoria ${l.CODCategoria}`); // Usamos o próprio código como fallback
+            }
+            if (l.CODCliente && !appCache.fornecedoresMap.has(l.CODCliente)) {
+                appCache.fornecedoresMap.set(l.CODCliente, `Fornecedor ${l.CODCliente}`); // Usamos o próprio código como fallback
+            }
+            if (l.Departamentos && Array.isArray(l.Departamentos)) {
+                l.Departamentos.forEach(d => {
+                    if (d.CODDepto && !appCache.departamentosMap.has(d.CODDepto)) {
+                        appCache.departamentosMap.set(d.CODDepto, `Depto ${d.CODDepto}`); // Usamos o próprio código como fallback
+                    }
+                });
+            }
+        });
+        appCache.anosDisponiveis = Array.from(anos).sort();
+
+        // 4. Salva o cache parcial no localStorage (lógica mantida)
+        const cacheParaSalvar = { ...appCache };
+        delete cacheParaSalvar.lancamentos;
+        delete cacheParaSalvar.anosDisponiveis;
+
+        localStorage.setItem(`appCache_${id}`, JSON.stringify(cacheParaSalvar, (key, value) => {
+            if (value instanceof Map) {
+                return { __dataType: 'Map', value: Array.from(value.entries()) };
+            }
+            return value;
+        }));
+        console.log("Cache parcial (sem lançamentos) salvo com sucesso.");
+
+        // 5. Configura a UI (lógica mantida)
+        configurarFiltros(appCache, () => atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE));
+
     } catch (e) {
-        console.error("Erro ao fazer o parse dos dados JSON (classes, projetos ou contas):", e);
-        // Opcional: Interromper a execução se os dados essenciais falharem
-        return; 
+        console.error("Erro crítico durante a inicialização:", e);
     }
-    
-    // 3. Extrai dados derivados dos lançamentos (ex: categorias, anos, etc.)
-    const anos = new Set();
-    appCache.lancamentos.forEach(l => {
-        // Extrai o ano da data de lançamento
-        const ano = l.DataLancamento.split('/')[2];
-        if (ano) {
-            anos.add(ano);
-        }
-        
-        // Exemplo de como você poderia popular os outros Maps dinamicamente, se necessário
-        // if (l.CODCategoria) appCache.categoriasMap.set(l.CODCategoria, "Descrição da Categoria");
-        // if (l.CODCliente) appCache.fornecedoresMap.set(l.CODCliente, "Nome do Fornecedor");
-    });
-    appCache.anosDisponiveis = Array.from(anos).sort();
-
-    // 4. Prepara e salva o cache no localStorage
-    appCache.userId = id;
-    appCache.userType = type;
-    
-    // Cria uma cópia do appCache para remover os lançamentos antes de salvar
-    // Isso evita sobrecarregar o localStorage
-    const cacheParaSalvar = { ...appCache };
-    delete cacheParaSalvar.lancamentos;
-    delete cacheParaSalvar.anosDisponiveis; // Os anos serão recalculados na próxima carga
-    
-    // Usamos replacer e reviver para salvar e carregar Maps corretamente
-    localStorage.setItem(`appCache_${id}`, JSON.stringify(cacheParaSalvar, (key, value) => {
-        if(value instanceof Map) {
-            return { __dataType: 'Map', value: Array.from(value.entries()) };
-        }
-        return value;
-    }));
-    console.log("Cache parcial (sem lançamentos) salvo com sucesso.");
-
-    // 5. Configura a UI com os dados em memória
-    configurarFiltros(appCache, () => atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE));
 };
