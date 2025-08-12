@@ -69,7 +69,7 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     };
 
     // 1. Recebe os lançamentos e converte o texto JSON em um objeto JavaScript
-    appCache.lancamentos = JSON.parse(lancamentos.listProperties());
+    appCache.lancamentos = JSON.parse(lancamentos);
     
     // 2. Popula os maps de categorias, fornecedores e departamentos a partir dos lançamentos
     console.log("Populando maps de suporte a partir dos lançamentos...");
