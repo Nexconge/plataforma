@@ -80,12 +80,15 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
         if (l.CODCliente) {
             appCache.fornecedoresMap.set(l.CODCliente, `Fornecedor ${l.CODCliente}`);
         }
-        if (l.Departamentos && Array.isArray(l.Departamentos)) {
-            l.Departamentos.forEach(d => {
-                const deptoDesc = d.CODDepto === 0 ? 'Não especificado' : `Departamento ${d.CODDepto}`;
-                appCache.departamentosMap.set(d.CODDepto, deptoDesc);
+        if (l.Departamentos && typeof l.Departamentos === 'string') {
+            l.Departamentos.split(',').forEach(pair => {
+                const [codigo, valor] = pair.split(':');
+                const codigoNum = Number(codigo);
+                const deptoDesc = codigoNum === 0 ? 'Não especificado' : valor;
+                appCache.departamentosMap.set(codigoNum, deptoDesc);
             });
         }
+
     });
 
     // 3. Processa dados do Bubble (JSONs)
