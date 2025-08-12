@@ -32,8 +32,7 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         const codConta = String(lancamento.CODContaC).trim();
         if (!contasFiltradas.has(codConta)) return;
         const [dia, mes, ano] = lancamento.DataLancamento.split('/');
-        
-        // --- CORREÇÃO --- Adicionada conversão explícita para robustez
+
         if (Number(ano) < primeiroAno) {
             saldoInicialPeriodo += lancamento.ValorLancamento;
             return;
@@ -41,10 +40,9 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         if (!anosParaProcessar.includes(ano)) return;
 
         const anoMes = `${mes.padStart(2, '0')}-${ano}`;
-        // --- CORREÇÃO --- Usando minúsculas para consistência com HTML
         const chaveAgregacao = (modo.toLowerCase() === 'anual') ? ano : anoMes;
         chavesComDados.add(chaveAgregacao);
-        
+
         const codCategoria = lancamento.CODCategoria || 'SemCategoria';
         const classe = appCache.classesMap.get(codCategoria) || 'Outros';
 
@@ -53,26 +51,36 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
 
         if (classe === '(-) Custos' || classe === '(-) Despesas') {
             const fornecedor = appCache.fornecedoresMap.get(lancamento.CODCliente) || `Fornecedor ${lancamento.CODCliente}`;
-            lancamento.Departamentos?.forEach(deptoRateio => {
-                const codDepto = deptoRateio.CODDepto;
-                const nomeDepto = appCache.departamentosMap.get(codDepto) || 'Outros Departamentos';
-                const chaveDepto = `${nomeDepto}|${classe}`;
-                if (!matrizDepartamentos[chaveDepto]) {
-                    matrizDepartamentos[chaveDepto] = { nome: nomeDepto, classe, categorias: {} };
-                }
-                const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
-                if (!categoriaRef[codCategoria]) {
-                    categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
-                }
-                const catData = categoriaRef[codCategoria];
-                const valorRateio = deptoRateio.ValDepto;
-                catData.valores[chaveAgregacao] = (catData.valores[chaveAgregacao] || 0) + valorRateio;
-                if (!catData.fornecedores[fornecedor]) {
-                    catData.fornecedores[fornecedor] = { fornecedor, valores: {}, total: 0 };
-                }
-                catData.fornecedores[fornecedor].valores[chaveAgregacao] = (catData.fornecedores[fornecedor].valores[chaveAgregacao] || 0) + valorRateio;
-                catData.fornecedores[fornecedor].total += valorRateio;
-            });
+
+            // --- NOVO TRECHO ---
+            if (lancamento.Departamentos && typeof lancamento.Departamentos === 'string') {
+                lancamento.Departamentos.split(',').forEach(pair => {
+                    const [codigo, valorStr] = pair.split(':');
+                    const codDepto = Number(codigo);
+                    const valorRateio = Number(valorStr) || 0;
+                    const nomeDepto = appCache.departamentosMap.get(codDepto) || 'Outros Departamentos';
+                    const chaveDepto = `${nomeDepto}|${classe}`;
+
+                    if (!matrizDepartamentos[chaveDepto]) {
+                        matrizDepartamentos[chaveDepto] = { nome: nomeDepto, classe, categorias: {} };
+                    }
+
+                    const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
+                    if (!categoriaRef[codCategoria]) {
+                        categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
+                    }
+                    const catData = categoriaRef[codCategoria];
+
+                    catData.valores[chaveAgregacao] = (catData.valores[chaveAgregacao] || 0) + valorRateio;
+
+                    if (!catData.fornecedores[fornecedor]) {
+                        catData.fornecedores[fornecedor] = { fornecedor, valores: {}, total: 0 };
+                    }
+                    catData.fornecedores[fornecedor].valores[chaveAgregacao] =
+                        (catData.fornecedores[fornecedor].valores[chaveAgregacao] || 0) + valorRateio;
+                    catData.fornecedores[fornecedor].total += valorRateio;
+                });
+            }
         }
     });
 
@@ -81,8 +89,10 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
         });
     });
+
     return { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados };
 }
+
 
 function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
     let saldoAcumulado = saldoInicial;
