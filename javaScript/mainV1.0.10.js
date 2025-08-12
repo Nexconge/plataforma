@@ -58,6 +58,7 @@ window.IniciarComCache = async function() {
  */
 window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classesJson, projetosJson) {
     console.log("Iniciando do zero com dados do banco de dados Bubble...");
+    console.log(lancamentos);
     
     // Recria o objeto appCache limpo
     appCache = {
