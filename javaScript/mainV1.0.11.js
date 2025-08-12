@@ -69,7 +69,7 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     };
 
     // 1. Recebe os lançamentos e converte o texto JSON em um objeto JavaScript
-    appCache.lancamentos = JSON.parse(lancamentos);
+    appCache.lancamentos = JSON.parse(lancamentos.listProperties());
     
     // 2. Popula os maps de categorias, fornecedores e departamentos a partir dos lançamentos
     console.log("Populando maps de suporte a partir dos lançamentos...");
@@ -93,13 +93,13 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     const projetos = JSON.parse(projetosJson);
     const contas = JSON.parse(contasJson);
     
-    classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
+    classes.forEach(c => appCache.classesMap.set(c.CODCategoria, c.ClasseCategoria));
 
     // --- CORREÇÃO APLICADA AQUI ---
     // Garante que p.contas seja um array antes de usar .map(), evitando erro em projetos sem contas.
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
+    projetos.forEach(p => appCache.projetosMap.set(p.CODProjeto, { nome: p.Projeto, contas: (p.Contas || []).map(String) }));
     
-    contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
+    contas.forEach(c => appCache.contasMap.set(String(c.CODContaC), { descricao: c.Conta, saldoIni: c.SaldoIni }));
     
     // 4. Calcula dados derivados
     const anos = new Set(appCache.lancamentos.map(l => l.DataLancamento.split('/')[2]));
