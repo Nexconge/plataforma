@@ -57,8 +57,6 @@ window.IniciarComCache = async function() {
  * Adicionada verificação para projetos sem contas associadas.
  */
 window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classesJson, projetosJson) {
-    console.log("Iniciando do zero com dados do banco de dados Bubble...");
-    console.log(lancamentos);
     
     // Recria o objeto appCache limpo
     appCache = {
@@ -72,7 +70,6 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     appCache.lancamentos = JSON.parse(lancamentos);
     
     // 2. Popula os maps de categorias, fornecedores e departamentos a partir dos lançamentos
-    console.log("Populando maps de suporte a partir dos lançamentos...");
     appCache.lancamentos.forEach(l => {
         if (l.CODCategoria) {
             appCache.categoriasMap.set(l.CODCategoria, l.CODCategoria);
