@@ -33,8 +33,13 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         if (!contasFiltradas.has(codConta)) return;
         const [dia, mes, ano] = lancamento.DataLancamento.split('/');
 
+        let valor = lancamento.ValorLancamento;
+        if (lancamento.Origem.slice(-1) === "P") {
+            valor = -valor;
+        }
+
         if (Number(ano) < primeiroAno) {
-            saldoInicialPeriodo += lancamento.ValorLancamento;
+            saldoInicialPeriodo += valor;
             return;
         }
         if (!anosParaProcessar.includes(ano)) return;
@@ -47,10 +52,10 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         const classe = appCache.classesMap.get(codCategoria) || 'Outros';
 
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
-        matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + lancamento.ValorLancamento;
+        matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         if (classe === '(-) Custos' || classe === '(-) Despesas') {
-            const fornecedor = appCache.fornecedoresMap.get(lancamento.CODCliente) || `Fornecedor ${lancamento.CODCliente}`;
+            const fornecedor = lancamento.Cliente;
 
             // --- NOVO TRECHO ---
             if (lancamento.Departamentos && typeof lancamento.Departamentos === 'string') {

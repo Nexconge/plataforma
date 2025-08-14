@@ -7,7 +7,7 @@ import { configurarFiltros, atualizarVisualizacoes } from './ui.js';
 // --- O cache em memória e as funções de serialização ---
 let appCache = {
     userId: null, userType: null, lancamentos: null,
-    categoriasMap: new Map(), fornecedoresMap: new Map(), classesMap: new Map(),
+    categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: []
 };
@@ -24,44 +24,12 @@ function reviver(key, value) {
     return value;
 }
 
-// =======================================================
-// PONTOS DE ENTRADA PARA O BUBBLE
-// =======================================================
-
-/**
- * [PRIMEIRA CHAMADA] MODIFICADO: Com os dados vindo do Bubble, a verificação de arquivo foi desativada.
- * A aplicação sempre fará o carregamento completo dos dados via IniciarDoZero.
- */
-window.TentarCache = async function(id) {
-    console.log("Verificação de cache desativada para o modo de banco de dados. Forçando carregamento completo.");
-    window.bubble_fn_cache("invalido"); // Sempre invalida o cache para forçar a chamada de IniciarDoZero
-};
-
-/**
- * [NÃO MAIS UTILIZADO] Esta função dependia da verificação de cache por arquivo, que foi desativada.
- * O fluxo agora sempre seguirá por IniciarDoZero.
- */
-window.IniciarComCache = async function() {
-    console.warn("A função IniciarComCache não é mais suportada neste modo de operação.");
-    // Recomenda-se remover a chamada a esta função no workflow do Bubble.
-};
-
-
-/**
- * [CHAMADO PELO WORKFLOW LENTO] - MODIFICADO
- * Agora recebe os lançamentos diretamente do Bubble.
- * Assinatura: async function(lancamentos, id, type, contasJson, classesJson, projetosJson)
- */
-/**
- * [CHAMADO PELO WORKFLOW LENTO] - CORRIGIDO
- * Adicionada verificação para projetos sem contas associadas.
- */
 window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classesJson, projetosJson) {
     
     // Recria o objeto appCache limpo
     appCache = {
         userId: null, userType: null, lancamentos: null,
-        categoriasMap: new Map(), fornecedoresMap: new Map(), classesMap: new Map(),
+        categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         anosDisponiveis: []
     };
@@ -69,13 +37,10 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     // 1. Recebe os lançamentos e converte o texto JSON em um objeto JavaScript
     appCache.lancamentos = JSON.parse(lancamentos);
     
-    // 2. Popula os maps de categorias, fornecedores e departamentos a partir dos lançamentos
+    // 2. Popula os maps de categorias e departamentos a partir dos lançamentos
     appCache.lancamentos.forEach(l => {
         if (l.CODCategoria) {
             appCache.categoriasMap.set(l.CODCategoria, l.CODCategoria);
-        }
-        if (l.CODCliente) {
-            appCache.fornecedoresMap.set(l.CODCliente, `Fornecedor ${l.CODCliente}`);
         }
         if (l.Departamentos && typeof l.Departamentos === 'string') {
             l.Departamentos.split(',').forEach(pair => {
