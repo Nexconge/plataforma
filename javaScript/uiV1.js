@@ -34,19 +34,23 @@ function getSelectItems(select){
  * @param {object} matrizDRE - Os dados processados para o DRE.
  * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
  */
-function renderizarTabelaDRE(matrizDRE, colunas) {
+function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     const tabela = document.getElementById('tabelaMatriz');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
-    // ================== CORREÇÃO APLICADA AQUI (ARRAY RESTAURADO) ==================
+    // Define a ordem base das classes que todos os usuários veem
     const ordemClasses = [
         '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida', '(-) Custos', '(-) Despesas',
         '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
-        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal',
-        'Entrada de Transferência', 'Saída de Transferência', 'Outros', 'Caixa Inicial', 'Caixa Final'
+        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
-    // =============================================================================
+    // Adiciona as classes extras APENAS se o usuário for Admin
+    if (userType === 'Admin') {
+        ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
+    }
+    // Adiciona as linhas de saldo, que sempre aparecem no final para todos
+    ordemClasses.push('Caixa Inicial', 'Caixa Final');
 
     const thead = document.createElement('thead');
     const headerRow = thead.insertRow();
@@ -293,7 +297,7 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fProcessaLancamentos, f
         }
     });
 
-    renderizarTabelaDRE(matrizDRE, colunas);
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDepartamentos(appCache.categoriasMap, dadosTabelaDeptos, colunas);
 }
 
