@@ -63,7 +63,10 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
                 lancamento.Departamentos.split(',').forEach(pair => {
                     const [codigo, valorStr] = pair.split(':');
                     const codDepto = Number(codigo);
-                    const valorRateio = Number(valorStr) || 0;
+                    let valorRateio = Number(valorStr) || 0;
+                    if (lancamento.Origem.slice(-1) === "P") {
+                        valorRateio = -valorRateio;
+                    }
                     const nomeDepto = appCache.departamentosMap.get(codDepto) || 'Outros Departamentos';
                     const chaveDepto = `${nomeDepto}|${classe}`;
 
