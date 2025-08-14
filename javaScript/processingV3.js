@@ -49,7 +49,8 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         chavesComDados.add(chaveAgregacao);
 
         const codCategoria = lancamento.CODCategoria || 'SemCategoria';
-        const classe = appCache.classesMap.get(codCategoria) || 'Outros';
+        const classeInfo = appCache.classesMap.get(codCategoria);
+        const classe = classeInfo ? classeInfo.classe : 'Outros';
 
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;

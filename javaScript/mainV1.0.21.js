@@ -1,7 +1,7 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV2.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV3.js';
 import { configurarFiltros, atualizarVisualizacoes } from './ui.js';
 
 // --- O cache em memória e as funções de serialização ---
@@ -39,9 +39,6 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     
     // 2. Popula os maps de categorias e departamentos a partir dos lançamentos
     appCache.lancamentos.forEach(l => {
-        if (l.CODCategoria) {
-            appCache.categoriasMap.set(l.CODCategoria, l.CODCategoria);
-        }
         if (l.Departamentos && typeof l.Departamentos === 'string') {
             l.Departamentos.split(',').forEach(pair => {
                 const [codigo, valor] = pair.split(':');
@@ -50,7 +47,6 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
                 appCache.departamentosMap.set(codigoNum, deptoDesc);
             });
         }
-
     });
 
     // 3. Processa dados do Bubble (JSONs)
@@ -58,7 +54,11 @@ window.IniciarDoZero = async function(lancamentos, id, type, contasJson, classes
     const projetos = JSON.parse(projetosJson);
     const contas = JSON.parse(contasJson);
     
-    classes.forEach(c => appCache.classesMap.set(c.codigo, c.descricao));
+    // Além de popular o classesMap, agora também populamos o categoriasMap
+    classes.forEach(c => {
+        appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
+        appCache.categoriasMap.set(c.codigo, c.Categoria); // <-- ADICIONADO AQUI
+    });
 
     // --- CORREÇÃO APLICADA AQUI ---
     // Garante que p.contas seja um array antes de usar .map(), evitando erro em projetos sem contas.
