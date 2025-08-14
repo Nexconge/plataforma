@@ -1,7 +1,7 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV1.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV2.js';
 import { configurarFiltros, atualizarVisualizacoes } from './ui.js';
 
 // --- O cache em memória e as funções de serialização ---
