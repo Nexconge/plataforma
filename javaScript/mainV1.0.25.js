@@ -24,7 +24,7 @@ function reviver(key, value) {
     return value;
 }
 
-window.IniciarDoZero = async function(lancamentos,departamentos,id,type,contasJson,classesJson,projetosJson) {
+window.IniciarDoZero = async function(lancamentos,deptosJson,id,type,contasJson,classesJson,projetosJson) {
     // Recria o objeto appCache limpo
     appCache = {
         userId: null, userType: null, lancamentos: null,
@@ -38,7 +38,7 @@ window.IniciarDoZero = async function(lancamentos,departamentos,id,type,contasJs
     const classes = JSON.parse(classesJson);
     const projetos = JSON.parse(projetosJson);
     const contas = JSON.parse(contasJson);
-    const departamentos = JSON.parse(departamentosJson);
+    const departamentos = JSON.parse(deptosJson);
 
     //Popula os mapas de dados
     classes.forEach(c => {
