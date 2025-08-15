@@ -28,7 +28,6 @@ function getSelectItems(select){
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
-
 /**
  * Renderiza a tabela de DRE, agora com colunas dinâmicas.
  * @param {object} matrizDRE - Os dados processados para o DRE.
@@ -343,6 +342,50 @@ function configurarFiltros(appCache, atualizarCallback) {
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
+}
+
+/**
+ * Captura os filtros selecionados e formata o período (anos) para a API.
+ * @returns {object|null} Um objeto com os filtros para a API ou null se algum elemento não for encontrado.
+ */
+function obterFiltrosSelecionados() {
+    const modoSelect = document.getElementById('modoSelect');
+    const anoSelect = document.getElementById('anoSelect');
+    const projSelect = document.getElementById('projSelect');
+    const contaSelect = document.getElementById('contaSelect');
+
+    if (!modoSelect || !anoSelect || !projSelect || !contaSelect) {
+        console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
+        return null;
+    }
+
+    let anosParaApi = [];
+    const modo = modoSelect.value;
+    const anoSelecionado = anoSelect.value;
+
+    if (modo.toLowerCase() === 'mensal') {
+        // Se o modo for mensal, o array contém apenas o ano selecionado.
+        if (anoSelecionado) {
+            anosParaApi.push(anoSelecionado);
+        }
+    } else if (modo.toLowerCase() === 'anual') {
+        // Se o modo for anual, gera um array com 5 anos a partir do ano inicial.
+        const anoInicio = Number(anoSelecionado);
+        if (anoInicio) {
+            const anoFim = anoInicio + 4;
+            for (let ano = anoInicio; ano <= anoFim; ano++) {
+                anosParaApi.push(String(ano));
+            }
+        }
+    }
+
+    const filtros = {
+        anos: anosParaApi,
+        projetos: getSelectItems(projSelect), // Reutiliza a função auxiliar existente
+        contas: getSelectItems(contaSelect)     // Reutiliza a função auxiliar existente
+    };
+
+    return filtros;
 }
 
 export { configurarFiltros, atualizarVisualizacoes };
