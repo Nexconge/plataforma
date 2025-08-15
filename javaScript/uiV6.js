@@ -379,10 +379,13 @@ function obterFiltrosSelecionados() {
         }
     }
 
+    const contasEmTexto = getSelectItems(contaSelect);
+    const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
+    
     const filtros = {
         anos: anosParaApi,
         projetos: getSelectItems(projSelect), // Reutiliza a função auxiliar existente
-        contas: getSelectItems(contaSelect)     // Reutiliza a função auxiliar existente
+        contas: contasEmNumero
     };
 
     return filtros;
