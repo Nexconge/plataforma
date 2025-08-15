@@ -118,15 +118,19 @@ function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
         matrizDRE['Caixa Inicial'] ??= {};
         matrizDRE['Caixa Final'] ??= {};
-        if (chavesComDados.has(coluna)) {
-            matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
-            const variacaoCaixa = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
-            saldoAcumulado += variacaoCaixa;
-            matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
-        } else {
-            matrizDRE['Caixa Inicial'][coluna] = 0;
-            matrizDRE['Caixa Final'][coluna] = 0;
-        }
+        
+        matrizDRE['Caixa Inicial'] ??= {};
+        matrizDRE['Caixa Final'] ??= {};
+        
+        // O caixa inicial da coluna é sempre o saldo acumulado do período anterior.
+        matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
+        // A variação de caixa inclui todas as movimentações.
+        // Se não houver lançamentos no mês, essa variação será 0.
+        const variacaoCaixa = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
+        // Atualiza o saldo acumulado para o próximo período.
+        saldoAcumulado += variacaoCaixa;
+        // O caixa final da coluna é o novo saldo acumulado.
+        matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
 }
 
