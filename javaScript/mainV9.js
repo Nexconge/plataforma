@@ -37,11 +37,12 @@ async function handleFiltroChange() {
 
     if (filtros && filtros.anos.length > 0) {
         // 2. Chamar a API para buscar os novos lançamentos
-        const novosLancamentos = await buscarLancamentos(filtros);
+        const apiResponse = await buscarLancamentos(filtros);
 
         // 3. Atualizar o cache com os dados retornados
-        appCache.lancamentos = novosLancamentos;
-
+        appCache.lancamentos = apiResponse.response.results || [];
+        console.log(appCache.lancamentos);
+        
         // 4. Chamar a função que renderiza as tabelas com os novos dados
         atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE);
     } else {
