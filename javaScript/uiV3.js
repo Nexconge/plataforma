@@ -324,15 +324,7 @@ function configurarFiltros(appCache, atualizarCallback) {
         projSelect.options[0].selected = true;
     }
 
-    contaSelect.innerHTML = '';
-    Array.from(appCache.contasMap.entries())
-        .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
-        .forEach(([codigo, { descricao }]) => {
-            const option = document.createElement('option');
-            option.value = codigo; option.textContent = descricao;
-            contaSelect.appendChild(option);
-        });
-
+    //Adiciona event listeners para atualizar as visualizações
     anoSelect.addEventListener('change', atualizarCallback);
     contaSelect.addEventListener('change', atualizarCallback);
     projSelect.addEventListener('change', () => {
@@ -345,7 +337,11 @@ function configurarFiltros(appCache, atualizarCallback) {
         atualizarCallback();
     });
 
+    // Configura o filtro de ano
     atualizarOpcoesAnoSelect(anoSelect, appCache.anosDisponiveis, modoSelect.value);
+    // Atualiza o filtro de contas com base no projeto selecionado
+    const projetosSelecionadosInicial = getSelectItems(projSelect);
+    atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
 
