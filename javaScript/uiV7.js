@@ -1,7 +1,7 @@
 // ui.js
 
 // --- CORREÇÃO --- Importa as funções de processamento que serão usadas pela UI
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV5.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV6.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {

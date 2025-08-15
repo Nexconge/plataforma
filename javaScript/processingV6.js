@@ -105,31 +105,40 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
 
 function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
     let saldoAcumulado = saldoInicial;
+
     colunas.forEach(coluna => {
         const getValor = (classe) => matrizDRE[classe]?.[coluna] || 0;
+
+        // Cálculos intermediários (sem alterações)
         const receitaLiquida = getValor('(+) Receita Bruta') + getValor('(-) Deduções');
         matrizDRE['(=) Receita Líquida'] ??= {};
         matrizDRE['(=) Receita Líquida'][coluna] = receitaLiquida;
+
         const geracaoCaixa = receitaLiquida + getValor('(-) Custos') + getValor('(-) Despesas') + getValor('(+/-) IRPJ/CSLL');
         matrizDRE['(+/-) Geração de Caixa Operacional'] ??= {};
         matrizDRE['(+/-) Geração de Caixa Operacional'][coluna] = geracaoCaixa;
-        const movimentacaoMensal = geracaoCaixa + getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
+
+        const movimentacaoNaoOperacional = getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
+
+        // --- LÓGICA CORRIGIDA ---
+        
+        // 1. A "Movimentação de Caixa Mensal" agora reflete TODAS as movimentações, exceto transferências internas e outros.
+        const movimentacaoMensal = geracaoCaixa + movimentacaoNaoOperacional;
         matrizDRE['(=) Movimentação de Caixa Mensal'] ??= {};
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
+
+        // 2. Define o Caixa Inicial da coluna atual
         matrizDRE['Caixa Inicial'] ??= {};
-        matrizDRE['Caixa Final'] ??= {};
-        
-        matrizDRE['Caixa Inicial'] ??= {};
-        matrizDRE['Caixa Final'] ??= {};
-        
-        // O caixa inicial da coluna é sempre o saldo acumulado do período anterior.
         matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
-        // A variação de caixa inclui todas as movimentações.
-        // Se não houver lançamentos no mês, essa variação será 0.
-        const variacaoCaixa = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
-        // Atualiza o saldo acumulado para o próximo período.
-        saldoAcumulado += variacaoCaixa;
-        // O caixa final da coluna é o novo saldo acumulado.
+
+        // 3. A variação REAL do caixa inclui a movimentação mensal E as transferências/outros.
+        const variacaoCaixaTotal = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
+
+        // 4. Atualiza o saldo acumulado com a variação TOTAL para o próximo período.
+        saldoAcumulado += variacaoCaixaTotal;
+
+        // 5. Define o Caixa Final da coluna atual
+        matrizDRE['Caixa Final'] ??= {};
         matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
 }
