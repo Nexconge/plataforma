@@ -388,4 +388,4 @@ function obterFiltrosSelecionados() {
     return filtros;
 }
 
-export { configurarFiltros, atualizarVisualizacoes };
+export { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados };

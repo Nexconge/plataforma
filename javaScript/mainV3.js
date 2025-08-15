@@ -2,7 +2,7 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV4.js';
-import { configurarFiltros, atualizarVisualizacoes } from './uiV4.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV5.js';
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {
