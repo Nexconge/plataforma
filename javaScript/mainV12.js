@@ -1,7 +1,7 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV7.js';
+import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV8.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV4.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV7.js';
 
@@ -29,30 +29,41 @@ function reviver(key, value) {
  * Função central que é chamada sempre que um filtro é alterado.
  */
 async function handleFiltroChange() {
-    // Adicionar feedback visual para o usuário (ex: mostrar um spinner de loading)
-    document.body.classList.add('loading'); 
-
-    // 1. Obter os filtros atuais da UI
+    document.body.classList.add('loading');
     const filtros = obterFiltrosSelecionados();
 
+    // 1. Inicia com um array vazio como padrão seguro
+    let lancamentosArray = []; 
+
+    // 2. Verifica se há filtros para fazer a chamada da API
     if (filtros && filtros.anos.length > 0) {
-        // 2. Chamar a API para buscar os novos lançamentos
         const apiResponse = await buscarLancamentos(filtros);
 
-        // 3. Atualizar o cache com os dados retornados
-        appCache.lancamentos = apiResponse.response.results || [];
-        console.log(appCache.lancamentos);
-        
-        // 4. Chamar a função que renderiza as tabelas com os novos dados
-        atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE);
+        // 3. Processa a resposta da API
+        if (apiResponse && apiResponse.response && typeof apiResponse.response.lancamentos === 'string' && apiResponse.response.lancamentos.length > 0) {
+            const lancamentosString = apiResponse.response.lancamentos;
+            const jsonArrayString = `[${lancamentosString}]`;
+            try {
+                // Preenche o array se o processamento for bem-sucedido
+                lancamentosArray = JSON.parse(jsonArrayString);
+            } catch (error) {
+                console.error("Erro ao fazer o parse do JSON de lançamentos:", error);
+                // Em caso de erro, lancamentosArray continua sendo um array vazio
+            }
+        }
     } else {
-        // Se não houver anos para buscar, limpa as tabelas (ou mostra uma mensagem)
-        appCache.lancamentos = [];
-        atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE);
+        // 4. Caso NÃO HAJA filtros, apenas loga a mensagem
         console.log("Nenhum período selecionado para buscar dados.");
     }
     
-    // Remover o feedback visual
+    // 5. ATUALIZA O CACHE com o resultado (dados processados ou array vazio)
+    // Esta linha agora fica fora e depois do bloco if/else.
+    appCache.lancamentos = lancamentosArray;
+    
+    // 6. ATUALIZA A TELA UMA ÚNICA VEZ com o estado final do cache
+    atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE);
+    
+    // 7. Remove o feedback visual
     document.body.classList.remove('loading');
 }
 
