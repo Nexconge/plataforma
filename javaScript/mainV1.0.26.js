@@ -24,17 +24,17 @@ function reviver(key, value) {
     return value;
 }
 
-window.IniciarDoZero = async function(lancamentos,deptosJson,id,type,contasJson,classesJson,projetosJson) {
-    // Recria o objeto appCache limpo
+window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
+    // Recria o objeto appCache limpo, mas mantém os lançamentos se já existirem
     appCache = {
-        userId: null, userType: null, lancamentos: null,
+        ...appCache, // Mantém dados existentes como 'lancamentos'
+        userId: null, userType: null,
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         anosDisponiveis: []
     };
 
     // 1. Recebe os dados do bubble e converte em um objeto JavaScript
-    appCache.lancamentos = JSON.parse(lancamentos);
     const classes = JSON.parse(classesJson);
     const projetos = JSON.parse(projetosJson);
     const contas = JSON.parse(contasJson);
@@ -43,17 +43,21 @@ window.IniciarDoZero = async function(lancamentos,deptosJson,id,type,contasJson,
     //Popula os mapas de dados
     classes.forEach(c => {
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
-        appCache.categoriasMap.set(c.codigo, c.Categoria); // <-- ADICIONADO AQUI
+        appCache.categoriasMap.set(c.codigo, c.Categoria);
     });
     projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
     contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
     departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
 
-    //verifica anos disponiveis
-    const anos = new Set(appCache.lancamentos.map(l => l.DataLancamento.split('/')[2]));
-    appCache.anosDisponiveis = Array.from(anos).sort();
+    // Define os anos disponíveis estaticamente de 2020 até o ano atual
+    const anoAtual = new Date().getFullYear();
+    appCache.anosDisponiveis = [];
+    for (let ano = 2020; ano <= anoAtual; ano++) {
+        appCache.anosDisponiveis.push(String(ano));
+    }
+    appCache.anosDisponiveis.sort(); // Garante a ordem
 
-    //Configura a interfaçe e filtros e inicia as tabelas
+    //Configura a interface e filtros
     appCache.userId = id;
     appCache.userType = type;
     configurarFiltros(appCache, () => atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE));
