@@ -2,7 +2,7 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV4.js';
-import { configurarFiltros, atualizarVisualizacoes } from './uiV1.js';
+import { configurarFiltros, atualizarVisualizacoes } from './uiV2.js';
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {
@@ -52,7 +52,7 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
     // Define os anos disponíveis estaticamente de 2020 até o ano atual
     const anoAtual = new Date().getFullYear();
     appCache.anosDisponiveis = [];
-    for (let ano = 2020; ano <= anoAtual; ano++) {
+    for (let ano = 2021; ano <= anoAtual; ano++) {
         appCache.anosDisponiveis.push(String(ano));
     }
     appCache.anosDisponiveis.sort(); // Garante a ordem

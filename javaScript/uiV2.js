@@ -310,6 +310,7 @@ function configurarFiltros(appCache, atualizarCallback) {
         return;
     }
     
+    //Pupula o filtro de projetos
     projSelect.innerHTML = '';
     Array.from(appCache.projetosMap.entries())
         .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
@@ -318,7 +319,11 @@ function configurarFiltros(appCache, atualizarCallback) {
             option.value = codProj; option.textContent = nome;
             projSelect.appendChild(option);
         });
-    
+    // Seleciona o primeiro projeto da lista, se houver algum
+    if (projSelect.options.length > 0) {
+        projSelect.options[0].selected = true;
+    }
+
     contaSelect.innerHTML = '';
     Array.from(appCache.contasMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
