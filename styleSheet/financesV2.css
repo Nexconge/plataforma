@@ -133,10 +133,6 @@ table tbody tr:last-child td:last-child {
     border-bottom: 1px solid #F7F7F7;
 }
 
-#tabelaMatriz tbody tr:nth-child(n+16):nth-child(-n+19) {
-    display: none;
-}
-
 /* ***************************** */
 
 div, label, select {

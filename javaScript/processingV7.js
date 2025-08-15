@@ -120,9 +120,6 @@ function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
 
         const movimentacaoNaoOperacional = getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
 
-        // --- LÓGICA CORRIGIDA ---
-        
-        // 1. A "Movimentação de Caixa Mensal" agora reflete TODAS as movimentações, exceto transferências internas e outros.
         const movimentacaoMensal = geracaoCaixa + movimentacaoNaoOperacional;
         matrizDRE['(=) Movimentação de Caixa Mensal'] ??= {};
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
