@@ -387,7 +387,6 @@ function obterFiltrosSelecionados() {
         projetos: getSelectItems(projSelect), // Reutiliza a função auxiliar existente
         contas: contasEmNumero
     };
-
     return filtros;
 }
 

@@ -41,7 +41,8 @@ async function buscarLancamentos(filtros) {
             },
             body: JSON.stringify(filtros),
         });
-
+        console.log(response);
+        console.log(JSON.parse(response));
         console.log(response.json);
         if (!response.ok) {
             const errorText = await response.text();
