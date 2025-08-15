@@ -31,7 +31,7 @@ async function obterDataAtualizacaoArquivo(url) {
  */
 async function buscarLancamentos(filtros) {
     // Substitua '/api/buscar-lancamentos' pela URL real da sua API
-    const API_URL = '/api/buscar-lancamentos'; 
+    const API_URL = 'https://plataforma-geourb.bubbleapps.io/version-test/api/1.1/wf/buscarlancamentos/initialize'; 
 
     try {
         const response = await fetch(API_URL, {
