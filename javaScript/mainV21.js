@@ -38,7 +38,7 @@ async function handleFiltroChange() {
     // 2. Verifica se há filtros para fazer a chamada da API
     if (filtros && filtros.anos.length > 0) {
         const apiResponse = await buscarLancamentos(filtros);
-
+        console.log("Resposta da API:", apiResponse);
         // 3. Processa a resposta da API
         if (apiResponse && apiResponse.response && typeof apiResponse.response.lancamentos === 'string' && apiResponse.response.lancamentos.length > 0) {
             const lancamentosString = apiResponse.response.lancamentos;
