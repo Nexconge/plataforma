@@ -41,6 +41,7 @@ async function buscarLancamentos(filtros) {
             },
             body: JSON.stringify(filtros),
         });
+        console.log("Resposta da API (raw):", response);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Falha ao buscar lançamentos: ${response.status} ${response.statusText} - ${errorText}`);
