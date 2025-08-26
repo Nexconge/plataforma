@@ -1,7 +1,7 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV10.js';
+import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV11.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV7.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV8.js';
 
