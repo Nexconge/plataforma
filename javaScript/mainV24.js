@@ -1,32 +1,34 @@
-// main.js - MODIFICADO
+// mainV22.js - VERSÃO CORRIGIDA COM userId/userType E CACHE
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV12.js';
+import { buscarLancamentos } from './apiV12.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV7.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV8.js';
 
 // --- Caches em memória ---
 let appCache = {
-    userId: null, userType: null, lancamentos: [],
-    categoriasMap: new Map(), classesMap: new Map(),
-    projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
-    anosDisponiveis: []
+    userId: null,
+    userType: null,
+    categoriasMap: new Map(),
+    classesMap: new Map(),
+    projetosMap: new Map(),
+    contasMap: new Map(),
+    departamentosMap: new Map(),
+    lancamentos: []
 };
-// Novo cache para armazenar os lançamentos por filtro
-let lancamentosCache = {};
+
+// Cache para armazenar os resultados dos lançamentos por combinação de filtros
+let lancamentosCache = new Map();
 
 /**
- * Gera uma chave de cache consistente para um objeto de filtros,
- * garantindo que a ordem das propriedades e dos itens em arrays não afete o resultado.
+ * Gera uma chave de cache consistente para um objeto de filtros.
  * @param {object} filtros - O objeto de filtros vindo da UI.
  * @returns {string} Uma string única representando a combinação de filtros.
  */
 function gerarChaveDeCache(filtros) {
     const filtrosOrdenados = {};
-    // Ordena as chaves do objeto de filtros para garantir consistência
     Object.keys(filtros).sort().forEach(key => {
         const valor = filtros[key];
-        // Se o valor for um array, ordena seus itens também
         if (Array.isArray(valor)) {
             filtrosOrdenados[key] = [...valor].sort();
         } else {
@@ -43,24 +45,27 @@ async function handleFiltroChange() {
     document.body.classList.add('loading');
     try {
         const filtros = obterFiltrosSelecionados();
-        if (!filtros) return; // Se os filtros não puderem ser obtidos, para a execução
+        if (!filtros) return;
+
+        // Adiciona userId e userType aos filtros enviados para a API, se necessário
+        filtros.userId = appCache.userId;
+        filtros.userType = appCache.userType;
 
         const cacheKey = gerarChaveDeCache(filtros);
         let lancamentosAtuais;
 
-        // 1. VERIFICA O CACHE ANTES DE CHAMAR A API
-        if (lancamentosCache[cacheKey]) {
+        if (lancamentosCache.has(cacheKey)) {
             console.log("CACHE HIT: Usando lançamentos salvos para os filtros:", cacheKey);
-            lancamentosAtuais = lancamentosCache[cacheKey];
+            lancamentosAtuais = lancamentosCache.get(cacheKey);
         } else {
             console.log("CACHE MISS: Buscando novos lançamentos na API para os filtros:", cacheKey);
+            // Passa os filtros completos para a API
             lancamentosAtuais = await buscarLancamentos(filtros);
-            lancamentosCache[cacheKey] = lancamentosAtuais; // Salva o resultado no cache
+            lancamentosCache.set(cacheKey, lancamentosAtuais);
         }
 
         appCache.lancamentos = lancamentosAtuais;
 
-        // 2. Filtra contas e calcula o saldo base (lógica de negócio)
         const { contasFiltradas, saldoBase } = filtrarContasESaldo(
             appCache.projetosMap,
             appCache.contasMap,
@@ -68,7 +73,6 @@ async function handleFiltroChange() {
             filtros.contas
         );
 
-        // 3. Processa os lançamentos para gerar as matrizes
         const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados } = processarLancamentos(
             appCache,
             filtros.modo,
@@ -77,15 +81,12 @@ async function handleFiltroChange() {
             saldoBase
         );
 
-        // 4. Calcula os totais finais da DRE
         const dreFinal = calcularTotaisDRE(matrizDRE, saldoInicialPeriodo, filtros.modo);
-
-        // 5. Atualiza a interface do usuário com os dados processados
         atualizarVisualizacoes(dreFinal, matrizDepartamentos, chavesComDados, filtros.modo);
 
     } catch (error) {
         console.error("Erro ao processar a mudança de filtro:", error);
-        alert("Ocorreu um erro ao atualizar os dados. Verifique o console para mais detalhes.");
+        alert("Ocorreu um erro ao atualizar os dados.");
     } finally {
         document.body.classList.remove('loading');
     }
@@ -93,16 +94,22 @@ async function handleFiltroChange() {
 
 /**
  * PONTO DE ENTRADA: Função chamada pelo workflow do Bubble.
- * Recebe os dados estáticos, inicializa o cache e configura a UI.
+ * @param {string} userId - ID do usuário logado.
+ * @param {string} userType - Tipo/perfil do usuário.
  * @param {string} classesJson - String JSON com os dados de classes/categorias.
  * @param {string} projetosJson - String JSON com os dados de projetos.
  * @param {string} contasJson - String JSON com os dados de contas.
  * @param {string} deptosJson - String JSON com os dados de departamentos.
  */
-export async function iniciarDoZero(classesJson, projetosJson, contasJson, deptosJson) {
-    console.log("Iniciando a aplicação com dados do Bubble...");
+export async function iniciarDoZero(userId, userType, classesJson, projetosJson, contasJson, deptosJson) {
+    console.log(`Iniciando app para o usuário ${userId} (${userType})...`);
     try {
-        // 1. Limpa e reinicia os caches
+        // 1. Limpa caches e define os dados do usuário
+        appCache = {
+            ...appCache,
+            userId: userId,
+            userType: userType,
+        };
         appCache.classesMap.clear();
         appCache.categoriasMap.clear();
         appCache.projetosMap.clear();
@@ -125,26 +132,20 @@ export async function iniciarDoZero(classesJson, projetosJson, contasJson, depto
         contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
         departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
         
-        // 4. Configura os filtros na tela (dropdowns, etc.) com os dados carregados
+        // 4. Configura os filtros na tela (dropdowns, etc.)
         configurarFiltros(appCache);
 
-        // 5. Adiciona os "escutadores" de eventos que chamarão a função handleFiltroChange
-        // Garante que os listeners sejam adicionados apenas uma vez
-        const setupListeners = () => {
-            document.getElementById('modoSelect').addEventListener('change', handleFiltroChange);
-            document.getElementById('anoSelect').addEventListener('change', handleFiltroChange);
-            document.getElementById('projSelect').addEventListener('change', handleFiltroChange);
-            document.getElementById('contaSelect').addEventListener('change', handleFiltroChange);
-        };
-        
-        // Remove listeners antigos se existirem, para evitar duplicação
+        // 5. Adiciona os "escutadores" de eventos, garantindo que não sejam duplicados
         const modoSelect = document.getElementById('modoSelect');
         if (!modoSelect.dataset.listenerAttached) {
-             setupListeners();
+             document.getElementById('modoSelect').addEventListener('change', handleFiltroChange);
+             document.getElementById('anoSelect').addEventListener('change', handleFiltroChange);
+             document.getElementById('projSelect').addEventListener('change', handleFiltroChange);
+             document.getElementById('contaSelect').addEventListener('change', handleFiltroChange);
              modoSelect.dataset.listenerAttached = 'true';
         }
 
-        // 6. Realiza a primeira busca de dados com os filtros padrão da tela
+        // 6. Realiza a primeira busca de dados com os filtros padrão
         await handleFiltroChange();
 
     } catch (error) {
