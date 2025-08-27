@@ -101,55 +101,39 @@ async function handleFiltroChange() {
  * @param {string} contasJson - String JSON com os dados de contas.
  * @param {string} deptosJson - String JSON com os dados de departamentos.
  */
-window.IniciarDoZero = async function(userId, userType, classesJson, projetosJson, contasJson, deptosJson) {
-    console.log(`Iniciando app para o usuário ${userId} (${userType})...`);
-    try {
-        // 1. Limpa caches e define os dados do usuário
-        appCache = {
-            ...appCache,
-            userId: userId,
-            userType: userType,
-        };
-        appCache.classesMap.clear();
-        appCache.categoriasMap.clear();
-        appCache.projetosMap.clear();
-        appCache.contasMap.clear();
-        appCache.departamentosMap.clear();
-        lancamentosCache.clear();
+window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
+    appCache = {
+        ...appCache,
+        userId: null, userType: null, lancamentos: [], // Garante que começa vazio
+        categoriasMap: new Map(), classesMap: new Map(),
+        projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
+        anosDisponiveis: []
+    };
 
-        // 2. Faz o parse dos JSONs recebidos do Bubble
-        const classes = JSON.parse(classesJson);
-        const projetos = JSON.parse(projetosJson);
-        const contas = JSON.parse(contasJson);
-        const departamentos = JSON.parse(deptosJson);
+    // ... (código de parsing dos JSONs e população dos mapas) ...
+    const classes = JSON.parse(classesJson);
+    const projetos = JSON.parse(projetosJson);
+    const contas = JSON.parse(contasJson);
+    const departamentos = JSON.parse(deptosJson);
 
-        // 3. Popula os mapas do cache com os dados estáticos
-        classes.forEach(c => {
-            appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
-            appCache.categoriasMap.set(c.codigo, c.Categoria);
-        });
-        projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
-        contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
-        departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
-        
-        // 4. Configura os filtros na tela (dropdowns, etc.)
-        configurarFiltros(appCache);
+    classes.forEach(c => {
+        appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
+        appCache.categoriasMap.set(c.codigo, c.Categoria);
+    });
+    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
+    contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
+    departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
 
-        // 5. Adiciona os "escutadores" de eventos, garantindo que não sejam duplicados
-        const modoSelect = document.getElementById('modoSelect');
-        if (!modoSelect.dataset.listenerAttached) {
-             document.getElementById('modoSelect').addEventListener('change', handleFiltroChange);
-             document.getElementById('anoSelect').addEventListener('change', handleFiltroChange);
-             document.getElementById('projSelect').addEventListener('change', handleFiltroChange);
-             document.getElementById('contaSelect').addEventListener('change', handleFiltroChange);
-             modoSelect.dataset.listenerAttached = 'true';
-        }
-
-        // 6. Realiza a primeira busca de dados com os filtros padrão
-        await handleFiltroChange();
-
-    } catch (error) {
-        console.error("Erro fatal na inicialização da aplicação via Bubble:", error);
-        alert("Não foi possível carregar os dados essenciais da aplicação.");
+    const anoAtual = new Date().getFullYear();
+    appCache.anosDisponiveis = [];
+    for (let ano = 2020; ano <= anoAtual; ano++) {
+        appCache.anosDisponiveis.push(String(ano));
     }
-}
+    appCache.anosDisponiveis.sort();
+
+    appCache.userId = id;
+    appCache.userType = type;
+
+    // --- ALTERAÇÃO PRINCIPAL ---
+    configurarFiltros(appCache, handleFiltroChange);
+};
