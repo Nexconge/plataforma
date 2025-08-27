@@ -101,7 +101,7 @@ async function handleFiltroChange() {
  * @param {string} contasJson - String JSON com os dados de contas.
  * @param {string} deptosJson - String JSON com os dados de departamentos.
  */
-export async function iniciarDoZero(userId, userType, classesJson, projetosJson, contasJson, deptosJson) {
+window.iniciarDoZero = async function(userId, userType, classesJson, projetosJson, contasJson, deptosJson) {
     console.log(`Iniciando app para o usuário ${userId} (${userType})...`);
     try {
         // 1. Limpa caches e define os dados do usuário
