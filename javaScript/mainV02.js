@@ -7,7 +7,9 @@ import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } f
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {
-    userId: null, userType: null, lancamentos: null,
+    userId: null, userType: null,
+    lancamentos: [], // todos combinados
+    lancamentosPorConta: new Map(), // <--- NOVO
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: []
@@ -32,38 +34,47 @@ async function handleFiltroChange() {
     document.body.classList.add('loading');
     const filtros = obterFiltrosSelecionados();
 
-    // 1. Inicia com um array vazio como padrão seguro
-    let lancamentosArray = []; 
+    let lancamentosArray = [];
 
-    // 2. Verifica se há filtros para fazer a chamada da API
-    if (filtros && filtros.anos.length > 0) {
-        const apiResponse = await buscarLancamentos(filtros);
-        console.log("Resposta da API:", apiResponse);
-        // 3. Processa a resposta da API
-        if (apiResponse && apiResponse.response && typeof apiResponse.response.lancamentos === 'string' && apiResponse.response.lancamentos.length > 0) {
-            const lancamentosString = apiResponse.response.lancamentos;
-            const jsonArrayString = `[${lancamentosString}]`;
-            try {
-                // Preenche o array se o processamento for bem-sucedido
-                lancamentosArray = JSON.parse(jsonArrayString);
-            } catch (error) {
-                console.error("Erro ao fazer o parse do JSON de lançamentos:", error);
-                // Em caso de erro, lancamentosArray continua sendo um array vazio
+    if (filtros && filtros.anos.length > 0 && filtros.contas.length > 0) {
+        // --- Separa as contas já no cache das que precisam ser buscadas
+        const contasParaBuscar = filtros.contas.filter(c => !appCache.lancamentosPorConta.has(String(c)));
+        const contasEmCache = filtros.contas.filter(c => appCache.lancamentosPorConta.has(String(c)));
+
+        // 1. Busca somente as contas faltantes
+        if (contasParaBuscar.length > 0) {
+            const filtrosAPI = { ...filtros, contas: contasParaBuscar };
+            const apiResponse = await buscarLancamentos(filtrosAPI);
+            if (apiResponse && apiResponse.response && typeof apiResponse.response.lancamentos === 'string') {
+                try {
+                    const lancamentosNovos = JSON.parse(`[${apiResponse.response.lancamentos}]`);
+                    // Distribui os lançamentos no cache por conta
+                    lancamentosNovos.forEach(l => {
+                        const cod = String(l.CODContaC);
+                        if (!appCache.lancamentosPorConta.has(cod)) {
+                            appCache.lancamentosPorConta.set(cod, []);
+                        }
+                        appCache.lancamentosPorConta.get(cod).push(l);
+                    });
+                } catch (error) {
+                    console.error("Erro ao parsear lançamentos:", error);
+                }
             }
         }
+
+        // 2. Monta o array final combinando cache + novas
+        filtros.contas.forEach(c => {
+            const lista = appCache.lancamentosPorConta.get(String(c)) || [];
+            lancamentosArray.push(...lista);
+        });
     } else {
-        // 4. Caso NÃO HAJA filtros, apenas loga a mensagem
-        console.log("Nenhum período selecionado para buscar dados.");
+        console.log("Nenhum período ou conta selecionada para buscar dados.");
     }
-    
-    // 5. ATUALIZA O CACHE com o resultado (dados processados ou array vazio)
-    // Esta linha agora fica fora e depois do bloco if/else.
+
+    // Atualiza cache global
     appCache.lancamentos = lancamentosArray;
-    
-    // 6. ATUALIZA A TELA UMA ÚNICA VEZ com o estado final do cache
+
     atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE);
-    
-    // 7. Remove o feedback visual
     document.body.classList.remove('loading');
 }
 

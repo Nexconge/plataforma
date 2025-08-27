@@ -384,7 +384,6 @@ function obterFiltrosSelecionados() {
     
     const filtros = {
         anos: anosParaApi,
-        projetos: getSelectItems(projSelect), // Reutiliza a função auxiliar existente
         contas: contasEmNumero
     };
     return filtros;
