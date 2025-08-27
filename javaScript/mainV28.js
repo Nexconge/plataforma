@@ -1,6 +1,4 @@
-// mainV22.js - VERSÃO CORRIGIDA COM userId/userType E CACHE
-
-// --- Importa as funções de cada módulo especializado ---
+// --- Importa as funções de cada módulo ---
 import { buscarLancamentos } from './apiV12.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV7.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV8.js';
@@ -16,15 +14,8 @@ let appCache = {
     departamentosMap: new Map(),
     lancamentos: []
 };
-
-// Cache para armazenar os resultados dos lançamentos por combinação de filtros
 let lancamentosCache = new Map();
 
-/**
- * Gera uma chave de cache consistente para um objeto de filtros.
- * @param {object} filtros - O objeto de filtros vindo da UI.
- * @returns {string} Uma string única representando a combinação de filtros.
- */
 function gerarChaveDeCache(filtros) {
     const filtrosOrdenados = {};
     Object.keys(filtros).sort().forEach(key => {
@@ -38,51 +29,54 @@ function gerarChaveDeCache(filtros) {
     return JSON.stringify(filtrosOrdenados);
 }
 
-/**
- * Função central, chamada sempre que um filtro na UI é alterado.
- */
 async function handleFiltroChange() {
     document.body.classList.add('loading');
     try {
         const filtros = obterFiltrosSelecionados();
-        if (!filtros) return;
-
-        // Adiciona userId e userType aos filtros enviados para a API, se necessário
+        if (!filtros || filtros.anos.length === 0) {
+            document.body.classList.remove('loading');
+            return;
+        }
         filtros.userId = appCache.userId;
         filtros.userType = appCache.userType;
 
         const cacheKey = gerarChaveDeCache(filtros);
-        let lancamentosAtuais;
+        let lancamentosArray;
 
         if (lancamentosCache.has(cacheKey)) {
-            console.log("CACHE HIT: Usando lançamentos salvos para os filtros:", cacheKey);
-            lancamentosAtuais = lancamentosCache.get(cacheKey);
+            console.log("CACHE HIT: Usando lançamentos salvos.", cacheKey);
+            lancamentosArray = lancamentosCache.get(cacheKey);
         } else {
-            console.log("CACHE MISS: Buscando novos lançamentos na API para os filtros:", cacheKey);
-            // Passa os filtros completos para a API
-            lancamentosAtuais = await buscarLancamentos(filtros);
-            lancamentosCache.set(cacheKey, lancamentosAtuais);
+            console.log("CACHE MISS: Buscando novos lançamentos na API.", cacheKey);
+            const apiResponse = await buscarLancamentos(filtros);
+            
+            // *** AQUI ESTÁ A CORREÇÃO ***
+            // Verifica se a resposta da API tem a estrutura esperada e extrai o array.
+            if (apiResponse && apiResponse.response && Array.isArray(apiResponse.response.lancamentos)) {
+                lancamentosArray = apiResponse.response.lancamentos;
+            } else {
+                console.warn("A resposta da API não continha um array de lançamentos ou estava mal formatada.", apiResponse);
+                lancamentosArray = []; // Garante que sempre teremos um array.
+            }
+            lancamentosCache.set(cacheKey, lancamentosArray);
         }
 
-        appCache.lancamentos = lancamentosAtuais;
+        appCache.lancamentos = lancamentosArray;
 
         const { contasFiltradas, saldoBase } = filtrarContasESaldo(
-            appCache.projetosMap,
-            appCache.contasMap,
-            filtros.projetos,
-            filtros.contas
+            appCache.projetosMap, appCache.contasMap,
+            filtros.projetos, filtros.contas
         );
 
         const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados } = processarLancamentos(
-            appCache,
-            filtros.modo,
-            filtros.anos,
-            contasFiltradas,
-            saldoBase
+            appCache, filtros.modo, filtros.anos,
+            contasFiltradas, saldoBase
         );
-
-        const dreFinal = calcularTotaisDRE(matrizDRE, saldoInicialPeriodo, filtros.modo);
-        atualizarVisualizacoes(dreFinal, matrizDepartamentos, chavesComDados, filtros.modo);
+        
+        atualizarVisualizacoes(
+            appCache,
+            { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados }
+        );
 
     } catch (error) {
         console.error("Erro ao processar a mudança de filtro:", error);
