@@ -24,6 +24,7 @@ function configurarEventosDoModal() {
     const modal = document.getElementById('modalProposta');
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
+    const header = document.getElementById('pageHeader');
 
     if (!modal || !btnFecharModal || !formProposta) {
         console.error("Não foi possível encontrar um ou mais elementos essenciais do modal (modalProposta, closeModal, formProposta).");
@@ -31,11 +32,17 @@ function configurarEventosDoModal() {
     }
 
     // Evento para o botão de fechar
-    btnFecharModal.addEventListener('click', () => modal.style.display = 'none');
+    btnFecharModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+        header.style.display = 'flex';
+    });
     
     // Evento para fechar clicando fora do modal
     window.addEventListener('click', (e) => {
-        if (e.target == modal) modal.style.display = 'none';
+        if (e.target == modal){
+            modal.style.display = 'none';
+            header.style.display = 'flex';
+        } 
     });
     
     // Evento para o envio do formulário, que chama a geração do PDF
@@ -58,6 +65,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
         const modal = document.getElementById('modalProposta');
+        const header = document.getElementById('pageHeader');
         if (!modal) {
             // Este erro não deveria mais acontecer, mas mantemos como segurança.
             throw new Error("Ocorreu um erro crítico e o modal não pôde ser criado.");
@@ -77,6 +85,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
         // Passo D: Finalmente, mostra o modal.
         modal.style.display = 'flex';
+        header.style.display = 'none';
 
     } catch (error) {
         console.error("Falha ao abrir o modal da proposta:", error);
