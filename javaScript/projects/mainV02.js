@@ -22,10 +22,3 @@ function inicializarApp(empreendimentosJSON, projectsUrl) {
         console.error("Botão 'btnAbrirProposta' não foi encontrado pelo main.js");
     }
 }
-
-// Garante que o DOM esteja pronto antes de executar o código
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarApp);
-} else {
-    inicializarApp();
-}
