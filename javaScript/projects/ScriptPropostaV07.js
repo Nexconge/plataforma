@@ -2,11 +2,8 @@
 async function garantirEstruturaModal() {
     // Se o modal já existe, não fazemos nada e retornamos imediatamente.
     if (document.getElementById('modalProposta')) {
-        console.log("Modal já existe. Apenas exibindo.");
         return;
     }
-    
-    console.log("Modal não encontrado. Baixando e configurando pela primeira vez...");
     
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
     const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html');
@@ -53,7 +50,6 @@ function configurarEventosDoModal() {
 // Esta é a função que o botão do Bubble vai chamar.
 // Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
 export async function abrirEPreencherModalProposta(mapaManager) {
-    console.log("Ação do Bubble: Abrindo o modal da proposta...");
 
     try {
         // Passo A: Garante que a estrutura do modal exista na página.
