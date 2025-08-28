@@ -52,7 +52,7 @@ function configurarEventosDoModal() {
 // --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
 // Esta é a função que o botão do Bubble vai chamar.
 // Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
-async function abrirEPreencherModalProposta() {
+export async function abrirEPreencherModalProposta() {
     console.log("Ação do Bubble: Abrindo o modal da proposta...");
 
     try {
