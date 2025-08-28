@@ -2,7 +2,7 @@
 // ----------------------------
 // Importa e injeta o modal no container
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('menuProposta.html')
+    fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Não foi possível carregar o modal.');
