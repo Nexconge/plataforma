@@ -1,26 +1,25 @@
-// --- PARTE 1: CONFIGURAÇÃO INICIAL (só roda uma vez) ---
-// Esta função prepara o modal: busca o HTML, injeta na página e configura os botões de fechar e o formulário.
-function inicializarEstruturaModal() {
-    // Busca o HTML do modal de uma fonte externa
-    fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html')
-        .then(response => {
-            if (!response.ok) throw new Error('Não foi possível carregar o HTML do modal.');
-            return response.text();
-        })
-        .then(html => {
-            // Injeta o HTML no container da página
-            const modalContainer = document.getElementById('modal-container');
-            if (modalContainer) {
-                modalContainer.innerHTML = html;
-                
-                // Agora que o HTML existe, podemos configurar os eventos internos do modal
-                configurarEventosDoModal();
-                console.log("Estrutura do modal carregada e configurada com sucesso.");
-            } else {
-                console.error("Container com id 'modal-container' não foi encontrado na página.");
-            }
-        })
-        .catch(error => console.error('Erro ao inicializar a estrutura do modal:', error));
+// Se não foi, ela baixa o HTML, injeta na página e configura os eventos.
+async function garantirEstruturaModal() {
+    // Se o modal já existe, não fazemos nada e retornamos imediatamente.
+    if (document.getElementById('modalProposta')) {
+        console.log("Modal já existe. Apenas exibindo.");
+        return;
+    }
+    
+    console.log("Modal não encontrado. Baixando e configurando pela primeira vez...");
+    
+    // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html');
+    if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
+    const html = await response.text();
+
+    // Injeta o HTML no container.
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) throw new Error("Container com id 'modal-container' não foi encontrado.");
+    modalContainer.innerHTML = html;
+
+    // Configura os eventos internos do modal (fechar, submit).
+    configurarEventosDoModal();
 }
 
 // Configura os eventos que são parte do modal (fechar, submeter formulário)
@@ -45,7 +44,7 @@ function configurarEventosDoModal() {
     // Evento para o envio do formulário, que chama a geração do PDF
     formProposta.addEventListener('submit', (e) => {
         e.preventDefault();
-        gerarPropostaPDF(); // Chamando a função de gerar PDF
+        gerarProposta(); // Chamando a função de gerar PDF
     });
 }
 
@@ -53,30 +52,40 @@ function configurarEventosDoModal() {
 // --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
 // Esta é a função que o botão do Bubble vai chamar.
 // Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
-function abrirEPreencherModalProposta() {
-    console.log("Ação do Bubble: Tentando abrir o modal da proposta...");
-    
-    const modal = document.getElementById('modalProposta');
-    if (!modal) {
-        console.error("O modal 'modalProposta' não foi encontrado. A inicialização pode ter falhado.");
-        return;
-    }
+async function abrirEPreencherModalProposta() {
+    console.log("Ação do Bubble: Abrindo o modal da proposta...");
 
-    // Validação: Verifica se um lote foi selecionado no mapa
-    // (A variável 'mapaManager' precisa estar acessível globalmente a partir do seu script do mapa)
-    if (typeof mapaManager === 'undefined' || !mapaManager.selectedLoteId) {
-        alert("Por favor, selecione um lote no mapa primeiro!");
-        return;
+    try {
+        // Passo A: Garante que a estrutura do modal exista na página.
+        // A função 'garantirEstruturaModal' só vai baixar o HTML na primeira vez.
+        await garantirEstruturaModal();
+
+        // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
+        const modal = document.getElementById('modalProposta');
+        if (!modal) {
+            // Este erro não deveria mais acontecer, mas mantemos como segurança.
+            throw new Error("Ocorreu um erro crítico e o modal não pôde ser criado.");
+        }
+
+        // Passo B: Valida se um lote está selecionado.
+        if (typeof mapaManager === 'undefined' || !mapaManager.selectedLoteId) {
+            alert("Por favor, selecione um lote no mapa primeiro!");
+            return;
+        }
+
+        // Passo C: Preenche os dados do lote selecionado no formulário.
+        const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
+        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
+        document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
+        document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Passo D: Finalmente, mostra o modal.
+        modal.style.display = 'flex';
+
+    } catch (error) {
+        console.error("Falha ao abrir o modal da proposta:", error);
+        alert("Não foi possível abrir o menu da proposta. Verifique o console para mais detalhes.");
     }
-    
-    // Preenche os dados do lote selecionado no formulário
-    const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
-    document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
-    document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
-    document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    
-    // Finalmente, mostra o modal
-    modal.style.display = 'flex';
 }
 
 // ----------------------------
@@ -203,8 +212,6 @@ async function gerarProposta() {
     doc.text(`Data de Vencimento Reforços: ${dados.finDataReforco}`, 20, yAtual);
     yAtual += 16;
 
-
-    // ----------------------------
     // Assinaturas
     doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', {day:'numeric', month:'long', year:'numeric'})}.`, 190, yAtual, {align:'right'});
     yAtual += 28;
@@ -223,10 +230,6 @@ async function gerarProposta() {
     // Exporta
     doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
 }
-
-// --- PARTE 4: EXECUÇÃO E EXPOSIÇÃO GLOBAL ---
-// Inicia o carregamento da estrutura do modal assim que o script é executado
-document.addEventListener('DOMContentLoaded', inicializarEstruturaModal);
 
 // Expõe a função principal para o Bubble, tornando-a "global"
 // O nome que o Bubble vai chamar é "abrirModalProposta"
