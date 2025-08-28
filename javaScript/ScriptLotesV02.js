@@ -367,3 +367,5 @@ function iniciarMapa(empreendimentosJSON, urlAPI){
     const mapaManager = new MapaLotesManager('meuMapa', urlAPI);
     mapaManager.init(empreendimentosJSON);
 }
+
+window.iniciarMapa = iniciarMapa;
