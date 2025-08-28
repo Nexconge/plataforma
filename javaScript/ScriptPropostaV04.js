@@ -1,21 +1,83 @@
-// ScriptProposta.js
-// ----------------------------
-// Importa e injeta o modal no container
-document.addEventListener('DOMContentLoaded', () => {
+// --- PARTE 1: CONFIGURAÇÃO INICIAL (só roda uma vez) ---
+// Esta função prepara o modal: busca o HTML, injeta na página e configura os botões de fechar e o formulário.
+function inicializarEstruturaModal() {
+    // Busca o HTML do modal de uma fonte externa
     fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html')
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Não foi possível carregar o modal.');
-            }
+            if (!response.ok) throw new Error('Não foi possível carregar o HTML do modal.');
             return response.text();
         })
         .then(html => {
-            document.getElementById('modal-container').innerHTML = html;
-            inicializarMenuProposta();
+            // Injeta o HTML no container da página
+            const modalContainer = document.getElementById('modal-container');
+            if (modalContainer) {
+                modalContainer.innerHTML = html;
+                
+                // Agora que o HTML existe, podemos configurar os eventos internos do modal
+                configurarEventosDoModal();
+                console.log("Estrutura do modal carregada e configurada com sucesso.");
+            } else {
+                console.error("Container com id 'modal-container' não foi encontrado na página.");
+            }
         })
-        .catch(error => console.error('Erro ao carregar o modal:', error));
-});
+        .catch(error => console.error('Erro ao inicializar a estrutura do modal:', error));
+}
 
+// Configura os eventos que são parte do modal (fechar, submeter formulário)
+function configurarEventosDoModal() {
+    const modal = document.getElementById('modalProposta');
+    const btnFecharModal = document.getElementById('closeModal');
+    const formProposta = document.getElementById('formProposta');
+
+    if (!modal || !btnFecharModal || !formProposta) {
+        console.error("Não foi possível encontrar um ou mais elementos essenciais do modal (modalProposta, closeModal, formProposta).");
+        return;
+    }
+
+    // Evento para o botão de fechar
+    btnFecharModal.addEventListener('click', () => modal.style.display = 'none');
+    
+    // Evento para fechar clicando fora do modal
+    window.addEventListener('click', (e) => {
+        if (e.target == modal) modal.style.display = 'none';
+    });
+    
+    // Evento para o envio do formulário, que chama a geração do PDF
+    formProposta.addEventListener('submit', (e) => {
+        e.preventDefault();
+        gerarPropostaPDF(); // Chamando a função de gerar PDF
+    });
+}
+
+
+// --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
+// Esta é a função que o botão do Bubble vai chamar.
+// Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
+function abrirEPreencherModalProposta() {
+    console.log("Ação do Bubble: Tentando abrir o modal da proposta...");
+    
+    const modal = document.getElementById('modalProposta');
+    if (!modal) {
+        console.error("O modal 'modalProposta' não foi encontrado. A inicialização pode ter falhado.");
+        return;
+    }
+
+    // Validação: Verifica se um lote foi selecionado no mapa
+    // (A variável 'mapaManager' precisa estar acessível globalmente a partir do seu script do mapa)
+    if (typeof mapaManager === 'undefined' || !mapaManager.selectedLoteId) {
+        alert("Por favor, selecione um lote no mapa primeiro!");
+        return;
+    }
+    
+    // Preenche os dados do lote selecionado no formulário
+    const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
+    document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
+    document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
+    document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    // Finalmente, mostra o modal
+    modal.style.display = 'flex';
+}
 
 // ----------------------------
 // Função principal para gerar o PDF
@@ -162,44 +224,10 @@ async function gerarProposta() {
     doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
 }
 
+// --- PARTE 4: EXECUÇÃO E EXPOSIÇÃO GLOBAL ---
+// Inicia o carregamento da estrutura do modal assim que o script é executado
+document.addEventListener('DOMContentLoaded', inicializarEstruturaModal);
 
-// ----------------------------
-// Inicialização do modal
-function inicializarMenuProposta() {
-    const modal = document.getElementById('modalProposta');
-    const btnAbrirModal = document.getElementById('btnAbrirProposta');
-    const btnFecharModal = document.getElementById('closeModal');
-    const formProposta = document.getElementById('formProposta');
-
-    btnAbrirModal.addEventListener('click', () => {
-        if (!mapaManager || !mapaManager.selectedLoteId) {
-            alert("Por favor, selecione um lote no mapa primeiro!");
-            return;
-        }
-        const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
-        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
-        document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
-        document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        modal.style.display = 'flex';
-    });
-
-    btnFecharModal.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', (e) => { if (e.target == modal) modal.style.display = 'none'; });
-
-    // Evento de submit único
-    formProposta.addEventListener('submit', (e) => {
-        e.preventDefault();
-        gerarProposta();
-    });
-}
-
-const botaoAbrir = document.getElementById('btnAbrirProposta');
-
-if (botaoAbrir) {
-  // Se entrar aqui, o botão foi encontrado
-  console.log("SUCESSO: Botão 'btnAbrirProposta' encontrado. Atribuindo evento de clique.", botaoAbrir);
-  botaoAbrir.addEventListener('click', abrirModalProposta);
-} else {
-  // Se entrar aqui, o botão NÃO foi encontrado a tempo.
-  console.error("FALHA: O script executou, mas o botão 'btnAbrirProposta' ainda não existe no DOM.");
-}
+// Expõe a função principal para o Bubble, tornando-a "global"
+// O nome que o Bubble vai chamar é "abrirModalProposta"
+window.abrirModalProposta = abrirEPreencherModalProposta;
