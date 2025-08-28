@@ -1,0 +1,49 @@
+<div id="modalProposta" class="modal-backdrop" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Gerar Proposta</h2>
+            <span id="closeModal" class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="info-lote-proposta">
+                Lote: <strong id="propLoteNome"></strong> | 
+                Área: <strong id="propLoteArea"></strong>m² | 
+                Valor: <strong id="propLoteValor"></strong>
+            </div>
+            <hr>
+            <form id="formProposta">
+                <fieldset>
+                    <legend>Dados do Cliente</legend>
+                    <input type="text" id="propClienteNome" placeholder="Nome Completo do Cliente" required>
+                    <input type="text" id="propClienteCPF" placeholder="CPF do Cliente" required>
+                    <input type="email" id="propClienteEmail" placeholder="E-mail do Cliente">
+                    <input type="text" id="propClienteTelefone" placeholder="Telefone do Cliente">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Condições de Pagamento</legend>
+                    <label>Entrada:</label>
+                    <input type="number" id="propValorEntrada" placeholder="Valor da Entrada (R$)">
+                    <input type="date" id="propDataEntrada" placeholder="Data da Entrada">
+                    
+                    <label>Parcelamento:</label>
+                    <input type="number" id="propQtdeParcelas" placeholder="Nº de Parcelas">
+                    <input type="number" id="propValorParcela" placeholder="Valor da Parcela (R$)">
+                    <input type="date" id="propDataPrimeiraParcela" placeholder="Data da 1ª Parcela">
+
+                    <label>Reforços:</label>
+                    <input type="number" id="propQtdeReforcos" placeholder="Nº de Reforços">
+                    <input type="number" id="propValorReforco" placeholder="Valor do Reforço (R$)">
+                    <input type="date" id="propDataPrimeiroReforco" placeholder="Data do 1º Reforço">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Observações</legend>
+                    <textarea id="propObservacoes" rows="3" placeholder="Observações adicionais da proposta..."></textarea>
+                </fieldset>
+                
+                <button type="submit" class="btn-gerar">Gerar PDF da Proposta</button>
+            </form>
+        </div>
+    </div>
+</div>
