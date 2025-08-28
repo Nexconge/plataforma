@@ -192,3 +192,14 @@ function inicializarMenuProposta() {
         gerarProposta();
     });
 }
+
+const botaoAbrir = document.getElementById('btnAbrirProposta');
+
+if (botaoAbrir) {
+  // Se entrar aqui, o botão foi encontrado
+  console.log("SUCESSO: Botão 'btnAbrirProposta' encontrado. Atribuindo evento de clique.", botaoAbrir);
+  botaoAbrir.addEventListener('click', abrirModalProposta);
+} else {
+  // Se entrar aqui, o botão NÃO foi encontrado a tempo.
+  console.error("FALHA: O script executou, mas o botão 'btnAbrirProposta' ainda não existe no DOM.");
+}
