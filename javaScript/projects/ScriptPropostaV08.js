@@ -4,7 +4,7 @@ async function garantirEstruturaModal() {
     if (document.getElementById('modalProposta')) {
         return;
     }
-    
+
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
     const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
@@ -36,15 +36,15 @@ function configurarEventosDoModal() {
         modal.style.display = 'none';
         header.style.display = 'flex';
     });
-    
+
     // Evento para fechar clicando fora do modal
     window.addEventListener('click', (e) => {
-        if (e.target == modal){
+        if (e.target == modal) {
             modal.style.display = 'none';
             header.style.display = 'flex';
-        } 
+        }
     });
-    
+
     // Evento para o envio do formulário, que chama a geração do PDF
     formProposta.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -143,7 +143,7 @@ async function gerarProposta() {
 
     // Título
     doc.setFontSize(18).setFont('helvetica', 'bold');
-    doc.text('Proposta Comercial', 105, 30, {align: 'center'});
+    doc.text('Proposta Comercial', 105, 30, { align: 'center' });
     doc.setFontSize(12).setFont('helvetica', 'normal');
     yAtual = 50;
 
@@ -160,12 +160,12 @@ async function gerarProposta() {
     const colEsquerda = [
         `Quadra: ${dados.quadra || '---'}`,
         `Lote: ${dados.lote || '---'}`,
-        `Área: ${dados.area.toLocaleString('pt-BR', {minimumFractionDigits: 2})} m²`
+        `Área: ${dados.area.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m²`
     ];
 
     const colDireita = [
-        `Valor Total: ${dados.valorTotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}`,
-        `Valor m²: ${dados.valorMetroQuadrado.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}`
+        `Valor Total: ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+        `Valor m²: ${dados.valorMetroQuadrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
     ];
 
     colEsquerda.forEach((linha, i) => doc.text(linha, 20, yAtual + i * 8));
@@ -207,28 +207,66 @@ async function gerarProposta() {
     yAtual += 2; doc.line(20, yAtual, 190, yAtual);
     yAtual += 8;
 
-    doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}`, 20, yAtual); yAtual += 8;
+    doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
     doc.text(`Data Vencimento Entrada: ${dados.finDataEntrada}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
-    doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}`, 20, yAtual); yAtual += 8;
+    doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
     doc.text(`Data de Vencimento Parcelas: ${dados.finDataParcela}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
-    doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}`, 20, yAtual); yAtual += 8;
+    doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
     doc.text(`Data de Vencimento Reforços: ${dados.finDataReforco}`, 20, yAtual);
     yAtual += 16;
 
     // Assinaturas
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', {day:'numeric', month:'long', year:'numeric'})}.`, 190, yAtual, {align:'right'});
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
     yAtual += 28;
 
     doc.line(32, yAtual, 92, yAtual);
     doc.line(118, yAtual, 178, yAtual);
 
     doc.setFontSize(10);
-    doc.text("Robson Kollett", 62, yAtual + 5, {align:'center'});
-    doc.text("Corretor", 62, yAtual + 10, {align:'center'});
-    doc.text(dados.nomeCliente, 148, yAtual + 5, {align:'center'});
-    doc.text("Cliente", 148, yAtual + 10, {align:'center'});
+    doc.text("Robson Kollett", 62, yAtual + 5, { align: 'center' });
+    doc.text("Corretor", 62, yAtual + 10, { align: 'center' });
+    doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
+    doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
+
+
+    // ----------------------------
+    // Segunda Página - Termo de Intenção de Compra
+    doc.addPage();
+    doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
+
+    // Adicionar título
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold')
+    doc.text('Termo de Intenção de Compra', 105, 30, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal')
+    yAtual = 50;
+
+    const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, brasileiro, ${dados.estadoCivilCliente}, inscrito sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, Residente e domiciliado em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}.
+        Formaliza através da WF SOLUÇÕES IMOBILIÁRIAS LTDA, empresa Jurídica de direito privado, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos, brasileiro, casado, empresário, inscrito sob nº CPF 006.614.829-44, cédula de identidade nº RG 3.848.767 SSP/SC, CRECI-SC 23.076F, e/ou José Eduardo Bevilaqua, brasileiro, solteiro, empresário, inscrito sob nº CPF 061.248.209-00, cédula de identidade nº RG 4.936.776 SSP/SC, CRECI-SC 63.226F, a Proposta de Intenção de Compra do imóvel abaixo descrito, Sendo:
+        Lote urbano com ${dados.area} metros de área, localizado da quadra nº ${dados.quadra}, lote nº ${dados.lote}, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “ORIGENS”.
+        Ofereço para compra do imóvel mencionado acima o valor de R$ ${dados.valorMetroQuadrado} (um mil e quatrocentos reais) pelo metro quadrado. Me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia de assinatura do contrato de compra e venda, valendo este como entrada e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas. Com vencimento da primeiro 30 (trinta) dias após a assinatura do referido contrato de compra e venda.
+        Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.
+    `;
+
+    doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
+
+    yAtual = 230
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    yAtual += 20;
+
+    // Define posição, tamanho e desenha as linhas
+    startX = 75;
+    endX = 135;
+    doc.line(startX, yAtual, endX, yAtual);
+    yAtual += 5;
+
+    // Inclui Nome e Qualificação
+    doc.setFontSize(10);
+    doc.text(dados.nomeCliente, 105, yAtual, { align: 'center' });
+    doc.text("Cliente", 105, yAtual + 5, { align: 'center' });
 
 
     // ----------------------------
