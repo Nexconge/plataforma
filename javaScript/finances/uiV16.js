@@ -90,6 +90,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
             cellClasse.classList.add('idented');
         }
 
+        // Valores das colunas
         let totalLinha = 0;
         colunas.forEach(coluna => {
             const valor = matrizDRE[classe]?.[coluna] || 0;
@@ -99,6 +100,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
             row.insertCell().textContent = formatarValor(valor);
         });
         
+        // Total da linha (exceto para saldos)
         if (classe === 'Caixa Final') {
             const ultimoValor = matrizDRE[classe]?.[colunas[colunas.length - 1]] || 0;
             row.insertCell().textContent = formatarValor(ultimoValor);
@@ -108,7 +110,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         } else {
             row.insertCell().textContent = formatarValor(totalLinha);
         }
-        
+        //Inseri linha em branco após linhas específicas
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
         }
@@ -178,7 +180,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
-    rowClasse.classList.add('linhatotal');
+    rowClasse.className = 'linhaClasseDetalhamento';
     rowClasse.id = classeId;
     rowClasse.onclick = () => toggleLinha(classeId);
 
@@ -203,7 +205,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     departamentos.forEach(dep => {
         const deptoId = `depto_${sanitizeId(dep.nome)}_${sanitizeId(classe)}`;
         const rowDepto = tbody.insertRow();
-        rowDepto.className = `linhatotal parent-${classeId} hidden`;
+        rowDepto.className = `linhaDepto parent-${classeId} hidden`;
         rowDepto.id = deptoId;
         rowDepto.onclick = () => toggleLinha(deptoId);
 
