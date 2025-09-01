@@ -51,13 +51,13 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         if (partesData.length !== 3) return; // Ignora datas malformadas
         const [dia, mes, ano] = partesData;
 
-        // Sua lógica original para determinar o valor
+        //Se origem for "P" (pagamento), inverte o sinal do valor
         let valor = lancamento.ValorLancamento;
         if (lancamento.Origem.slice(-1) === "P") {
             valor = -valor;
         }
 
-        // --- LÓGICA DE SALDO E PROCESSAMENTO COMBINADA ---
+        //LÓGICA DE SALDO E PROCESSAMENTO COMBINADA ---
         if (Number(ano) < primeiroAno) {
             // Se o lançamento é anterior ao período, apenas acumula no saldo inicial.
             saldoInicialPeriodo += valor;

@@ -1,5 +1,5 @@
 // ui.js
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV9.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV10.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -12,11 +12,20 @@ function sanitizeId(str) {
 }
 function toggleLinha(id) {
     const linhas = document.querySelectorAll(`.parent-${id}`);
+    const isHidden = ![...linhas].some(linha => !linha.classList.contains('hidden'));
+
     linhas.forEach(linha => {
-        const isHidden = linha.classList.toggle('hidden');
-        if (isHidden && linha.id) {
-            const filhos = document.querySelectorAll(`.parent-${linha.id}`);
-            filhos.forEach(filho => filho.classList.add('hidden'));
+        if (isHidden) {
+            // Expandindo: só mostra os filhos diretos
+            linha.classList.remove('hidden');
+        } else {
+            // Recolhendo: esconde este filho e todos os descendentes
+            linha.classList.add('hidden');
+
+            if (linha.id) {
+                const descendentes = document.querySelectorAll(`.parent-${linha.id}`);
+                descendentes.forEach(desc => desc.classList.add('hidden'));
+            }
         }
     });
 }
@@ -104,11 +113,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     tabela.appendChild(fragment);
 }
 
-/**
- * Renderiza a tabela de Custos/Despesas por Departamento, com colunas dinâmicas.
- * @param {object} dadosAgrupados - Os dados processados e agrupados por classe, com totais.
- * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
- */
 function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
@@ -138,96 +142,118 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
         classesMap[classe].push({ nome, categorias });
     });
 
-    // Renderiza cada classe
-    Object.entries(classesMap).forEach(([classe, departamentos]) => {
-        const classeId = `classe_${sanitizeId(classe)}`;
-        const rowClasse = tbody.insertRow();
-        rowClasse.className = 'cabecalho';
-        rowClasse.id = classeId;
-        rowClasse.onclick = () => toggleLinha(classeId);
+    // Ordem fixa das classes
+    const ordemClasses = [
+        '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida',
+        '(-) Custos', '(-) Despesas',
+        '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional',
+        '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
+        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios',
+        '(=) Movimentação de Caixa Mensal'
+    ];
 
-        const cellClasse = rowClasse.insertCell();
-        cellClasse.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+    // Renderiza as classes na ordem definida
+    ordemClasses.forEach(classe => {
+        if (classesMap[classe]) {
+            renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
+        }
+    });
 
-        // Totais da classe
-        const totaisClasse = Array(colunas.length).fill(0);
-        departamentos.forEach(dep => {
-            Object.values(dep.categorias).forEach(cat => {
-                colunas.forEach((coluna, idx) => {
-                    totaisClasse[idx] += cat.valores[coluna] || 0;
-                });
-            });
-        });
-        totaisClasse.forEach(valor => {
-            rowClasse.insertCell().textContent = formatarValor(valor);
-        });
-        rowClasse.insertCell().textContent = formatarValor(totaisClasse.reduce((a, b) => a + b, 0));
-
-        // Renderiza departamentos da classe
-        departamentos.forEach(dep => {
-            const deptoId = `depto_${sanitizeId(dep.nome)}_${sanitizeId(classe)}`;
-            const rowDepto = tbody.insertRow();
-            rowDepto.className = `linhatotal parent-${classeId} hidden`;
-            rowDepto.id = deptoId;
-            rowDepto.onclick = () => toggleLinha(deptoId);
-
-            const cellDepto = rowDepto.insertCell();
-            cellDepto.innerHTML = `<span class="expand-btn">[+]</span> ${dep.nome}`;
-
-            // Totais do departamento
-            const totaisDepto = Array(colunas.length).fill(0);
-            Object.values(dep.categorias).forEach(cat => {
-                colunas.forEach((coluna, idx) => {
-                    totaisDepto[idx] += cat.valores[coluna] || 0;
-                });
-            });
-            totaisDepto.forEach(valor => {
-                rowDepto.insertCell().textContent = formatarValor(valor);
-            });
-            rowDepto.insertCell().textContent = formatarValor(totaisDepto.reduce((a, b) => a + b, 0));
-
-            // Renderiza categorias do departamento
-            Object.entries(dep.categorias).forEach(([codCategoria, catData]) => {
-                const catId = `${deptoId}_cat_${sanitizeId(codCategoria)}`;
-                const rowCat = tbody.insertRow();
-                rowCat.className = `linha-categoria parent-${deptoId} hidden`;
-                rowCat.id = catId;
-                rowCat.onclick = (e) => { e.stopPropagation(); toggleLinha(catId); };
-
-                const cellCat = rowCat.insertCell();
-                cellCat.className = 'idented';
-                cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${categoriasMap.get(codCategoria) || 'Categoria desconhecida'}`;
-
-                let totalCategoria = 0;
-                colunas.forEach(coluna => {
-                    const valor = catData.valores[coluna] || 0;
-                    totalCategoria += valor;
-                    rowCat.insertCell().textContent = formatarValor(valor);
-                });
-                rowCat.insertCell().textContent = formatarValor(totalCategoria);
-
-                // Renderiza fornecedores da categoria
-                catData.fornecedores.forEach(fornecedorData => {
-                    const rowLan = tbody.insertRow();
-                    rowLan.className = `linha-lancamento parent-${catId} hidden`;
-                    const cellLan = rowLan.insertCell();
-                    cellLan.className = 'idented2';
-                    cellLan.textContent = fornecedorData.fornecedor;
-
-                    let totalFornecedor = 0;
-                    colunas.forEach(coluna => {
-                        const valor = fornecedorData.valores[coluna] || 0;
-                        totalFornecedor += valor;
-                        rowLan.insertCell().textContent = formatarValor(valor);
-                    });
-                    rowLan.insertCell().textContent = formatarValor(totalFornecedor);
-                });
-            });
-        });
+    // Caso existam classes não previstas em ordemClasses, renderiza no fim
+    Object.keys(classesMap).forEach(classe => {
+        if (!ordemClasses.includes(classe)) {
+            renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
+        }
     });
 
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
+}
+
+function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
+    const classeId = `classe_${sanitizeId(classe)}`;
+    const rowClasse = tbody.insertRow();
+    rowClasse.className = 'linhaSaldo';
+    rowClasse.id = classeId;
+    rowClasse.onclick = () => toggleLinha(classeId);
+
+    const cellClasse = rowClasse.insertCell();
+    cellClasse.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+
+    // Totais da classe
+    const totaisClasse = Array(colunas.length).fill(0);
+    departamentos.forEach(dep => {
+        Object.values(dep.categorias).forEach(cat => {
+            colunas.forEach((coluna, idx) => {
+                totaisClasse[idx] += cat.valores[coluna] || 0;
+            });
+        });
+    });
+    totaisClasse.forEach(valor => {
+        rowClasse.insertCell().textContent = formatarValor(valor);
+    });
+    rowClasse.insertCell().textContent = formatarValor(totaisClasse.reduce((a, b) => a + b, 0));
+
+    // Renderiza departamentos
+    departamentos.forEach(dep => {
+        const deptoId = `depto_${sanitizeId(dep.nome)}_${sanitizeId(classe)}`;
+        const rowDepto = tbody.insertRow();
+        rowDepto.className = `linhatotal parent-${classeId} hidden`;
+        rowDepto.id = deptoId;
+        rowDepto.onclick = () => toggleLinha(deptoId);
+
+        const cellDepto = rowDepto.insertCell();
+        cellDepto.innerHTML = `<span class="expand-btn">[+]</span> ${dep.nome}`;
+
+        const totaisDepto = Array(colunas.length).fill(0);
+        Object.values(dep.categorias).forEach(cat => {
+            colunas.forEach((coluna, idx) => {
+                totaisDepto[idx] += cat.valores[coluna] || 0;
+            });
+        });
+        totaisDepto.forEach(valor => {
+            rowDepto.insertCell().textContent = formatarValor(valor);
+        });
+        rowDepto.insertCell().textContent = formatarValor(totaisDepto.reduce((a, b) => a + b, 0));
+
+        // Categorias
+        Object.entries(dep.categorias).forEach(([codCategoria, catData]) => {
+            const catId = `${deptoId}_cat_${sanitizeId(codCategoria)}`;
+            const rowCat = tbody.insertRow();
+            rowCat.className = `linha-categoria parent-${deptoId} hidden`;
+            rowCat.id = catId;
+            rowCat.onclick = (e) => { e.stopPropagation(); toggleLinha(catId); };
+
+            const cellCat = rowCat.insertCell();
+            cellCat.className = 'idented';
+            cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${categoriasMap.get(codCategoria) || 'Categoria desconhecida'}`;
+
+            let totalCategoria = 0;
+            colunas.forEach(coluna => {
+                const valor = catData.valores[coluna] || 0;
+                totalCategoria += valor;
+                rowCat.insertCell().textContent = formatarValor(valor);
+            });
+            rowCat.insertCell().textContent = formatarValor(totalCategoria);
+
+            // Fornecedores
+            catData.fornecedores.forEach(fornecedorData => {
+                const rowLan = tbody.insertRow();
+                rowLan.className = `linha-lancamento parent-${catId} hidden`;
+                const cellLan = rowLan.insertCell();
+                cellLan.className = 'idented2';
+                cellLan.textContent = fornecedorData.fornecedor;
+
+                let totalFornecedor = 0;
+                colunas.forEach(coluna => {
+                    const valor = fornecedorData.valores[coluna] || 0;
+                    totalFornecedor += valor;
+                    rowLan.insertCell().textContent = formatarValor(valor);
+                });
+                rowLan.insertCell().textContent = formatarValor(totalFornecedor);
+            });
+        });
+    });
 }
 
 
