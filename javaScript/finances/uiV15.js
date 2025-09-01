@@ -178,7 +178,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
-    rowClasse.className = 'linhatotal';
+    rowClasse.classList.add('linhatotal');
     rowClasse.id = classeId;
     rowClasse.onclick = () => toggleLinha(classeId);
 
