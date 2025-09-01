@@ -1,7 +1,5 @@
 // ui.js
-
-// --- CORREÇÃO --- Importa as funções de processamento que serão usadas pela UI
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV7.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV8.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -29,7 +27,6 @@ function getSelectItems(select){
     return Array.from(select.selectedOptions).map(option => option.value);
 }
 /**
- * Renderiza a tabela de DRE, agora com colunas dinâmicas.
  * @param {object} matrizDRE - Os dados processados para o DRE.
  * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
  */
@@ -132,9 +129,15 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     Object.entries(dadosAgrupados).forEach(([classe, grupoData]) => {
         if (grupoData.deptoMap.size === 0) return;
 
+        const classeId = `classe_${sanitizeId(classe)}`;
         const rowClasse = tbody.insertRow();
         rowClasse.className = 'linhaSaldo';
-        rowClasse.insertCell().textContent = classe;
+        rowClasse.id = classeId; // Adiciona um ID para ser o alvo do toggle
+        rowClasse.onclick = () => toggleLinha(classeId); // Adiciona o evento de clique
+        const cellClasse = rowClasse.insertCell();
+        // Adiciona o botão de expansão [+]
+        cellClasse.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+        
         grupoData.totaisMensais.forEach(valor => { // LOOP CORRIGIDO (indireto)
             rowClasse.insertCell().textContent = formatarValor(valor);
         });
@@ -144,7 +147,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
             const { nome, categorias } = item;
             const deptoId = `depto_${sanitizeId(nome)}_${sanitizeId(classe)}`;
             const rowDepto = tbody.insertRow();
-            rowDepto.className = 'linhatotal';
+            rowDepto.className = `linhatotal parent-${classeId} hidden`; 
             rowDepto.onclick = () => toggleLinha(deptoId);
             const cellDepto = rowDepto.insertCell();
             cellDepto.innerHTML = `<span class="expand-btn">[+]</span> ${nome}`;
@@ -275,29 +278,8 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fProcessaLancamentos, f
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados } = fProcessaLancamentos(appCache, modo, anosParaProcessar, contasFiltradas, saldoBase);
     
     fCalculaTotais(matrizDRE, colunas, saldoInicialPeriodo, chavesComDados);
-
-    const dadosTabelaDeptos = {
-        '(-) Custos': { deptoMap: new Map(), totaisMensais: Array(colunas.length).fill(0), totalGeral: 0 },
-        '(-) Despesas': { deptoMap: new Map(), totaisMensais: Array(colunas.length).fill(0), totalGeral: 0 }
-    };
-    Object.values(matrizDepartamentos).forEach(item => {
-        const grupo = dadosTabelaDeptos[item.classe];
-        if (grupo) {
-            grupo.deptoMap.set(`${item.nome}|${item.classe}`, item);
-            Object.values(item.categorias).forEach(cat => {
-                colunas.forEach((coluna, index) => {
-                    const valor = cat.valores[coluna] || 0;
-                    if (valor !== 0) {
-                        grupo.totaisMensais[index] += valor;
-                        grupo.totalGeral += valor;
-                    }
-                });
-            });
-        }
-    });
-
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
-    renderizarTabelaDepartamentos(appCache.categoriasMap, dadosTabelaDeptos, colunas);
+    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
 
 function configurarFiltros(appCache, atualizarCallback) {
