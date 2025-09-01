@@ -142,7 +142,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     Object.entries(classesMap).forEach(([classe, departamentos]) => {
         const classeId = `classe_${sanitizeId(classe)}`;
         const rowClasse = tbody.insertRow();
-        rowClasse.className = 'linhaSaldo';
+        rowClasse.className = 'cabecalho';
         rowClasse.id = classeId;
         rowClasse.onclick = () => toggleLinha(classeId);
 
