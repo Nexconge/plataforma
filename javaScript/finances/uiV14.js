@@ -11,21 +11,26 @@ function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
 function toggleLinha(id) {
-    const linhas = document.querySelectorAll(`.parent-${id}`);
-    const isHidden = ![...linhas].some(linha => !linha.classList.contains('hidden'));
+    const filhos = document.querySelectorAll(`.parent-${id}`);
+    if (filhos.length === 0) return;
 
-    linhas.forEach(linha => {
-        if (isHidden) {
-            // Expandindo: só mostra os filhos diretos
-            linha.classList.remove('hidden');
-        } else {
-            // Recolhendo: esconde este filho e todos os descendentes
-            linha.classList.add('hidden');
+    const algumVisivel = [...filhos].some(linha => !linha.classList.contains('hidden'));
 
-            if (linha.id) {
-                const descendentes = document.querySelectorAll(`.parent-${linha.id}`);
-                descendentes.forEach(desc => desc.classList.add('hidden'));
-            }
+    if (algumVisivel) {
+        // Recolher: esconde todos os filhos e descendentes
+        esconderDescendentes(id);
+    } else {
+        // Expandir: mostra apenas os filhos diretos
+        filhos.forEach(filho => filho.classList.remove('hidden'));
+    }
+}
+
+function esconderDescendentes(id) {
+    const filhos = document.querySelectorAll(`.parent-${id}`);
+    filhos.forEach(filho => {
+        filho.classList.add('hidden');
+        if (filho.id) {
+            esconderDescendentes(filho.id); // recursão para esconder toda a árvore
         }
     });
 }
@@ -173,7 +178,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
-    rowClasse.className = 'linhaSaldo';
+    rowClasse.className = 'linhatotal';
     rowClasse.id = classeId;
     rowClasse.onclick = () => toggleLinha(classeId);
 
