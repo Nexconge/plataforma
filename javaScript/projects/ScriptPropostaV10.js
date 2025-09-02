@@ -79,7 +79,8 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
         // Passo C: Preenche os dados do lote selecionado no formulário.
         const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
-        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
+        document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[1] || 'N/A';
+        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
         document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -101,7 +102,7 @@ async function gerarProposta() {
     // Captura os dados do formulário
     const dados = {
         // Lote
-        quadra: document.getElementById('propQuadra')?.value || '',
+        quadra: document.getElementById('propQuadraNome')?.value || '',
         lote: document.getElementById('propLoteNome')?.textContent || '',
         area: parseFloat(document.getElementById('propLoteArea')?.textContent) || 0,
         valorTotal: parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
