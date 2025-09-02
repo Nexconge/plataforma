@@ -79,8 +79,8 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
         // Passo C: Preenche os dados do lote selecionado no formulário.
         const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
-        document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome || 'N/A';
-        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
+        document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[1] || 'N/A';
+        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
         document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
