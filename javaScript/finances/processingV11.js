@@ -30,16 +30,13 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
     const primeiroAno = Math.min(...anosParaProcessar.map(Number));
     let saldoInicialPeriodo = saldoBase;
 
-    // Lista das classes que terão seus departamentos detalhados.
     const classesParaDetalhar = new Set([
         '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
         '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', 
         '(+/-) Empréstimos/Consórcios'
     ]);
 
-    // --- LOOP ÚNICO DE PROCESSAMENTO ---
     appCache.lancamentos.forEach(lancamento => {
-        // Validação inicial dos dados do lançamento
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) {
             return; 
         }
@@ -48,45 +45,42 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         if (!contasFiltradas.has(codConta)) return;
 
         const partesData = lancamento.DataLancamento.split('/');
-        if (partesData.length !== 3) return; // Ignora datas malformadas
-        const [dia, mes, ano] = partesData;
+        if (partesData.length !== 3) return; 
 
-        //Se origem for "P" (pagamento), inverte o sinal do valor
+        const [dia, mesRaw, ano] = partesData;
+        const mes = mesRaw.padStart(2, '0');   // 🔥 garante sempre 2 dígitos
+        const anoMes = `${mes}-${ano}`;
+        const chaveAgregacao = (modo.toLowerCase() === 'anual') ? ano : anoMes;
+
         let valor = lancamento.ValorLancamento;
         if (lancamento.Origem.slice(-1) === "P") {
             valor = -valor;
         }
 
-        //LÓGICA DE SALDO E PROCESSAMENTO COMBINADA ---
         if (Number(ano) < primeiroAno) {
-            // Se o lançamento é anterior ao período, apenas acumula no saldo inicial.
             saldoInicialPeriodo += valor;
         } else if (anosParaProcessar.includes(ano)) {
-            // Se o lançamento está DENTRO do período, processa DRE e Departamentos.
-            const anoMes = `${mes.padStart(2, '0')}-${ano}`;
-            const chaveAgregacao = (modo.toLowerCase() === 'anual') ? ano : anoMes;
             chavesComDados.add(chaveAgregacao);
 
             const codCategoria = lancamento.CODCategoria || 'SemCategoria';
             const classeInfo = appCache.classesMap.get(codCategoria);
             const classe = classeInfo ? classeInfo.classe : 'Outros';
 
-            // 1. Processa a Matriz DRE (para todas as classes)
+            // Matriz DRE
             if (!matrizDRE[classe]) matrizDRE[classe] = {};
             matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
-            // 2. Processa a Matriz de Departamentos (apenas para as classes na lista)
+            // Matriz Departamentos
             if (classesParaDetalhar.has(classe) && lancamento.Departamentos && typeof lancamento.Departamentos === 'string') {
                 const fornecedor = lancamento.Cliente;
                 
                 lancamento.Departamentos.split(',').forEach(pair => {
                     const [codigo, valorStr] = pair.split(':');
-                    if (!codigo || !valorStr) return; // Pula pares malformados
+                    if (!codigo || !valorStr) return;
 
                     const codDepto = Number(codigo);
                     let valorRateio = Number(valorStr) || 0;
                     
-                    // Aplica a mesma lógica de sinal ao valor do rateio
                     if (lancamento.Origem.slice(-1) === "P") {
                         valorRateio = -valorRateio;
                     }
@@ -117,7 +111,6 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
         }
     });
 
-    // Mantém a sua lógica final para ordenar os fornecedores por total
     Object.values(matrizDepartamentos).forEach(dep => {
         Object.values(dep.categorias).forEach(cat => {
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
@@ -126,6 +119,7 @@ function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas
 
     return { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados };
 }
+
 
 
 function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
