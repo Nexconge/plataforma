@@ -6,7 +6,7 @@ async function garantirEstruturaModal() {
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV02.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV03.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
@@ -113,19 +113,15 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         const finValorEntrada = loteSelecionado.Valor * 0.25;
         const finValorParcela = loteSelecionado.Valor * 0.012;
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
-
-        document.getElementById('propClienteNome').value = formatadorDeMoeda.format(finValorEntrada);
-        document.getElementById('propClienteNome').disabled = true;
-        
         document.getElementById('propValorEntrada').value = formatadorDeMoeda.format(finValorEntrada);
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
-        document.getElementById('propValorParcela').value = finValorParcela
+        document.getElementById('propValorParcela').value = formatadorDeMoeda.format(finValorParcela);
         document.getElementById('propValorParcela').disabled = true;
         document.getElementById('propQtdeReforcos').value = 4;
         document.getElementById('propQtdeReforcos').disabled = true;
-        document.getElementById('propValorReforco').value = finValorReforco
+        document.getElementById('propValorReforco').value = formatadorDeMoeda.format(finValorReforco);
         document.getElementById('propValorReforco').disabled = true;
 
 
@@ -167,10 +163,10 @@ async function gerarProposta() {
         finValorEntrada: parseFloat(document.getElementById('propValorEntrada')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
         finDataEntrada: new Date(document.getElementById('propDataEntrada').value) || '',
         finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
-        finValorParcela: parseFloat(document.getElementById('propValorParcela').value) || 0,
+        finValorParcela: parseFloat(document.getElementById('propValorParcela')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
         finDataParcela: new Date(document.getElementById('propDataPrimeiraParcela').value) || '',
         finQntReforco: parseInt(document.getElementById('propQtdeReforcos').value) || 0,
-        finValorReforco: parseFloat(document.getElementById('propValorReforco').value) || 0,
+        finValorReforco: parseFloat(document.getElementById('propValorReforco')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
         finDataReforco: new Date(document.getElementById('propDataPrimeiroReforco').value) || ''
     };
 
