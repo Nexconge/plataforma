@@ -88,7 +88,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         const finValorEntrada = loteSelecionado.Valor * 0.25;
         const finValorParcela = loteSelecionado.Valor * 0.012;
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
-        document.getElementById('propValorEntrada').value = (finValorEntrada).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('propValorEntrada').value = finValorEntrada;
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
@@ -122,7 +122,7 @@ async function gerarProposta() {
         lote: document.getElementById('propLoteNome')?.textContent || '',
         area: parseFloat(document.getElementById('propLoteArea')?.textContent) || 0,
         valorTotal: parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        valorMetroQuadrado: parseFloat(document.getElementById('propLoteValorM2')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        valorMetroQuadrado: (valorTotal / area) || 0,
 
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
@@ -235,7 +235,7 @@ async function gerarProposta() {
     yAtual += 16;
 
     // Assinaturas
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
     yAtual += 28;
 
     doc.line(32, yAtual, 92, yAtual);
