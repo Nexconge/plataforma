@@ -106,6 +106,8 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
+        
+        document.getElementById('propClienteNome').value = "Larissa Zini Turri";
 
         // Passo D: Preenche os dados da condição financeira.
         const finValorEntrada = loteSelecionado.Valor * 0.25;
@@ -113,7 +115,6 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
         document.getElementById('propValorEntrada').value = finValorEntrada;
         document.getElementById('propValorEntrada').disabled = true;
-        document.getElementById('propValorEntrada2').textContent = formatadorDeMoeda.format(finValorEntrada);
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
         document.getElementById('propValorParcela').value = finValorParcela
