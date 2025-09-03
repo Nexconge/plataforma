@@ -136,7 +136,7 @@ async function gerarProposta() {
 
         // Financeiro
         finValorEntrada: parseFloat(document.getElementById('propValorEntrada').value) || 0,
-        finDataEntrada: document.getElementById('propDataEntrada').value || '',
+        finDataEntrada: new Date(document.getElementById('propDataEntrada').value) || '',
         finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
         finValorParcela: parseFloat(document.getElementById('propValorParcela').value) || 0,
         finDataParcela: document.getElementById('propDataPrimeiraParcela').value || '',
