@@ -111,6 +111,10 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 }
 
 // ----------------------------
+// Mascaras para os campos de input
+Inputmask("999.999.999-99").mask("#propClienteCPF");
+
+// ----------------------------
 // Função principal para gerar o PDF
 async function gerarProposta() {
     const { jsPDF } = window.jspdf;
@@ -225,13 +229,13 @@ async function gerarProposta() {
     yAtual += 8;
 
     doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data Vencimento Entrada: ${dados.finDataEntrada.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento Entrada: ${dados.finDataEntrada.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Parcelas: ${dados.finDataParcela}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1ª Parcela: ${dados.finDataParcela.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Reforços: ${dados.finDataReforco}`, 20, yAtual); yAtual += 16;
+    doc.text(`Data de Vencimento 1º Reforço: ${dados.finDataReforco.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 16;
 
     // Assinaturas
     doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
