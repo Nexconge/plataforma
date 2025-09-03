@@ -114,10 +114,10 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         const finValorParcela = loteSelecionado.Valor * 0.012;
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
 
-        document.getElementById('propClienteNome').value = formatadorDeMoeda.format(finValorEntrada);
-        document.getElementById('propClienteNome').disabled = true;
+        // document.getElementById('propClienteNome').value = formatadorDeMoeda.format(finValorEntrada);
+        // document.getElementById('propClienteNome').disabled = true;
         
-        document.getElementById('propValorEntrada').value = finValorEntrada;
+        document.getElementById('propValorEntrada').value = formatadorDeMoeda.format(finValorEntrada);
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
