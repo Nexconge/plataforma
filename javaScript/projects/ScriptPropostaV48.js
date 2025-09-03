@@ -114,8 +114,8 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         const finValorParcela = loteSelecionado.Valor * 0.012;
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
 
-        // document.getElementById('propClienteNome').value = formatadorDeMoeda.format(finValorEntrada);
-        // document.getElementById('propClienteNome').disabled = true;
+        document.getElementById('propCampoTeste').value = formatadorDeMoeda.format(finValorEntrada);
+        document.getElementById('propCampoTeste').disabled = true;
         
         document.getElementById('propValorEntrada').value = formatadorDeMoeda.format(finValorEntrada);
         document.getElementById('propValorEntrada').disabled = true;
@@ -164,7 +164,7 @@ async function gerarProposta() {
         cidadeCliente: document.getElementById('propClienteCidade')?.value || '',
 
         // Financeiro
-        finValorEntrada: parseFloat(document.getElementById('propValorEntrada').value) || 0,
+        finValorEntrada: parseFloat(document.getElementById('propValorEntrada')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
         finDataEntrada: new Date(document.getElementById('propDataEntrada').value) || '',
         finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
         finValorParcela: parseFloat(document.getElementById('propValorParcela').value) || 0,
