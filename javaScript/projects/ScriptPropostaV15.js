@@ -83,6 +83,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('propLoteValorM2').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         // Passo D: Finalmente, mostra o modal.
         modal.style.display = 'flex';
@@ -98,7 +99,6 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 // Função principal para gerar o PDF
 async function gerarProposta() {
     const { jsPDF } = window.jspdf;
-    const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
 
     // Captura os dados do formulário
     const dados = {
@@ -107,7 +107,7 @@ async function gerarProposta() {
         lote: document.getElementById('propLoteNome')?.textContent || '',
         area: parseFloat(document.getElementById('propLoteArea')?.textContent) || 0,
         valorTotal: parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        valorMetroQuadrado: loteSelecionado.ValorM2.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+        valorMetroQuadrado: parseFloat(document.getElementById('propLoteValorM2')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
 
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
