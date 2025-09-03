@@ -51,7 +51,7 @@ function configurarEventosDoModal() {
         gerarProposta(); // Chamando a função de gerar PDF
     });
 
-    // Evento para alterar a mascara do campo de CPF
+    // Evento de mascara do campo de CPF
     const cpfInput = document.getElementById("propClienteCPF");
     cpfInput.addEventListener("input", () => {
         let value = cpfInput.value;
@@ -60,6 +60,14 @@ function configurarEventosDoModal() {
         value = value.replace(/(\d{3})(\d)/, "$1.$2");
         value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
         cpfInput.value = value;
+    });
+
+    // Evento de mascara do campo de telefone
+    const telefoneInput = document.getElementById("propClienteTelefone");
+    telefoneInput.addEventListener("input", () => {
+        let value = telefoneInput.value;
+        value = value.replace(/(\(?\d{2}\)?\s?)(\d{5})-?(\d{4})/); // Aplica a máscara: (xx) xxxxx-xxxx
+        telefoneInput.value = value;
     });
 }
 
