@@ -98,6 +98,8 @@ export async function abrirEPreencherModalProposta(mapaManager) {
             return;
         }
 
+        const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
         // Passo C: Preenche os dados do lote selecionado no formulário.
         const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
         document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[1] || 'N/A';
@@ -109,7 +111,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         const finValorEntrada = loteSelecionado.Valor * 0.25;
         const finValorParcela = loteSelecionado.Valor * 0.012;
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
-        document.getElementById('propValorEntrada').value = finValorEntrada;
+        document.getElementById('propValorEntrada').value = formatadorDeMoeda.format(finValorEntrada);
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
