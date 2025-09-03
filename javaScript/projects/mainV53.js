@@ -6,7 +6,7 @@ import { abrirEPreencherModalProposta } from './ScriptPropostaV52.js';
 function inicializarApp(empreendimentosJSON, projectsUrl) {
 
     // 1. Inicializa o mapa e guarda a instância dele
-    const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl, username);
+    const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl);
 
     // 2. Encontra o botão da proposta
     const btnAbrirProposta = document.getElementById('btnAbrirProposta');
