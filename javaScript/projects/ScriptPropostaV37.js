@@ -66,7 +66,9 @@ function configurarEventosDoModal() {
     const telefoneInput = document.getElementById("propClienteTelefone");
     telefoneInput.addEventListener("input", () => {
         let value = telefoneInput.value;
-        value = value.replace(/(\(?\d{2}\)?\s?)(\d{5})-?(\d{4})/); // Aplica a máscara: (xx) xxxxx-xxxx
+        value = value.replace(/\D/g, ""); // Remove tudo que não for número
+        value = value.replace(/^(\d{2})(\d)/, '($1) $2'); // Aplica a máscara: (xx) xxxxx-xxxx
+        value = value.replace(/(\d{5})(\d)/, '$1-$2');
         telefoneInput.value = value;
     });
 }
