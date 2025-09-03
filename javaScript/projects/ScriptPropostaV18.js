@@ -86,6 +86,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
         // Passo D: Preenche os dados da condição comercial.
         document.getElementById('propValorEntrada').value = (loteSelecionado.Valor * 0.25).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('propQtdeParcelas').value = 48;
 
         // Passo E: Finalmente, mostra o modal.
         modal.style.display = 'flex';
