@@ -3,7 +3,7 @@ import { iniciarMapa } from './ScriptLotesV03.js';
 import { abrirEPreencherModalProposta } from './ScriptPropostaV52.js';
 
 // Função principal de inicialização do aplicativo
-function inicializarApp(empreendimentosJSON, projectsUrl) {
+function inicializarApp(empreendimentosJSON, projectsUrl, username) {
 
     // 1. Inicializa o mapa e guarda a instância dele
     const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl);
