@@ -107,14 +107,16 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
         
-        document.getElementById('propClienteNome').value = formatadorDeMoeda.format(loteSelecionado.Valor);
-        document.getElementById('propClienteNome').disabled = true;
         
-
+        
         // Passo D: Preenche os dados da condição financeira.
         const finValorEntrada = loteSelecionado.Valor * 0.25;
         const finValorParcela = loteSelecionado.Valor * 0.012;
         const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
+
+        document.getElementById('propClienteNome').value = formatadorDeMoeda.format(finValorEntrada);
+        document.getElementById('propClienteNome').disabled = true;
+        
         document.getElementById('propValorEntrada').value = finValorEntrada;
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
