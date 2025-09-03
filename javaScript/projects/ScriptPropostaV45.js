@@ -107,7 +107,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
         
-        document.getElementById('propClienteNome').value = "R$ 250.000,00";
+        document.getElementById('propClienteNome').value = formatadorDeMoeda.format(loteSelecionado.Valor);
         document.getElementById('propClienteNome').disabled = true;
         
 
