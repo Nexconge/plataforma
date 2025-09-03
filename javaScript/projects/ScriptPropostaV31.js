@@ -225,14 +225,13 @@ async function gerarProposta() {
     yAtual += 8;
 
     doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data Vencimento Entrada: ${dados.finDataEntrada}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data Vencimento Entrada: ${dados.finDataEntrada.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Parcelas: ${dados.finDataParcela}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento Parcelas: ${dados.finDataParcela.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Reforços: ${dados.finDataReforco}`, 20, yAtual);
-    yAtual += 16;
+    doc.text(`Data de Vencimento Reforços: ${dados.finDataReforco.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 16;
 
     // Assinaturas
     doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
@@ -271,7 +270,7 @@ async function gerarProposta() {
     doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
 
     yAtual = 230
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
     yAtual += 20;
 
     // Define posição, tamanho e desenha as linhas
