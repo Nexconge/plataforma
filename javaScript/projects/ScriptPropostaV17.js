@@ -83,8 +83,11 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    
-        // Passo D: Finalmente, mostra o modal.
+
+        // Passo D: Preenche os dados da condição comercial.
+        document.getElementById('propValorEntrada').value = (loteSelecionado.Valor * 0.25).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Passo E: Finalmente, mostra o modal.
         modal.style.display = 'flex';
         header.style.display = 'none';
 
