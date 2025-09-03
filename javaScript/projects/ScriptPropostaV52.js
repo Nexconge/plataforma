@@ -1,5 +1,5 @@
 // Se não foi, ela baixa o HTML, injeta na página e configura os eventos.
-async function garantirEstruturaModal() {
+async function garantirEstruturaModal(username) {
     // Se o modal já existe, não fazemos nada e retornamos imediatamente.
     if (document.getElementById('modalProposta')) {
         return;
@@ -16,11 +16,11 @@ async function garantirEstruturaModal() {
     modalContainer.innerHTML = html;
 
     // Configura os eventos internos do modal (fechar, submit).
-    configurarEventosDoModal();
+    configurarEventosDoModal(username);
 }
 
 // Configura os eventos que são parte do modal (fechar, submeter formulário)
-function configurarEventosDoModal() {
+function configurarEventosDoModal(username) {
     const modal = document.getElementById('modalProposta');
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
@@ -48,7 +48,7 @@ function configurarEventosDoModal() {
     // Evento para o envio do formulário, que chama a geração do PDF
     formProposta.addEventListener('submit', (e) => {
         e.preventDefault();
-        gerarProposta(); // Chamando a função de gerar PDF
+        gerarProposta(username); // Chamando a função de gerar PDF
     });
 
     // Evento de mascara do campo de CPF
@@ -77,12 +77,12 @@ function configurarEventosDoModal() {
 // --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
 // Esta é a função que o botão do Bubble vai chamar.
 // Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
-export async function abrirEPreencherModalProposta(mapaManager) {
+export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     try {
         // Passo A: Garante que a estrutura do modal exista na página.
         // A função 'garantirEstruturaModal' só vai baixar o HTML na primeira vez.
-        await garantirEstruturaModal();
+        await garantirEstruturaModal(username);
 
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
         const modal = document.getElementById('modalProposta');
@@ -137,7 +137,7 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
 // ----------------------------
 // Função principal para gerar o PDF
-async function gerarProposta() {
+async function gerarProposta(username) {
     const { jsPDF } = window.jspdf;
 
     // Captura os dados do formulário
@@ -266,7 +266,7 @@ async function gerarProposta() {
     doc.line(118, yAtual, 178, yAtual);
 
     doc.setFontSize(10);
-    doc.text("Robson Kollett", 62, yAtual + 5, { align: 'center' });
+    doc.text(username, 62, yAtual + 5, { align: 'center' });
     doc.text("Corretor", 62, yAtual + 10, { align: 'center' });
     doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 148, yAtual + 10, { align: 'center' });

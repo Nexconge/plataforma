@@ -1,12 +1,12 @@
 // Importa as funções públicas dos outros módulos
 import { iniciarMapa } from './ScriptLotesV03.js';
-import { abrirEPreencherModalProposta } from './ScriptPropostaV51.js';
+import { abrirEPreencherModalProposta } from './ScriptPropostaV52.js';
 
 // Função principal de inicialização do aplicativo
 function inicializarApp(empreendimentosJSON, projectsUrl) {
 
     // 1. Inicializa o mapa e guarda a instância dele
-    const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl);
+    const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl, username);
 
     // 2. Encontra o botão da proposta
     const btnAbrirProposta = document.getElementById('btnAbrirProposta');
@@ -15,7 +15,7 @@ function inicializarApp(empreendimentosJSON, projectsUrl) {
         // 3. Conecta o botão à função da proposta
         btnAbrirProposta.addEventListener('click', () => {
             // Ao clicar, chama a função importada, passando a instância do mapa para ela
-            abrirEPreencherModalProposta(mapaManager);
+            abrirEPreencherModalProposta(mapaManager, username);
         });
         console.log("Botão da proposta conectado com sucesso.");
     } else {
