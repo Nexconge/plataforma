@@ -84,8 +84,8 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        // Passo D: Preenche os dados da condição comercial.
-        document.getElementById('propValorEntrada').value = (loteSelecionado.Valor * 0.25).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        // Passo D: Preenche os dados da condição financeira.
+        document.getElementById('propValorEntrada').value = (loteSelecionado.Valor) //.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
