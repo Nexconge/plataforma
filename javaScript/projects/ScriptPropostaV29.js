@@ -122,7 +122,7 @@ async function gerarProposta() {
         lote: document.getElementById('propLoteNome')?.textContent || '',
         area: parseFloat(document.getElementById('propLoteArea')?.textContent) || 0,
         valorTotal: parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        valorMetroQuadrado: (valorTotal / area) || 0,
+        valorMetroQuadrado: (dados.valorTotal / dados.area) || 0,
 
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
