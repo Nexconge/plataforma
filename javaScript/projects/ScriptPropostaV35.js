@@ -50,6 +50,17 @@ function configurarEventosDoModal() {
         e.preventDefault();
         gerarProposta(); // Chamando a função de gerar PDF
     });
+
+    // Evento para alterar a mascara do campo de CPF
+    const cpfInput = document.getElementById("propClienteCPF");
+    cpfInput.addEventListener("input", () => {
+        let value = cpfInput.value;
+        value = value.replace(/\D/g, ""); // Remove tudo que não for número
+        value = value.replace(/(\d{3})(\d)/, "$1.$2"); // Aplica a máscara: xxx.xxx.xxx-xx
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        cpfInput.value = value;
+    });
 }
 
 
@@ -109,10 +120,6 @@ export async function abrirEPreencherModalProposta(mapaManager) {
         alert("Não foi possível abrir o menu da proposta. Verifique o console para mais detalhes.");
     }
 }
-
-// ----------------------------
-// Mascaras para os campos de input
-Inputmask("999.999.999-99").mask("#propClienteCPF");
 
 // ----------------------------
 // Função principal para gerar o PDF
