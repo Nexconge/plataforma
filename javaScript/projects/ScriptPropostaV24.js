@@ -86,15 +86,17 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
         // Passo D: Preenche os dados da condição financeira.
         const finValorEntrada = loteSelecionado.Valor * 0.25;
-        document.getElementById('propValorEntrada').value = finValorEntrada //.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const finValorParcela = loteSelecionado.Valor * 0.012;
+        const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
+        document.getElementById('propValorEntrada').value = finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         document.getElementById('propValorEntrada').disabled = true;
         document.getElementById('propQtdeParcelas').value = 48;
         document.getElementById('propQtdeParcelas').disabled = true;
-        document.getElementById('propValorParcela').value = 8500;
+        document.getElementById('propValorParcela').value = finValorParcela
         document.getElementById('propValorParcela').disabled = true;
         document.getElementById('propQtdeReforcos').value = 4;
         document.getElementById('propQtdeReforcos').disabled = true;
-        document.getElementById('propValorReforco').value = 30000;
+        document.getElementById('propValorReforco').value = finValorReforco
         document.getElementById('propValorReforco').disabled = true;
 
 
