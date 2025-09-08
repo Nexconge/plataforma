@@ -89,6 +89,11 @@ table tbody tr:last-child td:last-child {
     background-color: white;
 }
 
+.linhaClasseDetalhamento {
+    background-color: #A6CCEB;
+    font-weight: bold;
+}
+
 .linhaBranco {
     height: 30px;
 }
@@ -105,15 +110,12 @@ table tbody tr:last-child td:last-child {
     padding-left: 50px !important;
 }
 
-#tabelaCustos .linha-depto {
+#tabelaCustos .linhaDepto {
     background-color: white;
 }
 
 #tabelaCustos .linha-lancamento {
     font-size: 12px;
-}
-
-#tabelaCustos .linha-lancamento {
     background-color: white;
 }
 

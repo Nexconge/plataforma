@@ -1,12 +1,12 @@
 // Se não foi, ela baixa o HTML, injeta na página e configura os eventos.
-async function garantirEstruturaModal() {
+async function garantirEstruturaModal(username) {
     // Se o modal já existe, não fazemos nada e retornamos imediatamente.
     if (document.getElementById('modalProposta')) {
         return;
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma/html/menuProposta.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV03.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
@@ -16,11 +16,11 @@ async function garantirEstruturaModal() {
     modalContainer.innerHTML = html;
 
     // Configura os eventos internos do modal (fechar, submit).
-    configurarEventosDoModal();
+    configurarEventosDoModal(username);
 }
 
 // Configura os eventos que são parte do modal (fechar, submeter formulário)
-function configurarEventosDoModal() {
+function configurarEventosDoModal(username) {
     const modal = document.getElementById('modalProposta');
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
@@ -48,7 +48,28 @@ function configurarEventosDoModal() {
     // Evento para o envio do formulário, que chama a geração do PDF
     formProposta.addEventListener('submit', (e) => {
         e.preventDefault();
-        gerarProposta(); // Chamando a função de gerar PDF
+        gerarProposta(username); // Chamando a função de gerar PDF
+    });
+
+    // Evento de mascara do campo de CPF
+    const cpfInput = document.getElementById("propClienteCPF");
+    cpfInput.addEventListener("input", () => {
+        let value = cpfInput.value;
+        value = value.replace(/\D/g, ""); // Remove tudo que não for número
+        value = value.replace(/(\d{3})(\d)/, "$1.$2"); // Aplica a máscara: xxx.xxx.xxx-xx
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        cpfInput.value = value;
+    });
+
+    // Evento de mascara do campo de telefone
+    const telefoneInput = document.getElementById("propClienteTelefone");
+    telefoneInput.addEventListener("input", () => {
+        let value = telefoneInput.value;
+        value = value.replace(/\D/g, ""); // Remove tudo que não for número
+        value = value.replace(/^(\d{2})(\d)/, '($1) $2'); // Aplica a máscara: (xx) xxxxx-xxxx
+        value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        telefoneInput.value = value;
     });
 }
 
@@ -56,12 +77,12 @@ function configurarEventosDoModal() {
 // --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
 // Esta é a função que o botão do Bubble vai chamar.
 // Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
-export async function abrirEPreencherModalProposta(mapaManager) {
+export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     try {
         // Passo A: Garante que a estrutura do modal exista na página.
         // A função 'garantirEstruturaModal' só vai baixar o HTML na primeira vez.
-        await garantirEstruturaModal();
+        await garantirEstruturaModal(username);
 
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
         const modal = document.getElementById('modalProposta');
@@ -77,13 +98,34 @@ export async function abrirEPreencherModalProposta(mapaManager) {
             return;
         }
 
+        const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
         // Passo C: Preenche os dados do lote selecionado no formulário.
         const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
-        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome || 'N/A';
-        document.getElementById('propLoteArea').textContent = loteSelecionado.Área || '0';
-        document.getElementById('propLoteValor').textContent = (loteSelecionado.Valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[1] || 'N/A';
+        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
+        document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
+        
+        
+        
+        // Passo D: Preenche os dados da condição financeira.
+        const finValorEntrada = loteSelecionado.Valor * 0.25;
+        const finValorParcela = loteSelecionado.Valor * 0.012;
+        const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
+        document.getElementById('propValorEntrada').value = formatadorDeMoeda.format(finValorEntrada);
+        document.getElementById('propValorEntrada').disabled = true;
+        document.getElementById('propQtdeParcelas').value = 48;
+        document.getElementById('propQtdeParcelas').disabled = true;
+        document.getElementById('propValorParcela').value = formatadorDeMoeda.format(finValorParcela);
+        document.getElementById('propValorParcela').disabled = true;
+        document.getElementById('propQtdeReforcos').value = 4;
+        document.getElementById('propQtdeReforcos').disabled = true;
+        document.getElementById('propValorReforco').value = formatadorDeMoeda.format(finValorReforco);
+        document.getElementById('propValorReforco').disabled = true;
 
-        // Passo D: Finalmente, mostra o modal.
+
+        // Passo E: Finalmente, mostra o modal.
         modal.style.display = 'flex';
         header.style.display = 'none';
 
@@ -95,17 +137,17 @@ export async function abrirEPreencherModalProposta(mapaManager) {
 
 // ----------------------------
 // Função principal para gerar o PDF
-async function gerarProposta() {
+async function gerarProposta(username) {
     const { jsPDF } = window.jspdf;
 
     // Captura os dados do formulário
     const dados = {
         // Lote
-        quadra: document.getElementById('propQuadra')?.value || '',
+        quadra: document.getElementById('propQuadraNome')?.textContent || '',
         lote: document.getElementById('propLoteNome')?.textContent || '',
         area: parseFloat(document.getElementById('propLoteArea')?.textContent) || 0,
         valorTotal: parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        valorMetroQuadrado: parseFloat(document.getElementById('propValorMetro')?.value) || 0,
+        valorMetroQuadrado: (parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) / parseFloat(document.getElementById('propLoteArea')?.textContent)) || 0,
 
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
@@ -118,14 +160,14 @@ async function gerarProposta() {
         cidadeCliente: document.getElementById('propClienteCidade')?.value || '',
 
         // Financeiro
-        finValorEntrada: parseFloat(document.getElementById('propValorEntrada').value) || 0,
-        finDataEntrada: document.getElementById('propDataEntrada').value || '',
+        finValorEntrada: parseFloat(document.getElementById('propValorEntrada')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        finDataEntrada: new Date(document.getElementById('propDataEntrada').value) || '',
         finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
-        finValorParcela: parseFloat(document.getElementById('propValorParcela').value) || 0,
-        finDataParcela: document.getElementById('propDataPrimeiraParcela').value || '',
+        finValorParcela: parseFloat(document.getElementById('propValorParcela')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        finDataParcela: new Date(document.getElementById('propDataPrimeiraParcela').value) || '',
         finQntReforco: parseInt(document.getElementById('propQtdeReforcos').value) || 0,
-        finValorReforco: parseFloat(document.getElementById('propValorReforco').value) || 0,
-        finDataReforco: document.getElementById('propDataPrimeiroReforco').value || ''
+        finValorReforco: parseFloat(document.getElementById('propValorReforco')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        finDataReforco: new Date(document.getElementById('propDataPrimeiroReforco').value) || ''
     };
 
     // ----------------------------
@@ -208,24 +250,23 @@ async function gerarProposta() {
     yAtual += 8;
 
     doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data Vencimento Entrada: ${dados.finDataEntrada}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento Entrada: ${dados.finDataEntrada.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Parcelas: ${dados.finDataParcela}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1ª Parcela: ${dados.finDataParcela.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Reforços: ${dados.finDataReforco}`, 20, yAtual);
-    yAtual += 16;
+    doc.text(`Data de Vencimento 1º Reforço: ${dados.finDataReforco.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 16;
 
     // Assinaturas
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
     yAtual += 28;
 
     doc.line(32, yAtual, 92, yAtual);
     doc.line(118, yAtual, 178, yAtual);
 
     doc.setFontSize(10);
-    doc.text("Robson Kollett", 62, yAtual + 5, { align: 'center' });
+    doc.text(username, 62, yAtual + 5, { align: 'center' });
     doc.text("Corretor", 62, yAtual + 10, { align: 'center' });
     doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
@@ -254,7 +295,7 @@ async function gerarProposta() {
     doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
 
     yAtual = 230
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
     yAtual += 20;
 
     // Define posição, tamanho e desenha as linhas

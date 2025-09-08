@@ -30,8 +30,14 @@ async function obterDataAtualizacaoArquivo(url) {
  * @returns {Promise<Array>} Uma promessa que resolve para o array de lançamentos.
  */
 async function buscarLancamentos(filtros) {
-    // Substitua '/api/buscar-lancamentos' pela URL real da sua API
-    const API_URL = 'https://plataforma-geourb.bubbleapps.io/version-live/api/1.1/wf/buscarlancamentos'; 
+    //Monta a URL da API dependendo do ambiente (teste ou produção)
+    let baseURL = "https://plataforma-geourb.bubbleapps.io/";
+    if (window.location.href.includes("version-test")) {
+        baseURL += "version-test";
+    } else {
+        baseURL += "version-live";
+    }
+    const API_URL = `${baseURL}/api/1.1/wf/buscarlancamentos`;
 
     try {
         const response = await fetch(API_URL, {
