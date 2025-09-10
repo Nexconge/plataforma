@@ -215,6 +215,7 @@ async function gerarProposta(username) {
     ];
     let faltando = obrigatorios.filter(campo => {
         const valor = dados[campo];
+        console.log(`Verificando campo ${campo}:`, valor);
         return (
             valor === '' || valor === null ||
             valor === 'dd/mm/aaaa' || valor === '__/__/____' || // máscara não preenchida
