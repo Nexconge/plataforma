@@ -6,7 +6,7 @@ async function garantirEstruturaModal(username) {
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV03.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV04.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
