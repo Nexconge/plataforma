@@ -52,7 +52,7 @@ async function buscarLancamentos(filtros) {
             const errorText = await response.text();
             throw new Error(`Falha ao buscar lançamentos: ${response.status} ${response.statusText} - ${errorText}`);
         }
-
+        console.log("Resposta da API (JSON):", await response.clone().json());
         return await response.json();
     } catch (error) {
         console.error("Erro crítico ao buscar lançamentos:", error);
