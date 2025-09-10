@@ -6,7 +6,7 @@ async function garantirEstruturaModal(username) {
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV04.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV05.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
@@ -53,13 +53,22 @@ function configurarEventosDoModal(username) {
 
     // Evento de mascara do campo de CPF
     const cpfInput = document.getElementById("propClienteCPF");
-    cpfInput.addEventListener("input", () => {
-        let value = cpfInput.value;
-        value = value.replace(/\D/g, ""); // Remove tudo que não for número
-        value = value.replace(/(\d{3})(\d)/, "$1.$2"); // Aplica a máscara: xxx.xxx.xxx-xx
-        value = value.replace(/(\d{3})(\d)/, "$1.$2");
-        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        cpfInput.value = value;
+    cpfInput.addEventListener('input', function () {
+        let valor = this.value.replace(/\D/g, ''); // só números
+
+        if (valor.length <= 11) {
+            // CPF: 000.000.000-00
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            // CNPJ: 00.000.000/0000-00
+            valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+            valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+        }
+        this.value = valor;
     });
 
     // Evento de mascara do campo de telefone
@@ -191,6 +200,26 @@ async function gerarProposta(username) {
         finValorReforco: parseFloat(document.getElementById('propValorReforco')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
         finDataReforco: new Date(document.getElementById('propDataPrimeiroReforco').value) || ''
     };
+
+    // Validação: todos os campos obrigatórios
+    const obrigatorios = [
+        'quadra','lote','area','valorTotal',
+        'nomeCliente','cpfCliente','emailCliente','telefoneCliente',
+        'profissaoCliente','estadoCivilCliente','enderecoCliente','cidadeCliente',
+        'finValorEntrada','finDataEntrada','finQntParcela','finValorParcela',
+        'finDataParcela','finQntReforco','finValorReforco','finDataReforco'
+    ];
+    let faltando = obrigatorios.filter(campo => {
+        const valor = dados[campo];
+        return (
+            valor === '' || valor === null || 
+            (typeof valor === 'number' && (isNaN(valor) || valor <= 0))
+        );
+    });
+    if (faltando.length > 0) {
+        alert("⚠️ Preencha todos os campos obrigatórios antes de gerar a proposta!");
+        return; // interrompe a função
+    }
 
     // ----------------------------
     // Geração do PDF
