@@ -143,12 +143,11 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
     }
 }
 
-<<<<<<<< HEAD:javaScript/projects/ScriptPropostaV01.js
 function parseNumeroBR(valor) {
     if (!valor) return 0;
     return parseFloat(valor.replace(/\./g, '').replace(',', '.'));
 }
-========
+
 function parseBR(valor) {
     if (!valor) return 0;
     return parseFloat(
@@ -160,7 +159,6 @@ function parseBR(valor) {
     ) || 0;
 }
 
->>>>>>>> developer:javaScript/projects/ScriptPropostaV04.js
 // ----------------------------
 // Função principal para gerar o PDF
 async function gerarProposta(username) {
@@ -171,7 +169,7 @@ async function gerarProposta(username) {
         // Lote
         quadra: document.getElementById('propQuadraNome')?.textContent || '',
         lote: document.getElementById('propLoteNome')?.textContent || '',
-<<<<<<<< HEAD:javaScript/projects/ScriptPropostaV01.js
+
         area: parseNumeroBR(document.getElementById('propLoteArea')?.textContent),
         valorTotal: parseNumeroBR(document.getElementById('propLoteValor')?.textContent),
         valorMetroQuadrado: (
@@ -179,7 +177,6 @@ async function gerarProposta(username) {
             parseNumeroBR(document.getElementById('propLoteArea')?.textContent)
         ) || 0,
 
-========
         area: parseBR(document.getElementById('propLoteArea')?.textContent),
         valorTotal: parseBR(document.getElementById('propLoteValor')?.textContent),
         valorMetroQuadrado: (
@@ -187,7 +184,6 @@ async function gerarProposta(username) {
             parseBR(document.getElementById('propLoteArea')?.textContent)
         ) || 0,
         
->>>>>>>> developer:javaScript/projects/ScriptPropostaV04.js
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
         cpfCliente: document.getElementById('propClienteCPF').value || '',
