@@ -55,7 +55,11 @@ function configurarEventosDoModal(username) {
     const cpfInput = document.getElementById("propClienteCPF");
     cpfInput.addEventListener('input', function () {
         let valor = this.value.replace(/\D/g, ''); // só números
-
+        //Limita a 14 caracteres (CNPJ)
+        if (valor.length > 14) {
+            valor = valor.substring(0, 14);
+        }
+        //Aplica a mascara
         if (valor.length <= 11) {
             // CPF: 000.000.000-00
             valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
@@ -212,7 +216,8 @@ async function gerarProposta(username) {
     let faltando = obrigatorios.filter(campo => {
         const valor = dados[campo];
         return (
-            valor === '' || valor === null || 
+            valor === '' || valor === null ||
+            valor === 'dd/mm/aaaa' || valor === '__/__/____' || // máscara não preenchida
             (typeof valor === 'number' && (isNaN(valor) || valor <= 0))
         );
     });
