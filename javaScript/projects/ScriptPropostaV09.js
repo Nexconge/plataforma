@@ -196,13 +196,13 @@ async function gerarProposta(username) {
 
         // Financeiro
         finValorEntrada: parseFloat(document.getElementById('propValorEntrada')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        finDataEntrada: new Date(document.getElementById('propDataEntrada').value) || '',
+        finDataEntrada: document.getElementById('propDataEntrada').value || '',
         finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
         finValorParcela: parseFloat(document.getElementById('propValorParcela')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        finDataParcela: new Date(document.getElementById('propDataPrimeiraParcela').value) || '',
+        finDataParcela: document.getElementById('propDataPrimeiraParcela').value || '',
         finQntReforco: parseInt(document.getElementById('propQtdeReforcos').value) || 0,
         finValorReforco: parseFloat(document.getElementById('propValorReforco')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        finDataReforco: new Date(document.getElementById('propDataPrimeiroReforco').value) || ''
+        finDataReforco: document.getElementById('propDataPrimeiroReforco').value || ''
     };
 
     // Validação: todos os campos obrigatórios
