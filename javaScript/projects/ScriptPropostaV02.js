@@ -102,6 +102,13 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
         // Passo C: Preenche os dados do lote selecionado no formulário.
         const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
+        
+        //Verifica se o lote selecionado está disponível
+        if (loteSelecionado.Status !== "Disponível") {
+            alert("O lote selecionado não está disponível para venda. Por favor, escolha outro lote.");
+            return;
+        }
+        
         document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[1] || 'N/A';
         document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
