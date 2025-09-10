@@ -3,7 +3,7 @@
 // --- Importa as funções de cada módulo especializado ---
 import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV17.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV12.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV19.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV20.js';
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {

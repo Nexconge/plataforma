@@ -267,8 +267,6 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
-    tabelaDRE = document.getElementById('tabelaMatriz');
-    tabelaDEPARTAMENTOS = document.getElementById('tabelaCustos');
     
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
