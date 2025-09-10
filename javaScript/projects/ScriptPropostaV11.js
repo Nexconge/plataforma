@@ -6,7 +6,7 @@ async function garantirEstruturaModal(username) {
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV04.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV05.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
@@ -53,13 +53,26 @@ function configurarEventosDoModal(username) {
 
     // Evento de mascara do campo de CPF
     const cpfInput = document.getElementById("propClienteCPF");
-    cpfInput.addEventListener("input", () => {
-        let value = cpfInput.value;
-        value = value.replace(/\D/g, ""); // Remove tudo que não for número
-        value = value.replace(/(\d{3})(\d)/, "$1.$2"); // Aplica a máscara: xxx.xxx.xxx-xx
-        value = value.replace(/(\d{3})(\d)/, "$1.$2");
-        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        cpfInput.value = value;
+    cpfInput.addEventListener('input', function () {
+        let valor = this.value.replace(/\D/g, ''); // só números
+        //Limita a 14 caracteres (CNPJ)
+        if (valor.length > 14) {
+            valor = valor.substring(0, 14);
+        }
+        //Aplica a mascara
+        if (valor.length <= 11) {
+            // CPF: 000.000.000-00
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            // CNPJ: 00.000.000/0000-00
+            valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+            valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+        }
+        this.value = valor;
     });
 
     // Evento de mascara do campo de telefone
@@ -158,7 +171,11 @@ function parseBR(valor) {
             .replace(',', '.')        // troca vírgula decimal por ponto
     ) || 0;
 }
-
+function formatDateStr(dataStr) {
+    if (!dataStr) return '';
+    const [ano, mes, dia] = dataStr.split('-');
+    return `${dia}/${mes}/${ano}`;
+}
 // ----------------------------
 // Função principal para gerar o PDF
 async function gerarProposta(username) {
@@ -196,14 +213,35 @@ async function gerarProposta(username) {
 
         // Financeiro
         finValorEntrada: parseFloat(document.getElementById('propValorEntrada')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        finDataEntrada: new Date(document.getElementById('propDataEntrada').value) || '',
+        finDataEntrada: document.getElementById('propDataEntrada').value || '',
         finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
         finValorParcela: parseFloat(document.getElementById('propValorParcela')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        finDataParcela: new Date(document.getElementById('propDataPrimeiraParcela').value) || '',
+        finDataParcela: document.getElementById('propDataPrimeiraParcela').value || '',
         finQntReforco: parseInt(document.getElementById('propQtdeReforcos').value) || 0,
         finValorReforco: parseFloat(document.getElementById('propValorReforco')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        finDataReforco: new Date(document.getElementById('propDataPrimeiroReforco').value) || ''
+        finDataReforco: document.getElementById('propDataPrimeiroReforco').value || ''
     };
+
+    // Validação: todos os campos obrigatórios
+    const obrigatorios = [
+        'quadra','lote','area','valorTotal',
+        'nomeCliente','cpfCliente','emailCliente','telefoneCliente',
+        'profissaoCliente','estadoCivilCliente','enderecoCliente','cidadeCliente',
+        'finValorEntrada','finDataEntrada','finQntParcela','finValorParcela',
+        'finDataParcela','finQntReforco','finValorReforco','finDataReforco'
+    ];
+    let faltando = obrigatorios.filter(campo => {
+        const valor = dados[campo];
+        return (
+            valor === '' || valor === null ||
+            valor === 'dd/mm/aaaa' || valor === "Invalid Date" || // máscara não preenchida
+            (typeof valor === 'number' && (isNaN(valor) || valor <= 0))
+        );
+    });
+    if (faltando.length > 0) {
+        alert("⚠️ Preencha todos os campos obrigatórios antes de gerar a proposta!");
+        return; // interrompe a função
+    }
 
     // ----------------------------
     // Geração do PDF
@@ -285,13 +323,13 @@ async function gerarProposta(username) {
     yAtual += 8;
 
     doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Entrada: ${dados.finDataEntrada.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento Entrada: ${formatDateStr(dados.finDataEntrada)}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento 1ª Parcela: ${dados.finDataParcela.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1ª Parcela: ${formatDateStr(dados.finDataParcela)}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
     doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento 1º Reforço: ${dados.finDataReforco.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`, 20, yAtual); yAtual += 16;
+    doc.text(`Data de Vencimento 1º Reforço: ${formatDateStr(dados.finDataReforco)}`, 20, yAtual); yAtual += 16;
 
     // Assinaturas
     doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
