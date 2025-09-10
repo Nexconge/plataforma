@@ -1,5 +1,5 @@
 // ui.js
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV10.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV11.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -267,6 +267,9 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
+    tabelaDRE = document.getElementById('tabelaMatriz');
+    tabelaDEPARTAMENTOS = document.getElementById('tabelaCustos');
+    
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
