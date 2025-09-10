@@ -6,7 +6,7 @@ async function garantirEstruturaModal(username) {
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV03.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV04.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
@@ -80,8 +80,20 @@ function configurarEventosDoModal(username) {
 export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     try {
-        // Passo A: Garante que a estrutura do modal exista na página.
-        // A função 'garantirEstruturaModal' só vai baixar o HTML na primeira vez.
+
+        if (typeof mapaManager === 'undefined' || !mapaManager.selectedLoteId) {
+            alert("Por favor, selecione um lote no mapa primeiro!");
+            return;
+        }
+        const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
+
+        //Verifica se o lote selecionado está disponível
+        if (loteSelecionado.Status !== "Disponível") {
+            alert("O lote selecionado não está disponível para venda. Por favor, escolha outro lote.");
+            return;
+        }
+
+        //Baixa o HTML do modal, se necessário, e injeta na página
         await garantirEstruturaModal(username);
 
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
@@ -92,22 +104,18 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
             throw new Error("Ocorreu um erro crítico e o modal não pôde ser criado.");
         }
 
-        // Passo B: Valida se um lote está selecionado.
-        if (typeof mapaManager === 'undefined' || !mapaManager.selectedLoteId) {
-            alert("Por favor, selecione um lote no mapa primeiro!");
-            return;
+        const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const match = loteSelecionado.Nome.match(/^Q(\d+)([A-Z]+)(\d+)$/); //Ragex para encontrar o primeiro conjunto de letras depois de Q para definir o numero do lote.
+        if (match) {
+            document.getElementById('propQuadraNome').textContent = match[1] || 'N/A'; // Quadra
+            document.getElementById('propLoteNome').textContent = match[3] || 'N/A';   // Lote
+        } else {
+            document.getElementById('propQuadraNome').textContent = 'N/A';
+            document.getElementById('propLoteNome').textContent = 'N/A';
         }
 
-        const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-        // Passo C: Preenche os dados do lote selecionado no formulário.
-        const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
-        document.getElementById('propQuadraNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[1] || 'N/A';
-        document.getElementById('propLoteNome').textContent = loteSelecionado.Nome.match(/^Q(.*?)L(.*)$/)[2] || 'N/A';
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
-        
-        
         
         // Passo D: Preenche os dados da condição financeira.
         const finValorEntrada = loteSelecionado.Valor * 0.25;
@@ -135,10 +143,24 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
     }
 }
 
+<<<<<<<< HEAD:javaScript/projects/ScriptPropostaV01.js
 function parseNumeroBR(valor) {
     if (!valor) return 0;
     return parseFloat(valor.replace(/\./g, '').replace(',', '.'));
 }
+========
+function parseBR(valor) {
+    if (!valor) return 0;
+    return parseFloat(
+        valor
+            .toString()
+            .replace(/[^\d,.-]/g, '') // remove R$, espaços e caracteres não numéricos
+            .replace(/\./g, '')       // remove pontos de milhar
+            .replace(',', '.')        // troca vírgula decimal por ponto
+    ) || 0;
+}
+
+>>>>>>>> developer:javaScript/projects/ScriptPropostaV04.js
 // ----------------------------
 // Função principal para gerar o PDF
 async function gerarProposta(username) {
@@ -149,6 +171,7 @@ async function gerarProposta(username) {
         // Lote
         quadra: document.getElementById('propQuadraNome')?.textContent || '',
         lote: document.getElementById('propLoteNome')?.textContent || '',
+<<<<<<<< HEAD:javaScript/projects/ScriptPropostaV01.js
         area: parseNumeroBR(document.getElementById('propLoteArea')?.textContent),
         valorTotal: parseNumeroBR(document.getElementById('propLoteValor')?.textContent),
         valorMetroQuadrado: (
@@ -156,6 +179,15 @@ async function gerarProposta(username) {
             parseNumeroBR(document.getElementById('propLoteArea')?.textContent)
         ) || 0,
 
+========
+        area: parseBR(document.getElementById('propLoteArea')?.textContent),
+        valorTotal: parseBR(document.getElementById('propLoteValor')?.textContent),
+        valorMetroQuadrado: (
+            parseBR(document.getElementById('propLoteValor')?.textContent) /
+            parseBR(document.getElementById('propLoteArea')?.textContent)
+        ) || 0,
+        
+>>>>>>>> developer:javaScript/projects/ScriptPropostaV04.js
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
         cpfCliente: document.getElementById('propClienteCPF').value || '',

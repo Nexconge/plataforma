@@ -1,6 +1,10 @@
 // Importa as funções públicas dos outros módulos
 import { iniciarMapa } from './ScriptLotesV03.js';
+<<<<<<<< HEAD:javaScript/projects/mainV01.js
 import { abrirEPreencherModalProposta } from './ScriptPropostaV01.js';
+========
+import { abrirEPreencherModalProposta } from './ScriptPropostaV04.js';
+>>>>>>>> developer:javaScript/projects/mainV04.js
 
 // Função principal de inicialização do aplicativo
 function inicializarApp(empreendimentosJSON, projectsUrl, username) {
