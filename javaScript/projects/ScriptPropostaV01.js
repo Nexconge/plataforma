@@ -135,6 +135,17 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
     }
 }
 
+function parseBR(valor) {
+    if (!valor) return 0;
+    return parseFloat(
+        valor
+            .toString()
+            .replace(/[^\d,.-]/g, '') // remove R$, espaços e caracteres não numéricos
+            .replace(/\./g, '')       // remove pontos de milhar
+            .replace(',', '.')        // troca vírgula decimal por ponto
+    ) || 0;
+}
+
 // ----------------------------
 // Função principal para gerar o PDF
 async function gerarProposta(username) {
@@ -145,10 +156,13 @@ async function gerarProposta(username) {
         // Lote
         quadra: document.getElementById('propQuadraNome')?.textContent || '',
         lote: document.getElementById('propLoteNome')?.textContent || '',
-        area: parseFloat(document.getElementById('propLoteArea')?.textContent) || 0,
-        valorTotal: parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
-        valorMetroQuadrado: (parseFloat(document.getElementById('propLoteValor')?.textContent.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) / parseFloat(document.getElementById('propLoteArea')?.textContent)) || 0,
-
+        area: parseBR(document.getElementById('propLoteArea')?.textContent),
+        valorTotal: parseBR(document.getElementById('propLoteValor')?.textContent),
+        valorMetroQuadrado: (
+            parseBR(document.getElementById('propLoteValor')?.textContent) /
+            parseBR(document.getElementById('propLoteArea')?.textContent)
+        ) || 0,
+        
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
         cpfCliente: document.getElementById('propClienteCPF').value || '',
