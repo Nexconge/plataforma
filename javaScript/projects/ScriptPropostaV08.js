@@ -218,7 +218,7 @@ async function gerarProposta(username) {
         console.log(`Verificando campo ${campo}:`, valor);
         return (
             valor === '' || valor === null ||
-            valor === 'dd/mm/aaaa' || valor === '__/__/____' || // máscara não preenchida
+            valor === 'dd/mm/aaaa' || valor === "Invalid Date" || // máscara não preenchida
             (typeof valor === 'number' && (isNaN(valor) || valor <= 0))
         );
     });
