@@ -44,17 +44,27 @@ async function handleFiltroChange() {
         // 1. Busca somente as contas faltantes
         if (contasParaBuscar.length > 0) {
             const filtrosAPI = { ...filtros, contas: contasParaBuscar };
+
+            // 🔑 já cria o slot no cache antes de chamar a API
+            contasParaBuscar.forEach(c => {
+                const cod = String(c);
+                if (!appCache.lancamentosPorConta.has(cod)) {
+                    appCache.lancamentosPorConta.set(cod, []); 
+                }
+            });
+
+            // Chama a API para buscar os lançamentos faltantes
             const apiResponse = await buscarLancamentos(filtrosAPI);
+
+
             if (apiResponse && apiResponse.response && typeof apiResponse.response.lancamentos === 'string') {
                 try {
                     const lancamentosNovos = JSON.parse(`[${apiResponse.response.lancamentos}]`);
                     // Distribui os lançamentos no cache por conta
                     lancamentosNovos.forEach(l => {
                         const cod = String(l.CODContaC);
-                        if (!appCache.lancamentosPorConta.has(cod)) {
-                            appCache.lancamentosPorConta.set(cod, []);
-                        }
-                        appCache.lancamentosPorConta.get(cod).push(l);
+                        const lista = appCache.lancamentosPorConta.get(cod);
+                        lista.push(l);
                     });
                 } catch (error) {
                     console.error("Erro ao parsear lançamentos:", error);
