@@ -374,18 +374,12 @@ async function gerarProposta(username) {
     // ----------------------------
     // Exporta
 
-    if (navigator.userAgent.match(/iPhone/i)) {
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
 
         alert("Identificado navegador mobile")
         console.log("Lógica para iOS.");
-
-        try {
-            const dataUriString = doc.output('datauristring');
-            window.open(dataUriString, "_blank");
-        } catch (e) {
-            console.log("Ocorreu um erro ao gerar o PDF: " + e.message);
-            alert("Ocorreu um erro ao gerar o PDF: " + e.message);
-        }
+        var blob = pdf.output();
+        window.open(URL.createObjectURL(blob));
 
     } else {
         alert("Identificado navegador desktop")
