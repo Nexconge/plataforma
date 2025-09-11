@@ -372,13 +372,12 @@ async function gerarProposta(username) {
 
     // ----------------------------
     // Exporta
-    doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
-
-    // Exporta no caso de ser acessado via mobile
     if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
         const pdfBlob = doc.output("blob");
         const pdfURL = URL.createObjectURL(pdfBlob);
         window.open(pdfURL, "_blank");
+    } else {
+        doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
 }
 
