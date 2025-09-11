@@ -1,9 +1,5 @@
 // ui.js
-<<<<<<<< HEAD:javaScript/finances/uiV17.js
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV11.js';
-========
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV12.js';
->>>>>>>> developer:javaScript/finances/uiV20.js
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -271,11 +267,6 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
-<<<<<<<< HEAD:javaScript/finances/uiV17.js
-    tabelaDRE = document.getElementById('tabelaMatriz');
-    tabelaDEPARTAMENTOS = document.getElementById('tabelaCustos');
-========
->>>>>>>> developer:javaScript/finances/uiV20.js
     
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {

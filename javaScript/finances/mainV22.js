@@ -1,15 +1,9 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-<<<<<<<< HEAD:javaScript/finances/mainV17.js
-import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV14.js';
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV11.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV17.js';
-========
 import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV17.js';
 import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV12.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosSelecionados } from './uiV20.js';
->>>>>>>> developer:javaScript/finances/mainV22.js
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {
