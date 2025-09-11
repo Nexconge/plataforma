@@ -373,9 +373,7 @@ async function gerarProposta(username) {
     // ----------------------------
     // Exporta
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    if (isIOS) {
+    if (navigator.userAgent.match(/iPhone/i)) {
 
         alert("Identificado navegador mobile")
 
@@ -391,6 +389,7 @@ async function gerarProposta(username) {
         console.log("Lógica para Desktop/Android ativada (download direto).");
         doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
+
 }
 
 // Expõe a função principal para o Bubble, tornando-a "global"
