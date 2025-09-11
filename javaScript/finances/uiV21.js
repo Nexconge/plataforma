@@ -1,5 +1,5 @@
 // ui.js
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV12.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV13.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -267,7 +267,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
-    
+
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
