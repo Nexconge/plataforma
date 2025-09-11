@@ -231,6 +231,8 @@ async function gerarProposta(username) {
         return; // interrompe a função
     }
 
+    console.log("Dados coletados e campos validados, iniciando construção do pdf.")
+
     // ----------------------------
     // Geração do PDF
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -332,6 +334,7 @@ async function gerarProposta(username) {
     doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
 
+    console.log("primeira página construída, iniciando a segunda página.")
 
     // ----------------------------
     // Segunda Página - Termo de Intenção de Compra
