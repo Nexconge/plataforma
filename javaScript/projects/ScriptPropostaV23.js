@@ -241,10 +241,14 @@ async function gerarProposta(username) {
     let endX;
     const hoje = new Date();
 
+    console.log("criado objeto jsPDF.")
+
     // Inserir timbrado
     const timbrado = new Image();
     timbrado.src = "https://4d106c5b7475e4030b25f84093f67825.cdn.bubble.io/f1755806013895x646963497024678000/Papel%20Timbrado_WF-8.png";
     doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
+
+    console.log("adicionado timbrado")
 
     // Título
     doc.setFontSize(18).setFont('helvetica', 'bold');
@@ -391,9 +395,9 @@ async function gerarProposta(username) {
         console.log("Lógica para Desktop/Android ativada (download direto).");
         doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
-    
+
     console.log("Processo finalizado.");
-    
+
 
 }
 
