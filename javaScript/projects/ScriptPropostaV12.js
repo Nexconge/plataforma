@@ -129,7 +129,7 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
-        
+
         // Passo D: Preenche os dados da condição financeira.
         const finValorEntrada = loteSelecionado.Valor * 0.25;
         const finValorParcela = loteSelecionado.Valor * 0.012;
@@ -187,7 +187,7 @@ async function gerarProposta(username) {
             parseBR(document.getElementById('propLoteValor')?.textContent) /
             parseBR(document.getElementById('propLoteArea')?.textContent)
         ) || 0,
-        
+
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
         cpfCliente: document.getElementById('propClienteCPF').value || '',
@@ -211,11 +211,11 @@ async function gerarProposta(username) {
 
     // Validação: todos os campos obrigatórios
     const obrigatorios = [
-        'quadra','lote','area','valorTotal',
-        'nomeCliente','cpfCliente','emailCliente','telefoneCliente',
-        'profissaoCliente','estadoCivilCliente','enderecoCliente','cidadeCliente',
-        'finValorEntrada','finDataEntrada','finQntParcela','finValorParcela',
-        'finDataParcela','finQntReforco','finValorReforco','finDataReforco'
+        'quadra', 'lote', 'area', 'valorTotal',
+        'nomeCliente', 'cpfCliente', 'emailCliente', 'telefoneCliente',
+        'profissaoCliente', 'estadoCivilCliente', 'enderecoCliente', 'cidadeCliente',
+        'finValorEntrada', 'finDataEntrada', 'finQntParcela', 'finValorParcela',
+        'finDataParcela', 'finQntReforco', 'finValorReforco', 'finDataReforco'
     ];
     let faltando = obrigatorios.filter(campo => {
         const valor = dados[campo];
@@ -373,6 +373,13 @@ async function gerarProposta(username) {
     // ----------------------------
     // Exporta
     doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
+
+    // Exporta no caso de ser acessado via mobile
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+        const pdfBlob = doc.output("blob");
+        const pdfURL = URL.createObjectURL(pdfBlob);
+        window.open(pdfURL, "_blank");
+    }
 }
 
 // Expõe a função principal para o Bubble, tornando-a "global"
