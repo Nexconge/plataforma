@@ -372,12 +372,22 @@ async function gerarProposta(username) {
 
     // ----------------------------
     // Exporta
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isIOS) {
+
         alert("Identificado navegador mobile")
-        const pdfBlob = doc.output("blob");
-        const pdfURL = URL.createObjectURL(pdfBlob);
-        window.open(pdfURL, "_blank");
+
+        try {
+            const dataUriString = doc.output('datauristring');
+            window.open(dataUriString, "_blank");
+        } catch (e) {
+            alert("Ocorreu um erro ao gerar o PDF: " + e.message);
+        }
+
     } else {
+        console.log("Lógica para Desktop/Android ativada (download direto).");
         doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
 }
