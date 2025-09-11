@@ -48,6 +48,7 @@ function configurarEventosDoModal(username) {
     // Evento para o envio do formulário, que chama a geração do PDF
     formProposta.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log("Botão de gerar proposta clicado")
         gerarProposta(username); // Chamando a função de gerar PDF
     });
 
