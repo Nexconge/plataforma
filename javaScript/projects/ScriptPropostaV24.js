@@ -244,9 +244,9 @@ async function gerarProposta(username) {
     console.log("criado objeto jsPDF.")
 
     // Inserir timbrado
-    const timbrado = new Image();
-    timbrado.src = "https://4d106c5b7475e4030b25f84093f67825.cdn.bubble.io/f1755806013895x646963497024678000/Papel%20Timbrado_WF-8.png";
-    doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
+    // const timbrado = new Image();
+    // timbrado.src = "https://4d106c5b7475e4030b25f84093f67825.cdn.bubble.io/f1755806013895x646963497024678000/Papel%20Timbrado_WF-8.png";
+    // doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
 
     console.log("adicionado timbrado")
 
@@ -343,7 +343,7 @@ async function gerarProposta(username) {
     // ----------------------------
     // Segunda Página - Termo de Intenção de Compra
     doc.addPage();
-    doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
+    // doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
 
     // Adicionar título
     doc.setFontSize(18);
