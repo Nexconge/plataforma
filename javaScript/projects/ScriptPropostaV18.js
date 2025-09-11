@@ -376,11 +376,13 @@ async function gerarProposta(username) {
     if (navigator.userAgent.match(/iPhone/i)) {
 
         alert("Identificado navegador mobile")
+        console.log("Lógica para iOS.");
 
         try {
             const dataUriString = doc.output('datauristring');
             window.open(dataUriString, "_blank");
         } catch (e) {
+            console.log("Ocorreu um erro ao gerar o PDF: " + e.message);
             alert("Ocorreu um erro ao gerar o PDF: " + e.message);
         }
 
@@ -389,6 +391,9 @@ async function gerarProposta(username) {
         console.log("Lógica para Desktop/Android ativada (download direto).");
         doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
+    
+    console.log("Processo finalizado.");
+    
 
 }
 
