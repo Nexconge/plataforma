@@ -373,6 +373,7 @@ async function gerarProposta(username) {
     // ----------------------------
     // Exporta
     if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+        alert("Identificado navegador mobile")
         const pdfBlob = doc.output("blob");
         const pdfURL = URL.createObjectURL(pdfBlob);
         window.open(pdfURL, "_blank");
