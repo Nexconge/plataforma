@@ -387,6 +387,7 @@ async function gerarProposta(username) {
         }
 
     } else {
+        alert("Identificado navegador desktop")
         console.log("Lógica para Desktop/Android ativada (download direto).");
         doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
