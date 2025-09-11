@@ -370,6 +370,8 @@ async function gerarProposta(username) {
     doc.text(dados.nomeCliente, 105, yAtual, { align: 'center' });
     doc.text("Cliente", 105, yAtual + 5, { align: 'center' });
 
+    console.log("pdf pronto para ser exportado")
+
 
     // ----------------------------
     // Exporta
