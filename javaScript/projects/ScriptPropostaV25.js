@@ -387,8 +387,10 @@ async function gerarProposta(username) {
 
         alert("Identificado navegador mobile")
         console.log("Lógica para iOS.");
-        var blob = pdf.output();
-        window.open(URL.createObjectURL(blob));
+        // var blob = pdf.output();
+        // window.open(URL.createObjectURL(blob));
+        const dataUriString = doc.output('datauristring');
+        window.open(dataUriString, "_blank");
 
     } else {
         alert("Identificado navegador desktop")
