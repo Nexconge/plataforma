@@ -246,7 +246,7 @@ async function gerarProposta(username) {
     // Inserir timbrado
     const timbrado = new Image();
     console.log("Criado objeto imagem.")
-    timbrado.src = "https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/pngs/PapelTimbradoWF.png";
+    timbrado.src = "https://4d106c5b7475e4030b25f84093f67825.cdn.bubble.io/f1755806013895x646963497024678000/Papel%20Timbrado_WF-8.png";
     console.log("importada imagem")
     doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
     console.log("Adicionada imagem ao documento")
