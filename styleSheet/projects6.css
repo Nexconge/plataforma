@@ -44,7 +44,7 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
-#tabelaVendas {
+/* #tabelaVendas {
     position: relative;
     overflow-x: auto;
 }
@@ -54,7 +54,7 @@ label {
     left: 0;
     background: #C7C7C7;
     z-index: 10;
-}
+} */
 
 * {
     outline: 0px solid red;
