@@ -49,7 +49,7 @@ label {
     position: sticky;
     left: 0;
     background: red;
-    z-index: 2;
+    z-index: 10;
 }
 
 * {
