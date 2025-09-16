@@ -44,7 +44,8 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
-.tabelaVendas td:first-child {
+.tabelaVendas td:first-child,
+.tabelaVendas th:first-child {
     position: sticky;
     left: 0;
     background: red;
