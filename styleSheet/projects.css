@@ -44,6 +44,13 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
+#tabelaVendas td:first-child {
+    position: sticky;
+    left: 0;
+    background: red;
+    z-index: 2;
+}
+
 * {
     outline: 0px solid red;
 }
