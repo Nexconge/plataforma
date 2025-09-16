@@ -44,6 +44,11 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
+#tabelaVendas {
+    position: relative;
+    overflow-x: auto;
+}
+
 #tabelaVendas > .TableMainAxis:first-child {
     position: sticky;
     left: 0;
