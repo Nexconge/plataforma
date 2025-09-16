@@ -44,11 +44,10 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
-#tabelaVendas td:first-child,
-#tabelaVendas th:first-child {
+#tabelaVendas > .TableMainAxis:first-child {
     position: sticky;
     left: 0;
-    background: red;
+    background: #C7C7C7;
     z-index: 10;
 }
 
