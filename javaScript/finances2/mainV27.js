@@ -41,7 +41,8 @@ async function handleFiltroChange() {
     //Se existirem contas selecionadas
     if (contasSelecionadas && contasSelecionadas.length > 0 ){
         // Filtra as contas que já estão no cache das que precisam ser buscadas
-        const contasParaBuscar = filtros.contas.filter(c => !appCache.lancamentosPorConta.has(String(c)));
+        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.lancamentosPorConta.has(String(c)));
+
 
         // 1. Busca somente as contas faltantes
         if (contasParaBuscar.length > 0) {
