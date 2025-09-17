@@ -25,6 +25,7 @@ function configurarEventosDoModal(username) {
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
     const header = document.getElementById('pageHeader');
+    const sideToggle = document.getElementById('toggleSidebar');
 
     if (!modal || !btnFecharModal || !formProposta) {
         console.error("Não foi possível encontrar um ou mais elementos essenciais do modal (modalProposta, closeModal, formProposta).");
@@ -35,6 +36,7 @@ function configurarEventosDoModal(username) {
     btnFecharModal.addEventListener('click', () => {
         modal.style.display = 'none';
         header.style.display = 'flex';
+        sideToggle.style.display = 'flex';
     });
 
     // Evento para fechar clicando fora do modal
@@ -42,6 +44,7 @@ function configurarEventosDoModal(username) {
         if (e.target == modal) {
             modal.style.display = 'none';
             header.style.display = 'flex';
+            sideToggle.style.display = 'flex';
         }
     });
 
@@ -150,6 +153,7 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         // Passo E: Finalmente, mostra o modal.
         modal.style.display = 'flex';
         header.style.display = 'none';
+        sideToggle.style.display = 'none';
 
     } catch (error) {
         console.error("Falha ao abrir o modal da proposta:", error);
