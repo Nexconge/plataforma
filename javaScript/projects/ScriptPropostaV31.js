@@ -119,6 +119,9 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
         const modal = document.getElementById('modalProposta');
         const header = document.getElementById('pageHeader');
+        const sideToggle = document.getElementById('sideToggle');
+        const sideToggle2 = document.getElementById('sideToggleGroup');
+
         if (!modal) {
             // Este erro não deveria mais acontecer, mas mantemos como segurança.
             throw new Error("Ocorreu um erro crítico e o modal não pôde ser criado.");
@@ -152,8 +155,7 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         document.getElementById('propValorReforco').value = formatadorDeMoeda.format(finValorReforco);
         document.getElementById('propValorReforco').disabled = true;
 
-
-        // Passo E: mostra o modal.
+        // Passo E: mostra o modal e esconde o header e sideToggle
         modal.style.display = 'flex';
         header.style.display = 'none';
         sideToggle.style.display = 'none';
