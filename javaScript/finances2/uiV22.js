@@ -400,6 +400,7 @@ function obterContasSelecionadas() {
     }
     const contasEmTexto = getSelectItems(contaSelect);
     const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
+    console.log("Contas selecionadas (números):", contasEmNumero);
     return contasEmNumero;
 }
 
