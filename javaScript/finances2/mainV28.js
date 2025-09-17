@@ -66,9 +66,10 @@ async function handleFiltroChange() {
             const allResponses = await Promise.all(promises);
 
             allResponses.forEach(apiResponse => {
-                if (apiResponse && apiResponse.response && typeof apiResponse.response.lancamentos === 'string') {
+                if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string') {
                     try {
-                        const lancamentosNovos = JSON.parse(`[${apiResponse.response.lancamentos}]`);
+                        const lancamentosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
+                        console.log("Lançamentos novos recebidos:", lancamentosNovos);
                         lancamentosNovos.forEach(l => {
                             const cod = String(l.CODContaC);
                             if (appCache.lancamentosPorConta.has(cod)) {
