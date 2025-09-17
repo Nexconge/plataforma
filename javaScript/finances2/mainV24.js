@@ -34,7 +34,7 @@ async function handleFiltroChange() {
     document.body.classList.add('loading');
 
     //Obter as contas seleiconadas para buscar os lançamentos
-    const contasSelecionadas = obterFiltrosSelecionados();
+    const contasSelecionadas = obterContasSelecionadas();
     //Inicia um array de lançamentos vazio
     let lancamentosArray = [];
 
