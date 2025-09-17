@@ -25,7 +25,6 @@ function configurarEventosDoModal(username) {
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
     const header = document.getElementById('pageHeader');
-    const sideToggle = document.getElementById('sideToggle');
     const sideToggle2 = document.getElementById('sideToggleGroup');
 
     if (!modal || !btnFecharModal || !formProposta) {
@@ -37,7 +36,6 @@ function configurarEventosDoModal(username) {
     btnFecharModal.addEventListener('click', () => {
         modal.style.display = 'none';
         header.style.display = 'flex';
-        sideToggle.style.display = 'flex';
         sideToggle2.style.display = 'flex';
     });
 
@@ -46,7 +44,6 @@ function configurarEventosDoModal(username) {
         if (e.target == modal) {
             modal.style.display = 'none';
             header.style.display = 'flex';
-            sideToggle.style.display = 'flex';
             sideToggle2.style.display = 'flex';
         }
     });
@@ -119,7 +116,6 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
         const modal = document.getElementById('modalProposta');
         const header = document.getElementById('pageHeader');
-        const sideToggle = document.getElementById('sideToggle');
         const sideToggle2 = document.getElementById('sideToggleGroup');
 
         if (!modal) {
@@ -158,7 +154,6 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         // Passo E: mostra o modal e esconde o header e sideToggle
         modal.style.display = 'flex';
         header.style.display = 'none';
-        sideToggle.style.display = 'none';
         sideToggle2.style.display = 'none';
 
     } catch (error) {
