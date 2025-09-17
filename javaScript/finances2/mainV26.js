@@ -39,7 +39,7 @@ async function handleFiltroChange() {
     let lancamentosArray = [];
 
     //Se existirem contas selecionadas
-    if (contasSelecionadas && contasSelecionadas > 0 ){
+    if (contasSelecionadas && contasSelecionadas.length > 0 ){
         // Filtra as contas que já estão no cache das que precisam ser buscadas
         const contasParaBuscar = filtros.contas.filter(c => !appCache.lancamentosPorConta.has(String(c)));
 
