@@ -48,6 +48,7 @@ function configurarEventosDoModal(username) {
     // Evento para o envio do formulário, que chama a geração do PDF
     formProposta.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log("Botão de gerar proposta clicado")
         gerarProposta(username); // Chamando a função de gerar PDF
     });
 
@@ -129,7 +130,7 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
         document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
-        
+
         // Passo D: Preenche os dados da condição financeira.
         const finValorEntrada = loteSelecionado.Valor * 0.25;
         const finValorParcela = loteSelecionado.Valor * 0.012;
@@ -200,7 +201,7 @@ async function gerarProposta(username) {
             parseBR(document.getElementById('propLoteValor')?.textContent) /
             parseBR(document.getElementById('propLoteArea')?.textContent)
         ) || 0,
-        
+
         // Cliente
         nomeCliente: document.getElementById('propClienteNome').value || '',
         cpfCliente: document.getElementById('propClienteCPF').value || '',
@@ -224,11 +225,11 @@ async function gerarProposta(username) {
 
     // Validação: todos os campos obrigatórios
     const obrigatorios = [
-        'quadra','lote','area','valorTotal',
-        'nomeCliente','cpfCliente','emailCliente','telefoneCliente',
-        'profissaoCliente','estadoCivilCliente','enderecoCliente','cidadeCliente',
-        'finValorEntrada','finDataEntrada','finQntParcela','finValorParcela',
-        'finDataParcela','finQntReforco','finValorReforco','finDataReforco'
+        'quadra', 'lote', 'area', 'valorTotal',
+        'nomeCliente', 'cpfCliente', 'emailCliente', 'telefoneCliente',
+        'profissaoCliente', 'estadoCivilCliente', 'enderecoCliente', 'cidadeCliente',
+        'finValorEntrada', 'finDataEntrada', 'finQntParcela', 'finValorParcela',
+        'finDataParcela', 'finQntReforco', 'finValorReforco', 'finDataReforco'
     ];
     let faltando = obrigatorios.filter(campo => {
         const valor = dados[campo];
@@ -243,6 +244,8 @@ async function gerarProposta(username) {
         return; // interrompe a função
     }
 
+    console.log("Dados coletados e campos validados, iniciando construção do pdf.")
+
     // ----------------------------
     // Geração do PDF
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -251,10 +254,15 @@ async function gerarProposta(username) {
     let endX;
     const hoje = new Date();
 
+    console.log("criado objeto jsPDF.")
+
     // Inserir timbrado
     const timbrado = new Image();
+    console.log("Criado objeto imagem.")
     timbrado.src = "https://4d106c5b7475e4030b25f84093f67825.cdn.bubble.io/f1755806013895x646963497024678000/Papel%20Timbrado_WF-8.png";
+    console.log("importada imagem")
     doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
+    console.log("Adicionada imagem ao documento")
 
     // Título
     doc.setFontSize(18).setFont('helvetica', 'bold');
@@ -344,11 +352,12 @@ async function gerarProposta(username) {
     doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
 
+    console.log("primeira página construída, iniciando a segunda página.")
 
     // ----------------------------
     // Segunda Página - Termo de Intenção de Compra
     doc.addPage();
-    doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
+    // doc.addImage(timbrado, 'PNG', 0, 0, 210, 297);
 
     // Adicionar título
     doc.setFontSize(18);
@@ -382,10 +391,30 @@ async function gerarProposta(username) {
     doc.text(dados.nomeCliente, 105, yAtual, { align: 'center' });
     doc.text("Cliente", 105, yAtual + 5, { align: 'center' });
 
+    console.log("pdf pronto para ser exportado")
+
 
     // ----------------------------
     // Exporta
-    doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
+
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+
+        alert("Identificado navegador mobile")
+        console.log("Lógica para iOS.");
+        // var blob = pdf.output();
+        // window.open(URL.createObjectURL(blob));
+        const dataUriString = doc.output('datauristring');
+        window.open(dataUriString, "_blank");
+
+    } else {
+        alert("Identificado navegador desktop")
+        console.log("Lógica para Desktop/Android ativada (download direto).");
+        doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
+    }
+
+    console.log("Processo finalizado.");
+
+
 }
 
 // Expõe a função principal para o Bubble, tornando-a "global"
