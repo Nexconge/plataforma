@@ -2,7 +2,7 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarTitulos } from './apiV22.js';
-import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV16.js';
+import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV17.js';
 import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV24.js';
 
 // --- O cache em memória e as funções de serialização ---

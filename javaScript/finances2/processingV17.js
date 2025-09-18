@@ -149,7 +149,10 @@ function processarDados(appCache, modo, anosParaProcessar, contasFiltradas, sald
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
         });
     });
-
+    console.log("Matriz DRE processada:", matrizDRE);
+    console.log("Matriz Detalhamento DRE processada:", matrizDetalhamentoDRE);
+    console.log("Saldo Inicial do Período:", saldoInicialPeriodo);
+    console.log("Chaves com dados:", Array.from(chavesComDados).sort());
     return { matrizDRE, matrizDetalhamentoDRE, saldoInicialPeriodo, chavesComDados };
 }
 
