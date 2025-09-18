@@ -83,7 +83,12 @@ async function handleFiltroChange() {
                                     lista.push(lancamento);
                                 }
                             }
+                            console.log(`Cache atualizado para contas:`, lista);
+                            console.log(contasParaBuscar);
+                            console.log(appCache.lancamentosPorConta);
+                            console.log(cod);
                         });
+                        
                     } catch (error) {
                         console.error("Erro ao processar resposta da API:", error);
                     }
