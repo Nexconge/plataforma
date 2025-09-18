@@ -67,12 +67,11 @@ async function handleFiltroChange() {
                 if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) { // Evita strings vazias como "[]"
                     try {
                         // a) Parseia a string JSON para obter o array de TÍTULOS
-                        const stringInterna = JSON.parse(apiResponse.response.movimentos);
-                        const titulosNovos = JSON.parse(`[${stringInterna}]`);
-                        
+                        const titulosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
+                        console.log(`Títulos recebidos da API:`, titulosNovos);
                         // b) Extrai os LANÇAMENTOS dos títulos usando a função auxiliar
                         const lancamentosNovos = extrairLancamentosDosTitulos(titulosNovos);
-
+                        console.log(`Lançamentos extraídos:`, lancamentosNovos);
                         // c) Distribui os lançamentos extraídos diretamente no cache
                         lancamentosNovos.forEach(lancamento => {
                             const cod = String(lancamento.CODContaC);
@@ -99,7 +98,7 @@ async function handleFiltroChange() {
             const lista = appCache.lancamentosPorConta.get(String(c)) || [];
             lancamentosArray.push(...lista);
         });
-
+        console.log(`Total de lançamentos combinados para visualização: ${lancamentosArray.length}`);
     } else {
         console.log("Nenhuma conta selecionada para buscar dados.");
     }
