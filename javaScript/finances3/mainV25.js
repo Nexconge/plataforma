@@ -67,7 +67,7 @@ async function handleFiltroChange() {
                 if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) { // Evita strings vazias como "[]"
                     try {
                         // a) Parseia a string JSON para obter o array de TÍTULOS
-                        const titulosNovos = JSON.parse(apiResponse.response.movimentos);
+                        const titulosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
                         
                         // b) Extrai os LANÇAMENTOS dos títulos usando a função auxiliar
                         const lancamentosNovos = extrairLancamentosDosTitulos(titulosNovos);
