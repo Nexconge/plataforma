@@ -1,5 +1,5 @@
 // ui.js
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV15.js';
+//import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV15.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
