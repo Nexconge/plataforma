@@ -64,4 +64,4 @@ async function buscarTitulos(filtros) {
 }
 
 // Exporta a nova função junto com as existentes
-export { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos };
+export { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarTitulos };
