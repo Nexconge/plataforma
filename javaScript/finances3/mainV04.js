@@ -40,13 +40,13 @@ async function handleFiltroChange() {
     // Se existirem contas selecionadas
     if (contasSelecionadas && contasSelecionadas.length > 0) {
         // Filtra as contas que já estão no cache das que precisam ser buscadas
-        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.lancamentosPorConta.has(String(c)));
+        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.lancamentosPorConta.has((c)));
 
         // 1. Busca somente as contas faltantes
         if (contasParaBuscar.length > 0) {
             // Cria o slot da conta no cache antes de chamar a API para evitar chamadas duplicadas
             contasParaBuscar.forEach(c => {
-                const cod = String(c);
+                const cod = (c);
                 if (!appCache.lancamentosPorConta.has(cod)) {
                     appCache.lancamentosPorConta.set(cod, []);
                 }
@@ -100,7 +100,7 @@ async function handleFiltroChange() {
         // Limpa o array antes de preenchê-lo para evitar duplicação
         lancamentosArray = []; 
         contasSelecionadas.forEach(c => {
-            const lista = appCache.lancamentosPorConta.get(String(c)) || [];
+            const lista = appCache.lancamentosPorConta.get((c)) || [];
             lancamentosArray.push(...lista);
         });
         console.log(`Total de lançamentos combinados para visualização: ${lancamentosArray.length}`);
