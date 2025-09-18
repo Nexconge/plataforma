@@ -37,7 +37,7 @@ function processarDados(appCache, modo, anosParaProcessar, contasFiltradas, sald
     ]);
 
     //Processa os titulos
-    appCache.Titulos.forEach(titulo => {
+    appCache.titulos.forEach(titulo => {
 
         //Processa os lançamentos dentro do título se houver
         titulo.Lancamentos.forEach(lancamento => {
