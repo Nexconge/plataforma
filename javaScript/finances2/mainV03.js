@@ -2,7 +2,7 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarTitulos } from './apiV22.js';
-import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV17.js';
+import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV18.js';
 import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV24.js';
 
 // --- O cache em memória e as funções de serialização ---
@@ -69,7 +69,7 @@ async function handleFiltroChange() {
                 if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string') {
                     try {
                         const titulosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                        console.log("Lançamentos novos recebidos:", titulosNovos);
+                        console.log("Titulos novos recebidos:", titulosNovos);
                         titulosNovos.forEach(l => {
                             const cod = String(l.CODContaC);
                             if (appCache.titulosPorConta.has(cod)) {

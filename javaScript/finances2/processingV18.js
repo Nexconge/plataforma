@@ -39,6 +39,8 @@ function processarDados(appCache, modo, anosParaProcessar, contasFiltradas, sald
     //Processa os titulos
     appCache.titulos.forEach(titulo => {
 
+        const lancamentos = titulo.Lancamentos || titulo.lancamentos || [];
+
         //Processa os lançamentos dentro do título se houver
         titulo.Lancamentos.forEach(lancamento => {
             if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) {
@@ -55,7 +57,7 @@ function processarDados(appCache, modo, anosParaProcessar, contasFiltradas, sald
             if (partesData.length !== 3) return;
             // Formata mês e ano para "MM-AAAA" 
             const [dia, mesRaw, ano] = partesData;
-            const mes = mesRaw.padStart(2, '0');   // 🔥 garante sempre 2 dígitos
+            const mes = mesRaw.padStart(2, '0'); //garante sempre 2 dígitos
             const anoMes = `${mes}-${ano}`;
             // Define a chave de agregação conforme o modo (mensal ou anual)
             const chaveAgregacao = (modo.toLowerCase() === 'anual') ? ano : anoMes;
@@ -66,9 +68,13 @@ function processarDados(appCache, modo, anosParaProcessar, contasFiltradas, sald
                 valor = -valor;
             }
             // Extrai os departamentos do titulo, se não houver adiciona um departamento 0 com 100% do valor
-            const departamentos = titulo.Departamentos.length > 0
-                ? titulo.Departamentos
+            const departamentosTitulo = titulo.Departamentos || titulo.departamentos || [];
+            const departamentos = departamentosTitulo.length > 0
+                ? departamentosTitulo
                 : [{ CODDepto: 0, PercDepto: 100 }];
+            
+
+            // ------------------------------- Regras de período --------------------------------//    
             
             // Se o ano do lançamento for anterior ao primeiro ano do filtro, acumula no saldo inicial
             if (Number(ano) < primeiroAno) {
