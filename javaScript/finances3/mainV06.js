@@ -77,13 +77,13 @@ async function handleFiltroChange() {
                             console.log(`Codigo lançamento`, cod);
                             console.log(`Codigo contas`, contasParaBuscar);
                             console.log(`lancamentos por conta`, appCache.lancamentosPorConta);
-                            console.log(`Cache atualizado para contas:`, lista);
                             // Verifica se a conta do lançamento está entre as que buscamos, alguns titulos
                             // podem ter lançamentos em mais deu uma conta diferentes
                             if (contasParaBuscar.includes(cod)) {
                                 if (appCache.lancamentosPorConta.has(cod)) {
                                     const lista = appCache.lancamentosPorConta.get(cod);
                                     lista.push(lancamento);
+                                    console.log(`Cache atualizado para contas:`, lista);
                                 }
                             }             
                         });
