@@ -1,5 +1,5 @@
 // ui.js
-//import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV15.js';
+//import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV13.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -120,7 +120,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     tabela.appendChild(fragment);
 }
 
-function renderizarTabelaDepartamentos(categoriasMap, matrizDetalhamentoDRE, colunas) {
+function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
@@ -141,7 +141,7 @@ function renderizarTabelaDepartamentos(categoriasMap, matrizDetalhamentoDRE, col
 
     // Agrupa departamentos por classe
     const classesMap = {};
-    Object.entries(matrizDetalhamentoDRE).forEach(([chave, deptoData]) => {
+    Object.entries(dadosAgrupados).forEach(([chave, deptoData]) => {
         const { nome, classe, categorias } = deptoData;
         if (!classesMap[classe]) {
             classesMap[classe] = [];
@@ -312,7 +312,7 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
         });
 }
 
-function atualizarVisualizacoes(appCache, fContasESaldo, fProcessarDados, fCalculaTotais) {
+function atualizarVisualizacoes(appCache, fContasESaldo, fProcessaLancamentos, fCalculaTotais) {
     const modoSelect = document.getElementById('modoSelect'), anoSelect = document.getElementById('anoSelect');
     const projSelect = document.getElementById('projSelect'), contaSelect = document.getElementById('contaSelect');
     const modo = modoSelect.value, valorSelecionado = anoSelect.value;
@@ -337,11 +337,11 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fProcessarDados, fCalcu
     const contasSelecionadas = getSelectItems(contaSelect);
 
     const { contasFiltradas, saldoBase } = fContasESaldo(appCache.projetosMap, appCache.contasMap, projetosSelecionados, contasSelecionadas);
-    const { matrizDRE, matrizDetalhamentoDRE, saldoInicialPeriodo, chavesComDados } = fProcessarDados(appCache, modo, anosParaProcessar, contasFiltradas, saldoBase);
+    const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados } = fProcessaLancamentos(appCache, modo, anosParaProcessar, contasFiltradas, saldoBase);
     
     fCalculaTotais(matrizDRE, colunas, saldoInicialPeriodo, chavesComDados);
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
-    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDetalhamentoDRE, colunas);
+    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
 
 function configurarFiltros(appCache, atualizarCallback) {
@@ -404,4 +404,4 @@ function obterContasSelecionadas() {
     return contasEmNumero;
 }
 
-export { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas};
+export { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas };

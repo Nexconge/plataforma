@@ -37,7 +37,7 @@ async function buscarTitulos(filtros) {
     } else {
         baseURL += "version-live";
     }
-    const API_URL = `${baseURL}/api/1.1/wf/buscarmovimentos`;
+    const API_URL = `${baseURL}/api/1.1/wf/buscarlancamentos`;
 
     try {
         const response = await fetch(API_URL, {
