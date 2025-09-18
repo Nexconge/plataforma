@@ -37,7 +37,7 @@ async function buscarTitulos(filtros) {
     } else {
         baseURL += "version-live";
     }
-    const API_URL = `${baseURL}/api/1.1/wf/buscarlancamentos`;
+    const API_URL = `${baseURL}/api/1.1/wf/buscarmovimentos`;
 
     try {
         const response = await fetch(API_URL, {
@@ -50,12 +50,12 @@ async function buscarTitulos(filtros) {
         console.log("Resposta da API (raw):", response);
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Falha ao buscar lançamentos: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new Error(`Falha ao buscar titulos: ${response.status} ${response.statusText} - ${errorText}`);
         }
         console.log("Resposta da API (JSON):", await response.clone().json());
         return await response.json();
     } catch (error) {
-        console.error("Erro crítico ao buscar lançamentos:", error);
+        console.error("Erro crítico ao buscar titulos:", error);
         // Opcional: Adicionar uma notificação para o usuário na UI
         alert("Ocorreu um erro ao buscar os dados. Verifique o console para mais detalhes.");
         // Retorna um array vazio em caso de erro para não quebrar a aplicação
