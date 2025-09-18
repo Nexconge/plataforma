@@ -29,7 +29,7 @@ async function obterDataAtualizacaoArquivo(url) {
  * @param {object} filtros - O objeto de filtros gerado por obterFiltrosSelecionados.
  * @returns {Promise<Array>} Uma promessa que resolve para o array de lançamentos.
  */
-async function buscarLancamentos(filtros) {
+async function buscarTitulos(filtros) {
     //Monta a URL da API dependendo do ambiente (teste ou produção)
     let baseURL = "https://plataforma-geourb.bubbleapps.io/";
     if (window.location.href.includes("version-test")) {

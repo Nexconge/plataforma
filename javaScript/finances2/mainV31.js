@@ -1,15 +1,15 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarLancamentos } from './apiV20.js';
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV13.js';
-import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV22.js';
+import { buscarDadosOMIE, obterDataAtualizacaoArquivo, buscarTitulos } from './apiV21.js';
+import { filtrarContasESaldo, processarDados, calcularTotaisDRE } from './processingV15.js';
+import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV23.js';
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {
     userId: null, userType: null,
-    lancamentos: [], // todos combinados
-    lancamentosPorConta: new Map(), // <--- NOVO
+    titulos: [], // todos combinados
+    titulosPorConta: new Map(), // <--- NOVO
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: []
@@ -36,12 +36,12 @@ async function handleFiltroChange() {
     //Obter as contas seleiconadas para buscar os lançamentos
     const contasSelecionadas = obterContasSelecionadas();
     //Inicia um array de lançamentos vazio
-    let lancamentosArray = [];
+    let titulosArray = [];
 
     //Se existirem contas selecionadas
     if (contasSelecionadas && contasSelecionadas.length > 0 ){
         // Filtra as contas que já estão no cache das que precisam ser buscadas
-        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.lancamentosPorConta.has(String(c)));
+        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.titulosPorConta.has(String(c)));
 
 
         // 1. Busca somente as contas faltantes
@@ -51,8 +51,8 @@ async function handleFiltroChange() {
             //para evitar chamadas duplicadas
             contasParaBuscar.forEach(c => {
                 const cod = String(c);
-                if (!appCache.lancamentosPorConta.has(cod)) {
-                    appCache.lancamentosPorConta.set(cod, []); 
+                if (!appCache.titulosPorConta.has(cod)) {
+                    appCache.titulosPorConta.set(cod, []); 
                 }
             });
 
@@ -61,19 +61,19 @@ async function handleFiltroChange() {
                 const filtrosAPI = { 
                     contas: [conta] // Envia somente a conta, sem os anos
                 };
-                return buscarLancamentos(filtrosAPI);
+                return buscarTitulos(filtrosAPI);
             });
             const allResponses = await Promise.all(promises);
 
             allResponses.forEach(apiResponse => {
                 if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string') {
                     try {
-                        const lancamentosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                        console.log("Lançamentos novos recebidos:", lancamentosNovos);
-                        lancamentosNovos.forEach(l => {
+                        const titulosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
+                        console.log("Lançamentos novos recebidos:", titulosNovos);
+                        titulosNovos.forEach(l => {
                             const cod = String(l.CODContaC);
-                            if (appCache.lancamentosPorConta.has(cod)) {
-                                const lista = appCache.lancamentosPorConta.get(cod);
+                            if (appCache.titulosPorConta.has(cod)) {
+                                const lista = appCache.titulosPorConta.get(cod);
                                 lista.push(l);
                             }
                         });
@@ -86,24 +86,24 @@ async function handleFiltroChange() {
 
         // 2. Monta o array final combinando cache + novas
         contasSelecionadas.forEach(c => {
-            const lista = appCache.lancamentosPorConta.get(String(c)) || [];
-            lancamentosArray.push(...lista);
+            const lista = appCache.titulosPorConta.get(String(c)) || [];
+            titulosArray.push(...lista);
         });
     } else {
         console.log("Nenhuma conta selecionada para buscar dados.");
     }
 
     //Atualiza cache global
-    appCache.lancamentos = lancamentosArray;
+    appCache.titulos = titulosArray;
 
-    atualizarVisualizacoes(appCache, filtrarContasESaldo, processarLancamentos, calcularTotaisDRE);
+    atualizarVisualizacoes(appCache, filtrarContasESaldo, processarDados, calcularTotaisDRE);
     document.body.classList.remove('loading');
 }
 
 window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
     appCache = {
         ...appCache,
-        userId: null, userType: null, lancamentos: [], // Garante que começa vazio
+        userId: null, userType: null, titulos: [], // Garante que começa vazio
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         anosDisponiveis: []
