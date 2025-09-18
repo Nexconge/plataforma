@@ -46,9 +46,8 @@ async function handleFiltroChange() {
         if (contasParaBuscar.length > 0) {
             // Cria o slot da conta no cache antes de chamar a API para evitar chamadas duplicadas
             contasParaBuscar.forEach(c => {
-                const cod = (c);
-                if (!appCache.lancamentosPorConta.has(cod)) {
-                    appCache.lancamentosPorConta.set(cod, []);
+                if (!appCache.lancamentosPorConta.has(c)) {
+                    appCache.lancamentosPorConta.set(c, []);
                 }
             });
 
@@ -74,7 +73,7 @@ async function handleFiltroChange() {
                         console.log(`Lançamentos extraídos:`, lancamentosNovos);
                         // c) Distribui os lançamentos extraídos diretamente no cache
                         lancamentosNovos.forEach(lancamento => {
-                            const cod = String(lancamento.CODContaC);
+                            const cod = Number(lancamento.CODContaC);
                             console.log(`Codigo lançamento`, cod);
                             console.log(`Codigo contas`, contasParaBuscar);
                             console.log(`lancamentos por conta`, appCache.lancamentosPorConta);
