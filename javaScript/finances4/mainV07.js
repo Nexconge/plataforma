@@ -1,9 +1,10 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarTitulos } from './apiV19.js';
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos } from './processingV13.js';
-import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV21.js';
+import { buscarTitulos } from './apiV20.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos } from './processingV14.js';
+import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV22.js';
+//import { gerarMatrizConsolidada } from './utilsMatriz.js';
 
 // --- O cache em memória e as funções de serialização ---
 let appCache = {

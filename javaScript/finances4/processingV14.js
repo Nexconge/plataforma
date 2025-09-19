@@ -173,8 +173,6 @@ function processarLancamentos(appCache, contasFiltradas, novosLancamentos) {
     return { matrizDRE, matrizDepartamentos, chavesComDados };
 }
 
-
-
 function calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
     let saldoAcumulado = saldoInicial;
 

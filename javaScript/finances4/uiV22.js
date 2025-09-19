@@ -1,5 +1,5 @@
 // ui.js
-//import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE } from './processingV13.js';
+import { gerarMatrizConsolidada } from './utilsMatriz.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -312,12 +312,17 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
         });
 }
 
-function atualizarVisualizacoes(appCache, fContasESaldo, fProcessaLancamentos, fCalculaTotais) {
-    const modoSelect = document.getElementById('modoSelect'), anoSelect = document.getElementById('anoSelect');
-    const projSelect = document.getElementById('projSelect'), contaSelect = document.getElementById('contaSelect');
-    const modo = modoSelect.value, valorSelecionado = anoSelect.value;
+function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
+    const modoSelect = document.getElementById('modoSelect');
+    const anoSelect = document.getElementById('anoSelect');
+    const projSelect = document.getElementById('projSelect');
+    const contaSelect = document.getElementById('contaSelect');
+
+    const modo = modoSelect.value;
+    const valorSelecionado = anoSelect.value;
     if (!valorSelecionado) return;
 
+    // Determina os anos a serem exibidos
     let anosParaProcessar = [];
     if (modo.toLowerCase() === 'mensal') {
         anosParaProcessar = [valorSelecionado];
@@ -330,16 +335,27 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fProcessaLancamentos, f
             }
         }
     }
+
     if (anosParaProcessar.length === 0) return;
-    
-    const colunas = (modo.toLowerCase() === 'anual') ? [...anosParaProcessar].sort() : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${valorSelecionado}`);
+
     const projetosSelecionados = getSelectItems(projSelect);
     const contasSelecionadas = getSelectItems(contaSelect);
 
-    const { contasFiltradas, saldoBase } = fContasESaldo(appCache.projetosMap, appCache.contasMap, projetosSelecionados, contasSelecionadas);
-    const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados } = fProcessaLancamentos(appCache, modo, anosParaProcessar, contasFiltradas, saldoBase);
-    
-    fCalculaTotais(matrizDRE, colunas, saldoInicialPeriodo, chavesComDados);
+    // Obtem as contas filtradas (apenas para referência do saldo inicial)
+    const { saldoBase } = fContasESaldo(appCache.projetosMap, appCache.contasMap, projetosSelecionados, contasSelecionadas);
+
+    // --- Nova parte ---
+    const { matrizDRE, matrizDepartamentos, colunas } = gerarMatrizConsolidada(
+        appCache.matrizesPorConta,
+        contasSelecionadas,
+        anosParaProcessar,
+        modo
+    );
+
+    const saldoInicialPeriodo = saldoBase; // se desejar, pode ajustar aqui
+
+    fCalculaTotais(matrizDRE, colunas, saldoInicialPeriodo);
+
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
