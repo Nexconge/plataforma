@@ -154,11 +154,11 @@ function processarLancamentos(appCache, contasFiltradas, novosLancamentos) {
 
                 //Se o array de fornecedores não existir no array de categorias cria 
                 if (!catData.fornecedores[fornecedor]) {
-                    catData.fornecedores[fornecedor] = { fornecedor, total: 0 };
+                    catData.fornecedores[fornecedor] = { fornecedor, total: 0, valores: {} };
                 }
-                //Soma o valor ao total do fornecedor neste periodo dentro desta
-                //categoria dentro deste departamento para esta conta corrente
+                const fornecedorRef = catData.fornecedores[fornecedor];
                 catData.fornecedores[fornecedor].total += valorRateio;
+                fornecedorRef.valores[mesAno] = (fornecedorRef.valores[mesAno] || 0) + valorRateio;
             });
         }
     });
