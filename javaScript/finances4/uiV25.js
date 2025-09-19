@@ -1,5 +1,5 @@
 // ui.js
-import { gerarMatrizConsolidada } from './utilsMatrizV03.js';
+import { gerarMatrizConsolidada } from './utilsMatrizV04.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -330,7 +330,7 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
         const anoInicio = Number(valorSelecionado);
         const anoFim = anoInicio + 4;
         for (let ano = anoInicio; ano <= anoFim; ano++) {
-            if (appCache.anosDisponiveis.includes(String(ano))) {
+            if (appCache.anosDisponivis.includes(String(ano))) {
                 anosParaProcessar.push(String(ano));
             }
         }
@@ -351,6 +351,18 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
         anosParaProcessar,
         modo
     );
+
+    // =======================================================================================
+    // === PONTO DE DEBUG ADICIONADO =========================================================
+    // =======================================================================================
+    // Este log mostrará os dados finais, já agrupados por ano (se aplicável),
+    // exatamente como serão enviados para as funções de renderização.
+    console.log("%cDados Prontos para Renderização:", "color: blue; font-weight: bold;", {
+        colunas: colunas,
+        matrizDRE: matrizDRE,
+        matrizDepartamentos: matrizDepartamentos
+    });
+    // =======================================================================================
 
     const saldoInicialPeriodo = saldoBase; // se desejar, pode ajustar aqui
 

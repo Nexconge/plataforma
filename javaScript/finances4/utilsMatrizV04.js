@@ -80,8 +80,49 @@ function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltra
     });
 
     let colunas = Array.from(mesesExistentes).sort();
+    
+    // =======================================================================================
+    // === NOVA CORREÇÃO: AGRUPAMENTO ANUAL SE NECESSÁRIO =====================================
+    // =======================================================================================
     if (modo.toLowerCase() === 'anual') {
+        const matrizDREAnual = {};
+        const matrizDepartamentosAnual = JSON.parse(JSON.stringify(matrizDepartamentos)); // Cópia profunda
+
+        // Agrupa DRE por ano
+        for (const classe in matrizDRE) {
+            matrizDREAnual[classe] = {};
+            for (const mesAno in matrizDRE[classe]) {
+                const ano = mesAno.split('-')[1];
+                matrizDREAnual[classe][ano] = (matrizDREAnual[classe][ano] || 0) + matrizDRE[classe][mesAno];
+            }
+        }
+
+        // Agrupa Departamentos por ano
+        for (const deptoKey in matrizDepartamentosAnual) {
+            const depto = matrizDepartamentosAnual[deptoKey];
+            for (const catKey in depto.categorias) {
+                const cat = depto.categorias[catKey];
+                const valoresAnuais = {};
+                for (const mesAno in cat.valores) {
+                    const ano = mesAno.split('-')[1];
+                    valoresAnuais[ano] = (valoresAnuais[ano] || 0) + cat.valores[mesAno];
+                }
+                cat.valores = valoresAnuais;
+
+                cat.fornecedores.forEach(forn => {
+                    const valoresAnuaisForn = {};
+                    for (const mesAno in forn.valores) {
+                        const ano = mesAno.split('-')[1];
+                        valoresAnuaisForn[ano] = (valoresAnuaisForn[ano] || 0) + forn.valores[mesAno];
+                    }
+                    forn.valores = valoresAnuaisForn;
+                });
+            }
+        }
+        
+        // Define as colunas como apenas os anos e retorna as matrizes anuais
         colunas = Array.from(new Set(colunas.map(m => m.split('-')[1]))).sort();
+        return { matrizDRE: matrizDREAnual, matrizDepartamentos: matrizDepartamentosAnual, colunas };
     }
 
     return { matrizDRE, matrizDepartamentos, colunas };
