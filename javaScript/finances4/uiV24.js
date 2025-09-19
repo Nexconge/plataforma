@@ -1,5 +1,5 @@
 // ui.js
-import { gerarMatrizConsolidada } from './utilsMatrizV02.js';
+import { gerarMatrizConsolidada } from './utilsMatrizV03.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {

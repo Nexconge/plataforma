@@ -1,15 +1,11 @@
-// utilsMatriz.js
-
 function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltrados, modo) {
     const matrizDRE = {};
     const matrizDepartamentos = {};
     const mesesExistentes = new Set();
 
     matrizesPorConta.forEach((dadosConta, codConta) => {
-        // Ignora contas que não estão selecionadas no filtro
         if (!contasSelecionadas.includes(codConta)) return;
 
-        // Popula o Set de meses/anos existentes para determinar as colunas da tabela
         Object.values(dadosConta.matrizDRE).forEach(classeData => {
             Object.keys(classeData).forEach(mesAno => {
                 const [mes, ano] = mesAno.split('-');
@@ -17,7 +13,6 @@ function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltra
             });
         });
 
-        // Consolida a matriz DRE
         Object.entries(dadosConta.matrizDRE).forEach(([classe, mesesData]) => {
             if (!matrizDRE[classe]) matrizDRE[classe] = {};
             Object.entries(mesesData).forEach(([mesAno, valor]) => {
@@ -28,7 +23,6 @@ function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltra
             });
         });
 
-        // Consolida a matriz de Departamentos
         Object.entries(dadosConta.matrizDepartamentos).forEach(([chaveDepto, deptoData]) => {
             const { depto, classe, categorias } = deptoData;
             const novaChave = `${depto}|${classe}`;
@@ -44,33 +38,32 @@ function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltra
 
             Object.entries(categorias).forEach(([codCategoria, catData]) => {
                 if (!deptoRef.categorias[codCategoria]) {
+                    // CORREÇÃO: A propriedade 'fornecedores' na matriz consolidada deve ser um OBJETO para agregação.
                     deptoRef.categorias[codCategoria] = { valores: {}, fornecedores: {} };
                 }
                 const catRef = deptoRef.categorias[codCategoria];
 
-                // Agrega os valores totais da categoria
                 Object.entries(catData.valores).forEach(([mesAno, valor]) => {
                     const [mes, ano] = mesAno.split('-');
                     if (anosFiltrados.includes(ano)) catRef.valores[mesAno] = (catRef.valores[mesAno] || 0) + valor;
                 });
-
-                // --- CORREÇÃO NA AGREGAÇÃO DE FORNECEDORES ---
-                // O 'catData.fornecedores' que vem de processarLancamentos é um ARRAY.
-                // Precisamos iterar sobre ele e agregar os resultados em um OBJETO no 'catRef'.
+                
+                // --- LÓGICA DE AGREGAÇÃO DE FORNECEDORES CORRIGIDA ---
+                // Itera no array de fornecedores da matriz de origem
                 catData.fornecedores.forEach(fornecedorData => {
                     const nomeForn = fornecedorData.fornecedor;
-                    // Garante que o fornecedor exista no objeto de agregação
+                    
+                    // Usa o nome do fornecedor como chave no OBJETO de destino para somar os valores
                     if (!catRef.fornecedores[nomeForn]) {
                         catRef.fornecedores[nomeForn] = { fornecedor: nomeForn, total: 0, valores: {} };
                     }
                     const fornRef = catRef.fornecedores[nomeForn];
 
-                    // Itera sobre os valores mensais do fornecedor e soma no objeto agregado
                     Object.entries(fornecedorData.valores || {}).forEach(([mesAno, valor]) => {
                         const [mes, ano] = mesAno.split('-');
                         if (anosFiltrados.includes(ano)) {
                             fornRef.valores[mesAno] = (fornRef.valores[mesAno] || 0) + valor;
-                            fornRef.total += valor; // Recalcula o total consolidado
+                            fornRef.total += valor;
                         }
                     });
                 });
@@ -78,14 +71,13 @@ function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltra
         });
     });
 
-    // --- CORREÇÃO FINAL: Transforma os fornecedores agregados (objeto) em um array ordenado para a UI ---
+    // --- ETAPA FINAL: Converter o objeto de fornecedores de volta para um array ordenado ---
+    // A UI espera um array para renderizar as linhas, então fazemos a conversão aqui.
     Object.values(matrizDepartamentos).forEach(depto => {
         Object.values(depto.categorias).forEach(cat => {
-            // Converte o objeto de fornecedores de volta para um array e ordena pelo total
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
         });
     });
-
 
     let colunas = Array.from(mesesExistentes).sort();
     if (modo.toLowerCase() === 'anual') {
