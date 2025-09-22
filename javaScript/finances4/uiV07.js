@@ -1,5 +1,4 @@
 // ui.js
-import { calcularTotaisDRE } from './processingV06.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -286,7 +285,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
         });
     }
 }
-
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {
@@ -306,7 +304,6 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
@@ -314,7 +311,6 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
         return;
     }
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
-    calcularTotaisDRE(matrizDRE, colunas, saldoInicialPeriodo);
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
