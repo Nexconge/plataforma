@@ -427,9 +427,9 @@ function obterContasSelecionadas() {
         return null;
     }
     const contasEmTexto = getSelectItems(contaSelect);
-    const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
-    console.log("Contas selecionadas (números):", contasEmNumero);
-    return contasEmNumero;
+    //const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
+    console.log("Contas selecionadas (números):", contasEmTexto);
+    return contasEmTexto;
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas };
