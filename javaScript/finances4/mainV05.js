@@ -2,8 +2,8 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { buscarTitulos } from './apiV01.js';
-import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV03.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV03.js';
+import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV04.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV04.js';
 
 // --- O cache em memória foi reestruturado ---
 let appCache = {

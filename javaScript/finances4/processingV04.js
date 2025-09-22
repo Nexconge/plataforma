@@ -54,11 +54,11 @@ function extrairLancamentosDosTitulos(titulos) {
             let departamentosStr = "";
             if (Array.isArray(titulo.Departamentos)) {
                 const deptosArray = titulo.Departamentos.map(depto => {
+                    const valorRateio = lancamento.ValorLancamento * ((depto.PercDepto || 100) / 100);
                     if (!depto.CODDepto || typeof depto.PercDepto === 'undefined') {
-                        return null; // Ignora departamentos malformados.
+                        return `0:${valorRateio}`;; // Ignora departamentos malformados.
                     }
                     // Calcula o valor absoluto do rateio para este lançamento específico.
-                    const valorRateio = lancamento.ValorLancamento * (depto.PercDepto / 100);
                     return `${depto.CODDepto}:${valorRateio}`;
                 }).filter(Boolean); // Remove quaisquer entradas nulas.
 
