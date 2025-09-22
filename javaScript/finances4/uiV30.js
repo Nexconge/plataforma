@@ -1,5 +1,5 @@
 // ui.js
-import { gerarMatrizConsolidada } from './utilsMatrizV05.js';
+import { gerarMatrizConsolidada } from './utilsMatrizV06.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -306,7 +306,7 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
         .forEach(([codigo, { descricao }]) => {
             if (contasProjetos.has(Number(codigo))) {
                 const option = document.createElement('option');
-                option.value = codigo; option.textContent = descricao;
+                option.value = String(codigo); option.textContent = descricao;
                 contaSelect.appendChild(option);
             }
         });
@@ -339,7 +339,7 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
     if (anosParaProcessar.length === 0) return;
 
     const projetosSelecionados = getSelectItems(projSelect);
-    const contasSelecionadas = getSelectItems(contaSelect);
+    const contasSelecionadas = obterContasSelecionadas() || [];
 
     // Obtem as contas filtradas (apenas para referência do saldo inicial)
     const { saldoBase } = fContasESaldo(appCache.projetosMap, appCache.contasMap, projetosSelecionados, contasSelecionadas);

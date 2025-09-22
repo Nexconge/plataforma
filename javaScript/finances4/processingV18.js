@@ -94,7 +94,7 @@ function processarLancamentos(appCache, contasFiltradas, novosLancamentos) {
         
         //Verifica se o lançamento pertence a uma conta filtrada para evitar repetições em caso
         //de titulos com lançamentos em múltiplas contas
-        const codConta = lancamento.CODContaC;
+        const codConta = Number(lancamento.CODContaC);
         if (!contasFiltradas.has(codConta)) return;
 
         //Extrai mes e ano do lançamento para agregar na matriz
@@ -111,7 +111,7 @@ function processarLancamentos(appCache, contasFiltradas, novosLancamentos) {
         chavesComDados.add(mesAno);
 
         //Extrai dados de classe e categoria do mapa  
-        const codCategoria = lancamento.CODCategoria || 'SemCategoria';
+        const codCategoria = String(lancamento.CODCategoria || 'SemCategoria');
         const classeInfo = appCache.classesMap.get(codCategoria);
         const classe = classeInfo ? classeInfo.classe : 'Outros';
 

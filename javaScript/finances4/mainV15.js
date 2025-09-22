@@ -1,9 +1,9 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarTitulos } from './apiV20.js';
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos } from './processingV17.js';
-import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV29.js';
+import { buscarTitulos } from './apiV21.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos } from './processingV18.js';
+import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV30.js';
 //import { gerarMatrizConsolidada } from './utilsMatriz.js';
 
 // --- O cache em memória e as funções de serialização ---
@@ -28,7 +28,7 @@ async function handleFiltroChange() {
     // Se existirem contas selecionadas
     if (contasSelecionadas && contasSelecionadas.length > 0) {
         // Filtra as contas que já estão no cache das que precisam ser buscadas
-        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.contasBuscadas.includes((c)));
+        const contasParaBuscar = contasSelecionadas.filter(c => !appCache.matrizesPorConta.includes(Number(c)));
 
         // 1. Busca somente as contas faltantes
         if (contasParaBuscar.length > 0) {
@@ -41,12 +41,7 @@ async function handleFiltroChange() {
             });
 
             // Chama a API para buscar os títulos faltantes
-            const promises = contasParaBuscar.map(conta => {
-                const filtrosAPI = {
-                    contas: [conta] // Envia somente uma conta por vez
-                };
-                return buscarTitulos(filtrosAPI);
-            });
+            const promises = contasParaBuscar.map(conta => buscarTitulos({ contas: [Number(conta)] }));
             const allResponses = await Promise.all(promises);
 
             // Processa todas as respostas da API para extrair os lançamentos e popular o cache
@@ -60,9 +55,11 @@ async function handleFiltroChange() {
                         // c) Processa os lanãmentos extraidos para matrizrs de dados
                         if (lancamentosNovos.length > 0) {
                             const codConta = Number(lancamentosNovos[0].CODContaC);
-                            const lancamentosProcessados = processarLancamentos(appCache, new Set(contasParaBuscar), lancamentosNovos)
+                            const lancamentosProcessados = processarLancamentos(appCache, new Set([codConta]), lancamentosNovos);
 
                             appCache.matrizesPorConta.set(codConta, lancamentosProcessados)
+                            if (!appCache.contasBuscadas.includes(conta)) appCache.contasBuscadas.push(conta);
+
                             console.log(`Matriz incluída para conta ${codConta}:`, lancamentosProcessados);
                         }
                     } catch (error) {
@@ -98,9 +95,9 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
         appCache.categoriasMap.set(c.codigo, c.Categoria);
     });
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(Number) }));
-    contas.forEach(c => appCache.contasMap.set((c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
-    departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
+    projetos.forEach(p => appCache.projetosMap.set(Number(p.codProj), { nome: p.nomeProj, contas: (p.contas || []).map(Number) }));
+    contas.forEach(c => appCache.contasMap.set(Number(c.codigo), { descricao: c.descricao, saldoIni: Number(c.saldoIni) || 0 }));
+    departamentos.forEach(d => appCache.departamentosMap.set(Number(d.codigo), d.descricao));
 
     const anoAtual = new Date().getFullYear();
     appCache.anosDisponiveis = [];
