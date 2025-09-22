@@ -64,13 +64,26 @@ async function handleFiltroChange() {
         const allResponses = await Promise.all(promises);
 
         // Processa as respostas e popula o cache de lançamentos brutos (Nível 1)
-        allResponses.forEach((apiResponse, index) => {
-            const contaAtual = contasParaBuscar[index];
+        // Esta seção agora distribui cada lançamento para sua conta correta.
+        allResponses.forEach(apiResponse => {
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulosNovos = JSON.parse(`[${apiResponse.response.movimentos}]`);
                     const lancamentosNovos = extrairLancamentosDosTitulos(titulosNovos);
-                    appCache.lancamentosPorConta.set(contaAtual, lancamentosNovos);
+
+                    // Distribui cada lançamento para a sua respectiva conta no cache
+                    lancamentosNovos.forEach(lancamento => {
+                        const codConta = Number(lancamento.CODContaC);
+                        
+                        // Garante que o slot da conta existe no cache, mesmo que não tenha sido buscada diretamente
+                        if (!appCache.lancamentosPorConta.has(codConta)) {
+                            appCache.lancamentosPorConta.set(codConta, []);
+                        }
+                        
+                        // Adiciona o lançamento à lista da sua conta correspondente
+                        const lista = appCache.lancamentosPorConta.get(codConta);
+                        lista.push(lancamento);
+                    });
                 } catch (error) {
                     console.error("Erro ao processar resposta da API:", error);
                 }
