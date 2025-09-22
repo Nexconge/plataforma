@@ -1,5 +1,5 @@
 // ui.js
-import { calcularTotaisDRE } from './processingV01.js';
+import { calcularTotaisDRE } from './processingV02.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {

@@ -219,5 +219,82 @@ function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
         matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
 }
+function mergeMatrizes(listaDeDadosProcessados) {
+    const merged = {
+        matrizDRE: {},
+        matrizDepartamentos: {},
+        saldoInicialPeriodo: 0,
+        chavesComDados: new Set()
+    };
 
-export { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos};
+    if (!listaDeDadosProcessados || listaDeDadosProcessados.length === 0) {
+        return merged;
+    }
+
+    listaDeDadosProcessados.forEach(dados => {
+        // 1. Soma o saldo inicial de cada conta
+        merged.saldoInicialPeriodo += dados.saldoInicialPeriodo || 0;
+
+        // 2. Une os períodos (meses/anos) que contêm dados
+        dados.chavesComDados.forEach(chave => merged.chavesComDados.add(chave));
+
+        // 3. Soma os valores da matrizDRE
+        for (const classe in dados.matrizDRE) {
+            if (!merged.matrizDRE[classe]) merged.matrizDRE[classe] = {};
+            for (const periodo in dados.matrizDRE[classe]) {
+                merged.matrizDRE[classe][periodo] = (merged.matrizDRE[classe][periodo] || 0) + dados.matrizDRE[classe][periodo];
+            }
+        }
+
+        // 4. Soma os valores da matrizDepartamentos (que tem estrutura aninhada)
+        for (const chaveDepto in dados.matrizDepartamentos) {
+            const deptoData = dados.matrizDepartamentos[chaveDepto];
+            if (!merged.matrizDepartamentos[chaveDepto]) {
+                merged.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(deptoData)); // Cópia profunda na primeira vez
+                continue;
+            }
+            const mergedDepto = merged.matrizDepartamentos[chaveDepto];
+            for (const codCategoria in deptoData.categorias) {
+                const catData = deptoData.categorias[codCategoria];
+                if (!mergedDepto.categorias[codCategoria]) {
+                    mergedDepto.categorias[codCategoria] = JSON.parse(JSON.stringify(catData)); // Cópia profunda
+                    continue;
+                }
+                const mergedCat = mergedDepto.categorias[codCategoria];
+                for (const periodo in catData.valores) {
+                    mergedCat.valores[periodo] = (mergedCat.valores[periodo] || 0) + catData.valores[periodo];
+                }
+                Object.values(catData.fornecedores).forEach(fornecedorData => {
+                    const nomeForn = fornecedorData.fornecedor;
+                    if (!mergedCat.fornecedores[nomeForn]) {
+                        mergedCat.fornecedores[nomeForn] = { ...fornecedorData, valores: {}, total: 0 };
+                    }
+                    const mergedForn = mergedCat.fornecedores[nomeForn];
+                    mergedForn.total += fornecedorData.total;
+                    for (const periodo in fornecedorData.valores) {
+                        mergedForn.valores[periodo] = (mergedForn.valores[periodo] || 0) + fornecedorData.valores[periodo];
+                    }
+                });
+            }
+        }
+    });
+
+    // Reordena os fornecedores pelo total após a fusão
+    Object.values(merged.matrizDepartamentos).forEach(dep => {
+        Object.values(dep.categorias).forEach(cat => {
+            cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
+        });
+    });
+
+    return merged;
+}
+
+
+// Exporta a nova função junto com as existentes
+export { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos, mergeMatrizes };
+
+
+
+
+
+
