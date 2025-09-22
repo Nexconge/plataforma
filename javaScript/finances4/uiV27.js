@@ -304,7 +304,7 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
     Array.from(contasMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
         .forEach(([codigo, { descricao }]) => {
-            if (contasProjetos.has(codigo)) {
+            if (contasProjetos.has(String(codigo))) {
                 const option = document.createElement('option');
                 option.value = codigo; option.textContent = descricao;
                 contaSelect.appendChild(option);
