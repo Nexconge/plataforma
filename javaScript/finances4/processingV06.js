@@ -19,7 +19,6 @@ function filtrarContasESaldo(projetosMap, contasMap, filtroProjeto, filtroConta)
     });
     return { contasFiltradas, saldoBase };
 }
-
 function extrairLancamentosDosTitulos(titulos) {
     const lancamentosProcessados = [];
 
@@ -36,12 +35,6 @@ function extrairLancamentosDosTitulos(titulos) {
             return; // Pula para o próximo título do loop.
         }
 
-        // 1. Mapeia o campo "Natureza" para "Origem".
-        // O script de processamento ('processingV13.js') verifica se a Origem termina com "P"
-        // para negativar o valor. Esta lógica garante a compatibilidade.
-        // "R" (Receita) resulta em um valor positivo, "P" (Pagamento) em um negativo.
-        const origem = titulo.Natureza === 'P' ? 'EXTR_P' : 'EXTR_R';
-
         // 2. Itera sobre cada lançamento individual dentro do título.
         titulo.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') {
@@ -49,31 +42,34 @@ function extrairLancamentosDosTitulos(titulos) {
                 return; // Pula para o próximo lançamento.
             }
 
-            // 3. Processa e formata os Departamentos.
-            // O formato de destino é uma string como "CODIGO1:VALOR1,CODIGO2:VALOR2".
-            let departamentosStr = "";
-            if (Array.isArray(titulo.Departamentos)) {
-                const deptosArray = titulo.Departamentos.map(depto => {
-                    const valorRateio = lancamento.ValorLancamento * ((depto.PercDepto || 100) / 100);
-                    if (!depto.CODDepto || typeof depto.PercDepto === 'undefined') {
-                        return `0:${valorRateio}`;; // Ignora departamentos malformados.
-                    }
-                    // Calcula o valor absoluto do rateio para este lançamento específico.
-                    return `${depto.CODDepto}:${valorRateio}`;
-                }).filter(Boolean); // Remove quaisquer entradas nulas.
-
-                departamentosStr = deptosArray.join(',');
+            let departamentosObj = [];
+            // MUDANÇA: Verifica se o array de departamentos original tem conteúdo.
+            if (Array.isArray(titulo.Departamentos) && titulo.Departamentos.length > 0) {
+                // Se tiver, processa normalmente.
+                departamentosObj = titulo.Departamentos.map(depto => {
+                    const valorRateio = lancamento.ValorLancamento * ((depto.PercDepto ?? 100) / 100);
+                    return {
+                        CodDpto: depto.CODDepto || 0,
+                        ValorDepto: valorRateio
+                    };
+                });
+            } else {
+                // Se estiver vazio ou não existir, cria o departamento "Outros Departamentos" com o valor total.
+                departamentosObj = [{
+                    CodDpto: 0,
+                    ValorDepto: lancamento.ValorLancamento
+                }];
             }
 
             // 4. Monta o objeto de lançamento final no formato esperado.
             lancamentosProcessados.push({
-                Origem: origem,
+                Natureza: titulo.Natureza,
                 DataLancamento: lancamento.DataLancamento,
                 CODContaC: lancamento.CODContaC,
                 ValorLancamento: lancamento.ValorLancamento,
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente,
-                Departamentos: departamentosStr
+                Departamentos: departamentosObj
             });
         });
         console.log(lancamentosProcessados);
@@ -81,7 +77,6 @@ function extrairLancamentosDosTitulos(titulos) {
 
     return lancamentosProcessados;
 }
-
 function processarLancamentos(appCache, conta) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
     const classesParaDetalhar = new Set([
@@ -89,25 +84,26 @@ function processarLancamentos(appCache, conta) {
         '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', 
         '(+/-) Empréstimos/Consórcios'
     ]);
-
     appCache.lancamentos.forEach(lancamento => {
         if (conta != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) {
             return; 
         }
-        
+        //Cria chave de agragação por mes-ano  
         const partesData = lancamento.DataLancamento.split('/');
         if (partesData.length !== 3) return; 
         const [dia, mesRaw, ano] = partesData;
         const mes = mesRaw.padStart(2, '0');   //garante sempre 2 dígitos
         const chaveAgregacao = `${mes}-${ano}`;
+        chavesComDados.add(chaveAgregacao);
+
+        //Negativa valor para pagamentos ("P")
         let valor = lancamento.ValorLancamento;
-        if (lancamento.Origem.slice(-1) === "P") {
+        if (lancamento.Natureza === "P") {
             valor = -valor;
         }
 
-        chavesComDados.add(chaveAgregacao);
-
+        //Extrai outros dados
         const codCategoria = lancamento.CODCategoria || 'SemCategoria';
         const classeInfo = appCache.classesMap.get(codCategoria);
         const classe = classeInfo ? classeInfo.classe : 'Outros';
@@ -117,15 +113,14 @@ function processarLancamentos(appCache, conta) {
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         // Matriz Departamentos
-        if (classesParaDetalhar.has(classe) && lancamento.Departamentos && typeof lancamento.Departamentos === 'string') {
+        if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {
             const fornecedor = lancamento.Cliente;
             
-            lancamento.Departamentos.split(',').forEach(pair => {
-                const [codigo, valorStr] = pair.split(':');
-                if (!codigo || !valorStr) return;
-                const codDepto = Number(codigo);
-                let valorRateio = Number(valorStr) || 0;
-                if (lancamento.Origem.slice(-1) === "P") {
+            lancamento.Departamentos.forEach(depto => {
+                const codDepto = depto.CodDpto;
+                let valorRateio = depto.ValorDepto;
+
+                if (lancamento.Natureza === "P") {
                     valorRateio = -valorRateio;
                 }
                 const nomeDepto = appCache.departamentosMap.get(codDepto) || 'Outros Departamentos';
@@ -159,9 +154,6 @@ function processarLancamentos(appCache, conta) {
 
     return { matrizDRE, matrizDepartamentos, chavesComDados };
 }
-
-
-
 function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
     let saldoAcumulado = saldoInicial;
 
@@ -217,7 +209,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
             }
         }
         
-        // CORREÇÃO: Lógica de merge para matrizDepartamentos adicionada
+        // Mescla matrizDepartamentos adicionada
         for (const chaveDepto in dados.matrizDepartamentos) {
             if (!monthlyMerged.matrizDepartamentos[chaveDepto]) {
                 monthlyMerged.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(dados.matrizDepartamentos[chaveDepto]));
@@ -258,15 +250,12 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
 
     const tempDRE = JSON.parse(JSON.stringify(monthlyMerged.matrizDRE));
     calcularTotaisDRE(tempDRE, colunasHistoricasOrdenadas, 0);
-
     let saldoAcumuladoAntesDoPeriodo = 0;
     const primeiraColunaVisivel = colunasVisiveis[0];
-
     for (const periodo of colunasHistoricasOrdenadas) {
         if (periodo === primeiraColunaVisivel) break;
         saldoAcumuladoAntesDoPeriodo += tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0;
     }
-
     const saldoInicialPeriodo = saldoBaseTotal + saldoAcumuladoAntesDoPeriodo;
 
     if (modo.toLowerCase() === 'anual') {
