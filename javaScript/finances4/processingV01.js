@@ -10,7 +10,7 @@ function filtrarContasESaldo(projetosMap, contasMap, filtroProjeto, filtroConta)
         projeto.contas.forEach(codConta => {
             if (filtroConta.length === 0 || filtroConta.includes(codConta)) {
                 contasFiltradas.add(codConta);
-                const contaInfo = contasMap.get(codConta); // Garantir que a chave é string
+                const contaInfo = contasMap.get(String(codConta)); // Garantir que a chave é string
                 if (contaInfo) {
                     saldoBase += Number(contaInfo.saldoIni) || 0;
                 }
@@ -36,6 +36,12 @@ function extrairLancamentosDosTitulos(titulos) {
             return; // Pula para o próximo título do loop.
         }
 
+        // 1. Mapeia o campo "Natureza" para "Origem".
+        // O script de processamento ('processingV13.js') verifica se a Origem termina com "P"
+        // para negativar o valor. Esta lógica garante a compatibilidade.
+        // "R" (Receita) resulta em um valor positivo, "P" (Pagamento) em um negativo.
+        const origem = titulo.Natureza === 'P' ? 'EXTR_P' : 'EXTR_R';
+
         // 2. Itera sobre cada lançamento individual dentro do título.
         titulo.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') {
@@ -43,137 +49,141 @@ function extrairLancamentosDosTitulos(titulos) {
                 return; // Pula para o próximo lançamento.
             }
 
-            // 3. Processa e formata os Departamentos
-            //Cria o array vazio
-            let departamentosArray = [];
+            // 3. Processa e formata os Departamentos.
+            // O formato de destino é uma string como "CODIGO1:VALOR1,CODIGO2:VALOR2".
+            let departamentosStr = "";
             if (Array.isArray(titulo.Departamentos)) {
-                departamentosArray = titulo.Departamentos.map(depto => {
+                const deptosArray = titulo.Departamentos.map(depto => {
                     if (!depto.CODDepto || typeof depto.PercDepto === 'undefined') {
                         return null; // Ignora departamentos malformados.
                     }
-                    
-                    // Calcula o valor do lançamento dentro do departamento
+                    // Calcula o valor absoluto do rateio para este lançamento específico.
                     const valorRateio = lancamento.ValorLancamento * (depto.PercDepto / 100);
-                    return {
-                        CodDepto: depto.CODDepto,
-                        ValDepto: valorRateio
-                    };
+                    return `${depto.CODDepto}:${valorRateio}`;
                 }).filter(Boolean); // Remove quaisquer entradas nulas.
+
+                departamentosStr = deptosArray.join(',');
             }
 
             // 4. Monta o objeto de lançamento final no formato esperado.
             lancamentosProcessados.push({
-                Natureza: titulo.Natureza,
+                Origem: origem,
                 DataLancamento: lancamento.DataLancamento,
                 CODContaC: lancamento.CODContaC,
                 ValorLancamento: lancamento.ValorLancamento,
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente,
-                Departamentos: departamentosArray
+                Departamentos: departamentosStr
             });
         });
     });
+
     return lancamentosProcessados;
 }
 
-function processarLancamentos(appCache, contasFiltradas, novosLancamentos) {
+function processarLancamentos(appCache, modo, anosParaProcessar, contasFiltradas, saldoBase) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
     
-    //Define as classes a serem detalhadas na tabela de departamentos
+    if (anosParaProcessar.length === 0) {
+        return { matrizDRE, matrizDepartamentos, saldoInicialPeriodo: saldoBase, chavesComDados };
+    }
+
+    const primeiroAno = Math.min(...anosParaProcessar.map(Number));
+    let saldoInicialPeriodo = saldoBase;
+
     const classesParaDetalhar = new Set([
         '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
         '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', 
         '(+/-) Empréstimos/Consórcios'
     ]);
 
-    //Para cada novo lançamento, processa e agrega os dados;  
-    novosLancamentos.forEach(lancamento => {
+    appCache.lancamentos.forEach(lancamento => {
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) {
             return; 
         }
-        
-        //Verifica se o lançamento pertence a uma conta filtrada para evitar repetições em caso
-        //de titulos com lançamentos em múltiplas contas
-        const codConta = Number(lancamento.CODContaC);
+
+        const codConta = String(lancamento.CODContaC).trim();
         if (!contasFiltradas.has(codConta)) return;
 
-        //Extrai mes e ano do lançamento para agregar na matriz
-        const [dia, mesRaw, ano] = lancamento.DataLancamento.split('/');
-        const mes = String(mesRaw).padStart(2, '0');
-        const mesAno = `${mes}-${ano}`;
+        const partesData = lancamento.DataLancamento.split('/');
+        if (partesData.length !== 3) return; 
 
-        //Define se o valor é negativo ou positivo com base na natureza do título
+        const [dia, mesRaw, ano] = partesData;
+        const mes = mesRaw.padStart(2, '0');   // 🔥 garante sempre 2 dígitos
+        const anoMes = `${mes}-${ano}`;
+        const chaveAgregacao = (modo.toLowerCase() === 'anual') ? ano : anoMes;
+
         let valor = lancamento.ValorLancamento;
-        if (lancamento.Natureza === "P") {
+        if (lancamento.Origem.slice(-1) === "P") {
             valor = -valor;
         }
-        //Agrega os dados na matriz DRE e na matriz de Departamentos
-        chavesComDados.add(mesAno);
 
-        //Extrai dados de classe e categoria do mapa  
-        const codCategoria = String(lancamento.CODCategoria || 'SemCategoria');
-        const classeInfo = appCache.classesMap.get(codCategoria);
-        const classe = classeInfo ? classeInfo.classe : 'Outros';
+        if (Number(ano) < primeiroAno) {
+            saldoInicialPeriodo += valor;
+        } else if (anosParaProcessar.includes(ano)) {
+            chavesComDados.add(chaveAgregacao);
 
-        // Matriz DRE
-        if (!matrizDRE[classe]) matrizDRE[classe] = {};
-        matrizDRE[classe][mesAno] = (matrizDRE[classe][mesAno] || 0) + valor;
+            const codCategoria = lancamento.CODCategoria || 'SemCategoria';
+            const classeInfo = appCache.classesMap.get(codCategoria);
+            const classe = classeInfo ? classeInfo.classe : 'Outros';
 
-        // Matriz Departamentos
-        if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos)) {
-            //Define fornecedor
-            const fornecedor = lancamento.Cliente;
-            //Para cada departamento do lançamento
-            lancamento.Departamentos.forEach(depto => {
+            // Matriz DRE
+            if (!matrizDRE[classe]) matrizDRE[classe] = {};
+            matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
-                //Extrai informações do departamento
-                const codDepto = Number(depto.CodDepto || 0);
-                let valorRateio = Number(depto.ValDepto || 0);
-                //Define se o valor é negativo ou positivo
-                if (lancamento.Natureza === "P") {
-                    valorRateio = -valorRateio;
-                }
-                //Cria uma chave de agragação Depto+Classe
-                const chaveDepto = `${codDepto}|${classe}`;
+            // Matriz Departamentos
+            if (classesParaDetalhar.has(classe) && lancamento.Departamentos && typeof lancamento.Departamentos === 'string') {
+                const fornecedor = lancamento.Cliente;
+                
+                lancamento.Departamentos.split(',').forEach(pair => {
+                    const [codigo, valorStr] = pair.split(':');
+                    if (!codigo || !valorStr) return;
 
-                //Se o objeto para a conta e Depto+Classe não existir na matriz cria ele
-                if (!matrizDepartamentos[chaveDepto]) {
-                    matrizDepartamentos[chaveDepto] = { depto: codDepto, classe, categorias: {} };
-                }
+                    const codDepto = Number(codigo);
+                    let valorRateio = Number(valorStr) || 0;
+                    
+                    if (lancamento.Origem.slice(-1) === "P") {
+                        valorRateio = -valorRateio;
+                    }
 
-                //Referencia o campo categorias
-                const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
-                //Se o array de categoria não existir dentro do objeto cria uma vazia
-                if (!categoriaRef[codCategoria]) {
-                    categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
-                }
-                //Atribui o valor do departamento a categoria no mes e ano
-                const catData = categoriaRef[codCategoria];
-                catData.valores[mesAno] = (catData.valores[mesAno] || 0) + valorRateio;
+                    const nomeDepto = appCache.departamentosMap.get(codDepto) || 'Outros Departamentos';
+                    const chaveDepto = `${nomeDepto}|${classe}`;
 
+                    if (!matrizDepartamentos[chaveDepto]) {
+                        matrizDepartamentos[chaveDepto] = { nome: nomeDepto, classe, categorias: {} };
+                    }
 
-                //Se o array de fornecedores não existir no array de categorias cria 
-                if (!catData.fornecedores[fornecedor]) {
-                    catData.fornecedores[fornecedor] = { fornecedor, total: 0, valores: {} };
-                }
-                const fornecedorRef = catData.fornecedores[fornecedor];
-                catData.fornecedores[fornecedor].total += valorRateio;
-                fornecedorRef.valores[mesAno] = (fornecedorRef.valores[mesAno] || 0) + valorRateio;
-            });
+                    const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
+                    if (!categoriaRef[codCategoria]) {
+                        categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
+                    }
+                    const catData = categoriaRef[codCategoria];
+
+                    catData.valores[chaveAgregacao] = (catData.valores[chaveAgregacao] || 0) + valorRateio;
+
+                    if (!catData.fornecedores[fornecedor]) {
+                        catData.fornecedores[fornecedor] = { fornecedor, valores: {}, total: 0 };
+                    }
+                    catData.fornecedores[fornecedor].valores[chaveAgregacao] =
+                        (catData.fornecedores[fornecedor].valores[chaveAgregacao] || 0) + valorRateio;
+                    catData.fornecedores[fornecedor].total += valorRateio;
+                });
+            }
         }
     });
 
-    // Ordena fornecedores por total dentro de cada categoria
-    Object.values(matrizDepartamentos).forEach(dep => { 
-        Object.values(dep.categorias).forEach(cat => { 
+    Object.values(matrizDepartamentos).forEach(dep => {
+        Object.values(dep.categorias).forEach(cat => {
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
         });
     });
 
-    return { matrizDRE, matrizDepartamentos, chavesComDados };
+    return { matrizDRE, matrizDepartamentos, saldoInicialPeriodo, chavesComDados };
 }
 
-function calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
+
+
+function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
     let saldoAcumulado = saldoInicial;
 
     colunas.forEach(coluna => {

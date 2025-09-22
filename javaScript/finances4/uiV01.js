@@ -1,5 +1,5 @@
 // ui.js
-import { gerarMatrizConsolidada } from './utilsMatrizV06.js';
+import { calcularTotaisDRE } from './processingV01.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -24,7 +24,6 @@ function toggleLinha(id) {
         filhos.forEach(filho => filho.classList.remove('hidden'));
     }
 }
-
 function esconderDescendentes(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     filhos.forEach(filho => {
@@ -119,7 +118,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
-
 function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
@@ -176,7 +174,6 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
-
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
@@ -262,8 +259,6 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
         });
     });
 }
-
-
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
@@ -304,25 +299,40 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
     Array.from(contasMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
         .forEach(([codigo, { descricao }]) => {
-            if (contasProjetos.has(Number(codigo))) {
+            if (contasProjetos.has(codigo)) {
                 const option = document.createElement('option');
-                option.value = String(codigo); option.textContent = descricao;
+                option.value = codigo; option.textContent = descricao;
                 contaSelect.appendChild(option);
             }
         });
 }
 
-function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
+function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
+    if (!dadosProcessados) {
+        document.getElementById('tabelaMatriz').innerHTML = '';
+        document.getElementById('tabelaCustos').innerHTML = '';
+        return;
+    }
+    const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
+    calcularTotaisDRE(matrizDRE, colunas, saldoInicialPeriodo);
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
+    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
+}
+function obterFiltrosAtuais() {
     const modoSelect = document.getElementById('modoSelect');
     const anoSelect = document.getElementById('anoSelect');
     const projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect');
 
+    if (!modoSelect || !anoSelect || !projSelect || !contaSelect) {
+        console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
+        return null;
+    }
+
     const modo = modoSelect.value;
     const valorSelecionado = anoSelect.value;
-    if (!valorSelecionado) return;
+    if (!valorSelecionado) return null;
 
-    // Determina os anos a serem exibidos
     let anosParaProcessar = [];
     if (modo.toLowerCase() === 'mensal') {
         anosParaProcessar = [valorSelecionado];
@@ -330,48 +340,25 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
         const anoInicio = Number(valorSelecionado);
         const anoFim = anoInicio + 4;
         for (let ano = anoInicio; ano <= anoFim; ano++) {
-            if (appCache.anosDisponiveis.includes(String(ano))) {
-                anosParaProcessar.push(String(ano));
-            }
+            anosParaProcessar.push(String(ano));
         }
     }
+    
+    const colunas = (modo.toLowerCase() === 'anual')
+        ? [...anosParaProcessar].sort()
+        : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${valorSelecionado}`);
 
-    if (anosParaProcessar.length === 0) return;
+    const projetos = getSelectItems(projSelect).map(Number);
+    const contas = getSelectItems(contaSelect).map(Number);
 
-    const projetosSelecionados = getSelectItems(projSelect);
-    const contasSelecionadas = obterContasSelecionadas() || [];
-
-    // Obtem as contas filtradas (apenas para referência do saldo inicial)
-    const { saldoBase } = fContasESaldo(appCache.projetosMap, appCache.contasMap, projetosSelecionados, contasSelecionadas);
-
-    // --- Nova parte ---
-    const { matrizDRE, matrizDepartamentos, colunas } = gerarMatrizConsolidada(
-        appCache.matrizesPorConta,
-        contasSelecionadas,
-        anosParaProcessar,
-        modo
-    );
-
-    // =======================================================================================
-    // === PONTO DE DEBUG ADICIONADO =========================================================
-    // =======================================================================================
-    // Este log mostrará os dados finais, já agrupados por ano (se aplicável),
-    // exatamente como serão enviados para as funções de renderização.
-    console.log("%cDados Prontos para Renderização:", "color: blue; font-weight: bold;", {
-        colunas: colunas,
-        matrizDRE: matrizDRE,
-        matrizDepartamentos: matrizDepartamentos
-    });
-    // =======================================================================================
-
-    const saldoInicialPeriodo = saldoBase; // se desejar, pode ajustar aqui
-
-    fCalculaTotais(matrizDRE, colunas, saldoInicialPeriodo);
-
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
-    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
+    return {
+        modo: modo,
+        anos: anosParaProcessar,
+        projetos: projetos,
+        contas: contas,
+        colunas: colunas
+    };
 }
-
 function configurarFiltros(appCache, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
@@ -416,20 +403,4 @@ function configurarFiltros(appCache, atualizarCallback) {
     atualizarCallback();
 }
 
-/**
- * Captura os filtros selecionados e formata o período (anos) para a API.
- * @returns {object|null} Um objeto com os filtros para a API ou null se algum elemento não for encontrado.
- */
-function obterContasSelecionadas() {
-    const contaSelect = document.getElementById('contaSelect');
-    if (!contaSelect) {
-        console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
-        return null;
-    }
-    const contasEmTexto = getSelectItems(contaSelect);
-    const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
-    console.log("Contas selecionadas (números):", contasEmNumero);
-    return contasEmNumero;
-}
-
-export { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas };
+export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais };
