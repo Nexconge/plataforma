@@ -154,24 +154,39 @@ function processarLancamentos(appCache, conta) {
 
     return { matrizDRE, matrizDepartamentos, chavesComDados };
 }
-function calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
+function calcularTotaisDRE(matrizDRE, colunas, saldoInicial, chavesComDados) {
     let saldoAcumulado = saldoInicial;
+
     colunas.forEach(coluna => {
         const getValor = (classe) => matrizDRE[classe]?.[coluna] || 0;
 
+        // Cálculos intermediários (sem alterações)
         const receitaLiquida = getValor('(+) Receita Bruta') + getValor('(-) Deduções');
+        matrizDRE['(=) Receita Líquida'] ??= {};
         matrizDRE['(=) Receita Líquida'][coluna] = receitaLiquida;
 
         const geracaoCaixa = receitaLiquida + getValor('(-) Custos') + getValor('(-) Despesas') + getValor('(+/-) IRPJ/CSLL');
+        matrizDRE['(+/-) Geração de Caixa Operacional'] ??= {};
         matrizDRE['(+/-) Geração de Caixa Operacional'][coluna] = geracaoCaixa;
 
         const movimentacaoNaoOperacional = getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
+
         const movimentacaoMensal = geracaoCaixa + movimentacaoNaoOperacional;
+        matrizDRE['(=) Movimentação de Caixa Mensal'] ??= {};
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
 
+        // 2. Define o Caixa Inicial da coluna atual
+        matrizDRE['Caixa Inicial'] ??= {};
         matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
+
+        // 3. A variação REAL do caixa inclui a movimentação mensal E as transferências/outros.
         const variacaoCaixaTotal = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
+
+        // 4. Atualiza o saldo acumulado com a variação TOTAL para o próximo período.
         saldoAcumulado += variacaoCaixaTotal;
+
+        // 5. Define o Caixa Final da coluna atual
+        matrizDRE['Caixa Final'] ??= {};
         matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
 }
@@ -180,10 +195,9 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     const todasChaves = new Set();
 
     if (!listaDeDadosProcessados || listaDeDadosProcessados.length === 0) {
-        return { matrizDRE: {}, matrizDepartamentos: {}, saldoInicialPeriodo: 0 };
+        return { ...monthlyMerged, saldoInicialPeriodo: 0 };
     }
 
-    // ETAPA 1: Merge de todos os dados das contas em um único conjunto de dados MENSAIS
     const saldoBaseTotal = listaDeDadosProcessados.reduce((acc, dados) => {
         dados.chavesComDados.forEach(chave => todasChaves.add(chave));
 
@@ -195,7 +209,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
             }
         }
         
-        // Mescla matrizDepartamentos
+        // Mescla matrizDepartamentos adicionada
         for (const chaveDepto in dados.matrizDepartamentos) {
             if (!monthlyMerged.matrizDepartamentos[chaveDepto]) {
                 monthlyMerged.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(dados.matrizDepartamentos[chaveDepto]));
@@ -229,18 +243,13 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
         return acc + (dados.saldoIni || 0);
     }, 0);
 
-    // ETAPA 2: Cálculo do Saldo Inicial para o período visível
     const colunasHistoricasOrdenadas = Array.from(todasChaves).sort((a, b) => {
         const [mesA, anoA] = a.split('-'); const [mesB, anoB] = b.split('-');
         return new Date(anoA, mesA - 1) - new Date(anoB, mesB - 1);
     });
 
     const tempDRE = JSON.parse(JSON.stringify(monthlyMerged.matrizDRE));
-    ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
-        if (!tempDRE[classe]) tempDRE[classe] = {};
-    });
-    calcularTotaisDRE(tempDRE, colunasHistoricasOrdenadas, 0); // Roda sobre todos os dados históricos com saldo base zero
-    
+    calcularTotaisDRE(tempDRE, colunasHistoricasOrdenadas, 0);
     let saldoAcumuladoAntesDoPeriodo = 0;
     const primeiraColunaVisivel = colunasVisiveis[0];
     for (const periodo of colunasHistoricasOrdenadas) {
@@ -249,9 +258,9 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     }
     const saldoInicialPeriodo = saldoBaseTotal + saldoAcumuladoAntesDoPeriodo;
 
-    // ETAPA 3: Agregação Anual (se necessário)
-    const dataBeforeTotals = (modo.toLowerCase() === 'anual') ? (() => {
+    if (modo.toLowerCase() === 'anual') {
         const annualData = { matrizDRE: {}, matrizDepartamentos: {} };
+        // Agrega DRE
         for(const classe in monthlyMerged.matrizDRE) {
             annualData.matrizDRE[classe] = {};
             for(const periodoMensal in monthlyMerged.matrizDRE[classe]) {
@@ -259,6 +268,8 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
                 annualData.matrizDRE[classe][ano] = (annualData.matrizDRE[classe][ano] || 0) + monthlyMerged.matrizDRE[classe][periodoMensal];
             }
         }
+        
+        // CORREÇÃO: Lógica de agregação anual para matrizDepartamentos adicionada
         for(const chaveDepto in monthlyMerged.matrizDepartamentos) {
             const deptoData = monthlyMerged.matrizDepartamentos[chaveDepto];
             annualData.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(deptoData));
@@ -271,6 +282,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
                     valoresAnuais[ano] = (valoresAnuais[ano] || 0) + catData.valores[periodoMensal];
                 }
                 catData.valores = valoresAnuais;
+
                 for (const forn in catData.fornecedores) {
                     const valoresAnuaisForn = {};
                     for (const periodoMensal in catData.fornecedores[forn].valores) {
@@ -281,32 +293,12 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
                 }
             }
         }
-        return annualData;
-    })() : monthlyMerged;
-
-    // ETAPA 4: Cálculo da Coluna TOTAL para os dados já agregados
-    Object.values(dataBeforeTotals.matrizDRE).forEach(periodos => {
-        periodos.TOTAL = colunasVisiveis.reduce((acc, coluna) => acc + (periodos[coluna] || 0), 0);
-    });
-    // (A lógica para a matrizDepartamentos seria similar, mas é mais complexa e opcional)
-
-    // ETAPA 5: Finalização da Matriz DRE (Cálculo das linhas de totais e saldos para as colunas visiveis)
-    ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
-        if (!dataBeforeTotals.matrizDRE[classe]) dataBeforeTotals.matrizDRE[classe] = {};
-    });
-    calcularTotaisDRE(dataBeforeTotals.matrizDRE, colunasVisiveis, saldoInicialPeriodo);
-
-    // Ajuste final para a coluna TOTAL das linhas de saldo, que são casos especiais
-    if (dataBeforeTotals.matrizDRE['Caixa Inicial']) {
-        dataBeforeTotals.matrizDRE['Caixa Inicial'].TOTAL = dataBeforeTotals.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
+        
+        return { ...annualData, saldoInicialPeriodo };
+    } else {
+        return { ...monthlyMerged, saldoInicialPeriodo };
     }
-    if (dataBeforeTotals.matrizDRE['Caixa Final']) {
-        dataBeforeTotals.matrizDRE['Caixa Final'].TOTAL = dataBeforeTotals.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
-    }
-
-    return { ...dataBeforeTotals, saldoInicialPeriodo };
 }
-
 
 export { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos, mergeMatrizes };
 
