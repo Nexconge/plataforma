@@ -1,5 +1,4 @@
 // ui.js
-import { calcularTotaisDRE } from './processingV06.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -76,11 +75,9 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
 
     ordemClasses.forEach(classe => {
         const row = tbody.insertRow();
-        
         const cellClasse = row.insertCell();
         cellClasse.textContent = classe;
 
-        // Aplica estilos
         if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.classList.add('linhatotal');
         } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
@@ -89,27 +86,16 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
             cellClasse.classList.add('idented');
         }
 
-        // Valores das colunas
-        let totalLinha = 0;
+        // Renderiza os valores das colunas visíveis
         colunas.forEach(coluna => {
             const valor = matrizDRE[classe]?.[coluna] || 0;
-            if (!['Caixa Inicial', 'Caixa Final'].includes(classe)) {
-                totalLinha += valor;
-            }
             row.insertCell().textContent = formatarValor(valor);
         });
         
-        // Total da linha (exceto para saldos)
-        if (classe === 'Caixa Final') {
-            const ultimoValor = matrizDRE[classe]?.[colunas[colunas.length - 1]] || 0;
-            row.insertCell().textContent = formatarValor(ultimoValor);
-        } else if (classe === 'Caixa Inicial') {
-            const primeiroValor = matrizDRE[classe]?.[colunas[0]] || 0;
-            row.insertCell().textContent = formatarValor(primeiroValor);
-        } else {
-            row.insertCell().textContent = formatarValor(totalLinha);
-        }
-        //Inseri linha em branco após linhas específicas
+        // SIMPLIFICADO: Lê diretamente a propriedade 'TOTAL' pré-calculada
+        const total = matrizDRE[classe]?.TOTAL || 0;
+        row.insertCell().textContent = formatarValor(total);
+        
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
         }
@@ -286,7 +272,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
         });
     }
 }
-
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {
@@ -306,7 +291,6 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
@@ -314,7 +298,6 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
         return;
     }
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
-    calcularTotaisDRE(matrizDRE, colunas, saldoInicialPeriodo);
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
