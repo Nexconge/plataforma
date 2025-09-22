@@ -158,7 +158,6 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     } catch (error) {
         console.error("Falha ao abrir o modal da proposta:", error);
-        alert("Não foi possível abrir o menu da proposta. Verifique o console para mais detalhes.");
     }
 }
 
@@ -391,7 +390,6 @@ async function gerarProposta(username) {
 
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
 
-        alert("Identificado navegador mobile")
         console.log("Lógica para iOS.");
         // var blob = pdf.output();
         // window.open(URL.createObjectURL(blob));
@@ -399,7 +397,6 @@ async function gerarProposta(username) {
         window.open(dataUriString, "_blank");
 
     } else {
-        alert("Identificado navegador desktop")
         console.log("Lógica para Desktop/Android ativada (download direto).");
         doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
     }
