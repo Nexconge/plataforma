@@ -275,7 +275,6 @@ async function gerarProposta(username) {
 
         doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
         console.log("Imagem do timbrado adicionada com sucesso.");
-        // --- FIM DA SOLUÇÃO ---
 
         // Título
         doc.setFontSize(18).setFont('helvetica', 'bold');
