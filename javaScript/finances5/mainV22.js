@@ -2,8 +2,8 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { buscarTitulos } from './apiV20.js';
-import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV20.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV20.js';
+import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV21.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV21.js';
 
 // --- O cache em memória foi reestruturado ---
 let appCache = {
