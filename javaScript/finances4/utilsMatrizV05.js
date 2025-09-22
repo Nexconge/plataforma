@@ -4,7 +4,7 @@ function gerarMatrizConsolidada(matrizesPorConta, contasSelecionadas, anosFiltra
     const mesesExistentes = new Set();
 
     matrizesPorConta.forEach((dadosConta, codConta) => {
-        if (!contasSelecionadas.includes(codConta)) return;
+        if (!contasSelecionadas.includes(Number(codConta))) return;
 
         Object.values(dadosConta.matrizDRE).forEach(classeData => {
             Object.keys(classeData).forEach(mesAno => {

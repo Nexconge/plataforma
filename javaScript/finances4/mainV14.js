@@ -2,8 +2,8 @@
 
 // --- Importa as funções de cada módulo especializado ---
 import { buscarTitulos } from './apiV20.js';
-import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos } from './processingV16.js';
-import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV28.js';
+import { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos } from './processingV17.js';
+import { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas } from './uiV29.js';
 //import { gerarMatrizConsolidada } from './utilsMatriz.js';
 
 // --- O cache em memória e as funções de serialização ---
@@ -59,7 +59,7 @@ async function handleFiltroChange() {
                         const lancamentosNovos = extrairLancamentosDosTitulos(titulosNovos);
                         // c) Processa os lanãmentos extraidos para matrizrs de dados
                         if (lancamentosNovos.length > 0) {
-                            const codConta = lancamentosNovos[0].CODContaC;
+                            const codConta = Number(lancamentosNovos[0].CODContaC);
                             const lancamentosProcessados = processarLancamentos(appCache, new Set(contasParaBuscar), lancamentosNovos)
 
                             appCache.matrizesPorConta.set(codConta, lancamentosProcessados)
@@ -98,7 +98,7 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
         appCache.categoriasMap.set(c.codigo, c.Categoria);
     });
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
+    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(Number) }));
     contas.forEach(c => appCache.contasMap.set((c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
     departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
 

@@ -1,5 +1,5 @@
 // ui.js
-import { gerarMatrizConsolidada } from './utilsMatrizV04.js';
+import { gerarMatrizConsolidada } from './utilsMatrizV05.js';
 
 // Funções que não dependem de estado externo
 function formatarValor(valor) {
@@ -304,7 +304,7 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
     Array.from(contasMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
         .forEach(([codigo, { descricao }]) => {
-            if (contasProjetos.has(String(codigo))) {
+            if (contasProjetos.has(Number(codigo))) {
                 const option = document.createElement('option');
                 option.value = codigo; option.textContent = descricao;
                 contaSelect.appendChild(option);
@@ -427,9 +427,9 @@ function obterContasSelecionadas() {
         return null;
     }
     const contasEmTexto = getSelectItems(contaSelect);
-    //const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
-    console.log("Contas selecionadas (números):", contasEmTexto);
-    return contasEmTexto;
+    const contasEmNumero = contasEmTexto.map(Number); // Converte cada item do array para número
+    console.log("Contas selecionadas (números):", contasEmNumero);
+    return contasEmNumero;
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterContasSelecionadas };
