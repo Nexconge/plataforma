@@ -330,7 +330,7 @@ function atualizarVisualizacoes(appCache, fContasESaldo, fCalculaTotais) {
         const anoInicio = Number(valorSelecionado);
         const anoFim = anoInicio + 4;
         for (let ano = anoInicio; ano <= anoFim; ano++) {
-            if (appCache.anosDisponivis.includes(String(ano))) {
+            if (appCache.anosDisponiveis.includes(String(ano))) {
                 anosParaProcessar.push(String(ano));
             }
         }
