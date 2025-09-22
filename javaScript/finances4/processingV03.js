@@ -76,6 +76,7 @@ function extrairLancamentosDosTitulos(titulos) {
                 Departamentos: departamentosStr
             });
         });
+        console.log(lancamentosProcessados);
     });
 
     return lancamentosProcessados;
