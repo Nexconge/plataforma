@@ -176,7 +176,7 @@ function calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
     });
 }
 function mergeMatrizes(listaDeDados, modo, colunasVisiveis) {
-    if (!listaDeDados || listaDeDadosProcessados.length === 0) {
+    if (!listaDeDados || listaDeDados.length === 0) {
         return { matrizDRE: {}, matrizDepartamentos: {}, saldoInicialPeriodo: 0 };
     }
     
