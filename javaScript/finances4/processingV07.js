@@ -307,6 +307,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     return { ...dataBeforeTotals, saldoInicialPeriodo };
 }
 
+
 export { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos, mergeMatrizes };
 
 
