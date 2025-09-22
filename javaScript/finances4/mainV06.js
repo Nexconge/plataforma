@@ -1,9 +1,9 @@
 // main.js - MODIFICADO
 
 // --- Importa as funções de cada módulo especializado ---
-import { buscarTitulos } from './apiV01.js';
-import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV04.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV04.js';
+import { buscarTitulos } from './apiV02.js';
+import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV05.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV05.js';
 
 // --- O cache em memória foi reestruturado ---
 let appCache = {
@@ -13,18 +13,6 @@ let appCache = {
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: []
 };
-
-/**
- * Gera uma chave única para o cache de matrizes com base nos filtros atuais.
- * @param {object} filtros - O objeto de filtros contendo modo, anos, contas, etc.
- * @returns {string} Uma string que serve como chave de cache.
- */
-function gerarChaveCache(filtros) {
-    // Ordenar os arrays garante que a chave seja a mesma independentemente da ordem de seleção
-    const contasOrdenadas = [...filtros.contas].sort();
-    const anosOrdenados = [...filtros.anos].sort();
-    return `${filtros.modo}-${anosOrdenados.join(',')}-${contasOrdenadas.join(',')}`;
-}
 
 /**
  * Função central que é chamada sempre que um filtro é alterado.
@@ -73,15 +61,12 @@ async function handleFiltroChange() {
             }
 
             // Prepara os parâmetros para processar os dados desta ÚNICA conta
-            const contaInfo = appCache.contasMap.get(String(contaId));
-            const saldoBase = contaInfo ? Number(contaInfo.saldoIni) : 0;
-            const contasFiltradas = new Set([String(contaId)]);
-            const cacheTemporario = { ...appCache, lancamentos: lancamentosDaConta };
+            const cacheTemporario = { ...appCache, lancamentos: lancamentosDaConta};
 
             // Gera as matrizes para esta conta
-            const dadosProcessadosConta = processarLancamentos(
-                cacheTemporario, filtrosAtuais.modo, filtrosAtuais.anos, contasFiltradas, saldoBase
-            );
+            const dadosProcessadosConta = processarLancamentos(cacheTemporario, contaId);
+            const contaInfo = appCache.contasMap.get(String(contaId));
+            dadosProcessadosConta.saldoIni = contaInfo ? Number(contaInfo.saldoIni) : 0;
 
             // Armazena as matrizes processadas da conta no cache principal
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);
@@ -91,15 +76,11 @@ async function handleFiltroChange() {
 
     // 4. Juntar (Merge) as matrizes de TODAS as contas atualmente selecionadas
     console.log("Combinando matrizes em cache para a visualização...");
-    const matrizesParaJuntar = [];
-    contasSelecionadas.forEach(contaId => {
-        const dadosEmCache = appCache.matrizesPorConta.get(contaId);
-        if (dadosEmCache) { // Ignora placeholders nulos se a busca falhar
-            matrizesParaJuntar.push(dadosEmCache);
-        }
-    });
+    const matrizesParaJuntar = contasSelecionadas
+        .map(id => appCache.matrizesPorConta.get(id))
+        .filter(Boolean);
 
-    const dadosFinaisParaExibir = mergeMatrizes(matrizesParaJuntar);
+    const dadosFinaisParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas);
 
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosFinaisParaExibir, filtrosAtuais.colunas, appCache);
