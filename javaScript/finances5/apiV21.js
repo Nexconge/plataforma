@@ -1,9 +1,9 @@
 // api.js
 
 /**
- * Envia os filtros para a API e busca os lançamentos correspondentes.
+ * Envia os filtros para a API e busca os titulos correspondentes.
  * @param {object} filtros - O objeto de filtros gerado por obterFiltrosSelecionados.
- * @returns {Promise<Array>} Uma promessa que resolve para o array de lançamentos.
+ * @returns {Promise<Array>} Uma promessa que resolve para o array de titulos.
  */
 async function buscarTitulos(filtros) {
     //Monta a URL da API dependendo do ambiente (teste ou produção)
@@ -32,12 +32,12 @@ async function buscarTitulos(filtros) {
         return await response.json();
     } catch (error) {
         console.error("Erro crítico ao buscar titulos:", error);
-        // Opcional: Adicionar uma notificação para o usuário na UI
+        //notificação para o usuário na UI
         alert("Ocorreu um erro ao buscar os dados. Verifique o console para mais detalhes.");
-        // Retorna um array vazio em caso de erro para não quebrar a aplicação
+        //Retorna um array vazio em caso de erro para não quebrar a aplicação
         return []; 
     }
 }
 
-// Exporta a nova função junto com as existentes
+// Exporta a função
 export { buscarTitulos };
