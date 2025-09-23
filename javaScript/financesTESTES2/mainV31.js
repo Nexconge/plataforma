@@ -81,7 +81,6 @@ async function handleFiltroChange() {
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
 }
-
 //Função chamada pelo bubble que inicia a pagina tabela
 window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
     //Zera o cache
