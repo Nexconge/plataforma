@@ -475,13 +475,15 @@ async function gerarProposta(username) {
 
 async function carregarTimbrado64() {
   const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/TimbradoWF.txt";
+  let base64;
 
   try {
     const response = await fetch(url);
-    return base64 = await response.text(); // pega o conteúdo como texto
+    base64 = await response.text(); // pega o conteúdo como texto
   } catch (err) {
     console.error("Erro ao carregar arquivo:", err);
   }
+  return base64;
 }
 
 // Expõe a função principal para o Bubble, tornando-a "global"
