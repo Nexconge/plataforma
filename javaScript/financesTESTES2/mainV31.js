@@ -82,7 +82,7 @@ async function handleFiltroChange() {
     document.body.classList.remove('loading');
 }
 
-//Função chamada pelo bubble que inicia a tabela
+//Função chamada pelo bubble que inicia a pagina tabela
 window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
     //Zera o cache
     appCache = {

@@ -1,24 +1,4 @@
 // processing.js
-
-function filtrarContasESaldo(projetosMap, contasMap, filtroProjeto, filtroConta) {
-    const contasFiltradas = new Set();
-    let saldoBase = 0;
-
-    filtroProjeto.forEach(idProjeto => {
-        const projeto = projetosMap.get(idProjeto);
-        if (!projeto) return;
-        projeto.contas.forEach(codConta => {
-            if (filtroConta.length === 0 || filtroConta.includes(codConta)) {
-                contasFiltradas.add(codConta);
-                const contaInfo = contasMap.get(String(codConta)); // Garantir que a chave é string
-                if (contaInfo) {
-                    saldoBase += Number(contaInfo.saldoIni) || 0;
-                }
-            }
-        });
-    });
-    return { contasFiltradas, saldoBase };
-}
 function extrairLancamentosDosTitulos(titulos) {
     const lancamentosProcessados = [];
 
@@ -27,14 +7,14 @@ function extrairLancamentosDosTitulos(titulos) {
         console.error("A entrada para a função não é um array.", titulos);
         return lancamentosProcessados;
     }
-
+    //Para cada titlo recebido da API  
     titulos.forEach(titulo => {
-        // Valida se o título possui os dados mínimos necessários para o processamento.
+        // Valida se o título Lançamentos e categoria
         if (!titulo || !Array.isArray(titulo.Lancamentos) || !titulo.Categoria) {
             console.warn("O título está inválido ou com dados essenciais faltando e foi ignorado:", titulo);
             return; // Pula para o próximo título do loop.
         }
-
+        
         // 2. Itera sobre cada lançamento individual dentro do título.
         titulo.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') {
@@ -42,10 +22,11 @@ function extrairLancamentosDosTitulos(titulos) {
                 return; // Pula para o próximo lançamento.
             }
 
+                        
             let departamentosObj = [];
-            // MUDANÇA: Verifica se o array de departamentos original tem conteúdo.
+            // Verifica se o array de departamentos do titulo não é vazi
             if (Array.isArray(titulo.Departamentos) && titulo.Departamentos.length > 0) {
-                // Se tiver, processa normalmente.
+                // Se não for vazio cria um objeto departamento com valor = percentual do departamento*valor do lançamento
                 departamentosObj = titulo.Departamentos.map(depto => {
                     const valorRateio = lancamento.ValorLancamento * ((depto.PercDepto ?? 100) / 100);
                     return {
@@ -54,14 +35,14 @@ function extrairLancamentosDosTitulos(titulos) {
                     };
                 });
             } else {
-                // Se estiver vazio ou não existir, cria o departamento "Outros Departamentos" com o valor total.
+                // Se estiver vazio ou não existir, cria o departamento "Outros Departamentos" com o valor total do lançamento
                 departamentosObj = [{
                     CodDpto: 0,
                     ValorDepto: lancamento.ValorLancamento
                 }];
             }
 
-            // 4. Monta o objeto de lançamento final no formato esperado.
+            // Monta o objeto de lançamento e adiciona ao array de lançamentos processados
             lancamentosProcessados.push({
                 Natureza: titulo.Natureza,
                 DataLancamento: lancamento.DataLancamento,
@@ -72,19 +53,21 @@ function extrairLancamentosDosTitulos(titulos) {
                 Departamentos: departamentosObj
             });
         });
-        console.log(lancamentosProcessados);
     });
 
     return lancamentosProcessados;
 }
-function processarLancamentos(appCache, conta) {
+//Processa os dados recebidos da API em matrizes para salvar em cache
+function processarLancamentos(dadosConta, conta) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
+    //Deifine classes para detalhar na tabela de departamentos
     const classesParaDetalhar = new Set([
         '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
         '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', 
         '(+/-) Empréstimos/Consórcios'
     ]);
-    appCache.lancamentos.forEach(lancamento => {
+    //Para cada lançamento
+    dadosConta.lancamentos.forEach(lancamento => {
         if (conta != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) {
             return; 
@@ -96,56 +79,63 @@ function processarLancamentos(appCache, conta) {
         const mes = mesRaw.padStart(2, '0');   //garante sempre 2 dígitos
         const chaveAgregacao = `${mes}-${ano}`;
         chavesComDados.add(chaveAgregacao);
-
         //Negativa valor para pagamentos ("P")
         let valor = lancamento.ValorLancamento;
         if (lancamento.Natureza === "P") {
             valor = -valor;
         }
-
         //Extrai outros dados
         const codCategoria = lancamento.CODCategoria || 'SemCategoria';
-        const classeInfo = appCache.classesMap.get(codCategoria);
+        const classeInfo = dadosConta.classesMap.get(codCategoria);
         const classe = classeInfo ? classeInfo.classe : 'Outros';
 
         // Matriz DRE
+        // Se a lasse não existir na matriz cria um objeto para ela
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
+        // Dentro do objeto da classe soma o valor separado por chave de agragação
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         // Matriz Departamentos
         if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {
             const fornecedor = lancamento.Cliente;
-            
+            //Para cada departamento no lançamento
             lancamento.Departamentos.forEach(depto => {
                 const codDepto = depto.CodDpto;
                 let valorRateio = depto.ValorDepto;
-
                 if (lancamento.Natureza === "P") {
                     valorRateio = -valorRateio;
                 }
-                const nomeDepto = appCache.departamentosMap.get(codDepto) || 'Outros Departamentos';
+                //Recupera o nome do departamento no map
+                const nomeDepto = dadosConta.departamentosMap.get(codDepto) || 'Outros Departamentos';
+                //Cria uma chave de agragação usando o nome do dpto e da classe
                 const chaveDepto = `${nomeDepto}|${classe}`;
+                //Se a chave não existir na matriz cria
                 if (!matrizDepartamentos[chaveDepto]) {
                     matrizDepartamentos[chaveDepto] = { nome: nomeDepto, classe, categorias: {} };
                 }
+                //Pega o objeto de ctegorias dentro do objeto principal
                 const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
+                //Se a categoria não existir cria um objeto para ela
                 if (!categoriaRef[codCategoria]) {
                     categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
                 }
+                //Referencia o objeto criado para a categoria
                 const catData = categoriaRef[codCategoria];
-
+                //Soma o valor por chave de agragação dentro do objeto de valores
                 catData.valores[chaveAgregacao] = (catData.valores[chaveAgregacao] || 0) + valorRateio;
-
+                
+                //Dentro do objeto de categoria verifica se existe um objeto para o fornecedor, se não cria    
                 if (!catData.fornecedores[fornecedor]) {
                     catData.fornecedores[fornecedor] = { fornecedor, valores: {}, total: 0 };
                 }
+                //Soma os valores para o fornecedor dentro do objeto
                 catData.fornecedores[fornecedor].valores[chaveAgregacao] =
                     (catData.fornecedores[fornecedor].valores[chaveAgregacao] || 0) + valorRateio;
                 catData.fornecedores[fornecedor].total += valorRateio;
             });
         }
     });
-
+    //Organiza os fornecedores por ordem de valor
     Object.values(matrizDepartamentos).forEach(dep => {
         Object.values(dep.categorias).forEach(cat => {
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
@@ -154,6 +144,7 @@ function processarLancamentos(appCache, conta) {
 
     return { matrizDRE, matrizDepartamentos, chavesComDados };
 }
+//Calcula os valores para as classes totalizadoras matriz de DRE
 function calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
     let saldoAcumulado = saldoInicial;
     colunas.forEach(coluna => {
@@ -307,8 +298,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     return { ...dataBeforeTotals, saldoInicialPeriodo };
 }
 
-
-export { filtrarContasESaldo, processarLancamentos, calcularTotaisDRE, extrairLancamentosDosTitulos, mergeMatrizes };
+export { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes };
 
 
 
