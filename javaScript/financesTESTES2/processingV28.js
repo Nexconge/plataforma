@@ -166,6 +166,7 @@ function calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
         matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
 }
+//Soma matrizes de dados das contas selecionadas para renderizar a tabela
 function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {} };
     const todasChaves = new Set();
@@ -185,7 +186,6 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
                 monthlyMerged.matrizDRE[classe][periodo] = (monthlyMerged.matrizDRE[classe][periodo] || 0) + dados.matrizDRE[classe][periodo];
             }
         }
-        
         // Mescla matrizDepartamentos
         for (const chaveDepto in dados.matrizDepartamentos) {
             if (!monthlyMerged.matrizDepartamentos[chaveDepto]) {
