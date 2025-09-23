@@ -310,7 +310,7 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
     calcularLinhasDeTotalDRE(tempDRE, colunasHistoricasOrdenadas, 0);
 
     let saldoAcumuladoAntesDoPeriodo = 0;
-    const primeiraColunaVisivel = colunasVisiveisOrdenadas[0];
+    let primeiraColunaVisivel = colunasVisiveisOrdenadas[0];
     if (primeiraColunaVisivel && !primeiraColunaVisivel.includes('-')) {
         primeiraColunaVisivel = `01-${primeiraColunaVisivel}`;
     }
