@@ -273,36 +273,56 @@ function mergeDadosMensais(listaDeDadosProcessados) {
  * @param {number} saldoBaseTotal - A soma dos saldos iniciais de todas as contas.
  * @returns {number} - O valor do saldo inicial consolidado para o início do período visível.
  */
+/**
+ * Calcula o saldo de caixa inicial para um período de visualização específico.
+ * * @param {object} monthlyDRE - Objeto com os dados financeiros mensais.
+ * @param {Set|Array} todasChaves - Todas as chaves de período (MM-AAAA) disponíveis nos dados.
+ * @param {Array<string>} colunasVisiveis - As colunas/períodos selecionados para exibição.
+ * @param {number} saldoBaseTotal - O saldo de caixa inicial absoluto, antes de qualquer período histórico.
+ * @returns {number} O saldo de caixa inicial para o primeiro período visível.
+ */
 function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, saldoBaseTotal) {
-    // Ordena todas as chaves de período cronologicamente.
-    const colunasHistoricasOrdenadas = Array.from(todasChaves).sort((a, b) => {
+    // Função auxiliar para parsear e comparar datas no formato 'MM-AAAA'
+    const compararPeriodos = (a, b) => {
         const [mesA, anoA] = a.split('-');
         const [mesB, anoB] = b.split('-');
         return new Date(anoA, mesA - 1) - new Date(anoB, mesB - 1);
-    });
+    };
 
-    // Cria uma cópia temporária da DRE para não alterar a original durante o cálculo do histórico.
+    // 1. Ordena todas as chaves de período cronologicamente.
+    const colunasHistoricasOrdenadas = Array.from(todasChaves).sort(compararPeriodos);
+    
+    // 2. Garante que as colunas visíveis também estejam ordenadas. ESSA É A CORREÇÃO PRINCIPAL.
+    const colunasVisiveisOrdenadas = [...colunasVisiveis].sort(compararPeriodos);
+
+    // Se não houver colunas visíveis, não há o que calcular.
+    if (colunasVisiveisOrdenadas.length === 0) {
+        return saldoBaseTotal;
+    }
+
+    // 3. Cria uma cópia temporária da DRE para não alterar a original.
     const tempDRE = JSON.parse(JSON.stringify(monthlyDRE));
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!tempDRE[classe]) tempDRE[classe] = {};
     });
 
-    // Roda o cálculo da DRE sobre TODOS os dados históricos com um saldo base de zero.
-    // Isso é feito para calcular a 'Movimentação de Caixa Mensal' de cada período histórico.
+    // 4. Calcula a 'Movimentação de Caixa Mensal' de cada período histórico com um saldo base de zero.
     calcularLinhasDeTotalDRE(tempDRE, colunasHistoricasOrdenadas, 0);
 
     let saldoAcumuladoAntesDoPeriodo = 0;
-    const primeiraColunaVisivel = colunasVisiveis[0];
+    const primeiraColunaVisivel = colunasVisiveisOrdenadas[0];
 
-    // Itera sobre os períodos históricos e soma a movimentação de caixa de todos os meses
-    // ANTES do primeiro mês que será exibido na tela.
+    // 5. Itera sobre os períodos históricos e soma a movimentação de caixa de todos os meses
+    //    ANTES do primeiro mês que será exibido na tela.
     for (const periodo of colunasHistoricasOrdenadas) {
-        if (periodo === primeiraColunaVisivel) break; // Para quando chegar no início do período visível.
+        // Para a iteração exatamente quando encontrar o primeiro mês do período visível.
+        if (periodo === primeiraColunaVisivel) {
+            break; 
+        }
         saldoAcumuladoAntesDoPeriodo += tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0;
     }
 
-    // O saldo inicial do período visível é a soma do saldo base de todas as contas com
-    // a variação de caixa acumulada de todos os meses anteriores.
+    // 6. O saldo inicial é a soma do saldo base com a variação de caixa acumulada dos meses anteriores.
     return saldoBaseTotal + saldoAcumuladoAntesDoPeriodo;
 }
 /**
@@ -346,25 +366,15 @@ function agregarDadosParaAnual(monthlyData) {
     return annualData;
 }
 /**
- * ETAPA 4: Calcula a coluna 'TOTAL' para a matriz DRE.
+ * Calcula a coluna 'TOTAL' para a matriz DRE.
  * Soma os valores de todas as colunas visíveis para cada linha da DRE.
- * As classes de saldo (como Caixa Inicial e Final) são ignoradas aqui,
- * pois seu total não é uma simples soma, mas sim um cálculo específico de fluxo de caixa.
  * @param {object} matrizDRE - A matriz DRE (mensal ou anual).
  * @param {string[]} colunasVisiveis - As colunas que devem ser somadas no total.
  */
 function calcularColunaTotalDRE(matrizDRE, colunasVisiveis) {
-    // Define as linhas que são saldos e não devem ser somadas.
-    const classesDeSaldo = new Set(['Caixa Inicial', 'Caixa Final']);
-
-    // Itera sobre cada classe (linha) da DRE.
-    for (const classe in matrizDRE) {
-        // Apenas calcula a soma se a classe NÃO for uma classe de saldo.
-        if (!classesDeSaldo.has(classe)) {
-            const periodos = matrizDRE[classe];
-            periodos.TOTAL = colunasVisiveis.reduce((acc, coluna) => acc + (periodos[coluna] || 0), 0);
-        }
-    }
+    Object.values(matrizDRE).forEach(periodos => {
+        periodos.TOTAL = colunasVisiveis.reduce((acc, coluna) => acc + (periodos[coluna] || 0), 0);
+    });
 }
 /**
  * Função principal que orquestra a mesclagem e o processamento de dados de múltiplas contas.
@@ -404,20 +414,15 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     // Calcula as linhas de totais (Receita Líquida, Geração de Caixa, etc.) para os períodos visíveis.
     calcularLinhasDeTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis, saldoInicialPeriodo);
 
-    // O Caixa Inicial TOTAL do período é, por definição, o caixa inicial da primeira coluna visível.
-    const caixaInicialTotal = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
-    dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = caixaInicialTotal;
-
-    // A movimentação de caixa TOTAL é a soma de todas as movimentações mensais, que já foi calculada corretamente
-    // na ETAPA 4 pela função calcularColunaTotalDRE.
-    const movimentacaoTotalPeriodo = dadosAntesDosTotais.matrizDRE['(=) Movimentação de Caixa Mensal'].TOTAL || 0;
-    const transferenciasTotal = (dadosAntesDosTotais.matrizDRE['Entrada de Transferência']?.TOTAL || 0) + (dadosAntesDosTotais.matrizDRE['Saída de Transferência']?.TOTAL || 0);
-    const outrosTotal = dadosAntesDosTotais.matrizDRE['Outros']?.TOTAL || 0;
-
-    // O Caixa Final TOTAL é o Caixa Inicial TOTAL + toda a variação de caixa do período.
-    // Isso garante que a coluna TOTAL também siga a regra: Saldo Final = Saldo Inicial + Movimentações.
-    const caixaFinalTotal = caixaInicialTotal + movimentacaoTotalPeriodo + transferenciasTotal + outrosTotal;
-    dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = caixaFinalTotal;
+    // Ajuste final para a coluna TOTAL das linhas de saldo, que são casos especiais.
+    // O TOTAL do Caixa Inicial é o valor da primeira coluna visível.
+    if (dadosAntesDosTotais.matrizDRE['Caixa Inicial']) {
+        dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
+    }
+    // O TOTAL do Caixa Final é o valor da última coluna visível.
+    if (dadosAntesDosTotais.matrizDRE['Caixa Final']) {
+        dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
+    }
 
     // Retorna o objeto final
     return { ...dadosAntesDosTotais, saldoInicialPeriodo };
