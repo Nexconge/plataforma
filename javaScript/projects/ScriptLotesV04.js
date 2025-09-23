@@ -187,10 +187,11 @@ class MapaLotesManager {
             case "vendido":
                 return "ForestGreen"; // verde escuro
             case "reservado":
+                return "#f0c9ad"; // laranja claro
             case "indisponível":
-                return "gray";
+                return "#c7c7c7"; // cinza claro
             default:
-                return "gray"; // fallback
+                return "#c7c7c7"; // fallback
         }
     }
 
