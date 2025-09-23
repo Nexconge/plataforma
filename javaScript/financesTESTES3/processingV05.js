@@ -315,9 +315,10 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
     // 5. Itera sobre os períodos históricos e soma a movimentação de caixa de todos os meses
     //    ANTES do primeiro mês que será exibido na tela.
     for (const periodo of colunasHistoricasOrdenadas) {
-        // Para a iteração exatamente quando encontrar o primeiro mês do período visível.
-        if (periodo === primeiraColunaVisivel) {
-            break; 
+        // Interrompe a iteração se o período do histórico for IGUAL ou POSTERIOR 
+        // ao primeiro mês visível, garantindo que somamos apenas os meses ANTERIORES.
+        if (compararPeriodos(periodo, primeiraColunaVisivel) >= 0) {
+            break;
         }
         saldoAcumuladoAntesDoPeriodo += tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0;
     }
