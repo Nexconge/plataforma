@@ -1,11 +1,10 @@
-// main.js - MODIFICADO
+// main.js - Finances
+// Importa funções dos outros modulos
+import { buscarTitulos } from './apiV23.js';
+import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV23.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV23.js';
 
-// --- Importa as funções de cada módulo especializado ---
-import { buscarTitulos } from './apiV20.js';
-import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV20.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV20.js';
-
-// --- O cache em memória foi reestruturado ---
+// Inicia o chache
 let appCache = {
     userId: null, userType: null,
     matrizesPorConta: new Map(),
@@ -14,9 +13,7 @@ let appCache = {
     anosDisponiveis: []
 };
 
-/**
- * Função central que é chamada sempre que um filtro é alterado.
- */
+// Função para lidar com mudanças de filtro
 async function handleFiltroChange() {
     document.body.classList.add('loading');
 
@@ -24,8 +21,9 @@ async function handleFiltroChange() {
     const filtrosAtuais = obterFiltrosAtuais();
     const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
 
+    // Limpa as tabelas se nenhum conta for selecionada
     if (contasSelecionadas.length === 0) {
-        atualizarVisualizacoes(null, [], appCache); // Limpa a tela se nada for selecionado
+        atualizarVisualizacoes(null, [], appCache); 
         document.body.classList.remove('loading');
         return;
     }
@@ -33,13 +31,15 @@ async function handleFiltroChange() {
     // 2. Identificar contas cujos dados processados AINDA NÃO estão no cache
     const contasParaProcessar = contasSelecionadas.filter(c => !appCache.matrizesPorConta.has(c));
 
-    // 3. Se houver contas faltantes, buscar e processar APENAS elas, uma por uma
+    // 3. Se houver contas faltantes, buscar via API e processar APENAS elas
     if (contasParaProcessar.length > 0) {
-        console.log(`Buscando e processando dados para ${contasParaProcessar.length} nova(s) conta(s)...`);
         
         // Coloca um placeholder no cache para evitar múltiplas buscas simultâneas
+        //Se o usuario clicar varias vezes no mesmo filtro antes da primeira busca terminar isso pode
+        //levar a dados duplicados
         contasParaProcessar.forEach(c => appCache.matrizesPorConta.set(c, null));
 
+        //Faz a requisição para a api
         const promises = contasParaProcessar.map(conta => buscarTitulos({ contas: [conta] }));
         const responses = await Promise.all(promises);
 
@@ -47,7 +47,7 @@ async function handleFiltroChange() {
         for (let i = 0; i < contasParaProcessar.length; i++) {
             const contaId = contasParaProcessar[i];
             const apiResponse = responses[i];
-            
+            //Extrai os lançamentos dessa conta de cada titulo
             let lancamentosDaConta = [];
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
@@ -59,35 +59,32 @@ async function handleFiltroChange() {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }
             }
-
             // Prepara os parâmetros para processar os dados desta ÚNICA conta
-            const cacheTemporario = { ...appCache, lancamentos: lancamentosDaConta};
-
+            const parametrosDaConta = { ...appCache, lancamentos: lancamentosDaConta};
             // Gera as matrizes para esta conta
-            const dadosProcessadosConta = processarLancamentos(cacheTemporario, contaId);
-            const contaInfo = appCache.contasMap.get(String(contaId));
+            const dadosProcessadosConta = processarLancamentos(parametrosDaConta, contaId);
+            // O saldo inicial da conta no MAP
+            const contaInfo = appCache.contasMap.get(String(contaId));  
             dadosProcessadosConta.saldoIni = contaInfo ? Number(contaInfo.saldoIni) : 0;
-
             // Armazena as matrizes processadas da conta no cache principal
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);
             console.log(`Matrizes para a conta ${contaId} foram salvas no cache.`);
         }
     }
-
-    // 4. Juntar (Merge) as matrizes de TODAS as contas atualmente selecionadas
-    console.log("Combinando matrizes em cache para a visualização...");
+    // 4-Junta os dados das contas selecionadas nos filtro e prepara para visualização
     const matrizesParaJuntar = contasSelecionadas
         .map(id => appCache.matrizesPorConta.get(id))
         .filter(Boolean);
-
-    const dadosFinaisParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas);
+    const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas);
 
     // 5. Renderizar a visualização com os dados combinados
-    atualizarVisualizacoes(dadosFinaisParaExibir, filtrosAtuais.colunas, appCache);
+    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
 }
 
+//Função chamada pelo bubble que inicia a tabela
 window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
+    //Zera o cache
     appCache = {
         userId: null, userType: null,
         matrizesPorConta: new Map(), // Reseta o novo cache
@@ -95,12 +92,14 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         anosDisponiveis: []
     };
-    // ... (o restante do código de parsing e população dos mapas permanece o mesmo) ...
+    
+    //Parseia os dados recebidos do bubble 
     const classes = JSON.parse(classesJson);
     const projetos = JSON.parse(projetosJson);
     const contas = JSON.parse(contasJson);
     const departamentos = JSON.parse(deptosJson);
 
+    //Cria MAPS para cada tipo de dado
     classes.forEach(c => {
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
         appCache.categoriasMap.set(c.codigo, c.Categoria);
@@ -109,15 +108,17 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
     contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
     departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
 
+    //Cria na mão os anos disponíveis para o filtro de anos com base no ano atual até 2020
     const anoAtual = new Date().getFullYear();
     appCache.anosDisponiveis = [];
     for (let ano = 2020; ano <= anoAtual; ano++) {
         appCache.anosDisponiveis.push(String(ano));
     }
+    //Salva os anos disponíveis, id e tipo do usuário no cache global
     appCache.anosDisponiveis.sort();
-
     appCache.userId = id;
     appCache.userType = type;
-    
+
+    //Configura os filtros iniciais e faz a primeira chamada de mudança como callback
     configurarFiltros(appCache, handleFiltroChange);
 };

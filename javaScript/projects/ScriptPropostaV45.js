@@ -90,6 +90,61 @@ function configurarEventosDoModal(username) {
     });
 }
 
+// Função para escrever números por extenos
+function numeroPorExtenso(valor) {
+    if (typeof valor !== 'number') {
+        throw new Error('O valor deve ser numérico');
+    }
+
+    const unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+    const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+    const centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+
+    function extensoAte999(n) {
+        if (n === 0) return "";
+        if (n === 100) return "cem";
+        if (n < 20) return unidades[n];
+        if (n < 100) return dezenas[Math.floor(n / 10)] + (n % 10 ? " e " + unidades[n % 10] : "");
+        return centenas[Math.floor(n / 100)] + (n % 100 ? " e " + extensoAte999(n % 100) : "");
+    }
+
+    function grupoExtenso(n, escalaSing, escalaPlural) {
+        if (n === 0) return "";
+        if (n === 1) return extensoAte999(n) + " " + escalaSing;
+        return extensoAte999(n) + " " + escalaPlural;
+    }
+
+    const inteiro = Math.floor(valor);
+    const centavos = Math.round((valor - inteiro) * 100);
+
+    if (inteiro > 999999999) {
+        throw new Error('Valor máximo suportado é 999.999.999,99');
+    }
+
+    const milhoes = Math.floor(inteiro / 1000000);
+    const milhares = Math.floor((inteiro % 1000000) / 1000);
+    const centenasFinal = inteiro % 1000;
+
+    let partes = [];
+
+    if (milhoes) partes.push(grupoExtenso(milhoes, "milhão", "milhões"));
+    if (milhares) partes.push(grupoExtenso(milhares, "mil", "mil"));
+    if (centenasFinal) partes.push(extensoAte999(centenasFinal));
+
+    let resultado = partes.join(" e ");
+    if (!resultado) resultado = "zero";
+
+    resultado += inteiro === 1 ? " real" : " reais";
+
+    if (centavos > 0) {
+        resultado += " e " + (centavos === 1
+            ? extensoAte999(centavos) + " centavo"
+            : extensoAte999(centavos) + " centavos");
+    }
+
+    return resultado;
+}
+
 
 // --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
 // Esta é a função que o botão do Bubble vai chamar.
@@ -182,7 +237,7 @@ function carregarImagem(url) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         // Essencial para carregar imagens de outros domínios (CORS)
-        img.crossOrigin = "Anonymous"; 
+        img.crossOrigin = "Anonymous";
         // A Promise resolve quando a imagem termina de carregar
         img.onload = () => resolve(img);
         // A Promise rejeita se houver um erro no carregamento
@@ -364,22 +419,24 @@ async function gerarProposta(username) {
         // ----------------------------
         // Segunda Página - Termo de Intenção de Compra
         doc.addPage();
-        // doc.addImage(timbrado, 'PNG', 0, 0, 210, 297); // Se quiser o timbrado na segunda página, adicione aqui também
+        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297); // Se quiser o timbrado na segunda página, adicione aqui também
 
         // Adicionar título
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold')
-        doc.text('Termo de Intenção de Compra', 105, 30, { align: 'center' });
+        doc.text('Termo de Intenção de Compra e Proposta Financeira', 105, 30, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal')
         yAtual = 50;
 
-        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, brasileiro, ${dados.estadoCivilCliente}, inscrito sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, Residente e domiciliado em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}.
-         Formaliza através da WF SOLUÇÕES IMOBILIÁRIAS LTDA, empresa Jurídica de direito privado, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos, brasileiro, casado, empresário, inscrito sob nº CPF 006.614.829-44, cédula de identidade nº RG 3.848.767 SSP/SC, CRECI-SC 23.076F, e/ou José Eduardo Bevilaqua, brasileiro, solteiro, empresário, inscrito sob nº CPF 061.248.209-00, cédula de identidade nº RG 4.936.776 SSP/SC, CRECI-SC 63.226F, a Proposta de Intenção de Compra do imóvel abaixo descrito, Sendo:
-         Lote urbano com ${dados.area} metros de área, localizado da quadra nº ${dados.quadra}, lote nº ${dados.lote}, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “ORIGENS”.
-         Ofereço para compra do imóvel mencionado acima o valor de R$ ${dados.valorMetroQuadrado} (um mil e quatrocentos reais) pelo metro quadrado. Me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia de assinatura do contrato de compra e venda, valendo este como entrada e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas. Com vencimento da primeiro 30 (trinta) dias após a assinatura do referido contrato de compra e venda.
-         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.
-    `;
+        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formaliza para a empresa WF Soluções Imobiliárias Ltda, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos inscrito sob nº CPF 006.614.829-44 e/ou José Eduardo Bevilaqua inscrito sob nº CPF 061.248.209-00 o Termo de Intenção de Compra e Proposta Financeira do imóvel abaixo descrito:
+
+        Lote urbano nº ${dados.lote}, da quadra nº ${dados.quadra}, com ${dados.area.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} metros de área, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “Origens Bairro Inteligente”.
+         
+        Ofereço para compra do imóvel mencionado acima o valor de ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${numeroPorExtenso(dados.valorTotal)}), me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia ${formatDateStr(dados.finDataEntrada)} e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas vencendo a primeira em ${formatDateStr(dados.finDataParcela)} e 04 reforços anuais vencendo o primeiro em ${formatDateStr(dados.finDataReforco)}.
+        
+        Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.`
+            ;
 
         doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
 
