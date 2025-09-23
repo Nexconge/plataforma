@@ -134,7 +134,6 @@ function _mergeDadosMensais(listaDeDadosProcessados) {
             }
         }
         
-        // --- LÓGICA RESTAURADA ---
         for (const chaveDepto in dados.matrizDepartamentos) {
             if (!monthlyMerged.matrizDepartamentos[chaveDepto]) {
                 monthlyMerged.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(dados.matrizDepartamentos[chaveDepto]));
@@ -150,17 +149,17 @@ function _mergeDadosMensais(listaDeDadosProcessados) {
                         for (const periodo in catData.valores) {
                             mergedCat.valores[periodo] = (mergedCat.valores[periodo] || 0) + catData.valores[periodo];
                         }
-                        for (const fornKey in catData.fornecedores) {
-                            const forn = catData.fornecedores[fornKey].fornecedor;
-                            if (!mergedCat.fornecedores[forn]) {
-                                mergedCat.fornecedores[forn] = JSON.parse(JSON.stringify(catData.fornecedores[fornKey]));
-                            } else {
-                                mergedCat.fornecedores[forn].total += catData.fornecedores[fornKey].total;
-                                for (const periodo in catData.fornecedores[fornKey].valores) {
-                                    mergedCat.fornecedores[forn].valores[periodo] = (mergedCat.fornecedores[forn].valores[periodo] || 0) + catData.fornecedores[fornKey].valores[periodo];
+                        catData.fornecedores.forEach(fornecedorParaMesclar => {
+                            const fornecedorExistente = mergedCat.fornecedores.find(f => f.fornecedor === fornecedorParaMesclar.fornecedor);
+                            if (fornecedorExistente) {
+                                fornecedorExistente.total += fornecedorParaMesclar.total;
+                                for (const periodo in fornecedorParaMesclar.valores) {
+                                    fornecedorExistente.valores[periodo] = (fornecedorExistente.valores[periodo] || 0) + fornecedorParaMesclar.valores[periodo];
                                 }
+                            } else {
+                                mergedCat.fornecedores.push(JSON.parse(JSON.stringify(fornecedorParaMesclar)));
                             }
-                        }
+                        });
                     }
                 }
             }
