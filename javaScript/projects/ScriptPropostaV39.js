@@ -182,7 +182,7 @@ function carregarImagem(url) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         // Essencial para carregar imagens de outros domínios (CORS)
-        img.crossOrigin = "Anonymous"; 
+        img.crossOrigin = "Anonymous";
         // A Promise resolve quando a imagem termina de carregar
         img.onload = () => resolve(img);
         // A Promise rejeita se houver um erro no carregamento
@@ -374,12 +374,13 @@ async function gerarProposta(username) {
         doc.setFont('helvetica', 'normal')
         yAtual = 50;
 
-        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, brasileiro, ${dados.estadoCivilCliente}, inscrito sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, Residente e domiciliado em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}.
-         Formaliza através da WF SOLUÇÕES IMOBILIÁRIAS LTDA, empresa Jurídica de direito privado, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos, brasileiro, casado, empresário, inscrito sob nº CPF 006.614.829-44, cédula de identidade nº RG 3.848.767 SSP/SC, CRECI-SC 23.076F, e/ou José Eduardo Bevilaqua, brasileiro, solteiro, empresário, inscrito sob nº CPF 061.248.209-00, cédula de identidade nº RG 4.936.776 SSP/SC, CRECI-SC 63.226F, a Proposta de Intenção de Compra do imóvel abaixo descrito, Sendo:
-         Lote urbano com ${dados.area} metros de área, localizado da quadra nº ${dados.quadra}, lote nº ${dados.lote}, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “ORIGENS”.
-         Ofereço para compra do imóvel mencionado acima o valor de R$ ${dados.valorMetroQuadrado} (um mil e quatrocentos reais) pelo metro quadrado. Me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia de assinatura do contrato de compra e venda, valendo este como entrada e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas. Com vencimento da primeiro 30 (trinta) dias após a assinatura do referido contrato de compra e venda.
-         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.
-    `;
+        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, Residente e domiciliado em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, 
+        formaliza para a empresa WF Soluções Imobiliárias Ltda, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos inscrito sob nº CPF 006.614.829-44 e/ou José Eduardo Bevilaqua inscrito sob nº CPF 061.248.209-00 o Termo de Intenção de Compra e Proposta Financeira do imóvel abaixo descrito:
+
+        Lote urbano nº ${dados.lote}, da quadra nº ${dados.quadra}, com ${dados.area} metros de área, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “Origens Bairro Inteligente”.
+         
+        Ofereço para compra do imóvel mencionado acima o valor de R$ ${dados.valorTotal} (xxxx). Me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia ${dados.finDataEntrada} e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas vencendo a primeira em ${dados.finDataParcela} e 04 reforços anuais vencendo o primeiro em ${dados.finDataReforco}.
+         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.`;
 
         doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
 
