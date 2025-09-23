@@ -1,0 +1,489 @@
+// Se não foi, ela baixa o HTML, injeta na página e configura os eventos.
+async function garantirEstruturaModal(username) {
+    // Se o modal já existe, não fazemos nada e retornamos imediatamente.
+    if (document.getElementById('modalProposta')) {
+        return;
+    }
+
+    // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV05.html');
+    if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
+    const html = await response.text();
+
+    // Injeta o HTML no container.
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) throw new Error("Container com id 'modal-container' não foi encontrado.");
+    modalContainer.innerHTML = html;
+
+    // Configura os eventos internos do modal (fechar, submit).
+    configurarEventosDoModal(username);
+}
+
+// Configura os eventos que são parte do modal (fechar, submeter formulário)
+function configurarEventosDoModal(username) {
+    const modal = document.getElementById('modalProposta');
+    const btnFecharModal = document.getElementById('closeModal');
+    const formProposta = document.getElementById('formProposta');
+    const header = document.getElementById('pageHeader');
+
+    if (!modal || !btnFecharModal || !formProposta) {
+        console.error("Não foi possível encontrar um ou mais elementos essenciais do modal (modalProposta, closeModal, formProposta).");
+        return;
+    }
+
+    // Evento para o botão de fechar
+    btnFecharModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+        header.style.display = 'flex';
+    });
+
+    // Evento para fechar clicando fora do modal
+    window.addEventListener('click', (e) => {
+        if (e.target == modal) {
+            modal.style.display = 'none';
+            header.style.display = 'flex';
+        }
+    });
+
+    // Evento para o envio do formulário, que chama a geração do PDF
+    formProposta.addEventListener('submit', (e) => {
+        e.preventDefault();
+        console.log("Botão de gerar proposta clicado")
+        gerarProposta(username); // Chamando a função de gerar PDF
+    });
+
+    // Evento de mascara do campo de CPF
+    const cpfInput = document.getElementById("propClienteCPF");
+    cpfInput.addEventListener('input', function () {
+        let valor = this.value.replace(/\D/g, ''); // só números
+        //Limita a 14 caracteres (CNPJ)
+        if (valor.length > 14) {
+            valor = valor.substring(0, 14);
+        }
+        //Aplica a mascara
+        if (valor.length <= 11) {
+            // CPF: 000.000.000-00
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+            valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            // CNPJ: 00.000.000/0000-00
+            valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+            valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+        }
+        this.value = valor;
+    });
+
+    // Evento de mascara do campo de telefone
+    const telefoneInput = document.getElementById("propClienteTelefone");
+    telefoneInput.addEventListener("input", () => {
+        let value = telefoneInput.value;
+        value = value.replace(/\D/g, ""); // Remove tudo que não for número
+        value = value.replace(/^(\d{2})(\d)/, '($1) $2'); // Aplica a máscara: (xx) xxxxx-xxxx
+        value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        telefoneInput.value = value;
+    });
+}
+
+// Função para escrever números por extenos
+function numeroPorExtenso(valor) {
+    if (typeof valor !== 'number') {
+        throw new Error('O valor deve ser numérico');
+    }
+
+    const unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+    const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+    const centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+
+    function extensoAte999(n) {
+        if (n === 0) return "";
+        if (n === 100) return "cem";
+        if (n < 20) return unidades[n];
+        if (n < 100) return dezenas[Math.floor(n / 10)] + (n % 10 ? " e " + unidades[n % 10] : "");
+        return centenas[Math.floor(n / 100)] + (n % 100 ? " e " + extensoAte999(n % 100) : "");
+    }
+
+    function grupoExtenso(n, escalaSing, escalaPlural) {
+        if (n === 0) return "";
+        if (n === 1) return extensoAte999(n) + " " + escalaSing;
+        return extensoAte999(n) + " " + escalaPlural;
+    }
+
+    const inteiro = Math.floor(valor);
+    const centavos = Math.round((valor - inteiro) * 100);
+
+    if (inteiro > 999999999) {
+        throw new Error('Valor máximo suportado é 999.999.999,99');
+    }
+
+    const milhoes = Math.floor(inteiro / 1000000);
+    const milhares = Math.floor((inteiro % 1000000) / 1000);
+    const centenasFinal = inteiro % 1000;
+
+    let partes = [];
+
+    if (milhoes) partes.push(grupoExtenso(milhoes, "milhão", "milhões"));
+    if (milhares) partes.push(grupoExtenso(milhares, "mil", "mil"));
+    if (centenasFinal) partes.push(extensoAte999(centenasFinal));
+
+    let resultado = partes.join(" e ");
+    if (!resultado) resultado = "zero";
+
+    resultado += inteiro === 1 ? " real" : " reais";
+
+    if (centavos > 0) {
+        resultado += " e " + (centavos === 1
+            ? extensoAte999(centavos) + " centavo"
+            : extensoAte999(centavos) + " centavos");
+    }
+
+    return resultado;
+}
+
+
+// --- PARTE 2: FUNÇÃO PRINCIPAL (chamada pelo Bubble) ---
+// Esta é a função que o botão do Bubble vai chamar.
+// Ela verifica se um lote foi selecionado, preenche os dados e MOSTRA o modal.
+export async function abrirEPreencherModalProposta(mapaManager, username) {
+
+    try {
+
+        if (typeof mapaManager === 'undefined' || !mapaManager.selectedLoteId) {
+            alert("Por favor, selecione um lote no mapa primeiro!");
+            return;
+        }
+        const loteSelecionado = mapaManager.polygons[mapaManager.selectedLoteId].loteData;
+
+        //Verifica se o lote selecionado está disponível
+        if (loteSelecionado.Status !== "Disponível") {
+            alert("O lote selecionado não está disponível para venda. Por favor, escolha outro lote.");
+            return;
+        }
+
+        //Baixa o HTML do modal, se necessário, e injeta na página
+        await garantirEstruturaModal(username);
+
+        // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
+        const modal = document.getElementById('modalProposta');
+        const header = document.getElementById('pageHeader');
+
+        const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const match = loteSelecionado.Nome.match(/^Q(\d+)([A-Z]+)(\d+)$/); //Ragex para encontrar o primeiro conjunto de letras depois de Q para definir o numero do lote.
+        if (match) {
+            document.getElementById('propQuadraNome').textContent = match[1] || 'N/A'; // Quadra
+            document.getElementById('propLoteNome').textContent = match[3] || 'N/A';   // Lote
+        } else {
+            document.getElementById('propQuadraNome').textContent = 'N/A';
+            document.getElementById('propLoteNome').textContent = 'N/A';
+        }
+
+        document.getElementById('propLoteArea').textContent = (loteSelecionado.Área || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('propLoteValor').textContent = formatadorDeMoeda.format(loteSelecionado.Valor) || 0;
+
+        // Passo D: Preenche os dados da condição financeira.
+        const finValorEntrada = loteSelecionado.Valor * 0.25;
+        const finValorParcela = loteSelecionado.Valor * 0.012;
+        const finValorReforco = (loteSelecionado.Valor - finValorEntrada - finValorParcela * 48) / 4;
+        document.getElementById('propValorEntrada').value = formatadorDeMoeda.format(finValorEntrada);
+        document.getElementById('propValorEntrada').disabled = true;
+        document.getElementById('propQtdeParcelas').value = 48;
+        document.getElementById('propQtdeParcelas').disabled = true;
+        document.getElementById('propValorParcela').value = formatadorDeMoeda.format(finValorParcela);
+        document.getElementById('propValorParcela').disabled = true;
+        document.getElementById('propQtdeReforcos').value = 4;
+        document.getElementById('propQtdeReforcos').disabled = true;
+        document.getElementById('propValorReforco').value = formatadorDeMoeda.format(finValorReforco);
+        document.getElementById('propValorReforco').disabled = true;
+
+        // Passo E: mostra o modal e esconde o header
+        modal.style.display = 'flex';
+        header.style.display = 'none';
+
+    } catch (error) {
+        console.error("Falha ao abrir o modal da proposta:", error);
+    }
+}
+
+function parseBR(valor) {
+    if (!valor) return 0;
+    return parseFloat(
+        valor
+            .toString()
+            .replace(/[^\d,.-]/g, '') // remove R$, espaços e caracteres não numéricos
+            .replace(/\./g, '')       // remove pontos de milhar
+            .replace(',', '.')        // troca vírgula decimal por ponto
+    ) || 0;
+}
+function formatDateStr(dataStr) {
+    if (!dataStr) return '';
+    const [ano, mes, dia] = dataStr.split('-');
+    return `${dia}/${mes}/${ano}`;
+}
+
+/**
+ * Função auxiliar para carregar uma imagem de forma assíncrona.
+ * Retorna uma Promise que resolve com o objeto da imagem quando carregado.
+ * @param {string} url - A URL da imagem a ser carregada.
+ * @returns {Promise<HTMLImageElement>}
+ */
+function carregarImagem(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        // Essencial para carregar imagens de outros domínios (CORS)
+        img.crossOrigin = "Anonymous";
+        // A Promise resolve quando a imagem termina de carregar
+        img.onload = () => resolve(img);
+        // A Promise rejeita se houver um erro no carregamento
+        img.onerror = (err) => reject(err);
+        // Inicia o download da imagem
+        img.src = url;
+    });
+}
+/**
+ * Função principal para gerar a proposta em PDF.
+ * @param {string} username - Nome do corretor/usuário.
+ */
+async function gerarProposta(username) {
+    const { jsPDF } = window.jspdf;
+
+    // Captura os dados do formulário
+    const dados = {
+        // Lote
+        quadra: document.getElementById('propQuadraNome')?.textContent || '',
+        lote: document.getElementById('propLoteNome')?.textContent || '',
+        area: parseBR(document.getElementById('propLoteArea')?.textContent),
+        valorTotal: parseBR(document.getElementById('propLoteValor')?.textContent),
+        valorMetroQuadrado: (
+            parseBR(document.getElementById('propLoteValor')?.textContent) /
+            parseBR(document.getElementById('propLoteArea')?.textContent)
+        ) || 0,
+
+        // Cliente
+        nomeCliente: document.getElementById('propClienteNome').value || '',
+        cpfCliente: document.getElementById('propClienteCPF').value || '',
+        emailCliente: document.getElementById('propClienteEmail').value || '',
+        telefoneCliente: document.getElementById('propClienteTelefone').value || '',
+        profissaoCliente: document.getElementById('propClienteProfissao')?.value || '',
+        estadoCivilCliente: document.getElementById('propClienteEstadoCivil')?.value || '',
+        enderecoCliente: document.getElementById('propClienteEndereco')?.value || '',
+        cidadeCliente: document.getElementById('propClienteCidade')?.value || '',
+
+        // Financeiro
+        finValorEntrada: parseFloat(document.getElementById('propValorEntrada')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        finDataEntrada: document.getElementById('propDataEntrada').value || '',
+        finQntParcela: parseInt(document.getElementById('propQtdeParcelas').value) || 0,
+        finValorParcela: parseFloat(document.getElementById('propValorParcela')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        finDataParcela: document.getElementById('propDataPrimeiraParcela').value || '',
+        finQntReforco: parseInt(document.getElementById('propQtdeReforcos').value) || 0,
+        finValorReforco: parseFloat(document.getElementById('propValorReforco')?.value.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        finDataReforco: document.getElementById('propDataPrimeiroReforco').value || ''
+    };
+
+    // Validação: todos os campos obrigatórios
+    const obrigatorios = [
+        'quadra', 'lote', 'area', 'valorTotal',
+        'nomeCliente', 'cpfCliente', 'emailCliente', 'telefoneCliente',
+        'profissaoCliente', 'estadoCivilCliente', 'enderecoCliente', 'cidadeCliente',
+        'finValorEntrada', 'finDataEntrada', 'finQntParcela', 'finValorParcela',
+        'finDataParcela', 'finQntReforco', 'finValorReforco', 'finDataReforco'
+    ];
+    let faltando = obrigatorios.filter(campo => {
+        const valor = dados[campo];
+        return (
+            valor === '' || valor === null ||
+            valor === 'dd/mm/aaaa' || valor === "Invalid Date" || // máscara não preenchida
+            (typeof valor === 'number' && (isNaN(valor) || valor <= 0))
+        );
+    });
+    if (faltando.length > 0) {
+        alert("⚠️ Preencha todos os campos obrigatórios antes de gerar a proposta!");
+        return; // interrompe a função
+    }
+
+    console.log("Dados coletados e campos validados, iniciando construção do pdf.");
+
+    // ----------------------------
+    // Geração do PDF
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    let yAtual;
+    let startX;
+    let endX;
+    const hoje = new Date();
+
+    console.log("criado objeto jsPDF.");
+
+    try {
+        console.log("Adicionando imagem do timbrado via Base64...");
+        const timbradoBase64 = carregarTimbrado64();
+        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+        console.log("Imagem do timbrado adicionada com sucesso.");
+
+        // Título
+        doc.setFontSize(18).setFont('helvetica', 'bold');
+        doc.text('Proposta Comercial', 105, 30, { align: 'center' });
+        doc.setFontSize(12).setFont('helvetica', 'normal');
+        yAtual = 50;
+
+
+        // ----------------------------
+        // Seção: Dados do Lote
+        doc.setFontSize(14).setFont('helvetica', 'bold');
+        doc.text('Dados Lote', 20, yAtual);
+        doc.setFontSize(10).setFont('helvetica', 'normal');
+        yAtual += 2; startX = 20; endX = 190;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 8;
+
+        const colEsquerda = [
+            `Quadra: ${dados.quadra || '---'}`,
+            `Lote: ${dados.lote || '---'}`,
+            `Área: ${dados.area.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m²`
+        ];
+
+        const colDireita = [
+            `Valor Total: ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+            `Valor m²: ${dados.valorMetroQuadrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+        ];
+
+        colEsquerda.forEach((linha, i) => doc.text(linha, 20, yAtual + i * 8));
+        colDireita.forEach((linha, i) => doc.text(linha, 105, yAtual + i * 8));
+        yAtual += 32;
+
+
+        // ----------------------------
+        // Seção: Dados Cliente
+        doc.setFontSize(14).setFont('helvetica', 'bold');
+        doc.text('Dados Cliente', 20, yAtual);
+        doc.setFontSize(10).setFont('helvetica', 'normal');
+        yAtual += 2; doc.line(20, yAtual, 190, yAtual);
+        yAtual += 8;
+
+        const colCliEsq = [
+            `Nome: ${dados.nomeCliente}`,
+            `CPF: ${dados.cpfCliente}`,
+            `Telefone: ${dados.telefoneCliente}`,
+            `Email: ${dados.emailCliente}`
+        ];
+        const colCliDir = [
+            `Profissão: ${dados.profissaoCliente}`,
+            `Estado Civil: ${dados.estadoCivilCliente}`,
+            `Endereço: ${dados.enderecoCliente}`,
+            `Cidade/UF: ${dados.cidadeCliente}`
+        ];
+
+        colCliEsq.forEach((linha, i) => doc.text(linha, 20, yAtual + i * 8));
+        colCliDir.forEach((linha, i) => doc.text(linha, 105, yAtual + i * 8));
+        yAtual += 40;
+
+
+        // ----------------------------
+        // Seção: Condição Financeira
+        doc.setFontSize(14).setFont('helvetica', 'bold');
+        doc.text('Condição Financeira', 20, yAtual);
+        doc.setFontSize(10).setFont('helvetica', 'normal');
+        yAtual += 2; doc.line(20, yAtual, 190, yAtual);
+        yAtual += 8;
+
+        doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
+        doc.text(`Data de Vencimento Entrada: ${formatDateStr(dados.finDataEntrada)}`, 20, yAtual); yAtual += 8;
+        doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
+        doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
+        doc.text(`Data de Vencimento 1ª Parcela: ${formatDateStr(dados.finDataParcela)}`, 20, yAtual); yAtual += 8;
+        doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
+        doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
+        doc.text(`Data de Vencimento 1º Reforço: ${formatDateStr(dados.finDataReforco)}`, 20, yAtual); yAtual += 16;
+
+        // Assinaturas
+        doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+        yAtual += 28;
+
+        doc.line(32, yAtual, 92, yAtual);
+        doc.line(118, yAtual, 178, yAtual);
+
+        doc.setFontSize(10);
+        doc.text(username, 62, yAtual + 5, { align: 'center' });
+        doc.text("Corretor", 62, yAtual + 10, { align: 'center' });
+        doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
+        doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
+
+        console.log("primeira página construída, iniciando a segunda página.")
+
+        // ----------------------------
+        // Segunda Página - Termo de Intenção de Compra
+        doc.addPage();
+        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+        
+        // Adicionar título
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold')
+        doc.text('Termo de Intenção de Compra e Proposta Financeira', 105, 30, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal')
+        yAtual = 50;
+
+        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formaliza para a empresa WF Soluções Imobiliárias Ltda, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos inscrito sob nº CPF 006.614.829-44 e/ou José Eduardo Bevilaqua inscrito sob nº CPF 061.248.209-00 o Termo de Intenção de Compra e Proposta Financeira do imóvel abaixo descrito:
+
+        Lote urbano nº ${dados.lote}, da quadra nº ${dados.quadra}, com ${dados.area.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} metros de área, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “Origens Bairro Inteligente”.
+         
+        Ofereço para compra do imóvel mencionado acima o valor de ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${numeroPorExtenso(dados.valorTotal)}), me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia ${formatDateStr(dados.finDataEntrada)} e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas vencendo a primeira em ${formatDateStr(dados.finDataParcela)} e 04 reforços anuais vencendo o primeiro em ${formatDateStr(dados.finDataReforco)}.
+        
+        Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.`
+            ;
+
+        doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
+
+        yAtual = 230
+        doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+        yAtual += 20;
+
+        // Define posição, tamanho e desenha as linhas
+        startX = 75;
+        endX = 135;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+
+        // Inclui Nome e Qualificação
+        doc.setFontSize(10);
+        doc.text(dados.nomeCliente, 105, yAtual, { align: 'center' });
+        doc.text("Cliente", 105, yAtual + 5, { align: 'center' });
+
+        console.log("pdf pronto para ser exportado")
+
+    } catch (error) {
+        // Bloco de erro caso a imagem não carregue
+        console.error("Erro ao carregar a imagem do timbrado:", error);
+        alert("⚠️ Ocorreu um erro ao carregar os recursos para o PDF. Verifique sua conexão e tente novamente.");
+        return; // Interrompe a função
+    }
+
+    // ----------------------------
+    // Exporta
+
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        console.log("Lógica para iOS/Mobile ativada.");
+        const dataUriString = doc.output('datauristring');
+        window.open(dataUriString, "_blank");
+    } else {
+        console.log("Lógica para Desktop ativada (download direto).");
+        doc.save(`Proposta_${dados.quadra}_${dados.lote}.pdf`);
+    }
+
+    console.log("Processo finalizado.");
+}
+
+async function carregarTimbrado64() {
+  const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/TimbradoWF.txt";
+
+  try {
+    const response = await fetch(url);
+    return base64 = await response.text(); // pega o conteúdo como texto
+  } catch (err) {
+    console.error("Erro ao carregar arquivo:", err);
+  }
+}
+
+// Expõe a função principal para o Bubble, tornando-a "global"
+// O nome que o Bubble vai chamar é "abrirModalProposta"
+window.abrirModalProposta = abrirEPreencherModalProposta;
