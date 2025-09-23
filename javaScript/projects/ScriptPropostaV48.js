@@ -416,8 +416,9 @@ async function gerarProposta(username) {
         // ----------------------------
         // Segunda Página - Termo de Intenção de Compra
         doc.addPage();
-        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297); // Se quiser o timbrado na segunda página, adicione aqui também
-
+        doc.addImage(logoTimbradoB64, 'PNG', 10, 10, 40, 20);
+        doc.addImage(rodapeTimbradoB64, 'PNG', 0, 270, 210, 20);
+        
         // Adicionar título
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold')
