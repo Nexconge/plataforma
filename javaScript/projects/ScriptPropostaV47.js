@@ -25,7 +25,6 @@ function configurarEventosDoModal(username) {
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
     const header = document.getElementById('pageHeader');
-    const sideToggle2 = document.getElementById('sideToggleGroup');
 
     if (!modal || !btnFecharModal || !formProposta) {
         console.error("Não foi possível encontrar um ou mais elementos essenciais do modal (modalProposta, closeModal, formProposta).");
@@ -36,7 +35,6 @@ function configurarEventosDoModal(username) {
     btnFecharModal.addEventListener('click', () => {
         modal.style.display = 'none';
         header.style.display = 'flex';
-        sideToggle2.style.display = 'flex';
     });
 
     // Evento para fechar clicando fora do modal
@@ -44,7 +42,6 @@ function configurarEventosDoModal(username) {
         if (e.target == modal) {
             modal.style.display = 'none';
             header.style.display = 'flex';
-            sideToggle2.style.display = 'flex';
         }
     });
 
@@ -171,7 +168,6 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         // Agora que temos 100% de certeza que o modal existe no DOM, podemos continuar.
         const modal = document.getElementById('modalProposta');
         const header = document.getElementById('pageHeader');
-        const sideToggle2 = document.getElementById('sideToggle');
 
         const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
         const match = loteSelecionado.Nome.match(/^Q(\d+)([A-Z]+)(\d+)$/); //Ragex para encontrar o primeiro conjunto de letras depois de Q para definir o numero do lote.
@@ -201,10 +197,9 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         document.getElementById('propValorReforco').value = formatadorDeMoeda.format(finValorReforco);
         document.getElementById('propValorReforco').disabled = true;
 
-        // Passo E: mostra o modal e esconde o header e sideToggle
+        // Passo E: mostra o modal e esconde o header
         modal.style.display = 'flex';
         header.style.display = 'none';
-        sideToggle2.style.display = 'none';
 
     } catch (error) {
         console.error("Falha ao abrir o modal da proposta:", error);
