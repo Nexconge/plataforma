@@ -424,7 +424,7 @@ async function gerarProposta(username) {
         // Adicionar título
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold')
-        doc.text('Termo de Intenção de Compra', 105, 30, { align: 'center' });
+        doc.text('Termo de Intenção de Compra e Proposta Financeira', 105, 30, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal')
         yAtual = 50;
