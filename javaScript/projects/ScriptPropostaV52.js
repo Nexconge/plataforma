@@ -316,7 +316,7 @@ async function gerarProposta(username) {
 
     try {
         console.log("Adicionando imagem do timbrado via Base64...");
-        const timbradoBase64 = carregarTimbrado64();
+        const timbradoBase64 = await carregarTimbrado64();
         doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
         console.log("Imagem do timbrado adicionada com sucesso.");
 
