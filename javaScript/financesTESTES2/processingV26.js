@@ -119,12 +119,6 @@ function processarLancamentos(dadosConta, conta) {
 }
 
 
-// --- FUNÇÕES AUXILIARES PARA mergeMatrizes ---
-// O prefixo _ indica que são funções internas a este módulo.
-
-/**
- * ETAPA 1: Mescla os dados processados de múltiplas contas em uma única estrutura de dados mensal.
- */
 function _mergeDadosMensais(listaDeDadosProcessados) {
     const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {} };
     const todasChaves = new Set();
@@ -139,39 +133,58 @@ function _mergeDadosMensais(listaDeDadosProcessados) {
                 monthlyMerged.matrizDRE[classe][periodo] = (monthlyMerged.matrizDRE[classe][periodo] || 0) + dados.matrizDRE[classe][periodo];
             }
         }
-        // A lógica de merge para matrizDepartamentos é mais complexa e foi omitida para brevidade, mas deve ser mantida.
+        
+        // --- LÓGICA RESTAURADA ---
+        for (const chaveDepto in dados.matrizDepartamentos) {
+            if (!monthlyMerged.matrizDepartamentos[chaveDepto]) {
+                monthlyMerged.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(dados.matrizDepartamentos[chaveDepto]));
+            } else {
+                const mergedDepto = monthlyMerged.matrizDepartamentos[chaveDepto];
+                const deptoData = dados.matrizDepartamentos[chaveDepto];
+                for (const codCat in deptoData.categorias) {
+                    if (!mergedDepto.categorias[codCat]) {
+                        mergedDepto.categorias[codCat] = JSON.parse(JSON.stringify(deptoData.categorias[codCat]));
+                    } else {
+                        const mergedCat = mergedDepto.categorias[codCat];
+                        const catData = deptoData.categorias[codCat];
+                        for (const periodo in catData.valores) {
+                            mergedCat.valores[periodo] = (mergedCat.valores[periodo] || 0) + catData.valores[periodo];
+                        }
+                        for (const fornKey in catData.fornecedores) {
+                            const forn = catData.fornecedores[fornKey].fornecedor;
+                            if (!mergedCat.fornecedores[forn]) {
+                                mergedCat.fornecedores[forn] = JSON.parse(JSON.stringify(catData.fornecedores[fornKey]));
+                            } else {
+                                mergedCat.fornecedores[forn].total += catData.fornecedores[fornKey].total;
+                                for (const periodo in catData.fornecedores[fornKey].valores) {
+                                    mergedCat.fornecedores[forn].valores[periodo] = (mergedCat.fornecedores[forn].valores[periodo] || 0) + catData.fornecedores[fornKey].valores[periodo];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     });
-
     return { monthlyMerged, saldoBaseTotal, todasChaves };
 }
-
-/**
- * ETAPA 2: Calcula o saldo inicial para o período visível.
- */
 function _calcularSaldoInicialParaPeriodo(monthlyDRE, todasChaves, primeiraColunaVisivel, saldoBaseTotal, calcularTotaisDREFunc) {
     const colunasHistoricasOrdenadas = Array.from(todasChaves).sort((a, b) => {
         const [mesA, anoA] = a.split('-'); const [mesB, anoB] = b.split('-');
         return new Date(anoA, mesA - 1) - new Date(anoB, mesB - 1);
     });
-
     const tempDRE = JSON.parse(JSON.stringify(monthlyDRE));
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!tempDRE[classe]) tempDRE[classe] = {};
     });
     calcularTotaisDREFunc(tempDRE, colunasHistoricasOrdenadas, 0);
-
     let saldoAcumuladoAntesDoPeriodo = 0;
     for (const periodo of colunasHistoricasOrdenadas) {
         if (periodo === primeiraColunaVisivel) break;
         saldoAcumuladoAntesDoPeriodo += tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0;
     }
-
     return saldoBaseTotal + saldoAcumuladoAntesDoPeriodo;
 }
-
-/**
- * ETAPA 3: Agrega os dados mensais em anuais, se necessário.
- */
 function _agregarDadosParaAnual(monthlyData) {
     const annualData = { matrizDRE: {}, matrizDepartamentos: {} };
     for (const classe in monthlyData.matrizDRE) {
@@ -181,66 +194,87 @@ function _agregarDadosParaAnual(monthlyData) {
             annualData.matrizDRE[classe][ano] = (annualData.matrizDRE[classe][ano] || 0) + monthlyData.matrizDRE[classe][periodoMensal];
         }
     }
-    // A lógica de agregação para matrizDepartamentos também deve ser mantida.
+    // --- LÓGICA RESTAURADA ---
+    for (const chaveDepto in monthlyData.matrizDepartamentos) {
+        const deptoData = monthlyData.matrizDepartamentos[chaveDepto];
+        annualData.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(deptoData));
+        const annualDepto = annualData.matrizDepartamentos[chaveDepto];
+        for (const codCat in annualDepto.categorias) {
+            const catData = annualDepto.categorias[codCat];
+            const valoresAnuais = {};
+            for (const periodoMensal in catData.valores) {
+                const ano = periodoMensal.split('-')[1];
+                valoresAnuais[ano] = (valoresAnuais[ano] || 0) + catData.valores[periodoMensal];
+            }
+            catData.valores = valoresAnuais;
+            for (const fornKey in catData.fornecedores) {
+                const valoresAnuaisForn = {};
+                for (const periodoMensal in catData.fornecedores[fornKey].valores) {
+                    const ano = periodoMensal.split('-')[1];
+                    valoresAnuaisForn[ano] = (valoresAnuaisForn[ano] || 0) + catData.fornecedores[fornKey].valores[periodoMensal];
+                }
+                catData.fornecedores[fornKey].valores = valoresAnuaisForn;
+            }
+        }
+    }
     return annualData;
 }
-
-
 /**
  * Função interna para calcular os valores das classes totalizadoras da matriz de DRE.
- * Foi mantida aqui para ser usada tanto no cálculo do saldo histórico quanto no final.
+ * usada tanto no cálculo do saldo anterior quanto no final.
  */
 function _calcularTotaisDRE(matrizDRE, colunas, saldoInicial) {
     let saldoAcumulado = saldoInicial;
     colunas.forEach(coluna => {
         const getValor = (classe) => matrizDRE[classe]?.[coluna] || 0;
-
         const receitaLiquida = getValor('(+) Receita Bruta') + getValor('(-) Deduções');
+        if (!matrizDRE['(=) Receita Líquida']) matrizDRE['(=) Receita Líquida'] = {};
         matrizDRE['(=) Receita Líquida'][coluna] = receitaLiquida;
-
         const geracaoCaixa = receitaLiquida + getValor('(-) Custos') + getValor('(-) Despesas') + getValor('(+/-) IRPJ/CSLL');
+        if (!matrizDRE['(+/-) Geração de Caixa Operacional']) matrizDRE['(+/-) Geração de Caixa Operacional'] = {};
         matrizDRE['(+/-) Geração de Caixa Operacional'][coluna] = geracaoCaixa;
-
         const movimentacaoNaoOperacional = getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
         const movimentacaoMensal = geracaoCaixa + movimentacaoNaoOperacional;
+        if (!matrizDRE['(=) Movimentação de Caixa Mensal']) matrizDRE['(=) Movimentação de Caixa Mensal'] = {};
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
-
+        if (!matrizDRE['Caixa Inicial']) matrizDRE['Caixa Inicial'] = {};
         matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
         const variacaoCaixaTotal = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
         saldoAcumulado += variacaoCaixaTotal;
+        if (!matrizDRE['Caixa Final']) matrizDRE['Caixa Final'] = {};
         matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
 }
-
-
 // --- FUNÇÃO PRINCIPAL REESCRITA (ORQUESTRADORA) ---
-
 function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     if (!listaDeDadosProcessados || listaDeDadosProcessados.length === 0) {
         return { matrizDRE: {}, matrizDepartamentos: {}, saldoInicialPeriodo: 0 };
     }
 
-    // ETAPA 1: Mescla dados em uma base mensal.
     const { monthlyMerged, saldoBaseTotal, todasChaves } = _mergeDadosMensais(listaDeDadosProcessados);
-
-    // ETAPA 2: Calcula o saldo inicial para o período.
     const saldoInicialPeriodo = _calcularSaldoInicialParaPeriodo(monthlyMerged.matrizDRE, todasChaves, colunasVisiveis[0], saldoBaseTotal, _calcularTotaisDRE);
-
-    // ETAPA 3: Agrega para anual, se necessário.
     const dataBeforeTotals = (modo.toLowerCase() === 'anual') ? _agregarDadosParaAnual(monthlyMerged) : monthlyMerged;
 
-    // ETAPA 4: Calcula a coluna TOTAL.
+    // Calcula a coluna TOTAL para ambas as matrizes
     Object.values(dataBeforeTotals.matrizDRE).forEach(periodos => {
         periodos.TOTAL = colunasVisiveis.reduce((acc, coluna) => acc + (periodos[coluna] || 0), 0);
     });
 
-    // ETAPA 5: Finaliza a Matriz DRE com totais e saldos para o período visível.
+    Object.values(dataBeforeTotals.matrizDepartamentos).forEach(depto => {
+        Object.values(depto.categorias).forEach(cat => {
+            cat.TOTAL = colunasVisiveis.reduce((acc, col) => acc + (cat.valores[col] || 0), 0);
+            Object.values(cat.fornecedores).forEach(forn => {
+                forn.TOTAL = colunasVisiveis.reduce((acc, col) => acc + (forn.valores[col] || 0), 0);
+            });
+        });
+    });
+
+    // Finaliza a Matriz DRE
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!dataBeforeTotals.matrizDRE[classe]) dataBeforeTotals.matrizDRE[classe] = {};
     });
     _calcularTotaisDRE(dataBeforeTotals.matrizDRE, colunasVisiveis, saldoInicialPeriodo);
 
-    // Ajuste final para a coluna TOTAL das linhas de saldo.
     if (dataBeforeTotals.matrizDRE['Caixa Inicial']) {
         dataBeforeTotals.matrizDRE['Caixa Inicial'].TOTAL = dataBeforeTotals.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
     }
@@ -250,6 +284,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
 
     return { ...dataBeforeTotals, saldoInicialPeriodo };
 }
+
 
 
 // Exporta apenas as funções que precisam ser usadas por outros módulos.
