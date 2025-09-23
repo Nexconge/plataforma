@@ -92,27 +92,56 @@ function configurarEventosDoModal(username) {
 
 // Função para escrever números por extenos
 function numeroPorExtenso(valor) {
+    if (typeof valor !== 'number') {
+        throw new Error('O valor deve ser numérico');
+    }
+
     const unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
     const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
-    const centenas = ["", "cem", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+    const centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
 
-    function parteInteira(n) {
+    function extensoAte999(n) {
+        if (n === 0) return "";
+        if (n === 100) return "cem";
         if (n < 20) return unidades[n];
         if (n < 100) return dezenas[Math.floor(n / 10)] + (n % 10 ? " e " + unidades[n % 10] : "");
-        if (n < 1000) {
-            if (n === 100) return "cem";
-            return centenas[Math.floor(n / 100)] + (n % 100 ? " e " + parteInteira(n % 100) : "");
-        }
-        return n.toString(); // simplificado para até 999
+        return centenas[Math.floor(n / 100)] + (n % 100 ? " e " + extensoAte999(n % 100) : "");
+    }
+
+    function grupoExtenso(n, escalaSing, escalaPlural) {
+        if (n === 0) return "";
+        if (n === 1) return extensoAte999(n) + " " + escalaSing;
+        return extensoAte999(n) + " " + escalaPlural;
     }
 
     const inteiro = Math.floor(valor);
     const centavos = Math.round((valor - inteiro) * 100);
 
-    let resultado = parteInteira(inteiro) + (inteiro === 1 ? " real" : " reais");
-    if (centavos > 0) {
-        resultado += " e " + parteInteira(centavos) + (centavos === 1 ? " centavo" : " centavos");
+    if (inteiro > 999999999) {
+        throw new Error('Valor máximo suportado é 999.999.999,99');
     }
+
+    const milhoes = Math.floor(inteiro / 1000000);
+    const milhares = Math.floor((inteiro % 1000000) / 1000);
+    const centenasFinal = inteiro % 1000;
+
+    let partes = [];
+
+    if (milhoes) partes.push(grupoExtenso(milhoes, "milhão", "milhões"));
+    if (milhares) partes.push(grupoExtenso(milhares, "mil", "mil"));
+    if (centenasFinal) partes.push(extensoAte999(centenasFinal));
+
+    let resultado = partes.join(" e ");
+    if (!resultado) resultado = "zero";
+
+    resultado += inteiro === 1 ? " real" : " reais";
+
+    if (centavos > 0) {
+        resultado += " e " + (centavos === 1
+            ? extensoAte999(centavos) + " centavo"
+            : extensoAte999(centavos) + " centavos");
+    }
+
     return resultado;
 }
 
@@ -400,7 +429,7 @@ async function gerarProposta(username) {
         doc.setFont('helvetica', 'normal')
         yAtual = 50;
 
-        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, Residente e domiciliado em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formalizo para a empresa WF Soluções Imobiliárias Ltda, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos inscrito sob nº CPF 006.614.829-44 e/ou José Eduardo Bevilaqua inscrito sob nº CPF 061.248.209-00 o Termo de Intenção de Compra e Proposta Financeira do imóvel abaixo descrito:
+        const longText = `        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formaliza para a empresa WF Soluções Imobiliárias Ltda, inscrita no CNPJ 53.265.298/0001-28, neste ato representada por seus Sócios Procuradores Sr. Marcos Aurelio Fortes dos Santos inscrito sob nº CPF 006.614.829-44 e/ou José Eduardo Bevilaqua inscrito sob nº CPF 061.248.209-00 o Termo de Intenção de Compra e Proposta Financeira do imóvel abaixo descrito:
 
         Lote urbano nº ${dados.lote}, da quadra nº ${dados.quadra}, com ${dados.area.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} metros de área, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “Origens Bairro Inteligente”.
          
