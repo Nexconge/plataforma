@@ -433,7 +433,7 @@ async function gerarProposta(username) {
 
         Lote urbano nº ${dados.lote}, da quadra nº ${dados.quadra}, com ${dados.area.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} metros de área, sito no Município e Comarca de Chapeco/SC, inserido no empreendimento denominado “Origens Bairro Inteligente”.
          
-        Ofereço para compra do imóvel mencionado acima o valor de ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${numeroPorExtenso(dados.valorTotal)}). Me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia ${formatDateStr(dados.finDataEntrada)} e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas vencendo a primeira em ${formatDateStr(dados.finDataParcela)} e 04 reforços anuais vencendo o primeiro em ${formatDateStr(dados.finDataReforco)}.
+        Ofereço para compra do imóvel mencionado acima o valor de ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${numeroPorExtenso(dados.valorTotal)}), me comprometo ainda a realizar os pagamentos da seguinte forma: 25% (vinte e cinco por cento) do valor total do imóvel pago em moeda corrente nacional no dia ${formatDateStr(dados.finDataEntrada)} e o saldo dividido em 48 (quarenta e oito) parcelas mensais fixas e sucessivas vencendo a primeira em ${formatDateStr(dados.finDataParcela)} e 04 reforços anuais vencendo o primeiro em ${formatDateStr(dados.finDataReforco)}.
         
         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.`
             ;
