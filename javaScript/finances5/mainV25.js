@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos } from './apiV21.js';
-import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV21.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV21.js';
+import { buscarTitulos } from './apiV23.js';
+import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV23.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV23.js';
 
 // Inicia o chache
 let appCache = {
