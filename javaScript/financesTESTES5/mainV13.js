@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV02.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV10.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV11.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV03.js';
 
 // Inicia o chache
@@ -11,7 +11,7 @@ let appCache = {
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: [],
-    projecao: "realizado" // Valores possíveis: 'realizado', 'arealizar'
+    projecao: "arealizar" // Valores possíveis: 'realizado', 'arealizar'
 };
 
 // Função para lidar com mudanças de filtro
@@ -69,7 +69,7 @@ async function handleFiltroChange() {
             const contaInfo = appCache.contasMap.get(String(contaId));
             const saldoIni = contaInfo ? Number(contaInfo.saldoIni) : 0;
             if (dadosProcessadosConta.realizado) dadosProcessadosConta.realizado.saldoIni = saldoIni;
-            if (dadosProcessadosConta.aRealizar) dadosProcessadosConta.aRealizar.saldoIni = saldoIni;
+            if (dadosProcessadosConta.arealizar) dadosProcessadosConta.arealizar.saldoIni = saldoIni;
             
             // Armazena as matrizes processadas da conta no cache principal
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);
@@ -96,7 +96,7 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         anosDisponiveis: [],
-        projecao: "REALIZADO"
+        projecao: "realizado"
     };
     
     //Parseia os dados recebidos do bubble 

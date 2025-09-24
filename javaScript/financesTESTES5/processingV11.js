@@ -263,7 +263,7 @@ function processarDadosDaConta(dadosBase, dadosApi, contaId) {
 
     return {
         realizado: dadosRealizado,
-        aRealizar: dadosARealizar
+        arealizar: dadosARealizar
     };
 }
 //Calcula as linhas totalizadoras da Matriz DRE (Demonstração do Resultado) com base nos dados de entrada.
