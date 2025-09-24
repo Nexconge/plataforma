@@ -36,7 +36,7 @@
 
         .modal-close {
             appearance: none;
-            background: transparent;
+            background: #0056b3;
             border: none;
             display: inline-flex;
             align-items: center;
