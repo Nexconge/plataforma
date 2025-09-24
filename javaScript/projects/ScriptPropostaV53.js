@@ -6,7 +6,7 @@ async function garantirEstruturaModal(username) {
     }
 
     // Baixa o HTML do modal. 'await' pausa a execução até o fetch terminar.
-    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV05.html');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/nexconge/plataforma@developer/html/menuPropostaV06.html');
     if (!response.ok) throw new Error('Não foi possível baixar o HTML do modal.');
     const html = await response.text();
 
@@ -414,7 +414,7 @@ async function gerarProposta(username) {
         // Segunda Página - Termo de Intenção de Compra
         doc.addPage();
         doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
-        
+
         // Adicionar título
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold')
@@ -474,16 +474,16 @@ async function gerarProposta(username) {
 }
 
 async function carregarTimbrado64() {
-  const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/TimbradoWF.txt";
-  let base64;
+    const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/TimbradoWF.txt";
+    let base64;
 
-  try {
-    const response = await fetch(url);
-    base64 = await response.text(); // pega o conteúdo como texto
-  } catch (err) {
-    console.error("Erro ao carregar arquivo:", err);
-  }
-  return base64;
+    try {
+        const response = await fetch(url);
+        base64 = await response.text(); // pega o conteúdo como texto
+    } catch (err) {
+        console.error("Erro ao carregar arquivo:", err);
+    }
+    return base64;
 }
 
 // Expõe a função principal para o Bubble, tornando-a "global"

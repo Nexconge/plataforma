@@ -35,13 +35,15 @@
         }
 
         .modal-close {
+            appearance: none;
+            background: transparent;
+            border: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 20px;
             height: 20px;
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 12px;
             cursor: pointer;
             border-radius: 4px;
             transition: background-color 0.2s;
