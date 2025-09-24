@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos } from './apiV24.js';
-import { processarLancamentos, extrairLancamentosDosTitulos, mergeMatrizes } from './processingV28.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV24.js';
+import { buscarTitulos } from './apiV02.js';
+import { processarLancamentos, extrairDadosDosTitulos, mergeMatrizes } from './processingV08.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV02.js';
 
 // Inicia o chache
 let appCache = {
@@ -10,7 +10,8 @@ let appCache = {
     matrizesPorConta: new Map(),
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
-    anosDisponiveis: []
+    anosDisponiveis: [],
+    projecao: null
 };
 
 // Função para lidar com mudanças de filtro
@@ -52,7 +53,7 @@ async function handleFiltroChange() {
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                    const todosLancamentosExtraidos = extrairLancamentosDosTitulos(titulos);
+                    const { todosLancamentosExtraidos, titulosExtraidos } = extrairDadosDosTitulos(titulos);
                     // Filtra para garantir que estamos processando apenas lançamentos da conta correta
                     lancamentosDaConta = todosLancamentosExtraidos.filter(l => Number(l.CODContaC) === contaId);
                 } catch (e) {
@@ -81,7 +82,8 @@ async function handleFiltroChange() {
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
 }
-//Função chamada pelo bubble que inicia a pagina tabela
+
+//Função chamada pelo bubble que inicia a tabela
 window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,projetosJson) {
     //Zera o cache
     appCache = {
@@ -89,7 +91,8 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         matrizesPorConta: new Map(), // Reseta o novo cache
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
-        anosDisponiveis: []
+        anosDisponiveis: [],
+        projecao: "REALIZADO"
     };
     
     //Parseia os dados recebidos do bubble 

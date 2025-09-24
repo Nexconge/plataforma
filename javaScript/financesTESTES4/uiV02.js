@@ -1,16 +1,14 @@
 // ui.js
 
-//Formata valores para formato financeiro
+// Funções que não dependem de estado externo
 function formatarValor(valor) {
     if (valor === 0) return '-';
     const numeroFormatado = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0});
     return valor < 0 ? `(${numeroFormatado})` : numeroFormatado;
 }
-//Normaliza strings
 function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
-//Esconde e mostra as linhas ao clicar
 function toggleLinha(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     if (filhos.length === 0) return;
@@ -25,7 +23,6 @@ function toggleLinha(id) {
         filhos.forEach(filho => filho.classList.remove('hidden'));
     }
 }
-//Esconde descendentes e descendentes de descendentes ao dar toggle em uma linha da tabela de departamentoss
 function esconderDescendentes(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     filhos.forEach(filho => {
@@ -35,7 +32,6 @@ function esconderDescendentes(id) {
         }
     });
 }
-//Retorna os iten selecionados de um filtro
 function getSelectItems(select){
     if(!select.selectedOptions || select.selectedOptions.length === 0){
         return Array.from(select.options).map(option => option.value);
@@ -81,6 +77,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         const row = tbody.insertRow();
         const cellClasse = row.insertCell();
         cellClasse.textContent = classe;
+
         if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.classList.add('linhatotal');
         } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
@@ -88,14 +85,17 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         } else {
             cellClasse.classList.add('idented');
         }
+
         // Renderiza os valores das colunas visíveis
         colunas.forEach(coluna => {
             const valor = matrizDRE[classe]?.[coluna] || 0;
             row.insertCell().textContent = formatarValor(valor);
         });
-        // Lê diretamente a propriedade 'TOTAL' pré-calculada
+        
+        // SIMPLIFICADO: Lê diretamente a propriedade 'TOTAL' pré-calculada
         const total = matrizDRE[classe]?.TOTAL || 0;
         row.insertCell().textContent = formatarValor(total);
+        
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
         }
@@ -120,7 +120,9 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     headRow.insertCell().textContent = 'TOTAL';
     thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     fragment.appendChild(thead);
+
     const tbody = document.createElement('tbody');
+
     // Agrupa departamentos por classe
     const classesMap = {};
     Object.entries(dadosAgrupados).forEach(([chave, deptoData]) => {
@@ -130,6 +132,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
         }
         classesMap[classe].push({ nome, categorias });
     });
+
     // Ordem fixa das classes
     const ordemClasses = [
         '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida',
@@ -139,30 +142,34 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios',
         '(=) Movimentação de Caixa Mensal'
     ];
+
     // Renderiza as classes na ordem definida
     ordemClasses.forEach(classe => {
         if (classesMap[classe]) {
             renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
+
     // Caso existam classes não previstas em ordemClasses, renderiza no fim
     Object.keys(classesMap).forEach(classe => {
         if (!ordemClasses.includes(classe)) {
             renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
+
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
-//Renderiza uma unica classe na tabela de detalhamento
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
     rowClasse.className = 'linhaClasseDetalhamento';
     rowClasse.id = classeId;
     rowClasse.onclick = () => toggleLinha(classeId);
+
     const cellClasse = rowClasse.insertCell();
     cellClasse.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+
     // Totais da classe
     const totaisClasse = Array(colunas.length).fill(0);
     departamentos.forEach(dep => {
@@ -176,6 +183,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
         rowClasse.insertCell().textContent = formatarValor(valor);
     });
     rowClasse.insertCell().textContent = formatarValor(totaisClasse.reduce((a, b) => a + b, 0));
+
     // Renderiza departamentos
     departamentos.forEach(dep => {
         const deptoId = `depto_${sanitizeId(dep.nome)}_${sanitizeId(classe)}`;
@@ -183,8 +191,10 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
         rowDepto.className = `linhaDepto parent-${classeId} hidden`;
         rowDepto.id = deptoId;
         rowDepto.onclick = () => toggleLinha(deptoId);
+
         const cellDepto = rowDepto.insertCell();
         cellDepto.innerHTML = `<span class="expand-btn">[+]</span> ${dep.nome}`;
+
         const totaisDepto = Array(colunas.length).fill(0);
         Object.values(dep.categorias).forEach(cat => {
             colunas.forEach((coluna, idx) => {
@@ -195,6 +205,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
             rowDepto.insertCell().textContent = formatarValor(valor);
         });
         rowDepto.insertCell().textContent = formatarValor(totaisDepto.reduce((a, b) => a + b, 0));
+
         // Categorias
         Object.entries(dep.categorias).forEach(([codCategoria, catData]) => {
             const catId = `${deptoId}_cat_${sanitizeId(codCategoria)}`;
@@ -202,9 +213,11 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
             rowCat.className = `linha-categoria parent-${deptoId} hidden`;
             rowCat.id = catId;
             rowCat.onclick = (e) => { e.stopPropagation(); toggleLinha(catId); };
+
             const cellCat = rowCat.insertCell();
             cellCat.className = 'idented';
             cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${categoriasMap.get(codCategoria) || 'Categoria desconhecida'}`;
+
             let totalCategoria = 0;
             colunas.forEach(coluna => {
                 const valor = catData.valores[coluna] || 0;
@@ -212,6 +225,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
                 rowCat.insertCell().textContent = formatarValor(valor);
             });
             rowCat.insertCell().textContent = formatarValor(totalCategoria);
+
             // Fornecedores
             catData.fornecedores.forEach(fornecedorData => {
                 const rowLan = tbody.insertRow();
@@ -219,6 +233,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
                 const cellLan = rowLan.insertCell();
                 cellLan.className = 'idented2';
                 cellLan.textContent = fornecedorData.fornecedor;
+
                 let totalFornecedor = 0;
                 colunas.forEach(coluna => {
                     const valor = fornecedorData.valores[coluna] || 0;
@@ -230,7 +245,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
         });
     });
 }
-//Atualiza as opções de ano ao mudar o filtro de anual para mensal
+// Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     anoSelect.innerHTML = '';
 
@@ -257,7 +272,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
         });
     }
 }
-//Atualiza as opções de conta ao selecionar um projeto
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {
@@ -277,7 +291,6 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-//Atualiza as tabelas
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
@@ -288,7 +301,6 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
-//Retorna os filtros selecionados em um objeto
 function obterFiltrosAtuais() {
     const modoSelect = document.getElementById('modoSelect');
     const anoSelect = document.getElementById('anoSelect');
@@ -330,7 +342,6 @@ function obterFiltrosAtuais() {
         colunas: colunas
     };
 }
-//Configuração inicial dos filtros ao iniciar a pagina.
 function configurarFiltros(appCache, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
