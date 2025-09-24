@@ -18,7 +18,7 @@
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
 
         .modal-header {
@@ -35,9 +35,20 @@
         }
 
         .modal-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
             font-size: 1.5rem;
             font-weight: bold;
             cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .modal-close:hover {
+            background-color: #c7c7c7;
         }
 
         .modal-body {
@@ -67,7 +78,8 @@
             margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Adicionado para corrigir padding */
+            box-sizing: border-box;
+            /* Adicionado para corrigir padding */
         }
 
         #formProposta label {
