@@ -36,6 +36,7 @@ function configurarEventosDoModal(username) {
         modal.style.display = 'none';
         header.style.display = 'flex';
         header.style.pointerEvents = 'auto';
+        header.style.height = '10%';
     });
 
     // Evento para fechar clicando fora do modal
@@ -44,6 +45,7 @@ function configurarEventosDoModal(username) {
             modal.style.display = 'none';
             header.style.display = 'flex';
             header.style.pointerEvents = 'auto';
+            header.style.height = '10%';
         }
     });
 
@@ -203,6 +205,7 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
         modal.style.display = 'flex';
         header.style.display = 'none';
         header.style.pointerEvents = 'none';
+        header.style.height = '3%';
 
     } catch (error) {
         console.error("Falha ao abrir o modal da proposta:", error);
