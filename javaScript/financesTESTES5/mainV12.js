@@ -21,7 +21,7 @@ async function handleFiltroChange() {
     // 1. Obter estado atual dos filtros
     const filtrosAtuais = obterFiltrosAtuais();
     const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
-    appCache.projecao = "realizado"
+    appCache.projecao = "arealizar"
 
     // Limpa as tabelas se nenhuma conta for selecionada
     if (contasSelecionadas.length === 0) {
