@@ -38,7 +38,7 @@ function extrairDadosDosTitulos(titulos) {
                 titulosProcessados.push({
                     Natureza: titulo.Natureza,
                     DataEmissao: titulo.DataEmissao,
-                    ValorDaParte: lancamento.ValorLancamento, 
+                    ValorDaParte: lancamento.ValorBaixado, 
                     DataPagamento: lancamento.DataLancamento,
                     CODContaC: lancamento.CODContaC,
                     CODCategoria: titulo.Categoria,
@@ -46,16 +46,16 @@ function extrairDadosDosTitulos(titulos) {
                     Departamentos: departamentosObj
                 });
             }   
-            ValorPago += lancamento.ValorLancamento
+            ValorPago += lancamento.ValorBaixado
         });
         //Se o titulo não estiver quitado com pagamentos, gera um ultimo titulo com o valor restante e pagamento em aberto
-        if(titulo.ValorTitulo != ValorPago && titulo.ValorTitulo != 0){
-            const valorParcial = (titulo.ValorTitulo - ValorPago);
-            let departamentosObj = gerarDepartamentosObj(titulo.Departamentos, valorParcial);
+        const valorFaltante = (titulo.ValorTitulo - ValorPago)
+        if(valorFaltante > 0 && titulo.ValorTitulo != 0){
+            let departamentosObj = gerarDepartamentosObj(titulo.Departamentos, valorFaltante);
             titulosProcessados.push({
                 Natureza: titulo.Natureza,
                 DataEmissao: titulo.DataEmissao,
-                ValorDaParte: valorParcial,
+                ValorDaParte: valorFaltante,
                 DataPagamento: "",
                 CODContaC: titulo.CODContaC,
                 CODCategoria: titulo.Categoria,
