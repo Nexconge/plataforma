@@ -25,7 +25,8 @@ function configurarEventosDoModal(username) {
     const btnFecharModal = document.getElementById('closeModal');
     const formProposta = document.getElementById('formProposta');
     const header = document.getElementById('pageHeader');
-    const headerContainer = document.getElementById('pageHeaderContainer')
+    const headerContainer = document.querySelector('.bubble-element.Group.baTaHbf');
+
 
     if (!modal || !btnFecharModal || !formProposta) {
         console.error("Não foi possível encontrar um ou mais elementos essenciais do modal (modalProposta, closeModal, formProposta).");
@@ -36,7 +37,10 @@ function configurarEventosDoModal(username) {
     btnFecharModal.addEventListener('click', () => {
         modal.style.display = 'none';
         header.style.display = 'flex';
-        headerContainer.style.display = 'flex';
+        if (headerContainer) {
+            headerContainer.style.display = 'none';
+            headerContainer.style.pointerEvents = 'none';
+        }
     });
 
     // Evento para fechar clicando fora do modal
@@ -45,6 +49,10 @@ function configurarEventosDoModal(username) {
             modal.style.display = 'none';
             header.style.display = 'flex';
             headerContainer.style.display = 'flex';
+            if (headerContainer) {
+                headerContainer.style.display = 'none';
+                headerContainer.style.pointerEvents = 'none';
+            }
         }
     });
 
