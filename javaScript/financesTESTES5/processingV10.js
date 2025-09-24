@@ -495,11 +495,11 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     }
 
     // Retorna um resultado vazio se não houver dados de entrada.
-    if (!listaDeDadosProcessados || listaDeDadosProcessados.length === 0) {
+    if (!dadosSelecionados || dadosSelecionados.length === 0) {
         return { matrizDRE: {}, matrizDepartamentos: {}, saldoInicialPeriodo: 0 };
     }
     // ETAPA 1: Consolida todos os dados em uma base mensal.
-    const { monthlyMerged, saldoBaseTotal, todasChaves } = mergeDadosMensais(listaDeDadosProcessados);
+    const { monthlyMerged, saldoBaseTotal, todasChaves } = mergeDadosMensais(dadosSelecionados);
     // ETAPA 2: Calcula o saldo inicial correto para o primeiro período que será exibido.
     const saldoInicialPeriodo = calcularSaldoInicialPeriodo(monthlyMerged.matrizDRE, todasChaves, colunasVisiveis, saldoBaseTotal);
     // ETAPA 3: Agrega os dados mensalmente consolidados em anuais, se o modo for 'anual'.
