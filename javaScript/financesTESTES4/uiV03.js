@@ -92,7 +92,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
             row.insertCell().textContent = formatarValor(valor);
         });
         
-        // SIMPLIFICADO: Lê diretamente a propriedade 'TOTAL' pré-calculada
+        // Lê diretamente a propriedade 'TOTAL' pré-calculada
         const total = matrizDRE[classe]?.TOTAL || 0;
         row.insertCell().textContent = formatarValor(total);
         

@@ -183,15 +183,8 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
 
     // Itera sobre cada coluna (mês ou ano) para calcular os totais verticalmente.
     colunasParaCalcular.forEach(coluna => {
-        /**
-         * Função auxiliar para obter o valor de uma classe da DRE para a coluna atual.
-         * Retorna 0 se a classe ou o valor para aquela coluna não existir, evitando erros de 'undefined'.
-         * @param {string} classe - O nome da linha da DRE (ex: '(+) Receita Bruta').
-         * @returns {number} - O valor da classe para a coluna atual.
-         */
+        //Função auxiliar para obter o valor de uma classe da DRE para a coluna atual.
         const getValor = (classe) => matrizDRE[classe]?.[coluna] || 0;
-
-        // --- Cálculos de Resultados Operacionais ---
 
         // Calcula a Receita Líquida somando a Receita Bruta com as Deduções (que são negativas).
         const receitaLiquida = getValor('(+) Receita Bruta') + getValor('(-) Deduções');
@@ -201,16 +194,12 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
         const geracaoCaixa = receitaLiquida + getValor('(-) Custos') + getValor('(-) Despesas') + getValor('(+/-) IRPJ/CSLL');
         matrizDRE['(+/-) Geração de Caixa Operacional'][coluna] = geracaoCaixa;
 
-        // --- Cálculos de Movimentações Não Operacionais ---
-
-        // Soma todas as movimentações que não são da operação principal (financeiras, investimentos, etc.).
+        // Soma todas as outras movimentações (financeiras, investimentos, etc.).
         const movimentacaoNaoOperacional = getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
         
         // A movimentação total do mês é a soma do resultado operacional com o não operacional.
         const movimentacaoMensal = geracaoCaixa + movimentacaoNaoOperacional;
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
-
-        // --- Cálculos de Saldo de Caixa ---
 
         // O Caixa Inicial do período atual é o saldo acumulado até o final do período anterior.
         matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
@@ -289,16 +278,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
 
     return { monthlyMerged, saldoBaseTotal, todasChaves };
 }
-/**
- * Calcula o saldo de caixa inicial para o primeiro período visível na tela.
- * Para isso, ele simula os cálculos de fluxo de caixa sobre todo o histórico de dados
- * ANTERIOR ao período visível para determinar com quanto caixa o período selecionado começou.
- * @param {object} monthlyDRE - A matriz DRE com todos os dados históricos mesclados.
- * @param {Set<string>} todasChaves - Um Set com todos os períodos históricos disponíveis.
- * @param {string[]} colunasVisiveis - As colunas (períodos) que estão atualmente visíveis para o usuário.
- * @param {number} saldoBaseTotal - A soma dos saldos iniciais de todas as contas.
- * @returns {number} - O valor do saldo inicial consolidado para o início do período visível.
- */
+
 /**
  * Calcula o saldo de caixa inicial para um período de visualização específico.
  * * @param {object} monthlyDRE - Objeto com os dados financeiros mensais.
@@ -431,18 +411,15 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
         ? agregarDadosParaAnual(monthlyMerged)
         : monthlyMerged;
 
-    // ETAPA 4: Calcula a coluna "TOTAL" somando os valores das colunas visíveis.
-    calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis);
-    // (A lógica para a matrizDepartamentos seria similar, mas é mais complexa e opcional, conforme código original)
-
-    // ETAPA 5: Finaliza a Matriz DRE, calculando as linhas de totais e saldos para as colunas visíveis e a coluna TOTAL.
+    // ETAPA 4: Calcula as linhas totalizadoras e saldos para as colunas visíveis e a coluna TOTAL.
     // Garante que as linhas de totalização existam antes do cálculo.
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!dadosAntesDosTotais.matrizDRE[classe]) dadosAntesDosTotais.matrizDRE[classe] = {};
     });
-    
     // Calcula as linhas de totais (Receita Líquida, Geração de Caixa, etc.) para os períodos visíveis.
     calcularLinhasDeTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis, saldoInicialPeriodo);
+    // ETAPA 5: Calcula a coluna "TOTAL" somando os valores das colunas visíveis.
+    calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis);
 
     // Ajuste final para a coluna TOTAL das linhas de saldo, que são casos especiais.
     // O TOTAL do Caixa Inicial é o valor da primeira coluna visível.
@@ -453,7 +430,6 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis) {
     if (dadosAntesDosTotais.matrizDRE['Caixa Final']) {
         dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
     }
-
     // Retorna o objeto final
     return { ...dadosAntesDosTotais, saldoInicialPeriodo };
 }
