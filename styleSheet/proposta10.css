@@ -12,6 +12,7 @@
         }
 
         .modal-content {
+            font-family: 'Nunito', sans-serif;
             background-color: white;
             border-radius: 10px;
             width: 90%;
