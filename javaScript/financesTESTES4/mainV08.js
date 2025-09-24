@@ -53,9 +53,9 @@ async function handleFiltroChange() {
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                    const { todosLancamentosExtraidos, titulosExtraidos } = extrairDadosDosTitulos(titulos);
+                    const { lancamentosProcessados, titulosProcessados } = extrairDadosDosTitulos(titulos);
                     // Filtra para garantir que estamos processando apenas lançamentos da conta correta
-                    lancamentosDaConta = todosLancamentosExtraidos.filter(l => Number(l.CODContaC) === contaId);
+                    lancamentosDaConta = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
                 } catch (e) {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }
