@@ -2,7 +2,7 @@
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV03.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV12.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV03.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV04.js';
 
 // Inicia o chache
 let appCache = {
@@ -11,7 +11,7 @@ let appCache = {
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: [],
-    projecao: "arealizar" // Valores possíveis: 'realizado', 'arealizar'
+    projecao: "realizado" // Valores possíveis: 'realizado', 'arealizar'
 };
 
 // Função para lidar com mudanças de filtro
@@ -21,7 +21,6 @@ async function handleFiltroChange() {
     // 1. Obter estado atual dos filtros
     const filtrosAtuais = obterFiltrosAtuais();
     const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
-    appCache.projecao = "arealizar"
 
     // Limpa as tabelas se nenhuma conta for selecionada
     if (contasSelecionadas.length === 0) {
