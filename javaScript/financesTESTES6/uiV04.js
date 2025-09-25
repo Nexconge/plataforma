@@ -345,7 +345,7 @@ function obterFiltrosAtuais() {
 function configurarFiltros(appCache, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
-    
+    const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado')
     if(!projSelect || !contaSelect || !modoSelect || !anoSelect) {
         console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
         return;
@@ -366,6 +366,15 @@ function configurarFiltros(appCache, atualizarCallback) {
     }
 
     //Adiciona event listeners para atualizar as visualizações
+    btnARealizar.addEventListener('click', () => {
+        appCache.projecao = "arealizar";
+        atualizarCallback();
+    });
+    btnRealizado.addEventListener('click', () => {
+        appCache.projecao = "realizado";
+        atualizarCallback();
+    });
+
     anoSelect.addEventListener('change', atualizarCallback);
     contaSelect.addEventListener('change', atualizarCallback);
     projSelect.addEventListener('change', () => {

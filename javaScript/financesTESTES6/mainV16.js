@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos } from './apiV02.js';
-import { processarLancamentos, extrairDadosDosTitulos, mergeMatrizes } from './processingV09.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV03.js';
+import { buscarTitulos } from './apiV03.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV12.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais } from './uiV04.js';
 
 // Inicia o chache
 let appCache = {
@@ -11,7 +11,7 @@ let appCache = {
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     anosDisponiveis: [],
-    projecao: null
+    projecao: "realizado" // Valores possíveis: 'realizado', 'arealizar'
 };
 
 // Função para lidar com mudanças de filtro
@@ -22,7 +22,7 @@ async function handleFiltroChange() {
     const filtrosAtuais = obterFiltrosAtuais();
     const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
 
-    // Limpa as tabelas se nenhum conta for selecionada
+    // Limpa as tabelas se nenhuma conta for selecionada
     if (contasSelecionadas.length === 0) {
         atualizarVisualizacoes(null, [], appCache); 
         document.body.classList.remove('loading');
@@ -49,24 +49,27 @@ async function handleFiltroChange() {
             const contaId = contasParaProcessar[i];
             const apiResponse = responses[i];
             //Extrai os lançamentos dessa conta de cada titulo
-            let lancamentosDaConta = [];
+            let dadosExtraidos = { lancamentos: [], titulos: [] }; // Objeto padrão
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                    const { lancamentosProcessados, titulosProcessados } = extrairDadosDosTitulos(titulos);
+                    const { lancamentosProcessados, titulosEmAberto } = extrairDadosDosTitulos(titulos);
                     // Filtra para garantir que estamos processando apenas lançamentos da conta correta
-                    lancamentosDaConta = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
+                    dadosExtraidos.lancamentos = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
+                    dadosExtraidos.titulos = titulosEmAberto;
                 } catch (e) {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }
             }
-            // Prepara os parâmetros para processar os dados desta ÚNICA conta
-            const parametrosDaConta = { ...appCache, lancamentos: lancamentosDaConta};
             // Gera as matrizes para esta conta
-            const dadosProcessadosConta = processarLancamentos(parametrosDaConta, contaId);
-            // O saldo inicial da conta no MAP
-            const contaInfo = appCache.contasMap.get(String(contaId));  
-            dadosProcessadosConta.saldoIni = contaInfo ? Number(contaInfo.saldoIni) : 0;
+            const dadosProcessadosConta = processarDadosDaConta(appCache, dadosExtraidos, contaId);
+
+            // Adiciona o saldo inicial a ambos os modos
+            const contaInfo = appCache.contasMap.get(String(contaId));
+            const saldoIni = contaInfo ? Number(contaInfo.saldoIni) : 0;
+            if (dadosProcessadosConta.realizado) dadosProcessadosConta.realizado.saldoIni = saldoIni;
+            if (dadosProcessadosConta.arealizar) dadosProcessadosConta.arealizar.saldoIni = saldoIni;
+            
             // Armazena as matrizes processadas da conta no cache principal
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);
             console.log(`Matrizes para a conta ${contaId} foram salvas no cache.`);
@@ -76,7 +79,7 @@ async function handleFiltroChange() {
     const matrizesParaJuntar = contasSelecionadas
         .map(id => appCache.matrizesPorConta.get(id))
         .filter(Boolean);
-    const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas);
+    const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
 
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
@@ -92,7 +95,7 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         anosDisponiveis: [],
-        projecao: "REALIZADO"
+        projecao: "realizado"
     };
     
     //Parseia os dados recebidos do bubble 
