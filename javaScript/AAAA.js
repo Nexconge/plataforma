@@ -1,5 +1,93 @@
 // processing.js
+function processarTitulosParaProjecao(dadosBase, titulos) {
+    const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
+    const classesParaDetalhar = new Set([
+        '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
+        '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos',
+        '(+/-) Empréstimos/Consórcios'
+    ]);
 
+    // 1. Encontrar o intervalo de anos de todos os títulos para gerar os períodos.
+    const todosOsAnos = new Set();
+    titulos.forEach(t => {
+        if(t.DataEmissao) todosOsAnos.add(t.DataEmissao.split('/')[2]);
+        if(t.DataPagamento) todosOsAnos.add(t.DataPagamento.split('/')[2]);
+    });
+
+    if (todosOsAnos.size === 0) return { matrizDRE, matrizDepartamentos, chavesComDados };
+
+    const anoMin = Math.min(...Array.from(todosOsAnos).map(Number));
+    const anoMax = Math.max(...Array.from(todosOsAnos).map(Number));
+
+    // 2. Iterar sobre cada período (mês a mês) dentro do intervalo encontrado.
+    for (let ano = anoMin; ano <= anoMax; ano++) {
+        for (let mes = 1; mes <= 12; mes++) {
+            const chaveAgregacao = `${String(mes).padStart(2, '0')}-${ano}`;
+            const fimDoPeriodo = new Date(ano, mes, 0); // O dia 0 do próximo mês é o último dia do mês atual
+
+            // 3. Para cada período, iterar sobre TODOS os títulos e aplicar a regra.
+            titulos.forEach(titulo => {
+                const dataEmissao = parseDate(titulo.DataEmissao);
+                const dataPagamento = parseDate(titulo.DataPagamento);
+
+                // Aplica a regra principal
+                const emitidoAntesDoFim = dataEmissao && dataEmissao <= fimDoPeriodo;
+                const naoPagoAteOFim = !dataPagamento || dataPagamento > fimDoPeriodo;
+
+                if (emitidoAntesDoFim && naoPagoAteOFim) {
+                    chavesComDados.add(chaveAgregacao);
+                    
+                    let valor = titulo.ValorDaParte;
+                    if (titulo.Natureza === "P") valor = -valor;
+
+                    const codCategoria = titulo.CODCategoria || 'SemCategoria';
+                    const classeInfo = dadosBase.classesMap.get(codCategoria);
+                    const classe = classeInfo ? classeInfo.classe : 'Outros';
+
+                    // Preenche Matriz DRE
+                    if (!matrizDRE[classe]) matrizDRE[classe] = {};
+                    matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
+
+                    // Preenche Matriz Departamentos (lógica idêntica à do "REALIZADO")
+                    if (classesParaDetalhar.has(classe) && Array.isArray(titulo.Departamentos) && titulo.Departamentos.length > 0) {
+                        const fornecedor = titulo.Cliente;
+                        titulo.Departamentos.forEach(depto => {
+                            let valorRateio = depto.ValorDepto;
+                            if (titulo.Natureza === "P") valorRateio = -valorRateio;
+                            
+                            const nomeDepto = dadosBase.departamentosMap.get(depto.CodDpto) || 'Outros Departamentos';
+                            const chaveDepto = `${nomeDepto}|${classe}`;
+
+                            if (!matrizDepartamentos[chaveDepto]) {
+                                matrizDepartamentos[chaveDepto] = { nome: nomeDepto, classe, categorias: {} };
+                            }
+                            const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
+                            if (!categoriaRef[codCategoria]) {
+                                categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
+                            }
+                            const catData = categoriaRef[codCategoria];
+                            catData.valores[chaveAgregacao] = (catData.valores[chaveAgregacao] || 0) + valorRateio;
+                            
+                            if (!catData.fornecedores[fornecedor]) {
+                                catData.fornecedores[fornecedor] = { fornecedor, valores: {}, total: 0 };
+                            }
+                            catData.fornecedores[fornecedor].valores[chaveAgregacao] = (catData.fornecedores[fornecedor].valores[chaveAgregacao] || 0) + valorRateio;
+                            catData.fornecedores[fornecedor].total += valorRateio;
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    Object.values(matrizDepartamentos).forEach(dep => {
+        Object.values(dep.categorias).forEach(cat => {
+            cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
+        });
+    });
+
+    return { matrizDRE, matrizDepartamentos, chavesComDados };
+}
 function extrairLancamentosDosTitulos(titulos) {
     const lancamentosProcessados = [];
 

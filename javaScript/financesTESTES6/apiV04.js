@@ -3,7 +3,7 @@
 
 /**
  * Envia os filtros para a API e busca os titulos correspondentes no formato:
- * {"DataEmissao": "25/03/2025","ValorTitulo":177.19,"Natureza": "P",
+ * {"DataEmissao": "25/03/2025", "DataVencimento": "10/10/2025","ValorTitulo":177.19,"Natureza": "P",
  * "Categoria": "2.01.03", "Cliente": "S S/A", "CODContaC": 1961574032, 
  * "Lancamentos": [{"DataLancamento": "22/08/2025", "CODContaC": 1961574032, "ValorLancamento": 177.19, "ValorBaixado": 177.19}], 
  * "Departamentos": [{"CODDepto": 1922599606, "PercDepto": 100}]}
