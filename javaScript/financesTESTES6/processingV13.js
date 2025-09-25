@@ -39,6 +39,7 @@ function extrairDadosDosTitulos(titulos) {
         //Se o titulo não estiver quitado com pagamentos, gera um titulo em aberto com o valor restante
         const valorFaltante = (titulo.ValorTitulo - ValorPago)
         if(valorFaltante > 0 && titulo.ValorTitulo != 0){
+            console.log("Adicionado titulo em aberto para a conta")
             let departamentosObj = gerarDepartamentosObj(titulo.Departamentos, valorFaltante);
             titulosEmAberto.push({
                 Natureza: titulo.Natureza,
