@@ -10,11 +10,14 @@ let appCache = {
     matrizesPorConta: new Map(),
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
-    projecao: "realizado" // Valores possíveis: 'realizado', 'arealizar'
+    projecao: "realizado", // Valores possíveis: 'realizado', 'arealizar'
+    flagAnos: false // Flag para evitar chamadas recursivas ao mudar anos
 };
 
 // Função para lidar com mudanças de filtro
-async function handleFiltroChange() {
+async function handleFiltroChange(flagAnos = false) {
+    if (appCache.flagAnos){ appCache.flagAnos = false; return;} // Evita recursão infinita ao atualizar anos
+    
     document.body.classList.add('loading');
     // 1. Obter estado atual dos filtros
     const filtrosAtuais = obterFiltrosAtuais();
@@ -92,12 +95,9 @@ async function handleFiltroChange() {
     if (anosArray.length === 0) {
     anosArray.push(String(new Date().getFullYear()));
     }
-    // 1. Remove temporariamente o gatilho que chama handleFiltroChange
-    anoSelect.removeEventListener('change', handleFiltroChange);
     // 2. Atualiza as opções do select. Esta ação NÃO vai mais disparar o evento.
+    appCache.flagAnos = true; // Seta a flag para evitar recursão
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
-    // 3. Adiciona o gatilho de volta para que o usuário possa interagir normalmente.
-    anoSelect.addEventListener('change', handleFiltroChange);
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
@@ -114,7 +114,8 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         matrizesPorConta: new Map(), // Reseta o novo cache
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
-        projecao: "realizado"
+        projecao: "realizado",
+        flagAnos: false
     };
     
     //Parseia os dados recebidos do bubble 
