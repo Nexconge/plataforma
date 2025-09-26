@@ -156,6 +156,7 @@ function processarDadosDaConta(dadosBase, dadosApi, contaId) {
     const { lancamentos, titulos } = dadosApi;
 
     // Processa os dados para o modo REALIZADO
+    // Retorna os dados no formato { matrizDRE, matrizDepartamentos, chavesComDados }
     const dadosRealizado = processarRealizadoRealizar(dadosBase, lancamentos, contaId);
     const dadosARealizar = processarRealizadoRealizar(dadosBase, titulos, contaId);
 
@@ -289,7 +290,7 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
     // 1. Ordena todas as chaves de período cronologicamente.
     const colunasHistoricasOrdenadas = Array.from(todasChaves).sort(compararPeriodos);
     
-    // 2. Garante que as colunas visíveis também estejam ordenadas. ESSA É A CORREÇÃO PRINCIPAL.
+    // 2. Garante que as colunas visíveis também estejam ordenadas.
     const colunasVisiveisOrdenadas = [...colunasVisiveis].sort(compararPeriodos);
 
     // Se não houver colunas visíveis, não há o que calcular.

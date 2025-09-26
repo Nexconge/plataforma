@@ -342,7 +342,7 @@ function obterFiltrosAtuais() {
         colunas: colunas
     };
 }
-function configurarFiltros(appCache, atualizarCallback) {
+function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
     const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado')
@@ -383,16 +383,16 @@ function configurarFiltros(appCache, atualizarCallback) {
         atualizarCallback();
     });
     modoSelect.addEventListener('change', () => {
-        atualizarOpcoesAnoSelect(anoSelect, appCache.anosDisponiveis, modoSelect.value);
+        atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value);
         atualizarCallback();
     });
 
     // Configura o filtro de ano
-    atualizarOpcoesAnoSelect(anoSelect, appCache.anosDisponiveis, modoSelect.value);
+    atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value);
     // Atualiza o filtro de contas com base no projeto selecionado
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
 
-export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais };
+export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
