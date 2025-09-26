@@ -253,10 +253,13 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
-            option.value = ano; option.textContent = ano;
+            option.value = ano;
+            option.textContent = ano;
             anoSelect.appendChild(option);
         });
-        anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
+        anoSelect.value = anosDisponiveis.includes(valorAtual) 
+            ? valorAtual 
+            : (anosDisponiveis[anosDisponiveis.length - 1] || '');
     } else { // anual
         const periodos = new Set();
         anosDisponiveis.forEach(ano => {
@@ -268,14 +271,22 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
         periodosOrdenados.forEach(inicio => {
             const fim = inicio + 4;
             const option = document.createElement('option');
-            option.value = inicio; option.textContent = `${inicio}-${fim}`;
+            option.value = inicio; 
+            option.textContent = `${inicio}-${fim}`;
             anoSelect.appendChild(option);
         });
-    }
-    if (anosDisponiveis.includes(valorAtual) || (modo.toLowerCase() === 'anual' && periodos.has(Number(valorAtual)))) {
-        anoSelect.value = valorAtual;
+
+        // tenta preservar a seleção atual
+        const valorAtualNum = Number(valorAtual);
+        const periodoAtual = Math.floor((valorAtualNum - 1) / 5) * 5 + 1;
+        if (periodos.has(periodoAtual)) {
+            anoSelect.value = periodoAtual;
+        } else {
+            anoSelect.value = periodosOrdenados[0] || '';
+        }
     }
 }
+
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {

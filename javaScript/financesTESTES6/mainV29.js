@@ -2,7 +2,7 @@
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV17.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV06.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV07.js';
 
 // Inicia o chache
 let appCache = {
