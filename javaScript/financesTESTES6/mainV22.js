@@ -73,6 +73,7 @@ async function handleFiltroChange() {
     const matrizesParaJuntar = contasSelecionadas
         .map(id => appCache.matrizesPorConta.get(id))
         .filter(Boolean);
+
     // Extrai os anos disponíveis dos dados das chaves com dados e atualiza o filtro de anos
     const anoSelect = document.getElementById('anoSelect');
     const modoSelect = document.getElementById('modoSelect');
@@ -87,12 +88,19 @@ async function handleFiltroChange() {
         }
     });
     const anosArray = Array.from(anosDisponiveis).sort();
+    console.log("Anos disponíveis extraídos:", anosArray);
     if (anosArray.length === 0) {
     anosArray.push(String(new Date().getFullYear()));
     }
-    atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
+    // 1. Remove temporariamente o gatilho que chama handleFiltroChange
+    anoSelect.removeEventListener('change', handleFiltroChange);
+    // 2. Atualiza as opções do select. Esta ação NÃO vai mais disparar o evento.
+    atualizarOpcoesAnoSelect(anoSelect, listaDeAnos, modoSelect.value);
+    // 3. Adiciona o gatilho de volta para que o usuário possa interagir normalmente.
+    anoSelect.addEventListener('change', handleFiltroChange);
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
+    
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
@@ -106,7 +114,6 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
         matrizesPorConta: new Map(), // Reseta o novo cache
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
-        anosDisponiveis: [],
         projecao: "realizado"
     };
     
