@@ -20,7 +20,7 @@ async function handleFiltroChange() {
     
     document.body.classList.add('loading');
     // 1. Obter estado atual dos filtros
-    const filtrosAtuais = obterFiltrosAtuais();
+    let filtrosAtuais = obterFiltrosAtuais();
     const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
     // Limpa as tabelas se nenhuma conta for selecionada
     if (contasSelecionadas.length === 0) {
@@ -100,6 +100,7 @@ async function handleFiltroChange() {
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
     appCache.flagAnos = false; // Reseta a flag
 
+    filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
