@@ -50,6 +50,7 @@ function extrairDadosDosTitulos(titulos) {
                 Cliente: titulo.Cliente || "Cliente",
                 Departamentos: departamentosObj
             });
+            console.log("Titulo em aberto adicionado:")
         }
     });
     return { lancamentosProcessados, titulosEmAberto };
@@ -96,8 +97,9 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
         if (partesData.length !== 3) return; 
         const [dia, mesRaw, ano] = partesData;
         const chaveAgregacao = `${mesRaw.padStart(2, '0')}-${ano}`;
+        console.log("Processando lançamento para a chave:", chaveAgregacao);
         chavesComDados.add(chaveAgregacao);
-        
+    
         let valor = lancamento.ValorLancamento;
         if (lancamento.Natureza === "P") valor = -valor;
 
