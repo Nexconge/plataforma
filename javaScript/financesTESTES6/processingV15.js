@@ -320,7 +320,12 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
         if (compararPeriodos(periodo, primeiraColunaVisivel) >= 0) {
             break;
         }
-        saldoAcumuladoAntesDoPeriodo += tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0;
+        const variacaoDoPeriodo = (tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0) +
+                            (tempDRE['Entrada de Transferência']?.[periodo] || 0) +
+                            (tempDRE['Saída de Transferência']?.[periodo] || 0) +
+                            (tempDRE['Outros']?.[periodo] || 0);
+                            
+        saldoAcumuladoAntesDoPeriodo += variacaoDoPeriodo || 0;
     }
 
     // 6. O saldo inicial é a soma do saldo base com a variação de caixa acumulada dos meses anteriores.
