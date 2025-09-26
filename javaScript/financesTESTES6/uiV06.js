@@ -247,6 +247,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
 }
 // Funções de UI que precisam do estado (appCache)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
+    const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
     if (modo.toLowerCase() === 'mensal') {
@@ -270,6 +271,9 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
             option.value = inicio; option.textContent = `${inicio}-${fim}`;
             anoSelect.appendChild(option);
         });
+    }
+    if (anosDisponiveis.includes(valorAtual) || (modo.toLowerCase() === 'anual' && periodos.has(Number(valorAtual)))) {
+        anoSelect.value = valorAtual;
     }
 }
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
