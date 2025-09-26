@@ -29,12 +29,10 @@ async function buscarTitulos(filtros) {
             },
             body: JSON.stringify(filtros),
         });
-        console.log("Resposta da API (raw):", response);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Falha ao buscar titulos: ${response.status} ${response.statusText} - ${errorText}`);
         }
-        console.log("Resposta da API (JSON):", await response.clone().json());
         return await response.json();
     } catch (error) {
         console.error("Erro crítico ao buscar titulos:", error);

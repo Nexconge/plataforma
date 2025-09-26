@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos } from './apiV04.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV17.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV07.js';
+import { buscarTitulos } from './apiV01.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV01.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV01.js';
 
 // Inicia o chache
 let appCache = {
@@ -69,7 +69,6 @@ async function handleFiltroChange() {
             if (dadosProcessadosConta.arealizar) dadosProcessadosConta.arealizar.saldoIni = saldoIni;
             // Armazena as matrizes processadas da conta no cache principal
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);
-            console.log(`Matrizes para a conta ${contaId} foram salvas no cache.`);
         }
     }
     // 4-Junta os dados das contas selecionadas nos filtro e prepara para visualização
@@ -77,7 +76,7 @@ async function handleFiltroChange() {
         .map(id => appCache.matrizesPorConta.get(id))
         .filter(Boolean);
 
-    // Extrai os anos disponíveis dos dados das chaves com dados e atualiza o filtro de anos
+    // Extrai os anos disponíveis das chaves com dados
     const anoSelect = document.getElementById('anoSelect');
     const modoSelect = document.getElementById('modoSelect');
     let anosDisponiveis = new Set();
@@ -91,11 +90,11 @@ async function handleFiltroChange() {
         }
     });
     const anosArray = Array.from(anosDisponiveis).sort();
-    console.log("Anos disponíveis extraídos:", anosArray);
+    // Se não houver anos disponíveis, adiciona o ano atual como padrão
     if (anosArray.length === 0) {
-    anosArray.push(String(new Date().getFullYear()));
+        anosArray.push(String(new Date().getFullYear()));
     }
-    // 2. Atualiza as opções do select. Esta ação NÃO vai mais disparar o evento.
+    // Atuliza o select evitando recursão
     appCache.flagAnos = true; // Seta a flag para evitar recursão
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
     appCache.flagAnos = false; // Reseta a flag
