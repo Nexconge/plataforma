@@ -95,7 +95,7 @@ async function handleFiltroChange() {
     // 1. Remove temporariamente o gatilho que chama handleFiltroChange
     anoSelect.removeEventListener('change', handleFiltroChange);
     // 2. Atualiza as opções do select. Esta ação NÃO vai mais disparar o evento.
-    atualizarOpcoesAnoSelect(anoSelect, listaDeAnos, modoSelect.value);
+    atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
     // 3. Adiciona o gatilho de volta para que o usuário possa interagir normalmente.
     anoSelect.addEventListener('change', handleFiltroChange);
     // Combina os dados filtrados para exibição
