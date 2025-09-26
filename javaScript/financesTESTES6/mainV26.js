@@ -11,12 +11,12 @@ let appCache = {
     categoriasMap: new Map(), classesMap: new Map(),
     projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
     projecao: "realizado", // Valores possíveis: 'realizado', 'arealizar'
-    flagAnos: false // Flag para evitar chamadas recursivas ao mudar anos
+    flagAnos: false
 };
 
 // Função para lidar com mudanças de filtro
-async function handleFiltroChange(flagAnos = false) {
-    if (appCache.flagAnos){ appCache.flagAnos = false; return;} // Evita recursão infinita ao atualizar anos
+async function handleFiltroChange() {
+    if (appCache.flagAnos) return; // Evita recursão infinita ao atualizar anos
     
     document.body.classList.add('loading');
     // 1. Obter estado atual dos filtros
@@ -98,6 +98,8 @@ async function handleFiltroChange(flagAnos = false) {
     // 2. Atualiza as opções do select. Esta ação NÃO vai mais disparar o evento.
     appCache.flagAnos = true; // Seta a flag para evitar recursão
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
+    appCache.flagAnos = false; // Reseta a flag
+
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
