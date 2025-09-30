@@ -92,6 +92,11 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, primeiraChave) {
         // Renderiza os valores das colunas visíveis
         colunas.forEach(coluna => {
             const valor = matrizDRE[classe]?.[coluna] || 0;
+            // Se for Caixa Inicial ou Final e a coluna for anterior à primeiraChave → força 0
+            if ((classe === 'Caixa Inicial' || classe === 'Caixa Final') 
+                && compararChaves(coluna, primeiraChave) < 0) {
+                valor = 0;
+            }
             row.insertCell().textContent = formatarValor(valor);
         });
         
@@ -107,6 +112,13 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, primeiraChave) {
 
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
+}
+function compararChaves(a, b) {
+    const [mesA, anoA] = a.split('-').map(Number);
+    const [mesB, anoB] = b.split('-').map(Number);
+
+    if (anoA !== anoB) return anoA - anoB;
+    return mesA - mesB;
 }
 function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     const tabela = document.getElementById('tabelaCustos');

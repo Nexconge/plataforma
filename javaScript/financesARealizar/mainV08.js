@@ -2,7 +2,7 @@
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV05.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV02.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV03.js';
 
 // Inicia o chache
 let appCache = {
@@ -104,8 +104,8 @@ async function handleFiltroChange() {
     filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    const primeiraChave = dadosParaExibir.todasChaves.values().next().value;
-    console.log('Primeira chave:', primeiraChave);
+    const primeiraChave = [...dadosParaExibir.todasChaves][0];
+    //const ultimaChave = [...dadosParaExibir.todasChaves][dadosParaExibir.todasChaves.size - 1];
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache, primeiraChave);
     document.body.classList.remove('loading');
