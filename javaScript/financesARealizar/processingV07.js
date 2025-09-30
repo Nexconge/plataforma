@@ -432,9 +432,39 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     if (dadosAntesDosTotais.matrizDRE['Caixa Final']) {
         dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
     }
+    // Calcula as chaves de controle (primeira e última chave) para o período exibido.
+    const PeUChave = getChavesDeControle(todasChaves, modo);
     // Retorna o objeto final
-    return { ...dadosAntesDosTotais, saldoInicialPeriodo, todasChaves };
+    return { ...dadosAntesDosTotais, saldoInicialPeriodo, PeUChave };
 }
+function getChavesDeControle(chavesSet, modo) {
+    let primeiraChave = null;
+    for (const chave of chavesSet) {
+        if (!primeiraChave || compararChaves(chave, primeiraChave) < 0) {
+            primeiraChave = chave;
+        }
+    }
+    let ultimaChave = null;
+    for (const chave of chavesSet) {
+        if (!ultimaChave || compararChaves(chave, ultimaChave) > 0) {
+            ultimaChave = chave;
+        }
+    }
+    if (modo.toLowerCase() === "anual") {
+        primeiraChave = primeiraChave ? primeiraChave.split('-')[1] : null;
+        ultimaChave = ultimaChave ? ultimaChave.split('-')[1] : null;
+    }
+
+    return { ultimaChave, primeiraChave };
+}
+function compararChaves(a, b) {
+    const [mesA, anoA] = a.split('-').map(Number);
+    const [mesB, anoB] = b.split('-').map(Number);
+
+    if (anoA !== anoB) return anoA - anoB;
+    return mesA - mesB;
+}
+
 export { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes };
 
 

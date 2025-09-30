@@ -319,14 +319,14 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-function atualizarVisualizacoes(dadosProcessados, colunas, appCache, PeUchave) {
+function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
         document.getElementById('tabelaCustos').innerHTML = '';
         return;
     }
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, PeUchave);
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, dadosProcessados.PeUchave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
 function obterFiltrosAtuais() {

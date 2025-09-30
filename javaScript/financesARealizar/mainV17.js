@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV02.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV06.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV06.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV07.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV07.js';
 
 // Inicia o chache
 let appCache = {
@@ -105,10 +105,9 @@ async function handleFiltroChange() {
     filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    const PeUchave = getChavesDeControle(dadosParaExibir.todasChaves, filtrosAtuais.modo);
     
     // 5. Renderizar a visualização com os dados combinados
-    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache, PeUchave);
+    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
 }
 
@@ -147,30 +146,3 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
     //Configura os filtros iniciais e faz a primeira chamada de mudança como callback
     configurarFiltros(appCache, anoAtual, handleFiltroChange);
 };
-function getChavesDeControle(chavesSet, modo) {
-    let primeiraChave = null;
-    for (const chave of chavesSet) {
-        if (!primeiraChave || compararChaves(chave, primeiraChave) < 0) {
-            primeiraChave = chave;
-        }
-    }
-    let ultimaChave = null;
-    for (const chave of chavesSet) {
-        if (!ultimaChave || compararChaves(chave, ultimaChave) > 0) {
-            ultimaChave = chave;
-        }
-    }
-    if (modo.toLowerCase() === "anual") {
-        primeiraChave = primeiraChave ? primeiraChave.split('-')[1] : null;
-        ultimaChave = ultimaChave ? ultimaChave.split('-')[1] : null;
-    }
-
-    return { ultimaChave, primeiraChave };
-}
-function compararChaves(a, b) {
-    const [mesA, anoA] = a.split('-').map(Number);
-    const [mesB, anoB] = b.split('-').map(Number);
-
-    if (anoA !== anoB) return anoA - anoB;
-    return mesA - mesB;
-}
