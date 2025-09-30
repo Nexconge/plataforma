@@ -87,6 +87,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
         '(+/-) Empréstimos/Consórcios'
     ]);
     
+    let valorTotal = 0; 
     lancamentos.forEach(lancamento => {
         if (contaId != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) return;
@@ -99,6 +100,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
     
         let valor = lancamento.ValorLancamento;
         if (lancamento.Natureza === "P") valor = -valor;
+        valorTotal += valor;
 
         const codCategoria = lancamento.CODCategoria || 'SemCategoria';
         const classeInfo = dadosBase.classesMap.get(codCategoria);
@@ -142,7 +144,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
         });
     });
 
-    return { matrizDRE, matrizDepartamentos, chavesComDados };
+    return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal };
 }
 /**
  * **ALTERADO:** Função principal que agora orquestra o processamento de ambos os modos.
@@ -155,7 +157,7 @@ function processarDadosDaConta(dadosBase, dadosApi, contaId) {
     const { lancamentos, titulos } = dadosApi;
 
     // Processa os dados para o modo REALIZADO
-    // Retorna os dados no formato { matrizDRE, matrizDepartamentos, chavesComDados }
+    // Retorna os dados no formato { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal }
     const dadosRealizado = processarRealizadoRealizar(dadosBase, lancamentos, contaId);
     const dadosARealizar = processarRealizadoRealizar(dadosBase, titulos, contaId);
 
