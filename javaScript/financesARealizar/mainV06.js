@@ -104,6 +104,7 @@ async function handleFiltroChange() {
     filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
+    console.log('Dados para exibir:', dadosParaExibir);
     const primeiraChave = dadosParaExibir.todasChaves[0];
 
     // 5. Renderizar a visualização com os dados combinados
