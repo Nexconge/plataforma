@@ -42,12 +42,13 @@ function getSelectItems(select){
  * @param {object} matrizDRE - Os dados processados para o DRE.
  * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
  */
-function renderizarTabelaDRE(matrizDRE, colunas, userType, primeiraChave) {
+function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
     const tabela = document.getElementById('tabelaMatriz');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
-    console.log('Primeira chave:', primeiraChave);
+    console.log('Primeira chave:', PeUchave.primeiraChave);
+    console.log('Última chave:', PeUchave.ultimaChave);
     console.log('Colunas', colunas);
 
     // Define a ordem base das classes que todos os usuários veem
@@ -94,7 +95,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, primeiraChave) {
             let valor = matrizDRE[classe]?.[coluna] || 0;
             // Se for Caixa Inicial ou Final e a coluna for anterior à primeiraChave → força 0
             if ((classe === 'Caixa Inicial' || classe === 'Caixa Final') 
-                && compararChaves(coluna, primeiraChave) < 0) {
+                && (compararChaves(coluna, PeUchave.primeiraChave) < 0) || (compararChaves(coluna, PeUchave.ultimaChave) > 0)) {
                 valor = 0;
             }
             row.insertCell().textContent = formatarValor(valor);
@@ -322,14 +323,14 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-function atualizarVisualizacoes(dadosProcessados, colunas, appCache, primeiraChave) {
+function atualizarVisualizacoes(dadosProcessados, colunas, appCache, PeUchave) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
         document.getElementById('tabelaCustos').innerHTML = '';
         return;
     }
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, primeiraChave);
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, PeUchave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
 function obterFiltrosAtuais() {
