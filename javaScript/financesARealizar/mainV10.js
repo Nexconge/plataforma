@@ -104,7 +104,7 @@ async function handleFiltroChange() {
     filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    const primeiraChave = [...dadosParaExibir.todasChaves][0];
+    const primeiraChave = encontrarPrimeiraChave(dadosParaExibir.todasChaves);
     //const ultimaChave = [...dadosParaExibir.todasChaves][dadosParaExibir.todasChaves.size - 1];
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache, primeiraChave);
@@ -146,3 +146,21 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
     //Configura os filtros iniciais e faz a primeira chamada de mudança como callback
     configurarFiltros(appCache, anoAtual, handleFiltroChange);
 };
+function encontrarPrimeiraChave(chavesSet) {
+    let primeira = null;
+
+    for (const chave of chavesSet) {
+        if (!primeira || compararChaves(chave, primeira) < 0) {
+            primeira = chave;
+        }
+    }
+
+    return primeira;
+}
+function compararChaves(a, b) {
+    const [mesA, anoA] = a.split('-').map(Number);
+    const [mesB, anoB] = b.split('-').map(Number);
+
+    if (anoA !== anoB) return anoA - anoB;
+    return mesA - mesB;
+}
