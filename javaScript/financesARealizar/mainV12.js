@@ -146,16 +146,16 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
     configurarFiltros(appCache, anoAtual, handleFiltroChange);
 };
 function findPrimeiraEUltimaChave(chavesSet) {
-    let primeira = null;
+    let primeiraChave = null;
     for (const chave of chavesSet) {
-        if (!primeira || compararChaves(chave, primeira) < 0) {
-            primeira = chave;
+        if (!primeiraChave || compararChaves(chave, primeiraChave) < 0) {
+            primeiraChave = chave;
         }
     }
-    let ultima = null;
+    let ultimaChave = null;
     for (const chave of chavesSet) {
-        if (!ultima || compararChaves(chave, ultima) > 0) {
-            ultima = chave;
+        if (!ultimaChave || compararChaves(chave, ultimaChave) > 0) {
+            ultimaChave = chave;
         }
     }
     return { ultimaChave, primeiraChave };
