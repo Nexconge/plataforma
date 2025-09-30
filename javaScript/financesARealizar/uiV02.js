@@ -42,10 +42,13 @@ function getSelectItems(select){
  * @param {object} matrizDRE - Os dados processados para o DRE.
  * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
  */
-function renderizarTabelaDRE(matrizDRE, colunas, userType) {
+function renderizarTabelaDRE(matrizDRE, colunas, userType, primeiraChave) {
     const tabela = document.getElementById('tabelaMatriz');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
+
+    console.log('Primeira chave:', primeiraChave);
+    console.log('Colunas', colunas);
 
     // Define a ordem base das classes que todos os usuários veem
     const ordemClasses = [
@@ -96,6 +99,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         const total = matrizDRE[classe]?.TOTAL || 0;
         row.insertCell().textContent = formatarValor(total);
         
+        // Adiciona uma linha em branco após certas classes para melhorar a legibilidade
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
         }
@@ -306,14 +310,14 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
+function atualizarVisualizacoes(dadosProcessados, colunas, appCache, primeiraChave) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
         document.getElementById('tabelaCustos').innerHTML = '';
         return;
     }
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, primeiraChave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
 function obterFiltrosAtuais() {

@@ -434,7 +434,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
         dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
     }
     // Retorna o objeto final
-    return { ...dadosAntesDosTotais, saldoInicialPeriodo };
+    return { ...dadosAntesDosTotais, saldoInicialPeriodo, todasChaves };
 }
 export { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes };
 
