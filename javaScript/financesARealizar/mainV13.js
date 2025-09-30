@@ -101,10 +101,12 @@ async function handleFiltroChange() {
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
     appCache.flagAnos = false; // Reseta a flag
 
+    // Atualiza os filtros atuais para casos de de mudança de ano quando um a projeção é alterada e um ano não está mais disponível
     filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    const PeUchave = findPrimeiraEUltimaChave(dadosParaExibir.todasChaves);
+    const PeUchave = getChavesDeControle(dadosParaExibir.todasChaves, filtrosAtuais.modo);
+    
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache, PeUchave);
     document.body.classList.remove('loading');
@@ -145,7 +147,7 @@ window.IniciarDoZero = async function(deptosJson,id,type,contasJson,classesJson,
     //Configura os filtros iniciais e faz a primeira chamada de mudança como callback
     configurarFiltros(appCache, anoAtual, handleFiltroChange);
 };
-function findPrimeiraEUltimaChave(chavesSet) {
+function getChavesDeControle(chavesSet, modo) {
     let primeiraChave = null;
     for (const chave of chavesSet) {
         if (!primeiraChave || compararChaves(chave, primeiraChave) < 0) {
@@ -158,6 +160,11 @@ function findPrimeiraEUltimaChave(chavesSet) {
             ultimaChave = chave;
         }
     }
+    if (modo === "anual") {
+        primeiraChave = primeiraChave ? primeiraChave.split('-')[1] : null;
+        ultimaChave = ultimaChave ? ultimaChave.split('-')[1] : null;
+    }
+
     return { ultimaChave, primeiraChave };
 }
 function compararChaves(a, b) {
