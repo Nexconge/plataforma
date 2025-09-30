@@ -47,10 +47,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
-    console.log('Primeira chave:', PeUchave.primeiraChave);
-    console.log('Última chave:', PeUchave.ultimaChave);
-    console.log('Colunas', colunas);
-
     // Define a ordem base das classes que todos os usuários veem
     const ordemClasses = [
         '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida', '(-) Custos', '(-) Despesas',
