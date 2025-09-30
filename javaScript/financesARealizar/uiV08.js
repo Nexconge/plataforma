@@ -326,7 +326,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
         return;
     }
     const { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } = dadosProcessados;
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, dadosProcessados.PeUchave);
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, dadosProcessados.PeUChave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
 }
 function obterFiltrosAtuais() {
