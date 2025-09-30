@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV03.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV04.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV01.js';
 
 // Inicia o chache
@@ -65,7 +65,9 @@ async function handleFiltroChange() {
             // Adiciona o saldo inicial a ambos os modos
             const contaInfo = appCache.contasMap.get(String(contaId));
             const saldoIni = contaInfo ? Number(contaInfo.saldoIni) : 0;
+            //Saldo inicial do realizado é o saldo inicial da conta
             if (dadosProcessadosConta.realizado) dadosProcessadosConta.realizado.saldoIni = saldoIni;
+            //Saldo inicial do A realizar é o saldo inicial da conta + o valor total realizado
             if (dadosProcessadosConta.arealizar) dadosProcessadosConta.arealizar.saldoIni = saldoIni + (dadosProcessadosConta.realizado ? dadosProcessadosConta.realizado.valorTotal : 0);
             // Armazena as matrizes processadas da conta no cache principal
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);

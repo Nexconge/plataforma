@@ -290,7 +290,8 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
 
     // 1. Ordena todas as chaves de período cronologicamente.
     const colunasHistoricasOrdenadas = Array.from(todasChaves).sort(compararPeriodos);
-    
+    console.log('Colunas Históricas Ordenadas:', colunasHistoricasOrdenadas);
+
     // 2. Garante que as colunas visíveis também estejam ordenadas.
     const colunasVisiveisOrdenadas = [...colunasVisiveis].sort(compararPeriodos);
 
