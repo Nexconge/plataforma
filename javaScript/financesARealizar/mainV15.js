@@ -160,7 +160,7 @@ function getChavesDeControle(chavesSet, modo) {
             ultimaChave = chave;
         }
     }
-    if (modo === "anual") {
+    if (modo.toLowerCase() === "anual") {
         primeiraChave = primeiraChave ? primeiraChave.split('-')[1] : null;
         ultimaChave = ultimaChave ? ultimaChave.split('-')[1] : null;
     }
