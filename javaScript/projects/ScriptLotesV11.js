@@ -133,7 +133,11 @@ class MapaLotesManager {
             });
 
             polygon.loteData = lote;
-            polygon.on('click', () => this._handlePolygonClick(polygon));
+            polygon.on('click', (e) => {
+                L.DomEvent.stopPropagation(e); // Impede que o clique chegue no mapa
+                this._handlePolygonClick(polygon);
+            });
+
             this.polygons[lote._id] = polygon;
         });
 
@@ -195,6 +199,7 @@ class MapaLotesManager {
         document.getElementById("empreendimentoSelect").addEventListener("change", this._handleFilterChange);
         document.getElementById("zona").addEventListener('click', this._handleZoneToggle);
         document.getElementById("buttonAlterar").addEventListener('click', () => this._atualizarPoligonoSelecionado());
+        this.map.on('click', () => this._clearForm());
     }
 
     _handlePolygonClick(polygon) {
