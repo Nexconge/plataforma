@@ -102,24 +102,6 @@ class MapaLotesManager {
         return todosOsLotes;
     }
 
-    //VERSAO LOCAL
-    /*
-    async _fetchLotesPermitidos() {
-        let todosOsLotes = [];
-
-        try {
-            const response = await fetch('dados_lotes.json');
-            if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
-            const data = await response.json();
-            todosOsLotes = data.response?.results || [];
-            
-            return todosOsLotes;
-        } catch (e) {
-            console.error("Erro ao carregar lotes:", e);
-            return [];
-        }
-    }*/
-
     // --- Métodos de Renderização e Mapa ---
     _initMap() {
         this.map = L.map(this.mapId).setView([-27.093791, -52.6215887], 15);
@@ -228,14 +210,10 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
-        //Versao Local
-        //const selectedEmpreendimentoId = document.getElementById("empreendimentoSelect").selectedOptions[0]?.text || "Todos";
         //Versão Bubble
         const selectedEmpreendimentoId = document.getElementById("empreendimentoSelect").value;
         Object.values(this.polygons).forEach(p => {
             // A lógica de filtro agora compara o ID do empreendimento do lote com o ID selecionado
-            //Versao Local
-            //const shouldBeVisible = (selectedEmpreendimentoId === "Todos") || p.loteData.Empreendimento === selectedEmpreendimentoId;
             //Versao Bubble
             const shouldBeVisible = !selectedEmpreendimentoId || p.loteData.Empreendimento === selectedEmpreendimentoId;
 
@@ -273,14 +251,14 @@ class MapaLotesManager {
     _fillForm(lote) {
         const campos = {
             "quadra_lote2": lote.Nome,
-            "area2": lote.Área, // Use "Área" com acento. O "" é um problema do seu terminal
+            "area2": String(lote.Área), // Use "Área" com acento. O "" é um problema do seu terminal
             "status2": `"${lote.Status || "Desconhecido"}"`,
             "zona2": `"${lote.Zoneamento || "Desconhecido"}"`,
-            "frente2": lote.Frente,
-            "lateral2": lote.Lateral,
-            "valor_metro2": lote.ValorM2,
-            "valor_total2": lote.Valor,
-            "indice2": lote.IndiceConstrutivo
+            "frente2": String(lote.Frente),
+            "lateral2": String(lote.Lateral),
+            "valor_metro2": String(lote.ValorM2),
+            "valor_total2": String(lote.Valor),
+            "indice2": String(lote.IndiceConstrutivo)
         };
 
         for (const id in campos) {
@@ -298,7 +276,6 @@ class MapaLotesManager {
             const cor = this._getLoteColor(polygon.loteData);
             polygon.setStyle({ weight: 0.6, fillColor: cor, color: "black" });
         }
-
         const formIds = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2"];
         formIds.forEach(id => {
             const el = document.getElementById(id);
@@ -337,14 +314,14 @@ class MapaLotesManager {
         // 1. Atualiza os dados internos do objeto
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
-            Área: getVal("area2"),
+            Área: Number(getVal("area2")),
             Status: getVal("status2").replace(/"/g, ''),
             Zoneamento: getVal("zona2").replace(/"/g, ''),
-            Frente: getVal("frente2"),
-            Lateral: getVal("lateral2"),
-            ValorM2: getVal("valor_metro2"),
-            Valor: getVal("valor_total2"),
-            IndiceConstrutivo: getVal("indice2")
+            Frente: Number(getVal("frente2")),
+            Lateral: Number(getVal("lateral2")),
+            ValorM2: Number(getVal("valor_metro2")),
+            Valor: Number(getVal("valor_total2")),
+            IndiceConstrutivo: Number(getVal("indice2"))
         });
 
         // 2. Aplica o "update" visual no mapa
