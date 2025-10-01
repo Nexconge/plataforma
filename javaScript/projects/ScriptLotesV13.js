@@ -126,6 +126,7 @@ class MapaLotesManager {
 
             const cor = this._getLoteColor(lote);
 
+            console.log(lote.Quadra);
             // Se o campo 'Quadra' for verdadeiro, cria um círculo no centro
             if (lote.Quadra) {
                 // Cria um polígono temporário apenas para calcular o centro
