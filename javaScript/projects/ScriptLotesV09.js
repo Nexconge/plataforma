@@ -314,13 +314,13 @@ class MapaLotesManager {
         // 1. Atualiza os dados internos do objeto
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
-            Área: Number(getVal("area2")),
+            Área: unmaskNumber(getVal("area2")),
             Status: getVal("status2").replace(/"/g, ''),
             Zoneamento: getVal("zona2").replace(/"/g, ''),
-            Frente: Number(getVal("frente2")),
-            Lateral: Number(getVal("lateral2")),
-            ValorM2: Number(getVal("valor_metro2")),
-            Valor: Number(getVal("valor_total2")),
+            Frente: unmaskNumber(getVal("frente2")),
+            Lateral: unmaskNumber(getVal("lateral2")),
+            ValorM2: unmaskNumber(getVal("valor_metro2")),
+            Valor: unmaskNumber(getVal("valor_total2")),
             //IndiceConstrutivo: Number(getTxt("indice2"))
         });
 
@@ -340,7 +340,14 @@ class MapaLotesManager {
         poligono.getTooltip()?.setContent(textoTooltip);
     }
 }
-
+const unmaskNumber = (val) => {
+    if (!val) return 0;
+    // remove tudo exceto dígitos, vírgula e ponto
+    val = val.replace(/[^\d,.-]/g, "");
+    // troca vírgula por ponto para parseFloat
+    val = val.replace(",", ".");
+    return parseFloat(val) || 0;
+};
 export function iniciarMapa(empreendimentosJSON, urlAPI) {
     const mapaManager = new MapaLotesManager('meuMapa', urlAPI);
     mapaManager.init(empreendimentosJSON);
