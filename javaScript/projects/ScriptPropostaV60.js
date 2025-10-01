@@ -434,7 +434,12 @@ async function gerarProposta(username) {
         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.`
             ;
 
-        doc.text(longText, 20, yAtual, { align: "justify", maxWidth: 170, lineHeightFactor: 2.5 })
+        const linhas = doc.splitTextToSize(longText, 170);
+        let y = yAtual;
+        linhas.forEach(linha => {
+            doc.text(linha, 20, y);
+            y += 6; // ajusta conforme necessário
+        });
 
         yAtual = 230
         doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
