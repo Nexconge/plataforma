@@ -310,18 +310,17 @@ class MapaLotesManager {
 
         const poligono = this.polygons[this.selectedLoteId];
         const getVal = id => document.getElementById(id).value;
-        const getTxt = id => document.getElementById(id).textContent;
 
         // 1. Atualiza os dados internos do objeto
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
-            Área: Number(getTxt("area2")),
+            Área: Number(getVal("area2")),
             Status: getVal("status2").replace(/"/g, ''),
             Zoneamento: getVal("zona2").replace(/"/g, ''),
-            Frente: Number(getTxt("frente2")),
-            Lateral: Number(getTxt("lateral2")),
-            ValorM2: Number(getTxt("valor_metro2")),
-            Valor: Number(getTxt("valor_total2")),
+            Frente: Number(getVal("frente2")),
+            Lateral: Number(getVal("lateral2")),
+            ValorM2: Number(getVal("valor_metro2")),
+            Valor: Number(getVal("valor_total2")),
             //IndiceConstrutivo: Number(getTxt("indice2"))
         });
 
