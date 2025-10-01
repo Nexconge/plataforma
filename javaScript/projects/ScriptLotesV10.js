@@ -342,10 +342,11 @@ class MapaLotesManager {
 }
 const unmaskNumber = (val) => {
     if (!val) return 0;
-    // remove tudo exceto dígitos, vírgula e ponto
-    val = val.replace(/[^\d,.-]/g, "");
-    // troca vírgula por ponto para parseFloat
-    val = val.replace(",", ".");
+    // Remove R$ e espaços
+    val = val.replace(/R\$|\s/g, "");
+    // Remove vírgulas de milhar
+    val = val.replace(/,/g, "");
+    // Converte para float
     return parseFloat(val) || 0;
 };
 export function iniciarMapa(empreendimentosJSON, urlAPI) {
