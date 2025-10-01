@@ -324,19 +324,30 @@ class MapaLotesManager {
         const bounds = new L.LatLngBounds();
         let visibleLayersCount = 0;
 
-        Object.values(this.polygons).forEach(p => {
-            if (this.map.hasLayer(p)) {
-                bounds.extend(p.getBounds());
-                visibleLayersCount++;
+        Object.values(this.polygons).forEach(layer => {
+            if (!this.map.hasLayer(layer)) return;
+
+            // Polígonos e retângulos têm getBounds()
+            if (layer.getBounds) {
+                bounds.extend(layer.getBounds());
+            } 
+            // Círculos e marcadores têm getLatLng()
+            else if (layer.getLatLng) {
+                bounds.extend(layer.getLatLng());
             }
+
+            visibleLayersCount++;
         });
 
         if (visibleLayersCount > 0) {
+            // Centraliza o mapa nos bounds calculados
             this.map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
         } else {
+            // Nenhum layer visível, retorna ao centro padrão
             this.map.flyTo(this.map.options.center, this.map.options.zoom, { duration: 1 });
         }
     }
+
 
     _atualizarPoligonoSelecionado() {
         if (!this.selectedLoteId || !this.polygons[this.selectedLoteId]) {
