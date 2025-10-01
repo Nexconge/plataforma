@@ -125,25 +125,54 @@ class MapaLotesManager {
             } catch { return; }
 
             const cor = this._getLoteColor(lote);
-            const polygon = L.polygon(coordenadas, {
-                color: "black",
-                fillColor: cor,
-                weight: 0.6,
-                fillOpacity: 1
-            });
 
-            polygon.loteData = lote;
-            polygon.on('click', (e) => {
-                L.DomEvent.stopPropagation(e); // Impede que o clique chegue no mapa
-                this._handlePolygonClick(polygon);
-            });
+            // Se o campo 'Quadra' for verdadeiro, cria um círculo no centro
+            if (lote.Quadra) {
+                // Cria um polígono temporário apenas para calcular o centro
+                const tempPolygon = L.polygon(coordenadas);
+                const centro = tempPolygon.getBounds().getCenter();
 
-            this.polygons[lote._id] = polygon;
+                const circle = L.circleMarker(centro, {
+                    radius: 8,
+                    color: "black",
+                    fillColor: cor,
+                    fillOpacity: 1,
+                    weight: 0.6
+                });
+
+                circle.loteData = lote;
+                circle.on('click', (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    this._handlePolygonClick(circle);
+                });
+
+                this.polygons[lote._id] = circle;
+                circle.addTo(this.map);
+
+            } else {
+                // Caso normal: desenha o polígono
+                const polygon = L.polygon(coordenadas, {
+                    color: "black",
+                    fillColor: cor,
+                    weight: 0.6,
+                    fillOpacity: 1
+                });
+
+                polygon.loteData = lote;
+                polygon.on('click', (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    this._handlePolygonClick(polygon);
+                });
+
+                this.polygons[lote._id] = polygon;
+                polygon.addTo(this.map);
+            }
         });
 
         // Dispara o filtro para exibir os lotes corretos inicialmente
         this._handleFilterChange();
     }
+
 
     _getLoteColor(lote) {
         const isZonaAtiva = document.querySelector("#zona input[type='checkbox']")?.checked;
