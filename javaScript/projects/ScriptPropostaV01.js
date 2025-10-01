@@ -441,7 +441,7 @@ async function gerarProposta(username) {
             y += 6; // ajusta conforme necessário
         });
 
-        yAtual = 230
+        yAtual = y + 20;
         doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
         yAtual += 20;
 
