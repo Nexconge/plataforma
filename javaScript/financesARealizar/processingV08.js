@@ -138,11 +138,11 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
         }
     });
     
-    Object.values(matrizDepartamentos).forEach(dep => {
+    /*Object.values(matrizDepartamentos).forEach(dep => {
         Object.values(dep.categorias).forEach(cat => {
             cat.fornecedores = Object.values(cat.fornecedores).sort((a, b) => b.total - a.total);
         });
-    });
+    });*/
 
     return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal };
 }

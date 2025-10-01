@@ -240,7 +240,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
             rowCat.insertCell().textContent = formatarValor(totalCategoria);
 
             // Fornecedores
-            catData.fornecedores.forEach(fornecedorData => {
+            /*catData.fornecedores.forEach(fornecedorData => {
                 const rowLan = tbody.insertRow();
                 rowLan.className = `linha-lancamento parent-${catId} hidden`;
                 const cellLan = rowLan.insertCell();
@@ -254,7 +254,24 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
                     rowLan.insertCell().textContent = formatarValor(valor);
                 });
                 rowLan.insertCell().textContent = formatarValor(totalFornecedor);
-            });
+            });*/
+            Object.values(catData.fornecedores)
+                .sort((a, b) => b.total - a.total)
+                .forEach(fornecedorData => {
+                    const rowLan = tbody.insertRow();
+                    rowLan.className = `linha-lancamento parent-${catId} hidden`;
+                    const cellLan = rowLan.insertCell();
+                    cellLan.className = 'idented2';
+                    cellLan.textContent = fornecedorData.fornecedor;
+
+                    let totalFornecedor = 0;
+                    colunas.forEach(coluna => {
+                        const valor = fornecedorData.valores[coluna] || 0;
+                        totalFornecedor += valor;
+                        rowLan.insertCell().textContent = formatarValor(valor);
+                    });
+                    rowLan.insertCell().textContent = formatarValor(totalFornecedor);
+                });
         });
     });
 }
