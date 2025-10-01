@@ -322,7 +322,7 @@ class MapaLotesManager {
             Lateral: Number(getTxt("lateral2")),
             ValorM2: Number(getTxt("valor_metro2")),
             Valor: Number(getTxt("valor_total2")),
-            IndiceConstrutivo: Number(getTxt("indice2"))
+            //IndiceConstrutivo: Number(getTxt("indice2"))
         });
 
         // 2. Aplica o "update" visual no mapa
