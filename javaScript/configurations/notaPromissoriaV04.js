@@ -1,4 +1,4 @@
-window.gerarNotaPromissoria() = function() {
+window.gerarNotaPromissoria = async function() {
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
