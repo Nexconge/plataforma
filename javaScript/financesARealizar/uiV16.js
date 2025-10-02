@@ -300,7 +300,7 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         if (projecao.toLowerCase() === 'arealizar') {
             primeiroInicio = anoAtual; // AnoAtual-AnoAtual+5
         } else {
-            primeiroInicio = anoAtual - duracaoP; // período anterior
+            primeiroInicio = anoAtual - duracaoP + 1; // período anterior
         }
 
         const anosDisponiveisSet = new Set(anosNums);
@@ -331,7 +331,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             if (periodoValido(p)) periodos.push(p);
             p -= duracaoP;
         }
-
         // Remove duplicados e ordena do mais recente para o mais antigo
         const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
 
