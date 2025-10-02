@@ -140,15 +140,14 @@ class MapaLotesManager {
                     fillOpacity: 0,      // sem preenchimento
                     weight: 1
                 });
-
                 // Label fixa com o nome da quadra
                 const label = L.marker(centro, {
-                    interactive: false, // não reage a clique
+                    interactive: false,
                     icon: L.divIcon({
                         className: "quadra-label",
-                        html: `<div style="font-size:12px;font-weight:bold;text-align:center;">Q.${lote.Nome}</div>`,
-                        iconSize: [40, 20], // tamanho aproximado da caixa do texto
-                        iconAnchor: [20, 10] // centraliza no ponto
+                        html: `<div>${lote.Nome}</div>`,
+                        iconSize: [60, 30],   // ajusta largura/altura da caixa
+                        iconAnchor: [30, 15]  // centraliza no ponto
                     })
                 });
 

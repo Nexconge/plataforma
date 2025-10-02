@@ -44,6 +44,22 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
+.quadra-label div {
+    font-size: 16px;          /* tamanho fixo */
+    font-weight: bold;
+    color: black;
+    background: rgba(255, 255, 255, 0.8); /* fundo branco semi-transparente */
+    border: 1px solid black;  /* borda fina */
+    border-radius: 50%;       /* deixa a caixinha arredondada */
+    text-align: center;
+    line-height: 28px;        /* alinha verticalmente */
+    width: 60px;
+    height: 30px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.3); /* sombra leve */
+    user-select: none;        /* evita seleção de texto no clique */
+    pointer-events: none;     /* ignora interação do mouse */
+}
+
 /* #tabelaVendas {
     position: relative;
     overflow-x: auto;
