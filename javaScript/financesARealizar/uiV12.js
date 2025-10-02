@@ -287,27 +287,34 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
             option.textContent = ano;
             anoSelect.appendChild(option);
         });
-        anoSelect.value = anosDisponiveis.includes(valorAtual) 
-            ? valorAtual 
+        anoSelect.value = anosDisponiveis.includes(valorAtual)
+            ? valorAtual
             : (anosDisponiveis[anosDisponiveis.length - 1] || '');
     } else { // anual
         const periodos = new Set();
         const anosNums = anosDisponiveis.map(a => Number(a)).sort((a, b) => a - b);
         const anoAtual = new Date().getFullYear();
-        let primeiroInicio = Math.floor((anoAtual - 1) / 5) * 5 + 1;
-        let primeiroFim = primeiroInicio + 4;
-        while (primeiroFim <= anoAtual + 5) {
-            primeiroInicio += 5;
-            primeiroFim += 5;
-        }
+
+        // Primeiro período = AnoAtual - AnoAtual+5
+        const primeiroInicio = anoAtual;
         periodos.add(primeiroInicio);
+
+        // Adiciona períodos existentes nos anosDisponiveis (5 em 5, arredondando)
         anosNums.forEach(ano => {
             const inicioPeriodo = Math.floor((ano - 1) / 5) * 5 + 1;
             periodos.add(inicioPeriodo);
         });
+
+        // Ordena: primeiro = AnoAtual-AnoAtual+5, depois restantes do mais recente ao mais antigo
         const periodosOrdenados = Array.from(periodos).sort((a, b) => b - a);
+
         periodosOrdenados.forEach(inicio => {
-            const fim = inicio + 4;
+            let fim;
+            if (inicio === primeiroInicio) {
+                fim = primeiroInicio + 5; // primeiro período = AnoAtual-AnoAtual+5
+            } else {
+                fim = inicio + 4; // demais períodos = blocos de 5
+            }
             const option = document.createElement('option');
             option.value = inicio;
             option.textContent = `${inicio}-${fim}`;
@@ -316,7 +323,13 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
 
         // tenta preservar a seleção atual
         const valorAtualNum = Number(valorAtual);
-        const periodoAtual = Math.floor((valorAtualNum - 1) / 5) * 5 + 1;
+        let periodoAtual;
+        if (valorAtualNum >= primeiroInicio && valorAtualNum <= primeiroInicio + 5) {
+            periodoAtual = primeiroInicio;
+        } else {
+            periodoAtual = Math.floor((valorAtualNum - 1) / 5) * 5 + 1;
+        }
+
         if (periodos.has(periodoAtual)) {
             anoSelect.value = periodoAtual;
         } else {
