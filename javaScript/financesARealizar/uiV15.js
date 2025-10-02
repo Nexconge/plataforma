@@ -292,6 +292,7 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
     } else { // anual
         const duracaoP = 6; // cada período tem 6 anos
         const periodos = [];
+        const anosNums = anosDisponiveis.map(a => Number(a));
         const anoAtual = new Date().getFullYear();
 
         // Primeiro período
@@ -301,29 +302,41 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         } else {
             primeiroInicio = anoAtual - duracaoP; // período anterior
         }
-        periodos.push(primeiroInicio);
 
-        // Gerar períodos consecutivos após o primeiro
-        const maxAno = Math.max(...anosDisponiveis.map(a => Number(a)), anoAtual + 20); // limite para gerar futuros
-        let inicio = primeiroInicio + duracaoP;
-        while (inicio <= maxAno) {
-            periodos.push(inicio);
-            inicio += duracaoP;
+        const anosDisponiveisSet = new Set(anosNums);
+
+        // Função que verifica se ao menos um ano do período está disponível
+        const periodoValido = (inicio) => {
+            for (let i = 0; i < duracaoP; i++) {
+                if (anosDisponiveisSet.has(inicio + i)) return true;
+            }
+            return false;
+        };
+
+        // Adiciona períodos posteriores e anteriores se houver anos disponíveis
+        let inicio = primeiroInicio;
+        const maxAno = Math.max(...anosNums, primeiroInicio + 50); // limite arbitrário futuro
+        const minAno = Math.min(...anosNums, primeiroInicio - 50); // limite arbitrário passado
+
+        // Gera períodos posteriores
+        let p = primeiroInicio;
+        while (p <= maxAno) {
+            if (periodoValido(p)) periodos.push(p);
+            p += duracaoP;
         }
 
-        // Gerar períodos anteriores ao primeiro, se existirem anosDisponiveis menores
-        const minAno = Math.min(...anosDisponiveis.map(a => Number(a)));
-        inicio = primeiroInicio - duracaoP;
-        while (inicio >= minAno) {
-            periodos.push(inicio);
-            inicio -= duracaoP;
+        // Gera períodos anteriores
+        p = primeiroInicio - duracaoP;
+        while (p >= minAno) {
+            if (periodoValido(p)) periodos.push(p);
+            p -= duracaoP;
         }
 
-        // Ordena do mais recente para o mais antigo
-        periodos.sort((a, b) => b - a);
+        // Remove duplicados e ordena do mais recente para o mais antigo
+        const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
 
         // Cria options
-        periodos.forEach(inicio => {
+        periodosUnicos.forEach(inicio => {
             const fim = inicio + duracaoP - 1;
             const option = document.createElement('option');
             option.value = inicio;
@@ -333,18 +346,11 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
 
         // Preserva a seleção atual
         const valorAtualNum = Number(valorAtual);
-        let periodoAtual;
-        if (valorAtualNum >= primeiroInicio && valorAtualNum <= primeiroInicio + duracaoP - 1) {
-            periodoAtual = primeiroInicio;
-        } else {
-            // encontra o período correto do valor atual
-            periodoAtual = periodos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1) || periodos[0];
-        }
+        let periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1) || periodosUnicos[0];
 
         anoSelect.value = periodoAtual;
     }
 }
-
 
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
