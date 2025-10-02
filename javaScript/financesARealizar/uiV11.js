@@ -292,16 +292,24 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
             : (anosDisponiveis[anosDisponiveis.length - 1] || '');
     } else { // anual
         const periodos = new Set();
-        anosDisponiveis.forEach(ano => {
-            const anoNum = Number(ano);
-            const inicioPeriodo = Math.floor((anoNum - 1) / 5) * 5 + 1;
+        const anosNums = anosDisponiveis.map(a => Number(a)).sort((a, b) => a - b);
+        const anoAtual = new Date().getFullYear();
+        let primeiroInicio = Math.floor((anoAtual - 1) / 5) * 5 + 1;
+        let primeiroFim = primeiroInicio + 4;
+        while (primeiroFim <= anoAtual + 5) {
+            primeiroInicio += 5;
+            primeiroFim += 5;
+        }
+        periodos.add(primeiroInicio);
+        anosNums.forEach(ano => {
+            const inicioPeriodo = Math.floor((ano - 1) / 5) * 5 + 1;
             periodos.add(inicioPeriodo);
         });
         const periodosOrdenados = Array.from(periodos).sort((a, b) => b - a);
         periodosOrdenados.forEach(inicio => {
             const fim = inicio + 4;
             const option = document.createElement('option');
-            option.value = inicio; 
+            option.value = inicio;
             option.textContent = `${inicio}-${fim}`;
             anoSelect.appendChild(option);
         });
