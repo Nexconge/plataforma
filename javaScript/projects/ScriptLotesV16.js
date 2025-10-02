@@ -146,7 +146,7 @@ class MapaLotesManager {
                     interactive: false, // não reage a clique
                     icon: L.divIcon({
                         className: "quadra-label",
-                        html: `<div style="font-size:12px;font-weight:bold;text-align:center;">Q.${lote.Quadra}</div>`,
+                        html: `<div style="font-size:12px;font-weight:bold;text-align:center;">Q.${lote.Nome}</div>`,
                         iconSize: [40, 20], // tamanho aproximado da caixa do texto
                         iconAnchor: [20, 10] // centraliza no ponto
                     })
