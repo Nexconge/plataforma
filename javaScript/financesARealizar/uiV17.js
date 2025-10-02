@@ -350,7 +350,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         anoSelect.value = periodoAtual;
     }
 }
-
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {
@@ -400,7 +399,7 @@ function obterFiltrosAtuais() {
         anosParaProcessar = [valorSelecionado];
     } else {
         const anoInicio = Number(valorSelecionado);
-        const anoFim = anoInicio + 4;
+        const anoFim = anoInicio + 5;
         for (let ano = anoInicio; ano <= anoFim; ano++) {
             anosParaProcessar.push(String(ano));
         }
