@@ -145,9 +145,9 @@ class MapaLotesManager {
                     className: "quadra-tooltip"
                 });
                 
-                label.loteData = lote;
-                this.polygons[lote._id] = label;
-                label.addTo(this.map);
+                circle.loteData = lote;
+                this.polygons[lote._id] = circle;
+                circle.addTo(this.map);
                 
             } else {
                 // Caso normal: desenha o polígono
