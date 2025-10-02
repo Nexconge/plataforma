@@ -132,17 +132,19 @@ class MapaLotesManager {
                 // Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
-                const marker = L.marker(centro, {
-                icon: L.divIcon({
-                    className: '',
-                    html: `<div style="font-size:14px; font-weight:bold; color:black; text-shadow: 1px 1px 2px white;">${lote.Nome}</div>`,
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20]
-                })
-                }).addTo(this.map);
 
-                marker.on("click", (e) => L.DomEvent.stopPropagation(e));
-
+                // Label fixa com o nome da quadra
+                const label = L.marker(centro, {
+                    interactive: false,
+                    icon: L.divIcon({
+                        className: "quadra-label",
+                        html: `<div>${lote.Nome}</div>`,
+                        iconSize: [60, 30],   // ajusta largura/altura da caixa
+                        iconAnchor: [30, 15]  // centraliza no ponto
+                    })
+                });
+                label.loteData = lote;
+                this.polygons[lote._id] = label;
             } else {
                 // Caso normal: desenha o polígono
                 const polygon = L.polygon(coordenadas, {
