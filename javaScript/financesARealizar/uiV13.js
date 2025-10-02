@@ -276,7 +276,7 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     });
 }
 // Funções de UI que precisam do estado (appCache)
-function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
+function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
@@ -294,40 +294,41 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo) {
         const periodos = new Set();
         const anosNums = anosDisponiveis.map(a => Number(a)).sort((a, b) => a - b);
         const anoAtual = new Date().getFullYear();
-
+        let primeiroInicio;
+        const duracaoP = 6; // cada período tem 6 anos 
+        
         // Primeiro período = AnoAtual - AnoAtual+5
-        const primeiroInicio = anoAtual;
+        if (projecao.toLowerCase() === 'arealizar'){
+            primeiroInicio = anoAtual;
+        } else { primeiroInicio = anoAtual - duracaoP + 1;}
         periodos.add(primeiroInicio);
 
-        // Adiciona períodos existentes nos anosDisponiveis (5 em 5, arredondando)
+        // Adiciona períodos existentes nos anosDisponiveis
         anosNums.forEach(ano => {
-            const inicioPeriodo = Math.floor((ano - 1) / 5) * 5 + 1;
+            // calcula início do período de 6 anos do ano
+            const inicioPeriodo = ano - ((ano - 1) % duracaoP);
             periodos.add(inicioPeriodo);
         });
 
-        // Ordena: primeiro = AnoAtual-AnoAtual+5, depois restantes do mais recente ao mais antigo
+        // Ordena do mais recente para o mais antigo
         const periodosOrdenados = Array.from(periodos).sort((a, b) => b - a);
 
+        // Cria options
         periodosOrdenados.forEach(inicio => {
-            let fim;
-            if (inicio === primeiroInicio) {
-                fim = primeiroInicio + 5; // primeiro período = AnoAtual-AnoAtual+5
-            } else {
-                fim = inicio + 4; // demais períodos = blocos de 5
-            }
+            const fim = inicio + duracaoP - 1; // 6 anos por período
             const option = document.createElement('option');
             option.value = inicio;
             option.textContent = `${inicio}-${fim}`;
             anoSelect.appendChild(option);
         });
 
-        // tenta preservar a seleção atual
+        // Preserva a seleção atual
         const valorAtualNum = Number(valorAtual);
         let periodoAtual;
-        if (valorAtualNum >= primeiroInicio && valorAtualNum <= primeiroInicio + 5) {
+        if (valorAtualNum >= primeiroInicio && valorAtualNum <= primeiroInicio + duracaoP - 1) {
             periodoAtual = primeiroInicio;
         } else {
-            periodoAtual = Math.floor((valorAtualNum - 1) / 5) * 5 + 1;
+            periodoAtual = valorAtualNum - ((valorAtualNum - 1) % duracaoP);
         }
 
         if (periodos.has(periodoAtual)) {
@@ -449,12 +450,12 @@ function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
         atualizarCallback();
     });
     modoSelect.addEventListener('change', () => {
-        atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value);
+        atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
         atualizarCallback();
     });
 
     // Configura o filtro de ano
-    atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value);
+    atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
     // Atualiza o filtro de contas com base no projeto selecionado
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);

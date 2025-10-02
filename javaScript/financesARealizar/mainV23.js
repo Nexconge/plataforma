@@ -2,7 +2,7 @@
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV02.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV09.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV12.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV13.js';
 
 // Inicia o chache
 let appCache = {
@@ -98,7 +98,7 @@ async function handleFiltroChange() {
     }
     // Atuliza o select evitando recursão
     appCache.flagAnos = true; // Seta a flag para evitar recursão
-    atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value);
+    atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value, appCache.projecao);
     appCache.flagAnos = false; // Reseta a flag
 
     // Atualiza os filtros atuais para casos de de mudança de ano quando um a projeção é alterada e um ano não está mais disponível
