@@ -44,20 +44,14 @@ label {
     font-family: 'Nunito', sans-serif;
 }
 
-.quadra-label div {
-    font-size: 16px;          /* tamanho fixo */
+.quadra-tooltip {
     font-weight: bold;
+    font-size: 14px;
     color: black;
-    background: rgba(255, 255, 255, 0.8); /* fundo branco semi-transparente */
-    border: 1px solid black;  /* borda fina */
-    border-radius: 50%;       /* deixa a caixinha arredondada */
-    text-align: center;
-    line-height: 28px;        /* alinha verticalmente */
-    width: 60px;
-    height: 30px;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.3); /* sombra leve */
-    user-select: none;        /* evita seleção de texto no clique */
-    pointer-events: none;     /* ignora interação do mouse */
+    text-shadow: 1px 1px 2px white; /* melhora visibilidade */
+    background: transparent;        /* sem caixinha */
+    border: none;
+    box-shadow: none;
 }
 
 /* #tabelaVendas {

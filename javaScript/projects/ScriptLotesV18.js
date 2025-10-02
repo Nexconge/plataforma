@@ -133,34 +133,22 @@ class MapaLotesManager {
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
 
-                // Círculo apenas contorno (transparente no meio)
+                // Círculo de contorno
                 const circle = L.circle(centro, {
-                    radius: 20,          // ajusta conforme o tamanho da quadra
+                    radius: 20,
                     color: "black",
-                    fillOpacity: 0,      // sem preenchimento
+                    fillOpacity: 0,
                     weight: 1
+                }).addTo(this.map);
+                // Tooltip que escala junto com o mapa
+                circle.bindTooltip(lote.Nome, {
+                    permanent: true,
+                    direction: "center",
+                    className: "quadra-tooltip"
                 });
-                // Label fixa com o nome da quadra
-                const label = L.marker(centro, {
-                    interactive: false,
-                    icon: L.divIcon({
-                        className: "quadra-label",
-                        html: `<div>${lote.Nome}</div>`,
-                        iconSize: [60, 30],   // ajusta largura/altura da caixa
-                        iconAnchor: [30, 15]  // centraliza no ponto
-                    })
-                });
-
-                // Adiciona ao mapa
-                this.polygons[lote._id] = circle;
-                circle.addTo(this.map);
-                label.addTo(this.map);
-
                 // Clique no círculo chama o mesmo handler
-                circle.loteData = lote;
                 circle.on("click", (e) => {
                     L.DomEvent.stopPropagation(e);
-                    this._handlePolygonClick(circle);
                 });
 
             } else {
