@@ -286,9 +286,15 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             option.textContent = ano;
             anoSelect.appendChild(option);
         });
-        anoSelect.value = anosDisponiveis.includes(valorAtual)
-            ? valorAtual
-            : (anosDisponiveis[anosDisponiveis.length - 1] || '');
+        // Preserva a seleção atual se ainda estiver disponível
+        if (anosDisponiveis.includes(valorAtual)) {
+            anoSelect.value = valorAtual;
+        } else if (projecao == "realizado") {
+            anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
+        } else {
+            anoSelect.value = anosDisponiveis[0] || '';
+        }
+
     } else { // anual
         const duracaoP = 6; // cada período tem 6 anos
         const periodos = [];
@@ -302,9 +308,7 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         } else {
             primeiroInicio = anoAtual - duracaoP + 1; // período anterior
         }
-
         const anosDisponiveisSet = new Set(anosNums);
-
         // Função que verifica se ao menos um ano do período está disponível
         const periodoValido = (inicio) => {
             for (let i = 0; i < duracaoP; i++) {
@@ -312,19 +316,16 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             }
             return false;
         };
-
         // Adiciona períodos posteriores e anteriores se houver anos disponíveis
         let inicio = primeiroInicio;
         const maxAno = Math.max(...anosNums, primeiroInicio + 50); // limite arbitrário futuro
         const minAno = Math.min(...anosNums, primeiroInicio - 50); // limite arbitrário passado
-
         // Gera períodos posteriores
         let p = primeiroInicio;
         while (p <= maxAno) {
             if (periodoValido(p)) periodos.push(p);
             p += duracaoP;
         }
-
         // Gera períodos anteriores
         p = primeiroInicio - duracaoP;
         while (p >= minAno) {
@@ -333,7 +334,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         }
         // Remove duplicados e ordena do mais recente para o mais antigo
         const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
-
         // Cria options
         periodosUnicos.forEach(inicio => {
             const fim = inicio + duracaoP - 1;
@@ -343,11 +343,19 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             anoSelect.appendChild(option);
         });
 
-        // Preserva a seleção atual
+        // Preserva a seleção atual do período se ainda estiver disponível
         const valorAtualNum = Number(valorAtual);
-        let periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1) || periodosUnicos[0];
+        const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1);
 
-        anoSelect.value = periodoAtual;
+        if (periodoAtual !== undefined) {
+            anoSelect.value = periodoAtual;
+        } else if (projecao.toLowerCase() === "realizado") {
+            // pega o último período
+            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || '';
+        } else {
+            // pega o primeiro período
+            anoSelect.value = periodosUnicos[0] || '';
+        }
     }
 }
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
