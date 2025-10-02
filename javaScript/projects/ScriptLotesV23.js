@@ -125,24 +125,26 @@ class MapaLotesManager {
             } catch { return; }
 
             const cor = this._getLoteColor(lote);
-
-            console.log(lote.Quadra);
             // Se o campo 'Quadra' for verdadeiro, cria um círculo no centro
             if (lote.Quadra) {
                 // Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
 
-                // Label fixa com o nome da quadra
-                const label = L.marker(centro, {
-                    interactive: false,
-                    icon: L.divIcon({
-                        className: "quadra-label",
-                        html: `<div>${lote.Nome}</div>`,
-                        iconSize: [60, 30],   // ajusta largura/altura da caixa
-                        iconAnchor: [30, 15]  // centraliza no ponto
-                    })
+                const circle = L.circle(centro, {
+                    radius: 20,
+                    color: "black",
+                    fillOpacity: 0,
+                    weight: 1
+                }).addTo(this.map);
+
+                // Tooltip que escala junto com o mapa
+                circle.bindTooltip(lote.Nome, {
+                    permanent: true,
+                    direction: "center",
+                    className: "quadra-tooltip"
                 });
+                
                 label.loteData = lote;
                 this.polygons[lote._id] = label;
                 label.addTo(this.map);
