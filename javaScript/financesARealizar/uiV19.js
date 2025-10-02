@@ -351,10 +351,10 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             anoSelect.value = periodoAtual;
         } else if (projecao.toLowerCase() === "realizado") {
             // pega o último período
-            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || '';
+            anoSelect.value = periodosUnicos[0] || '';
         } else {
             // pega o primeiro período
-            anoSelect.value = periodosUnicos[0] || '';
+            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || '';
         }
     }
 }
