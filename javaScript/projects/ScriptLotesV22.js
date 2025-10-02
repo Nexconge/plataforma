@@ -145,6 +145,8 @@ class MapaLotesManager {
                 });
                 label.loteData = lote;
                 this.polygons[lote._id] = label;
+                label.addTo(this.map);
+                
             } else {
                 // Caso normal: desenha o polígono
                 const polygon = L.polygon(coordenadas, {
