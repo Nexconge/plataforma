@@ -17,6 +17,7 @@ window.gerarNotaPromissoria = async function () {
         nomeAvalista_1: document.getElementById("inputNomeAvalista_1")?.value?.trim(),
         cpfCnpjAvalista_1: document.getElementById("inputCpfCnpjAvalista_1")?.value?.trim(),
     };
+    console.log("Dados capturados para a nota promissória:", dados);
 
     // --- Validação: todos os campos obrigatórios ---
     const obrigatorios = [
