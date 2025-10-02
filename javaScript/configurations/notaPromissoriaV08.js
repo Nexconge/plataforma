@@ -5,7 +5,7 @@ window.gerarNotaPromissoria = async function () {
     const dados = {
         numeroNotaPromissoria: document.getElementById("inputNumeroNotaPromissoria")?.value?.trim(),
         dataVencimento: document.getElementById("inputDataVencimento")?.value?.trim(),
-        valorNotaPromissoria: document.getElementById("inputValorNotaPromissoria")?.valueAsNumber,
+        valorNotaPromissoria: document.getElementById("inputValorNotaPromissoria")?.value?.trim(),
         nomeFavorecido: document.getElementById("inputNomeFavorecido")?.value?.trim(),
         cnpjFavorecido: document.getElementById("inputCpfCnpjFavorecido")?.value?.trim(),
         pracaPagamento: document.getElementById("inputPracaPagamento")?.value?.trim(),
