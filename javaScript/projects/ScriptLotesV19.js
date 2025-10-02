@@ -136,15 +136,20 @@ class MapaLotesManager {
                 // Círculo de contorno
                 const circle = L.circle(centro, {
                     radius: 20,
-                    color: "black",
+                    color: "invisible",
                     fillOpacity: 0,
                     weight: 1
                 }).addTo(this.map);
                 // Tooltip que escala junto com o mapa
-                circle.bindTooltip(lote.Nome, {
-                    permanent: true,
-                    direction: "center",
-                    className: "quadra-tooltip"
+                circle.setText(lote.Nome, {
+                    center: true,
+                    attributes: { 
+                        "font-size": "14", 
+                        "font-weight": "bold", 
+                        "fill": "black", 
+                        "stroke": "white", 
+                        "stroke-width": "2" 
+                    }
                 });
                 // Clique no círculo chama o mesmo handler
                 circle.on("click", (e) => {
