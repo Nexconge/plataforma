@@ -129,26 +129,40 @@ class MapaLotesManager {
             console.log(lote.Quadra);
             // Se o campo 'Quadra' for verdadeiro, cria um círculo no centro
             if (lote.Quadra) {
-                // Cria um polígono temporário apenas para calcular o centro
+                // Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
 
-                const circle = L.circleMarker(centro, {
-                    radius: 8,
+                // Círculo apenas contorno (transparente no meio)
+                const circle = L.circle(centro, {
+                    radius: 20,          // ajusta conforme o tamanho da quadra
                     color: "black",
-                    fillColor: cor,
-                    fillOpacity: 1,
-                    weight: 0.6
+                    fillOpacity: 0,      // sem preenchimento
+                    weight: 1
                 });
 
+                // Label fixa com o nome da quadra
+                const label = L.marker(centro, {
+                    interactive: false, // não reage a clique
+                    icon: L.divIcon({
+                        className: "quadra-label",
+                        html: `<div style="font-size:12px;font-weight:bold;text-align:center;">Q.${lote.Quadra}</div>`,
+                        iconSize: [40, 20], // tamanho aproximado da caixa do texto
+                        iconAnchor: [20, 10] // centraliza no ponto
+                    })
+                });
+
+                // Adiciona ao mapa
+                this.polygons[lote._id] = circle;
+                circle.addTo(this.map);
+                label.addTo(this.map);
+
+                // Clique no círculo chama o mesmo handler
                 circle.loteData = lote;
-                circle.on('click', (e) => {
+                circle.on("click", (e) => {
                     L.DomEvent.stopPropagation(e);
                     this._handlePolygonClick(circle);
                 });
-
-                this.polygons[lote._id] = circle;
-                circle.addTo(this.map);
 
             } else {
                 // Caso normal: desenha o polígono
@@ -169,7 +183,6 @@ class MapaLotesManager {
                 polygon.addTo(this.map);
             }
         });
-
         // Dispara o filtro para exibir os lotes corretos inicialmente
         this._handleFilterChange();
     }
