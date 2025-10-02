@@ -132,29 +132,16 @@ class MapaLotesManager {
                 // Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
-
-                // Círculo de contorno
-                const circle = L.circle(centro, {
-                    radius: 20,
-                    color: "invisible",
-                    fillOpacity: 0,
-                    weight: 1
+                const marker = L.marker(centro, {
+                icon: L.divIcon({
+                    className: '',
+                    html: `<div style="font-size:14px; font-weight:bold; color:black; text-shadow: 1px 1px 2px white;">${lote.Nome}</div>`,
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20]
+                })
                 }).addTo(this.map);
-                // Tooltip que escala junto com o mapa
-                circle.setText(lote.Nome, {
-                    center: true,
-                    attributes: { 
-                        "font-size": "14", 
-                        "font-weight": "bold", 
-                        "fill": "black", 
-                        "stroke": "white", 
-                        "stroke-width": "2" 
-                    }
-                });
-                // Clique no círculo chama o mesmo handler
-                circle.on("click", (e) => {
-                    L.DomEvent.stopPropagation(e);
-                });
+
+                marker.on("click", (e) => L.DomEvent.stopPropagation(e));
 
             } else {
                 // Caso normal: desenha o polígono
