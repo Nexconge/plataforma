@@ -54,7 +54,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
     // Adiciona as classes extras APENAS se o usuário for Admin
-    if (userType && userType.toLowerCase() === 'admin') {
+    if (userType && userType.toLowerCase() === 'developer') {
         ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
     }
     // Adiciona as linhas de saldo, que sempre aparecem no final para todos

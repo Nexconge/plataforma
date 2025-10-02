@@ -1,4 +1,13 @@
 // processing.js
+/**
+ * Itera sobre os títulos da API e os separa em duas listas: pagamentos já realizados e títulos a vencer.
+ * @param {Array} titulos - Array de títulos vindo da API.
+ * @returns {object} 
+ * // {
+ * //   lancamentosProcessados: [ { Natureza, DataLancamento, CODContaC, ValorLancamento, CODCategoria, Cliente, Departamentos:[{CodDpto, ValorDepto}] } ],
+ * //   titulosEmAberto: [ { Natureza, DataLancamento, CODContaC, ValorLancamento, CODCategoria, Cliente, Departamentos:[{CodDpto, ValorDepto}] } ]
+ * // }
+ */
 function extrairDadosDosTitulos(titulos) {
     const lancamentosProcessados = [];
     const titulosEmAberto = [];
@@ -78,7 +87,19 @@ function parseDate(dateString) {
     // new Date(ano, mês - 1, dia)
     return new Date(parts[2], parts[1] - 1, parts[0]);
 }
-//Processa considerando datas de emissão (Sem uso no momento)
+/**
+ * Processa uma lista de lançamentos (realizados ou a realizar) e os agrupa em matrizes DRE e de Departamentos.
+ * @param {object} dadosBase - Cache da aplicação.
+ * @param {Array} lancamentos - Array de lançamentos ou títulos a processar.
+ * @param {number} contaId - ID da conta corrente sendo processada.
+ * @returns {object} 
+ * // {
+ * //   matrizDRE: { "Classe": { "MM-AAAA": valor, ... }, ... },
+ * //   matrizDepartamentos: { "NomeDepto|Classe": { nome, classe, categorias: { ... } }, ... },
+ * //   chavesComDados: Set("MM-AAAA", ...),
+ * //   valorTotal: number
+ * // }
+ */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
     const classesParaDetalhar = new Set([
@@ -147,11 +168,15 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
     return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal };
 }
 /**
- * **ALTERADO:** Função principal que agora orquestra o processamento de ambos os modos.
+ * Orquestra o processamento dos dados de uma conta, separando em 'realizado' e 'a realizar'.
  * @param {object} dadosBase - O cache da aplicação com os mapas de apoio.
  * @param {object} dadosApi - Objeto com { lancamentos, titulos } extraídos da API.
  * @param {number} contaId - O ID da conta sendo processada.
- * @returns {object} - Um objeto contendo as matrizes para `realizado` e `aRealizar`.
+ * @returns {object} 
+ * // {
+ * //   realizado: { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal },
+ * //   arealizar: { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal }
+ * // }
  */
 function processarDadosDaConta(dadosBase, dadosApi, contaId) {
     const { lancamentos, titulos } = dadosApi;
@@ -210,10 +235,13 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
 }
 /**
  * Mescla os dados de múltiplas contas em um único conjunto de dados mensais.
- * Itera sobre uma lista de dados processados de várias fontes (contas bancárias, etc.)
- * e os consolida em uma única matrizDRE e matrizDepartamentos.
  * @param {object[]} listaDeDadosProcessados - Array de objetos, cada um contendo os dados de uma conta.
- * @returns {object} - Um objeto contendo { monthlyMerged, saldoBaseTotal, todasChaves }.
+ * @returns {object} 
+ * // {
+ * //   monthlyMerged: { matrizDRE, matrizDepartamentos },
+ * //   saldoBaseTotal: number,
+ * //   todasChaves: Set("MM-AAAA", ...)
+ * // }
  */
 function mergeDadosMensais(listaDeDadosProcessados) {
     const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {} };
@@ -390,8 +418,14 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis) {
  * @param {object[]} listaDeDadosProcessados - Array de objetos, cada um contendo os dados de uma conta.
  * @param {string} modo - O modo de visualização ('mensal' ou 'anual').
  * @param {string[]} colunasVisiveis - As colunas (períodos) que devem ser exibidas.
- * @returns {object} - Um objeto contendo { matrizDRE, matrizDepartamentos, saldoInicialPeriodo } prontos para renderização.
  * @param {string} projecao - O modo de visualização ('realizado' ou 'aRealizar').
+ * @returns {object} 
+ * // {
+ * //   matrizDRE: { "Classe": { "MM-AAAA": valor, "TOTAL": valorTotal, ... }, ... },
+ * //   matrizDepartamentos: { "NomeDepto|Classe": { ... } },
+ * //   saldoInicialPeriodo: number,
+ * //   PeUChave: { ultimaChave: "MM-AAAA", primeiraChave: "MM-AAAA" }
+ * // }
  */
 function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao) {
     const dadosSelecionados = listaDeDadosProcessados
