@@ -24,7 +24,9 @@ window.gerarNotaPromissoria = async function() {
     let margemLateral = 20;
     let margemSuperior = 30; // valor inicial da margem superior
     let yAtual = margemSuperior + 10; // valor inicial do yAtual
-    
+    let startX = margemLateral; // Define posição, tamanho e desenha as linhas
+    let endX = margemLateral + 75;
+
     // Título
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -67,8 +69,6 @@ window.gerarNotaPromissoria = async function() {
     
     // Assinaturas
     yAtual += 15
-    startX = margemLateral; // Define posição, tamanho e desenha as linhas
-    endX = margemLateral + 75;
     doc.line(startX, yAtual, endX, yAtual);
     yAtual += 5;
     doc.setFontSize(8);
