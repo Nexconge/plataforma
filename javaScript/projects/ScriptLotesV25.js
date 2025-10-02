@@ -132,8 +132,8 @@ class MapaLotesManager {
                 const centro = tempPolygon.getBounds().getCenter();
 
                 const circle = L.circle(centro, {
-                    radius: 20,
-                    color: "black",
+                    radius: 1,
+                    color: "invisible",
                     fillOpacity: 0,
                     weight: 1
                 }).addTo(this.map);
