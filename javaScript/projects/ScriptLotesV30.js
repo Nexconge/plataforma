@@ -45,7 +45,6 @@ class MapaLotesManager {
         this._renderLotes(this.allLotes);
         this._populateEmpreendimentoFilter();
         this._centralizeView();
-        this._installQuadraZoomHandler(this.map);
     }
 
     //VERSAO BUBBLE
