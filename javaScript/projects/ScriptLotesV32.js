@@ -185,7 +185,7 @@ class MapaLotesManager {
         function updateQuadraScale() {
             const z = map.getZoom();
             const baseZoom = 15;   // zoom de referência
-            const minZoomShow = 13;
+            const minZoomShow = 17;
             const minScale = 0.45;
 
             const rawScale = z / baseZoom;
