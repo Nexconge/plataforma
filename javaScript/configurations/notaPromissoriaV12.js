@@ -121,9 +121,22 @@ window.gerarNotaPromissoria = async function () {
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
         doc.setFontSize(8);
-        doc.text(dados.nomeAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual - 20, { align: "center" }); yAtual += 5;
-        doc.text(dados.cpfCnpjAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual - 15, { align: "center" }); yAtual += 5;
-        doc.text("Assinante Adicional", (startX + ((endX - startX) / 2)), yAtual - 10, { align: "center" }); yAtual += 5;
+        doc.text(dados.nomeAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Assinante Adicional", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+    }
+
+    // Assinatura Avalistas
+    if (dados.nomeAvalista_1 !== "" && dados.cpfCnpjAvalista_1 !== "") {
+        yAtual += 15;
+        startX = margemLateral;
+        endX = margemLateral + 75;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+        doc.setFontSize(8);
+        doc.text(dados.nomeAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
     // Borda do documento
@@ -136,4 +149,5 @@ window.gerarNotaPromissoria = async function () {
 
     // Salvar
     doc.save("nota-promissoria.pdf");
+
 };
