@@ -139,6 +139,18 @@ window.gerarNotaPromissoria = async function () {
         doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
+    if (dados.nomeAvalista_2 !== "" && dados.cpfCnpjAvalista_2 !== "") {
+        yAtual -= 20;
+        startX = larguraPagina - margemLateral - 75;
+        endX = larguraPagina - margemLateral;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+        doc.setFontSize(8);
+        doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+    }
+
     // Borda do documento
     margemLateral -= 5;
     const alturaQuadrado = yAtual - margemSuperior;
