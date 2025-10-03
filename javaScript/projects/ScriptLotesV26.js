@@ -131,23 +131,15 @@ class MapaLotesManager {
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
 
-                const circle = L.circle(centro, {
-                    radius: 1,
-                    color: "invisible",
-                    fillOpacity: 0,
-                    weight: 1
+                const marker = L.marker(centro, {
+                    icon: L.divIcon({
+                        className: "quadra-tooltip",
+                        html: `<div>${lote.Nome}</div>`,
+                        iconSize: null // deixa o tamanho ser controlado via CSS
+                    })
                 }).addTo(this.map);
-
-                // Tooltip que escala junto com o mapa
-                circle.bindTooltip(lote.Nome, {
-                    permanent: true,
-                    direction: "center",
-                    className: "quadra-tooltip"
-                });
-                
-                circle.loteData = lote;
-                this.polygons[lote._id] = circle;
-                circle.addTo(this.map);
+                this.polygons[lote._id] = marker;
+                marker.loteData = lote;
                 
             } else {
                 // Caso normal: desenha o polígono
@@ -228,6 +220,14 @@ class MapaLotesManager {
         document.getElementById("zona").addEventListener('click', this._handleZoneToggle);
         document.getElementById("buttonAlterar").addEventListener('click', () => this._atualizarPoligonoSelecionado());
         this.map.on('click', () => this._clearForm());
+        //Evento para ajustar o tamanho dos tooltips de quadras conforme o zoom
+        this.map.on("zoomend", () => {
+            const zoom = this.map.getZoom();
+            const scale = zoom / 15; // 15 = zoom de referência
+            document.querySelectorAll(".quadra-tooltip").forEach(el => {
+                el.style.transform = `scale(${scale})`;
+            });
+        });
     }
 
     _handlePolygonClick(polygon) {
