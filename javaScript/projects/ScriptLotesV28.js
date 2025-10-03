@@ -125,7 +125,7 @@ class MapaLotesManager {
             } catch { return; }
 
             const cor = this._getLoteColor(lote);
-            // Se o campo 'Quadra' for verdadeiro, cria um círculo no centro
+
             if (lote.Quadra) {
                 // Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
@@ -136,19 +136,19 @@ class MapaLotesManager {
                     color: "invisible",
                     fillOpacity: 0,
                     weight: 1
-                }).addTo(this.map);
+                });
 
-                // Tooltip que escala junto com o mapa
+                // Tooltip permanente para quadras
                 circle.bindTooltip(lote.Nome, {
                     permanent: true,
                     direction: "center",
                     className: "quadra-tooltip"
                 });
-                
+
                 circle.loteData = lote;
                 this.polygons[lote._id] = circle;
                 circle.addTo(this.map);
-                
+
             } else {
                 // Caso normal: desenha o polígono
                 const polygon = L.polygon(coordenadas, {
@@ -157,6 +157,12 @@ class MapaLotesManager {
                     weight: 0.6,
                     fillOpacity: 1
                 });
+
+                // Tooltip temporário para lotes
+                polygon.bindTooltip(
+                    `${lote.Nome} - ${lote.Status || "Desconhecido"}`, 
+                    { permanent: false }
+                );
 
                 polygon.loteData = lote;
                 polygon.on('click', (e) => {
@@ -168,7 +174,8 @@ class MapaLotesManager {
                 polygon.addTo(this.map);
             }
         });
-        // Dispara o filtro para exibir os lotes corretos inicialmente
+
+        // Aplica o filtro inicial
         this._handleFilterChange();
     }
 
@@ -251,16 +258,13 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
-        //Versão Bubble
         const selectedEmpreendimentoId = document.getElementById("empreendimentoSelect").value;
+
         Object.values(this.polygons).forEach(p => {
-            // A lógica de filtro agora compara o ID do empreendimento do lote com o ID selecionado
-            //Versao Bubble
             const shouldBeVisible = !selectedEmpreendimentoId || p.loteData.Empreendimento === selectedEmpreendimentoId;
 
             if (shouldBeVisible && !this.map.hasLayer(p)) {
                 this.map.addLayer(p);
-                p.bindTooltip(`${p.loteData.Nome} - ${p.loteData.Status || "Desconhecido"}`, { permanent: false });
             } else if (!shouldBeVisible && this.map.hasLayer(p)) {
                 this.map.removeLayer(p);
             }
