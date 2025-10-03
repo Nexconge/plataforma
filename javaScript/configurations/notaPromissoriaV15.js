@@ -56,6 +56,7 @@ function numeroPorExtenso(valor) {
 // Função principal para gerar a nota promissória
 window.gerarNotaPromissoria = async function () {
     const { jsPDF } = window.jspdf;
+    const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
     // --- Captura de dados em um objeto ---
     const dados = {
@@ -82,6 +83,7 @@ window.gerarNotaPromissoria = async function () {
         cpfCnpjAvalista_4: document.getElementById("inputCpfCnpjAvalista_4")?.value?.trim(),
     };
     console.log("Dados capturados para a nota promissória:", dados);
+    console.log(valorNotaPromissoria)
 
     // --- Validação: todos os campos obrigatórios ---
     const obrigatorios = [
