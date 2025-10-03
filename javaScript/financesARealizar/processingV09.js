@@ -471,6 +471,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     // Retorna o objeto final
     return { ...dadosAntesDosTotais, saldoInicialPeriodo, PeUChave };
 }
+// Obtem a primeira e ultima chave do periodo de dados selecionados
 function getChavesDeControle(chavesSet, modo) {
     let primeiraChave = null;
     for (const chave of chavesSet) {
@@ -491,6 +492,7 @@ function getChavesDeControle(chavesSet, modo) {
 
     return { ultimaChave, primeiraChave };
 }
+// Faz a comparação entre duas chaves no formato "MM-AAAA" ou "AAAA" e retorna em ordem crescente
 function compararChaves(a, b) {
     const [mesA, anoA] = a.split('-').map(Number);
     const [mesB, anoB] = b.split('-').map(Number);

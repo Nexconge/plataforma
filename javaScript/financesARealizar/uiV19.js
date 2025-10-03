@@ -294,7 +294,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         } else {
             anoSelect.value = anosDisponiveis[0] || '';
         }
-
     } else { // anual
         const duracaoP = 6; // cada período tem 6 anos
         const periodos = [];
@@ -304,11 +303,12 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         // Primeiro período
         let primeiroInicio;
         if (projecao.toLowerCase() === 'arealizar') {
-            primeiroInicio = anoAtual; // AnoAtual-AnoAtual+5
+            primeiroInicio = anoAtual; // AnoAtual-(AnoAtual+5)
         } else {
-            primeiroInicio = anoAtual - duracaoP + 1; // período anterior
+            primeiroInicio = anoAtual - duracaoP + 1; // (AnoAtual-5)-AnoAtual
         }
         const anosDisponiveisSet = new Set(anosNums);
+
         // Função que verifica se ao menos um ano do período está disponível
         const periodoValido = (inicio) => {
             for (let i = 0; i < duracaoP; i++) {
@@ -316,6 +316,7 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             }
             return false;
         };
+        
         // Adiciona períodos posteriores e anteriores se houver anos disponíveis
         let inicio = primeiroInicio;
         const maxAno = Math.max(...anosNums, primeiroInicio + 50); // limite arbitrário futuro
