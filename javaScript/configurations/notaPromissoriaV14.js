@@ -1,3 +1,59 @@
+// Função para escrever números por extenos
+function numeroPorExtenso(valor) {
+    if (typeof valor !== 'number') {
+        throw new Error('O valor deve ser numérico');
+    }
+
+    const unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+    const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+    const centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+
+    function extensoAte999(n) {
+        if (n === 0) return "";
+        if (n === 100) return "cem";
+        if (n < 20) return unidades[n];
+        if (n < 100) return dezenas[Math.floor(n / 10)] + (n % 10 ? " e " + unidades[n % 10] : "");
+        return centenas[Math.floor(n / 100)] + (n % 100 ? " e " + extensoAte999(n % 100) : "");
+    }
+
+    function grupoExtenso(n, escalaSing, escalaPlural) {
+        if (n === 0) return "";
+        if (n === 1) return extensoAte999(n) + " " + escalaSing;
+        return extensoAte999(n) + " " + escalaPlural;
+    }
+
+    const inteiro = Math.floor(valor);
+    const centavos = Math.round((valor - inteiro) * 100);
+
+    if (inteiro > 999999999) {
+        throw new Error('Valor máximo suportado é 999.999.999,99');
+    }
+
+    const milhoes = Math.floor(inteiro / 1000000);
+    const milhares = Math.floor((inteiro % 1000000) / 1000);
+    const centenasFinal = inteiro % 1000;
+
+    let partes = [];
+
+    if (milhoes) partes.push(grupoExtenso(milhoes, "milhão", "milhões"));
+    if (milhares) partes.push(grupoExtenso(milhares, "mil", "mil"));
+    if (centenasFinal) partes.push(extensoAte999(centenasFinal));
+
+    let resultado = partes.join(" e ");
+    if (!resultado) resultado = "zero";
+
+    resultado += inteiro === 1 ? " real" : " reais";
+
+    if (centavos > 0) {
+        resultado += " e " + (centavos === 1
+            ? extensoAte999(centavos) + " centavo"
+            : extensoAte999(centavos) + " centavos");
+    }
+
+    return resultado;
+}
+
+// Função principal para gerar a nota promissória
 window.gerarNotaPromissoria = async function () {
     const { jsPDF } = window.jspdf;
 
@@ -88,13 +144,13 @@ window.gerarNotaPromissoria = async function () {
     // Texto do corpo (adaptado com dados reais)
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const longText = `Ao(s) um dia(s) do mês de janeiro do ano de dois mil e vinte e dois pagarei por esta única via de NOTA PROMISSÓRIA à ${dados.nomeFavorecido}, CPF/CNPJ ${dados.cnpjFavorecido}, na praça de ${dados.pracaPagamento}, ou à sua ordem, a quantia de ${dados.valorNotaPromissoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} em moeda corrente nacional.`;
+    const longText = `Ao(s) um dia(s) do mês de janeiro do ano de dois mil e vinte e dois pagarei por esta única via de NOTA PROMISSÓRIA à ${dados.nomeFavorecido}, CPF/CNPJ ${dados.cnpjFavorecido}, na praça de ${dados.pracaPagamento}, ou à sua ordem, a quantia de ${dados.valorNotaPromissoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} (${numeroPorExtenso(dados.valorNotaPromissoria).toUpperCase()}) em moeda corrente nacional.`;
     doc.text(longText, margemLateral, yAtual, {
         align: "justify",
         maxWidth: (larguraPagina - (margemLateral * 2)),
         lineHeightFactor: 1.5
     });
-    yAtual += 20;
+    yAtual += 30;
 
     // Dados complementares
     doc.setFontSize(8);
