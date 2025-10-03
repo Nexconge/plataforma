@@ -115,6 +115,7 @@ window.gerarNotaPromissoria = async function () {
 
     // Assinatura Assinante Adicional
     if (dados.nomeAssinanteAdc !== "" && dados.cpfCnpjAssinanteAdc !== "") {
+        yAtual -= 20;
         startX = larguraPagina - margemLateral - 75;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual - 25, endX, yAtual - 25);
