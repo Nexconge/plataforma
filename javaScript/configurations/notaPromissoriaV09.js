@@ -14,8 +14,16 @@ window.gerarNotaPromissoria = async function () {
         enderecoEmitente: document.getElementById("inputEnderecoEmitente")?.value?.trim(),
         empreendimento: document.getElementById("inputEmpreendimento")?.value?.trim(),
         complemento: document.getElementById("inputComplemento")?.value?.trim(),
+        nomeAssinanteAdc: document.getElementById("inputNomeAssinanteAdc")?.value?.trim(),
+        cpfCnpjAssinanteAdc: document.getElementById("inputCpfCnpjAssinanteAdc")?.value?.trim(),
         nomeAvalista_1: document.getElementById("inputNomeAvalista_1")?.value?.trim(),
         cpfCnpjAvalista_1: document.getElementById("inputCpfCnpjAvalista_1")?.value?.trim(),
+        nomeAvalista_2: document.getElementById("inputNomeAvalista_2")?.value?.trim(),
+        cpfCnpjAvalista_2: document.getElementById("inputCpfCnpjAvalista_2")?.value?.trim(),
+        nomeAvalista_3: document.getElementById("inputNomeAvalista_3")?.value?.trim(),
+        cpfCnpjAvalista_3: document.getElementById("inputCpfCnpjAvalista_3")?.value?.trim(),
+        nomeAvalista_4: document.getElementById("inputNomeAvalista_4")?.value?.trim(),
+        cpfCnpjAvalista_4: document.getElementById("inputCpfCnpjAvalista_4")?.value?.trim(),
     };
     console.log("Dados capturados para a nota promissória:", dados);
 
@@ -96,7 +104,7 @@ window.gerarNotaPromissoria = async function () {
     doc.text(`Empreendimento: ${dados.empreendimento}`, margemLateral, yAtual); yAtual += 5;
     doc.text(`Complemento: ${dados.complemento}`, margemLateral, yAtual); yAtual += 5;
 
-    // Assinaturas
+    // Assinatura Emitente
     yAtual += 15;
     doc.line(startX, yAtual, endX, yAtual);
     yAtual += 5;
@@ -105,9 +113,16 @@ window.gerarNotaPromissoria = async function () {
     doc.text(dados.cpfCnpjEmitente, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
     doc.text("Emitente", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
 
-    // Rodapé
-    doc.setFontSize(10);
-    doc.text("Documento gerado automaticamente", 20, 280);
+    // Assinatura Assinante Adicional
+    if (dados.nomeAssinanteAdc !== "" && dados.cpfCnpjAssinanteAdc !== "") {
+        startX = larguraPagina - margemLateral - 75;
+        endX = larguraPagina - margemLateral;
+        doc.line(startX, yAtual - 25, endX, yAtual - 25);
+        doc.setFontSize(8);
+        doc.text(dados.nomeAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual - 20, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual - 15, { align: "center" }); yAtual += 5;
+        doc.text("Assinante Adicional", (startX + ((endX - startX) / 2)), yAtual - 10, { align: "center" }); yAtual += 5;
+    }
 
     // Borda do documento
     margemLateral -= 5;
