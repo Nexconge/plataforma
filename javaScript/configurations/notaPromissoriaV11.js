@@ -118,7 +118,8 @@ window.gerarNotaPromissoria = async function () {
         yAtual -= 20;
         startX = larguraPagina - margemLateral - 75;
         endX = larguraPagina - margemLateral;
-        doc.line(startX, yAtual - 25, endX, yAtual - 25);
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
         doc.setFontSize(8);
         doc.text(dados.nomeAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual - 20, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual - 15, { align: "center" }); yAtual += 5;
