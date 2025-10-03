@@ -56,13 +56,13 @@ function numeroPorExtenso(valor) {
 // Função principal para gerar a nota promissória
 window.gerarNotaPromissoria = async function () {
     const { jsPDF } = window.jspdf;
-    const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    // const formatadorDeMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
     // --- Captura de dados em um objeto ---
     const dados = {
         numeroNotaPromissoria: document.getElementById("inputNumeroNotaPromissoria")?.value?.trim(),
         dataVencimento: document.getElementById("inputDataVencimento")?.value?.trim(),
-        valorNotaPromissoria: document.getElementById("inputValorNotaPromissoria")?.value?.trim(),
+        valorNotaPromissoria: parseFloat(document.getElementById("inputValorNotaPromissoria")?.value?.trim().replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
         nomeFavorecido: document.getElementById("inputNomeFavorecido")?.value?.trim(),
         cnpjFavorecido: document.getElementById("inputCpfCnpjFavorecido")?.value?.trim(),
         pracaPagamento: document.getElementById("inputPracaPagamento")?.value?.trim(),
@@ -83,7 +83,6 @@ window.gerarNotaPromissoria = async function () {
         cpfCnpjAvalista_4: document.getElementById("inputCpfCnpjAvalista_4")?.value?.trim(),
     };
     console.log("Dados capturados para a nota promissória:", dados);
-    console.log(valorNotaPromissoria)
 
     // --- Validação: todos os campos obrigatórios ---
     const obrigatorios = [
