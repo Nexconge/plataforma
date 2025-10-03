@@ -45,6 +45,7 @@ class MapaLotesManager {
         this._renderLotes(this.allLotes);
         this._populateEmpreendimentoFilter();
         this._centralizeView();
+        this._installQuadraZoomHandler(this.map);
     }
 
     //VERSAO BUBBLE
@@ -179,6 +180,32 @@ class MapaLotesManager {
         this._handleFilterChange();
     }
 
+    _installQuadraZoomHandler(map) {
+        const container = map.getContainer();
+
+        function updateQuadraScale() {
+            const z = map.getZoom();
+            // calcula escala relativa (ajuste a fórmula se quiser outra sensibilidade)
+            const rawScale = z / BASE_ZOOM;
+            const scale = Math.max(MIN_SCALE, rawScale);
+
+            // define variável CSS no container do mapa — afeta todas as quadra-tooltip sem tocar DOM individual
+            container.style.setProperty('--quadra-scale', String(scale));
+
+            // controla visibilidade global abaixo de certo zoom
+            if (z < MIN_ZOOM_SHOW) {
+            container.classList.add('quadra-hidden');
+            } else {
+            container.classList.remove('quadra-hidden');
+            }
+        }
+
+        // usa ambos 'zoom' e 'zoomend' para ser mais responsivo (algumas versões/tempos)
+        map.on('zoom zoomend', updateQuadraScale);
+
+        // dispara uma vez agora (útil se o mapa não começar no zoom padrão)
+        updateQuadraScale();
+    }
 
     _getLoteColor(lote) {
         const isZonaAtiva = document.querySelector("#zona input[type='checkbox']")?.checked;
