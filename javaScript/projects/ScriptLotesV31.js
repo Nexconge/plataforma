@@ -33,7 +33,8 @@ class MapaLotesManager {
 
         this._initMap();
         this._setupEventListeners();
-
+        this._installQuadraZoomHandler(this.map);
+        
         this.allLotes = await this._fetchLotesPermitidos();
 
         if (!this.allLotes.length) {
@@ -179,31 +180,30 @@ class MapaLotesManager {
         this._handleFilterChange();
     }
 
+    
     _installQuadraZoomHandler(map) {
-        const container = map.getContainer();
-
         function updateQuadraScale() {
             const z = map.getZoom();
-            // calcula escala relativa (ajuste a fórmula se quiser outra sensibilidade)
-            const rawScale = z / BASE_ZOOM;
-            const scale = Math.max(MIN_SCALE, rawScale);
+            const baseZoom = 15;   // zoom de referência
+            const minZoomShow = 13;
+            const minScale = 0.45;
 
-            // define variável CSS no container do mapa — afeta todas as quadra-tooltip sem tocar DOM individual
-            container.style.setProperty('--quadra-scale', String(scale));
+            const rawScale = z / baseZoom;
+            const scale = Math.max(minScale, rawScale);
 
-            // controla visibilidade global abaixo de certo zoom
-            if (z < MIN_ZOOM_SHOW) {
-            container.classList.add('quadra-hidden');
+            // aplica em nível global (todas .quadra-tooltip herdam)
+            document.documentElement.style.setProperty('--quadra-scale', String(scale));
+
+            // controla visibilidade
+            if (z < minZoomShow) {
+            document.documentElement.classList.add('quadra-hidden');
             } else {
-            container.classList.remove('quadra-hidden');
+            document.documentElement.classList.remove('quadra-hidden');
             }
         }
 
-        // usa ambos 'zoom' e 'zoomend' para ser mais responsivo (algumas versões/tempos)
         map.on('zoom zoomend', updateQuadraScale);
-
-        // dispara uma vez agora (útil se o mapa não começar no zoom padrão)
-        updateQuadraScale();
+        updateQuadraScale(); // roda na carga inicial
     }
 
     _getLoteColor(lote) {
