@@ -215,8 +215,8 @@ window.gerarNotaPromissoria = async function () {
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
         doc.setFontSize(8);
-        doc.text(dados.nomeAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        doc.text(dados.cpfCnpjAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.nomeAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
@@ -227,8 +227,8 @@ window.gerarNotaPromissoria = async function () {
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
         doc.setFontSize(8);
-        doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.nomeAvalista_4, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_4, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
