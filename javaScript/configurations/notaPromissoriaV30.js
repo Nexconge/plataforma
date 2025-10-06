@@ -250,7 +250,7 @@ window.gerarNotaPromissoria = async function () {
     // Assinatura Assinante Adicional
     if (dados.nomeAssinanteAdc !== "" && dados.cpfCnpjAssinanteAdc !== "") {
         yAtual -= 20;
-        startX = larguraPagina - margemLateral - 75;
+        startX = larguraPagina - margemLateral - 85;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
@@ -264,7 +264,7 @@ window.gerarNotaPromissoria = async function () {
     if (dados.nomeAvalista_1 !== "" && dados.cpfCnpjAvalista_1 !== "") {
         yAtual += 20;
         startX = margemLateral;
-        endX = margemLateral + 75;
+        endX = margemLateral + 85;
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
         doc.setFontSize(8);
@@ -275,7 +275,7 @@ window.gerarNotaPromissoria = async function () {
 
     if (dados.nomeAvalista_2 !== "" && dados.cpfCnpjAvalista_2 !== "") {
         yAtual -= 20;
-        startX = larguraPagina - margemLateral - 75;
+        startX = larguraPagina - margemLateral - 85;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
@@ -288,7 +288,7 @@ window.gerarNotaPromissoria = async function () {
     if (dados.nomeAvalista_3 !== "" && dados.cpfCnpjAvalista_3 !== "") {
         yAtual += 20;
         startX = margemLateral;
-        endX = margemLateral + 75;
+        endX = margemLateral + 85;
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
         doc.setFontSize(8);
@@ -299,7 +299,7 @@ window.gerarNotaPromissoria = async function () {
 
     if (dados.nomeAvalista_4 !== "" && dados.cpfCnpjAvalista_4 !== "") {
         yAtual -= 20;
-        startX = larguraPagina - margemLateral - 75;
+        startX = larguraPagina - margemLateral - 85;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual, endX, yAtual);
         yAtual += 5;
