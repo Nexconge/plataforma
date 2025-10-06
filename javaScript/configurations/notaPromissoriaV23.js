@@ -111,8 +111,8 @@ window.gerarNotaPromissoria = async function () {
     // Dimensões da página A4
     const larguraPagina = 210;
     const alturaPagina = 297;
-    let margemLateral = 10;
-    let margemSuperior = 20;
+    let margemLateral = 15;
+    let margemSuperior = 15;
     let yAtual = margemSuperior + 10;
     let startX = margemLateral;
     let endX = margemLateral + 85;
