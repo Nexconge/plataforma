@@ -141,7 +141,7 @@ class MapaLotesManager {
                     permanent: true,
                     direction: "bottom",
                     className: "quadra-tooltip",
-                    offset: [-4, 2] //remove deslocamento padrão
+                    offset: [-6, 1.5] //remove deslocamento padrão
                 });
 
                 marker.loteData = lote;
