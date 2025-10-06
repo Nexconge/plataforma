@@ -120,7 +120,7 @@ window.gerarNotaPromissoria = async function () {
     // Título
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("NOTA PROMISSÓRIA", margemLateral, yAtual);
+    doc.text("NOTA PROMISSÓRIA - Nº 1", margemLateral, yAtual);
 
     // Vencimento
     doc.setFontSize(14);
