@@ -53,6 +53,50 @@ function numeroPorExtenso(valor) {
     return resultado;
 }
 
+// Função para escrever data por extenso 
+function dataPorExtenso(dataStr) {
+  const [diaStr, mesStr, anoStr] = dataStr.split("/");
+
+  const dia = parseInt(diaStr, 10);
+  const mes = parseInt(mesStr, 10);
+  const ano = parseInt(anoStr, 10);
+
+  const meses = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+  ];
+
+  const numerosPorExtenso = [
+    "", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez",
+    "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove", "vinte"
+  ];
+
+  function escreverNumeroExtenso(n) {
+    if (n <= 20) return numerosPorExtenso[n];
+    const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+    const unidades = numerosPorExtenso[n % 10];
+    const dezena = dezenas[Math.floor(n / 10)];
+    return unidades ? `${dezena} e ${unidades}` : dezena;
+  }
+
+  function escreverAnoExtenso(ano) {
+    const milhar = Math.floor(ano / 1000); // 2
+    const centena = Math.floor((ano % 1000) / 100); // 0
+    const dezenaUnidade = ano % 100; // 29
+
+    let resultado = "dois mil";
+    if (centena > 0) resultado += ` e ${numerosPorExtenso[centena * 100] || escreverNumeroExtenso(centena * 100)}`;
+    if (dezenaUnidade > 0) resultado += ` e ${numerosPorExtenso[dezenaUnidade] || escreverNumeroExtenso(dezenaUnidade)}`;
+    return resultado;
+  }
+
+  const diaExtenso = escreverNumeroExtenso(dia);
+  const mesExtenso = meses[mes - 1];
+  const anoExtenso = escreverAnoExtenso(ano);
+
+  return `${diaExtenso} dias do mês de ${mesExtenso} do ano de ${anoExtenso}`;
+}
+
 // Função principal para gerar a nota promissória
 window.gerarNotaPromissoria = async function () {
     const { jsPDF } = window.jspdf;
@@ -145,7 +189,7 @@ window.gerarNotaPromissoria = async function () {
     // Texto do corpo (adaptado com dados reais)
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const longText = `Ao(s) um dia(s) do mês de janeiro do ano de dois mil e vinte e dois pagarei por esta única via de NOTA PROMISSÓRIA à ${dados.nomeFavorecido}, CPF/CNPJ ${dados.cnpjFavorecido}, na praça de ${dados.pracaPagamento}, ou à sua ordem, a quantia de ${dados.valorNotaPromissoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} (${numeroPorExtenso(dados.valorNotaPromissoria).toUpperCase()}) em moeda corrente nacional.`;
+    const longText = `Ao(s) ${dataPorExtenso(dados.dataVencimento)} pagarei por esta única via de NOTA PROMISSÓRIA à ${dados.nomeFavorecido}, CPF/CNPJ ${dados.cnpjFavorecido}, na praça de ${dados.pracaPagamento}, ou à sua ordem, a quantia de ${dados.valorNotaPromissoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} (${numeroPorExtenso(dados.valorNotaPromissoria).toUpperCase()}) em moeda corrente nacional.`;
     doc.text(longText, margemLateral, yAtual, {
         align: "justify",
         maxWidth: (larguraPagina - (margemLateral * 2)),
