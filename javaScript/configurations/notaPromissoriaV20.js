@@ -162,7 +162,7 @@ window.gerarNotaPromissoria = async function () {
     doc.text(`Complemento: ${dados.complemento}`, margemLateral, yAtual); yAtual += 5;
 
     // Assinatura Emitente
-    yAtual += 15;
+    yAtual += 20;
     doc.line(startX, yAtual, endX, yAtual);
     yAtual += 5;
     doc.setFontSize(8);
@@ -185,7 +185,7 @@ window.gerarNotaPromissoria = async function () {
 
     // Assinatura Avalistas
     if (dados.nomeAvalista_1 !== "" && dados.cpfCnpjAvalista_1 !== "") {
-        yAtual += 15;
+        yAtual += 20;
         startX = margemLateral;
         endX = margemLateral + 75;
         doc.line(startX, yAtual, endX, yAtual);
