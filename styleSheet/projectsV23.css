@@ -46,7 +46,8 @@ label {
 
 .quadra-tooltip {
   font-weight: 900;
-  font-size: 20px;
+  font-size: 30px;
+  font-style: bold;
   color: #111;
   -webkit-text-stroke: 0.5px #fff;
   text-shadow:
@@ -59,6 +60,7 @@ label {
   white-space: nowrap;
   text-align: center;
 }
+
 .quadra-hidden .quadra-tooltip {
   display: none !important;
 }
