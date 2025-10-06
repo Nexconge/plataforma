@@ -92,8 +92,8 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
         colunas.forEach(coluna => {
             let valor = matrizDRE[classe]?.[coluna] || 0;
 
-
             // Se for Caixa Inicial ou Final e a coluna for anterior à primeiraChave → força 0
+            console.log(temChaves, classe, coluna, PeUchave);
             if (temChaves) {
                 if ((classe === 'Caixa Inicial' || classe === 'Caixa Final') 
                     && (compararChaves(coluna, PeUchave.primeiraChave) < 0) || (compararChaves(coluna, PeUchave.ultimaChave) > 0)) {
