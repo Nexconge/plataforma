@@ -45,13 +45,13 @@ label {
 }
 
 .quadra-tooltip {
-  font-weight: 800;
+  font-weight: 900;
   font-size: 20px;
   color: #111;
-  -webkit-text-stroke: 2px #fff;
+  -webkit-text-stroke: 0.5px #fff;
   text-shadow:
-    0 0 3px rgba(255,255,255,0.9),
-    0 0 6px rgba(255,255,255,0.7);
+    0 0 2px rgba(255,255,255,0.9),
+    0 0 4px rgba(255,255,255,0.7);
   background: none !important;
   border: none !important;
   box-shadow: none !important;
