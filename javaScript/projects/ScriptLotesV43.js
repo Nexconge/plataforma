@@ -125,52 +125,46 @@ class MapaLotesManager {
                 if (!Array.isArray(coordenadas) || coordenadas.length === 0) return;
             } catch { return; }
 
-            const cor = this._getLoteColor(lote);
-
             if (lote.Quadra) {
-                // Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
 
-                const circle = L.circle(centro, {
-                    radius: 1,
-                    color: "invisible",
-                    fillOpacity: 0,
-                    weight: 1
+                // marcador invisível só para ancorar o tooltip
+                const marker = L.marker(centro, {
+                    opacity: 0, // invisível, mas mantém posição no mapa
+                    interactive: false // evita interferir em cliques
                 });
 
-                // Tooltip permanente para quadras
-                circle.bindTooltip(lote.Nome, {
+                marker.bindTooltip(lote.Nome, {
                     permanent: true,
-                    direction: "center",
-                    className: "quadra-tooltip"
+                    direction: "bottom",
+                    className: "quadra-tooltip",
+                    offset: [-6, 1.5] //remove deslocamento padrão
                 });
 
-                circle.loteData = lote;
-                this.polygons[lote._id] = circle;
-                circle.addTo(this.map);
-
-            } else {
+                marker.loteData = lote;
+                this.polygons[lote._id] = marker;
+                marker.addTo(this.map);
+            } 
+            if (!lote.Quadra){
                 // Caso normal: desenha o polígono
+                const cor = this._getLoteColor(lote);
                 const polygon = L.polygon(coordenadas, {
                     color: "black",
                     fillColor: cor,
                     weight: 0.6,
                     fillOpacity: 1
                 });
-
                 // Tooltip temporário para lotes
                 polygon.bindTooltip(
                     `${lote.Nome} - ${lote.Status || "Desconhecido"}`, 
                     { permanent: false }
                 );
-
                 polygon.loteData = lote;
                 polygon.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
                     this._handlePolygonClick(polygon);
                 });
-
                 this.polygons[lote._id] = polygon;
                 polygon.addTo(this.map);
             }
