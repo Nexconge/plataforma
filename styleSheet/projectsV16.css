@@ -47,29 +47,17 @@ label {
 .quadra-tooltip {
   font-weight: bold;
   font-size: 14px;
-  color: black; /* Cor principal do texto */
-  -webkit-text-stroke: 1px white; /* Contorno real (suportado pelo Chrome, Edge, Safari, Opera) */
-
-  /* Fallback com sombras (simula contorno branco em torno do texto) */
+  color: black;
+  -webkit-text-stroke: 1px white;
   text-shadow:
     1px 1px 0 white,
     -1px 1px 0 white,
     1px -1px 0 white,
-    -1px -1px 0 white,
-    0 1px 0 white,
-    1px 0 0 white,
-    0 -1px 0 white,
-    -1px 0 0 white;
-
-  background: none;
-  border: none;
-  box-shadow: none;
-  white-space: nowrap;
-  text-align: center;
-
-  transform-origin: center center;
-  transform: scale(var(--quadra-scale, 1));
-  transition: transform 120ms linear, opacity 120ms linear;
+    -1px -1px 0 white;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .quadra-hidden .quadra-tooltip {

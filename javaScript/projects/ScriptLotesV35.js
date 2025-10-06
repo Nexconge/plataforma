@@ -132,10 +132,10 @@ class MapaLotesManager {
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
                 const circle = L.circle(centro, {
-                    radius: 1,
-                    color: "invisible",
+                    radius: 0.1, // mínimo > 0 pra Leaflet não "sumir"
+                    color: "transparent",
                     fillOpacity: 0,
-                    weight: 1
+                    weight: 0
                 });
                 // Tooltip permanente para quadras
                 circle.bindTooltip(lote.Nome, {
