@@ -53,6 +53,50 @@ function numeroPorExtenso(valor) {
     return resultado;
 }
 
+// Função para escrever data por extenso 
+function dataPorExtenso(dataStr) {
+  const [diaStr, mesStr, anoStr] = dataStr.split("/");
+
+  const dia = parseInt(diaStr, 10);
+  const mes = parseInt(mesStr, 10);
+  const ano = parseInt(anoStr, 10);
+
+  const meses = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+  ];
+
+  const numerosPorExtenso = [
+    "", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez",
+    "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove", "vinte"
+  ];
+
+  function escreverNumeroExtenso(n) {
+    if (n <= 20) return numerosPorExtenso[n];
+    const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+    const unidades = numerosPorExtenso[n % 10];
+    const dezena = dezenas[Math.floor(n / 10)];
+    return unidades ? `${dezena} e ${unidades}` : dezena;
+  }
+
+  function escreverAnoExtenso(ano) {
+    const milhar = Math.floor(ano / 1000);
+    const centena = Math.floor((ano % 1000) / 100);
+    const dezenaUnidade = ano % 100;
+
+    let resultado = "dois mil";
+    if (centena > 0) resultado += ` e ${numerosPorExtenso[centena * 100] || escreverNumeroExtenso(centena * 100)}`;
+    if (dezenaUnidade > 0) resultado += ` e ${numerosPorExtenso[dezenaUnidade] || escreverNumeroExtenso(dezenaUnidade)}`;
+    return resultado;
+  }
+
+  const diaExtenso = escreverNumeroExtenso(dia);
+  const mesExtenso = meses[mes - 1];
+  const anoExtenso = escreverAnoExtenso(ano);
+
+  return `${diaExtenso} dias do mês de ${mesExtenso} do ano de ${anoExtenso}`;
+}
+
 // Função principal para gerar a nota promissória
 window.gerarNotaPromissoria = async function () {
     const { jsPDF } = window.jspdf;
@@ -62,7 +106,7 @@ window.gerarNotaPromissoria = async function () {
     const dados = {
         numeroNotaPromissoria: document.getElementById("inputNumeroNotaPromissoria")?.value?.trim(),
         dataVencimento: document.getElementById("inputDataVencimento")?.value?.trim(),
-        valorNotaPromissoria: parseFloat(document.getElementById("inputValorNotaPromissoria")?.value?.trim().replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.')) || 0,
+        valorNotaPromissoria: parseFloat(document.getElementById("inputValorNotaPromissoria")?.value?.trim().replace(/[R$\s,]/g, '').replace(/,/g, '')) || 0,
         nomeFavorecido: document.getElementById("inputNomeFavorecido")?.value?.trim(),
         cnpjFavorecido: document.getElementById("inputCpfCnpjFavorecido")?.value?.trim(),
         pracaPagamento: document.getElementById("inputPracaPagamento")?.value?.trim(),
@@ -111,16 +155,16 @@ window.gerarNotaPromissoria = async function () {
     // Dimensões da página A4
     const larguraPagina = 210;
     const alturaPagina = 297;
-    let margemLateral = 20;
-    let margemSuperior = 30;
+    let margemLateral = 15;
+    let margemSuperior = 15;
     let yAtual = margemSuperior + 10;
     let startX = margemLateral;
-    let endX = margemLateral + 75;
+    let endX = margemLateral + 85;
 
     // Título
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("NOTA PROMISSÓRIA", margemLateral, yAtual);
+    doc.text("NOTA PROMISSÓRIA - Nº 1", margemLateral, yAtual);
 
     // Vencimento
     doc.setFontSize(14);
@@ -145,7 +189,7 @@ window.gerarNotaPromissoria = async function () {
     // Texto do corpo (adaptado com dados reais)
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const longText = `Ao(s) um dia(s) do mês de janeiro do ano de dois mil e vinte e dois pagarei por esta única via de NOTA PROMISSÓRIA à ${dados.nomeFavorecido}, CPF/CNPJ ${dados.cnpjFavorecido}, na praça de ${dados.pracaPagamento}, ou à sua ordem, a quantia de ${dados.valorNotaPromissoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} (${numeroPorExtenso(dados.valorNotaPromissoria).toUpperCase()}) em moeda corrente nacional.`;
+    const longText = `Ao(s) ${dataPorExtenso(dados.dataVencimento)} pagarei por esta única via de NOTA PROMISSÓRIA à ${dados.nomeFavorecido}, CPF/CNPJ ${dados.cnpjFavorecido}, na praça de ${dados.pracaPagamento}, ou à sua ordem, a quantia de ${dados.valorNotaPromissoria.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} (${numeroPorExtenso(dados.valorNotaPromissoria).toUpperCase()}) em moeda corrente nacional.`;
     doc.text(longText, margemLateral, yAtual, {
         align: "justify",
         maxWidth: (larguraPagina - (margemLateral * 2)),
@@ -162,7 +206,7 @@ window.gerarNotaPromissoria = async function () {
     doc.text(`Complemento: ${dados.complemento}`, margemLateral, yAtual); yAtual += 5;
 
     // Assinatura Emitente
-    yAtual += 15;
+    yAtual += 20;
     doc.line(startX, yAtual, endX, yAtual);
     yAtual += 5;
     doc.setFontSize(8);
@@ -185,7 +229,7 @@ window.gerarNotaPromissoria = async function () {
 
     // Assinatura Avalistas
     if (dados.nomeAvalista_1 !== "" && dados.cpfCnpjAvalista_1 !== "") {
-        yAtual += 15;
+        yAtual += 20;
         startX = margemLateral;
         endX = margemLateral + 75;
         doc.line(startX, yAtual, endX, yAtual);
@@ -205,6 +249,30 @@ window.gerarNotaPromissoria = async function () {
         doc.setFontSize(8);
         doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+    }
+
+    if (dados.nomeAvalista_3 !== "" && dados.cpfCnpjAvalista_3 !== "") {
+        yAtual += 20;
+        startX = margemLateral;
+        endX = margemLateral + 75;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+        doc.setFontSize(8);
+        doc.text(dados.nomeAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+    }
+
+    if (dados.nomeAvalista_4 !== "" && dados.cpfCnpjAvalista_4 !== "") {
+        yAtual -= 20;
+        startX = larguraPagina - margemLateral - 75;
+        endX = larguraPagina - margemLateral;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+        doc.setFontSize(8);
+        doc.text(dados.nomeAvalista_4, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_4, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
