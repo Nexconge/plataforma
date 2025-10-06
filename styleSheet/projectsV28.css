@@ -46,7 +46,7 @@ label {
 
 .quadra-tooltip {
   font-weight: 900;
-  font-size: 20px !important; /* 🔹 força o tamanho real */
+  font-size: 23px !important; /* 🔹 força o tamanho real */
   line-height: 1 !important;
   color: #111;
 
