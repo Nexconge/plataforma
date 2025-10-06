@@ -111,11 +111,11 @@ window.gerarNotaPromissoria = async function () {
     // Dimensões da página A4
     const larguraPagina = 210;
     const alturaPagina = 297;
-    let margemLateral = 20;
-    let margemSuperior = 30;
+    let margemLateral = 10;
+    let margemSuperior = 20;
     let yAtual = margemSuperior + 10;
     let startX = margemLateral;
-    let endX = margemLateral + 75;
+    let endX = margemLateral + 85;
 
     // Título
     doc.setFontSize(14);
@@ -197,6 +197,30 @@ window.gerarNotaPromissoria = async function () {
     }
 
     if (dados.nomeAvalista_2 !== "" && dados.cpfCnpjAvalista_2 !== "") {
+        yAtual -= 20;
+        startX = larguraPagina - margemLateral - 75;
+        endX = larguraPagina - margemLateral;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+        doc.setFontSize(8);
+        doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+    }
+
+    if (dados.nomeAvalista_3 !== "" && dados.cpfCnpjAvalista_3 !== "") {
+        yAtual += 20;
+        startX = margemLateral;
+        endX = margemLateral + 75;
+        doc.line(startX, yAtual, endX, yAtual);
+        yAtual += 5;
+        doc.setFontSize(8);
+        doc.text(dados.nomeAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text(dados.cpfCnpjAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+    }
+
+    if (dados.nomeAvalista_4 !== "" && dados.cpfCnpjAvalista_4 !== "") {
         yAtual -= 20;
         startX = larguraPagina - margemLateral - 75;
         endX = larguraPagina - margemLateral;
