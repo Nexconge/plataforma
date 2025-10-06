@@ -139,7 +139,7 @@ class MapaLotesManager {
 
                 marker.bindTooltip(lote.Nome, {
                     permanent: true,
-                    direction: "center",
+                    direction: "bottom",
                     className: "quadra-tooltip",
                     offset: [-4, 2] //remove deslocamento padrão
                 });
