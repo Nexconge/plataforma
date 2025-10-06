@@ -47,9 +47,21 @@ label {
 .quadra-tooltip {
   font-weight: bold;
   font-size: 14px;
-  color: black;
-  text-shadow: 1px 1px 2px white;
-  background: transparent;
+  color: black; /* Cor principal do texto */
+  -webkit-text-stroke: 1px white; /* Contorno real (suportado pelo Chrome, Edge, Safari, Opera) */
+
+  /* Fallback com sombras (simula contorno branco em torno do texto) */
+  text-shadow:
+    1px 1px 0 white,
+    -1px 1px 0 white,
+    1px -1px 0 white,
+    -1px -1px 0 white,
+    0 1px 0 white,
+    1px 0 0 white,
+    0 -1px 0 white,
+    -1px 0 0 white;
+
+  background: none;
   border: none;
   box-shadow: none;
   white-space: nowrap;
