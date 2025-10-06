@@ -80,9 +80,9 @@ function dataPorExtenso(dataStr) {
   }
 
   function escreverAnoExtenso(ano) {
-    const milhar = Math.floor(ano / 1000); // 2
-    const centena = Math.floor((ano % 1000) / 100); // 0
-    const dezenaUnidade = ano % 100; // 29
+    const milhar = Math.floor(ano / 1000);
+    const centena = Math.floor((ano % 1000) / 100);
+    const dezenaUnidade = ano % 100;
 
     let resultado = "dois mil";
     if (centena > 0) resultado += ` e ${numerosPorExtenso[centena * 100] || escreverNumeroExtenso(centena * 100)}`;
