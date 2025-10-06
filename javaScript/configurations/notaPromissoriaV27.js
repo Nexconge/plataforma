@@ -97,6 +97,38 @@ function dataPorExtenso(dataStr) {
   return `${diaExtenso} dias do mês de ${mesExtenso} do ano de ${anoExtenso}`;
 }
 
+// Evento de mascara do campo de CPF
+document.getElementById("inputCpfCnpjFavorecido").classList.add("cpf-cnpj");
+document.getElementById("inputCpfCnpjEmitente").classList.add("cpf-cnpj");
+document.getElementById("inputCpfCnpjAssinanteAdc").classList.add("cpf-cnpj");
+document.getElementById("inputCpfCnpjAvalista_1").classList.add("cpf-cnpj");
+document.getElementById("inputCpfCnpjAvalista_2").classList.add("cpf-cnpj");
+document.getElementById("inputCpfCnpjAvalista_3").classList.add("cpf-cnpj");
+document.getElementById("inputCpfCnpjAvalista_4").classList.add("cpf-cnpj");
+
+const cpfInputs = document.querySelectorAll(".cpf-cnpj");
+cpfInputs.addEventListener('input', function () {
+    let valor = this.value.replace(/\D/g, ''); // só números
+    //Limita a 14 caracteres (CNPJ)
+    if (valor.length > 14) {
+        valor = valor.substring(0, 14);
+    }
+    //Aplica a mascara
+    if (valor.length <= 11) {
+        // CPF: 000.000.000-00
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+        // CNPJ: 00.000.000/0000-00
+        valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    this.value = valor;
+});
+
 // Função principal para gerar a nota promissória
 window.gerarNotaPromissoria = async function () {
     const { jsPDF } = window.jspdf;
