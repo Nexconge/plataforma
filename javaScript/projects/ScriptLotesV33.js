@@ -128,7 +128,7 @@ class MapaLotesManager {
             const cor = this._getLoteColor(lote);
 
             if (lote.Quadra) {
-                // Cria polígono temporário só para calcular centro
+                /* Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
 
@@ -148,7 +148,29 @@ class MapaLotesManager {
 
                 circle.loteData = lote;
                 this.polygons[lote._id] = circle;
-                circle.addTo(this.map);
+                circle.addTo(this.map);*/
+                const polygon = L.polygon(coordenadas, {
+                    color: "black",
+                    fillColor: null, // Sem preenchimento
+                    weight: 0.6,
+                    fillOpacity: 1,
+                    clickable: false // Desativa eventos de clique
+                });
+
+                // Tooltip temporário para lotes
+                polygon.bindTooltip(
+                    `${lote.Nome}`, 
+                    { permanent: true }
+                );
+
+                polygon.loteData = lote;
+                //polygon.on('click', (e) => {
+                  //  L.DomEvent.stopPropagation(e);
+                    //this._handlePolygonClick(polygon);
+                //});
+
+                this.polygons[lote._id] = polygon;
+                polygon.addTo(this.map);
 
             } else {
                 // Caso normal: desenha o polígono
