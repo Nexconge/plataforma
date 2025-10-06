@@ -86,6 +86,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
             cellClasse.classList.add('idented');
         }
 
+        const hoje = new Date();
         const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
         const anoAtual = new Date().getFullYear();
         const primeiraChave = PeUchave?.primeiraChave || `${mesAtual}-${anoAtual}`;
