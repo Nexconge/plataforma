@@ -137,10 +137,11 @@ class MapaLotesManager {
                     interactive: false // evita interferir em cliques
                 });
 
-                marker.bindTooltip(lote.Nome || "(sem nome)", {
+                marker.bindTooltip(lote.Nome, {
                     permanent: true,
                     direction: "center",
-                    className: "quadra-tooltip"
+                    className: "quadra-tooltip",
+                    offset: [0, 0] //remove deslocamento padrão
                 });
 
                 marker.loteData = lote;
