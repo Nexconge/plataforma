@@ -62,9 +62,6 @@ label {
   padding: 0 !important;
   white-space: nowrap;
   text-align: center;
-
-  transform: translate(-50%, -50%) scale(var(--quadra-scale, 1)) !important;
-  transform-origin: center center !important;
 }
 
 .quadra-hidden .quadra-tooltip {
