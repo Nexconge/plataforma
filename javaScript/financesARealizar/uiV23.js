@@ -86,18 +86,19 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
             cellClasse.classList.add('idented');
         }
 
-        // Verifica se PeUchave existe e tem primeiraChave/ultimaChave válidas se não quer dizer que o período é vazio
-        const temChaves = PeUchave && PeUchave.primeiraChave && PeUchave.ultimaChave;
+        const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+        const anoAtual = new Date().getFullYear();
+        const primeiraChave = PeUchave?.primeiraChave || `${mesAtual}-${anoAtual}`;
+        const ultimaChave = PeUchave?.ultimaChave || colunas[colunas.length - 1];
         // Renderiza os valores das colunas visíveis
         colunas.forEach(coluna => {
             let valor = matrizDRE[classe]?.[coluna] || 0;
             // Se for Caixa Inicial ou Final e a coluna for anterior à primeiraChave → força 0
-            if (temChaves) {
-                if ((classe === 'Caixa Inicial' || classe === 'Caixa Final') 
-                    && (compararChaves(coluna, PeUchave.primeiraChave) < 0) || (compararChaves(coluna, PeUchave.ultimaChave) > 0)) {
-                    valor = 0;
+            if (classe === 'Caixa Inicial' || classe === 'Caixa Final'){
+                if((compararChaves(coluna, primeiraChave) < 0) || (compararChaves(coluna, ultimaChave) > 0)){
+                    valor = 0
                 }
-            }   
+            }
             row.insertCell().textContent = formatarValor(valor);
         });
         
