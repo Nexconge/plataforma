@@ -142,6 +142,9 @@ class MapaLotesManager {
                     direction: "center",
                     className: "quadra-tooltip"
                 });
+                
+                console.log("Criando marcador para quadra:", lote);
+                console.log("Coordenadas do centro:", lote.loteData);
 
                 marker.loteData = lote;
                 this.polygons[lote._id] = marker;
