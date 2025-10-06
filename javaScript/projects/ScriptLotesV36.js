@@ -128,25 +128,24 @@ class MapaLotesManager {
             const cor = this._getLoteColor(lote);
 
             if (lote.Quadra) {
-                //Cria polígono temporário só para calcular centro
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
-                const circle = L.circle(centro, {
-                    radius: 0.1, // mínimo > 0 pra Leaflet não "sumir"
-                    color: "transparent",
-                    fillOpacity: 0,
-                    weight: 0
+
+                // marcador invisível só para ancorar o tooltip
+                const marker = L.marker(centro, {
+                    opacity: 0, // invisível, mas mantém posição no mapa
+                    interactive: false // evita interferir em cliques
                 });
-                // Tooltip permanente para quadras
-                circle.bindTooltip(lote.Nome, {
+
+                marker.bindTooltip(lote.Nome || "(sem nome)", {
                     permanent: true,
                     direction: "center",
                     className: "quadra-tooltip"
                 });
-                circle.loteData = lote;
-                this.polygons[lote._id] = circle;
-                circle.addTo(this.map);
 
+                marker.loteData = lote;
+                this.polygons[lote._id] = marker;
+                marker.addTo(this.map);
             } else {
                 // Caso normal: desenha o polígono
                 const polygon = L.polygon(coordenadas, {

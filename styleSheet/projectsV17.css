@@ -58,6 +58,8 @@ label {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .quadra-hidden .quadra-tooltip {
