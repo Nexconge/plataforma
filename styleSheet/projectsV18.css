@@ -45,15 +45,13 @@ label {
 }
 
 .quadra-tooltip {
-  font-weight: bold;
-  font-size: 14px;
+  font-weight: 900;
+  font-size: 15px;
   color: black;
-  -webkit-text-stroke: 1px white;
+  -webkit-text-stroke: 1.5px white;
   text-shadow:
-    1px 1px 0 white,
-    -1px 1px 0 white,
-    1px -1px 0 white,
-    -1px -1px 0 white;
+    1px 1px 2px white,
+    -1px -1px 2px white;
   background: none !important;
   border: none !important;
   box-shadow: none !important;
@@ -61,7 +59,6 @@ label {
   white-space: nowrap;
   text-align: center;
 }
-
 .quadra-hidden .quadra-tooltip {
   display: none !important;
 }
