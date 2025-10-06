@@ -270,7 +270,7 @@ window.gerarNotaPromissoria = async function () {
         doc.setFontSize(8);
         doc.text(dados.nomeAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Garantidor", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
     if (dados.nomeAvalista_2 !== "" && dados.cpfCnpjAvalista_2 !== "") {
@@ -282,7 +282,7 @@ window.gerarNotaPromissoria = async function () {
         doc.setFontSize(8);
         doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Garantidor", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
     if (dados.nomeAvalista_3 !== "" && dados.cpfCnpjAvalista_3 !== "") {
@@ -294,7 +294,7 @@ window.gerarNotaPromissoria = async function () {
         doc.setFontSize(8);
         doc.text(dados.nomeAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        doc.text("Avalista", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Garantidor", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
     if (dados.nomeAvalista_4 !== "" && dados.cpfCnpjAvalista_4 !== "") {
@@ -306,7 +306,7 @@ window.gerarNotaPromissoria = async function () {
         doc.setFontSize(8);
         doc.text(dados.nomeAvalista_4, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_4, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        doc.text("Avalista", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        doc.text("Garantidor", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
     // Borda do documento
