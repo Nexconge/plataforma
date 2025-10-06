@@ -125,8 +125,6 @@ class MapaLotesManager {
                 if (!Array.isArray(coordenadas) || coordenadas.length === 0) return;
             } catch { return; }
 
-            const cor = this._getLoteColor(lote);
-
             if (lote.Quadra) {
                 const tempPolygon = L.polygon(coordenadas);
                 const centro = tempPolygon.getBounds().getCenter();
@@ -147,27 +145,26 @@ class MapaLotesManager {
                 marker.loteData = lote;
                 this.polygons[lote._id] = marker;
                 marker.addTo(this.map);
-            } else {
+            } 
+            if (!lote.Quadra){
                 // Caso normal: desenha o polígono
+                const cor = this._getLoteColor(lote);
                 const polygon = L.polygon(coordenadas, {
                     color: "black",
                     fillColor: cor,
                     weight: 0.6,
                     fillOpacity: 1
                 });
-
                 // Tooltip temporário para lotes
                 polygon.bindTooltip(
                     `${lote.Nome} - ${lote.Status || "Desconhecido"}`, 
                     { permanent: false }
                 );
-
                 polygon.loteData = lote;
                 polygon.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
                     this._handlePolygonClick(polygon);
                 });
-
                 this.polygons[lote._id] = polygon;
                 polygon.addTo(this.map);
             }
