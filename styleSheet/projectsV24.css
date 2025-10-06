@@ -46,19 +46,21 @@ label {
 
 .quadra-tooltip {
   font-weight: 900;
-  font-size: 30px;
-  font-style: bold;
+  font-size: 28px !important; /* força o tamanho */
   color: #111;
-  -webkit-text-stroke: 0.5px #fff;
+  -webkit-text-stroke: 1px #fff;
   text-shadow:
-    0 0 2px rgba(255,255,255,0.9),
-    0 0 4px rgba(255,255,255,0.7);
+    0 0 3px rgba(255,255,255,0.9),
+    0 0 6px rgba(255,255,255,0.7),
+    0 0 9px rgba(255,255,255,0.5);
   background: none !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   white-space: nowrap;
   text-align: center;
+  transform: translate(-50%, -50%) !important; /* 🔹 centraliza no ponto exato */
+  transform-origin: center center !important;
 }
 
 .quadra-hidden .quadra-tooltip {
