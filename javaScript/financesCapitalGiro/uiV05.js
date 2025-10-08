@@ -508,11 +508,8 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
  * @param {string[]} colunas - O array de colunas (períodos) a serem exibidos.
  */
 function renderizarTabelaCapitalGiro(matriz, colunas) {
-    console.log("--- Debug Capital de Giro ---");
-    console.log("Passo 1: A função renderizarTabelaCapitalGiro foi chamada.");
 
     const tabela = document.getElementById('tabelaCapitalGiro');
-    console.log("Passo 2: Tentando encontrar o elemento #tabelaCapitalGiro. Encontrado:", tabela);
 
     if (!tabela) {
         console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML. A função será interrompida.");
@@ -525,8 +522,6 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia ou é inválida. Nada será renderizado.");
         return;
     }
-
-    console.log("Passo 3: O elemento da tabela foi encontrado e os dados são válidos. Começando a construir a tabela.");
 
     try {
         const fragment = document.createDocumentFragment();
@@ -583,12 +578,9 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         fragment.appendChild(tbody);
         tabela.appendChild(fragment);
 
-        console.log("Passo 4: A tabela foi construída e adicionada ao HTML com sucesso.");
-
     } catch (error) {
         console.error("ERRO DURANTE A RENDERIZAÇÃO: Um erro inesperado ocorreu ao construir a tabela.", error);
     }
-    console.log("--- Fim do Debug ---");
 }
 
 

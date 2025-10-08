@@ -192,6 +192,8 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     const contasAReceber = [];
     const contasAPagar = [];
 
+    const nomeConta = contaInfo ? contaInfo.nome : `Conta ${contaId}`;
+    console.log(`Processando Capital de Giro para a conta: ${nomeConta} (ID: ${contaId})`);
     if (Array.isArray(capitalDeGiro)) {
         capitalDeGiro.forEach(item => {
             // 1. Calcula o fluxo de caixa real (transações pagas)
@@ -205,6 +207,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
                 }
             }
 
+            console.log(item);
             // 2. Organiza itens de Contas a Pagar/Receber com datas parseadas
             if (item.DataVencimento && item.DataEmissao){
                 const itemProcessado = {
@@ -252,7 +255,6 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
     // Processa os dados para Capital de Giro
     const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
     const conta = AppCache.contasMap.get(String(contaId));
-    console.log(`Conta: ${conta}`, dadosCapitalDeGiro);
     return {
         realizado: dadosRealizado,
         arealizar: dadosARealizar,
