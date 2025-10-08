@@ -75,7 +75,7 @@ function extrairDadosDosTitulos(titulos) {
                 DataPagamento: null,
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
-                ValorTitulo: lancamento.ValorLancamento || 0,
+                ValorTitulo: valorFaltante || 0,
             });
         }
     });
@@ -249,7 +249,7 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
     const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId);
 
     // Processa os dados para Capital de Giro
-    const dadosCapitalDeGiro = processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId);
+    const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
 
     return {
         realizado: dadosRealizado,
