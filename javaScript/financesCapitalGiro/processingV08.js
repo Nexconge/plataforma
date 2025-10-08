@@ -544,12 +544,6 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
  * @param {Array} colunasVisiveis - As colunas (períodos 'MM-AAAA') a serem exibidas.
  * @returns {object} A matriz formatada para a tabela de Capital de Giro.
  */
-/**
- * Consolida os dados de capital de giro de múltiplas contas e gera a matriz final para exibição.
- * @param {Array} listaDeDadosCapitalGiro - Array com os objetos pré-processados de cada conta.
- * @param {Array} colunasVisiveis - As colunas (períodos 'MM-AAAA') a serem exibidas.
- * @returns {object} A matriz formatada para a tabela de Capital de Giro.
- */
 function gerarMatrizCapitalGiro(listaDeDadosCapitalGiro, colunasVisiveis) {
     // --- ETAPA 1: AGREGAÇÃO DOS DADOS ---
     // Nesta etapa, juntamos os dados de todas as contas selecionadas em estruturas únicas.
@@ -644,20 +638,26 @@ function gerarMatrizCapitalGiro(listaDeDadosCapitalGiro, colunasVisiveis) {
             });
         };
 
-        // Processa a lista de Contas a Receber.
+        // Processa Contas a Receber
         processarItens(contasAReceberAgregadas, item => {
-            const valor = item.ValorTitulo || 0;
-            // REGRA CURTO/LONGO PRAZO: Se o vencimento for ANTES ou NO fim do período, é Curto Prazo (vencido ou a vencer).
-            if (item.DataVencimento && item.DataVencimento <= fimPeriodo) cpAR += valor;
-            // Caso contrário, é Longo Prazo.
-            else lpAR += valor;
+            // SÓ PROCESSA SE TIVER DATA DE EMISSÃO.
+            // Isso impede que transações puras de caixa (sem emissão) sejam contadas como AR.
+            if (item.DataEmissao) {
+                const valor = item.ValorTitulo || 0;
+                // Regra: Vencimento passou em relação ao período = Curto Prazo
+                if (item.DataVencimento && item.DataVencimento <= fimPeriodo) cpAR += valor;
+                else lpAR += valor;
+            }
         });
 
-        // Processa a lista de Contas a Pagar usando a mesma lógica.
+        // Processa Contas a Pagar
         processarItens(contasAPagarAgregadas, item => {
-            const valor = item.ValorTitulo || 0;
-            if (item.DataVencimento && item.DataVencimento <= fimPeriodo) cpAP += valor;
-            else lpAP += valor;
+            // SÓ PROCESSA SE TIVER DATA DE EMISSÃO.
+            if (item.DataEmissao) {
+                const valor = item.ValorTitulo || 0;
+                if (item.DataVencimento && item.DataVencimento <= fimPeriodo) cpAP += valor;
+                else lpAP += valor;
+            }
         });
 
         // Armazena os totais calculados na matriz, na coluna do mês correspondente.
