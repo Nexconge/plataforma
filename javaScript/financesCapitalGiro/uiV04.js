@@ -264,7 +264,6 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     const { matrizDRE, matrizDepartamentos, PeUChave, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, PeUChave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
-    console.log(matrizCapitalGiro, colunas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
 /**
@@ -509,69 +508,87 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
  * @param {string[]} colunas - O array de colunas (períodos) a serem exibidos.
  */
 function renderizarTabelaCapitalGiro(matriz, colunas) {
+    console.log("--- Debug Capital de Giro ---");
+    console.log("Passo 1: A função renderizarTabelaCapitalGiro foi chamada.");
+
     const tabela = document.getElementById('tabelaCapitalGiro');
-    if (!tabela) return; // Aborta se o elemento da tabela não for encontrado.
+    console.log("Passo 2: Tentando encontrar o elemento #tabelaCapitalGiro. Encontrado:", tabela);
 
-    tabela.innerHTML = ''; // Limpa o conteúdo anterior
-    if (!matriz || Object.keys(matriz).length === 0) return; // Aborta se não houver dados.
+    if (!tabela) {
+        console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML. A função será interrompida.");
+        return;
+    }
+    
+    tabela.innerHTML = '';
+    
+    if (!matriz || Object.keys(matriz).length === 0) {
+        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia ou é inválida. Nada será renderizado.");
+        return;
+    }
 
-    const fragment = document.createDocumentFragment();
+    console.log("Passo 3: O elemento da tabela foi encontrado e os dados são válidos. Começando a construir a tabela.");
 
-    // 1. Cria o Cabeçalho da Tabela
-    const thead = document.createElement('thead');
-    const headerRow = thead.insertRow();
-    headerRow.className = 'cabecalho';
-    headerRow.insertCell().textContent = 'Capital de Giro';
-    colunas.forEach(col => headerRow.insertCell().textContent = col);
-    fragment.appendChild(thead);
+    try {
+        const fragment = document.createDocumentFragment();
 
-    const tbody = document.createElement('tbody');
+        // Cria o Cabeçalho
+        const thead = document.createElement('thead');
+        const headerRow = thead.insertRow();
+        headerRow.className = 'cabecalho';
+        headerRow.insertCell().textContent = 'Capital de Giro';
+        colunas.forEach(col => headerRow.insertCell().textContent = col);
+        fragment.appendChild(thead);
 
-    // 2. Funções auxiliares para criar as linhas e evitar repetição de código
-    const criarLinha = (label, chaveDados, isPercent = false, cssClass = '') => {
-        const row = tbody.insertRow();
-        if (cssClass) row.className = cssClass;
+        const tbody = document.createElement('tbody');
 
-        const cellLabel = row.insertCell();
-        cellLabel.textContent = label;
+        // Funções auxiliares
+        const criarLinha = (label, chaveDados, isPercent = false, cssClass = '') => {
+            const row = tbody.insertRow();
+            if (cssClass) row.className = cssClass;
+            
+            const cellLabel = row.insertCell();
+            cellLabel.textContent = label;
+            
+            const formatFunc = isPercent ? formatarPercentual : formatarValor;
+            colunas.forEach(col => {
+                const valor = matriz[chaveDados]?.[col] || 0;
+                const cell = row.insertCell();
+                cell.textContent = formatFunc(valor);
+            });
+        };
+        const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 1}" class="linhaBranco"></td>`;
 
-        const formatFunc = isPercent ? formatarPercentual : formatarValor;
-        colunas.forEach(col => {
-            const valor = matriz[chaveDados]?.[col] || 0;
-            const cell = row.insertCell();
-            cell.textContent = formatFunc(valor);
-        });
-    };
-    const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 1}" class="linhaBranco"></td>`;
+        // Monta o corpo da tabela
+        criarLinha('(+) Caixa', '(+) Caixa', false, 'linhatotal');
+        criarLinhaBranca();
+        criarLinha('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
+        criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
+        // ... (o restante da montagem da tabela continua aqui dentro)
+        criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
+        criarLinha('Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
+        criarLinha('Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
+        criarLinhaBranca();
+        criarLinha('(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
+        criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
+        criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
+        criarLinha('Curto Prazo (%)', 'Curto Prazo AP %', true, 'idented');
+        criarLinha('Longo Prazo (%)', 'Longo Prazo AP %', true, 'idented');
+        criarLinhaBranca();
+        criarLinha('(+) Curto Prazo (30 dias)', '(+) Curto Prazo (30 dias)', false, 'linhatotal');
+        criarLinha('(-) Longo Prazo (maior que 30 dias)', '(-) Longo Prazo (maior que 30 dias)', false, 'linhatotal');
+        criarLinhaBranca();
+        criarLinha('(=) Capital Líquido Circulante', '(=) Capital Líquido Circulante', false, 'linhaSaldo');
 
-    // 3. Monta o corpo da tabela, linha por linha, seguindo o layout da imagem
-    criarLinha('(+) Caixa', '(+) Caixa', false, 'linhatotal');
-    criarLinhaBranca();
 
-    criarLinha('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
-    criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
-    criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
-    criarLinha('Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
-    criarLinha('Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
-    criarLinhaBranca();
+        fragment.appendChild(tbody);
+        tabela.appendChild(fragment);
 
-    // NOTA: A linha de Estoques é omitida, pois não temos esses dados.
+        console.log("Passo 4: A tabela foi construída e adicionada ao HTML com sucesso.");
 
-    criarLinha('(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
-    criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
-    criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
-    criarLinha('Curto Prazo (%)', 'Curto Prazo AP %', true, 'idented');
-    criarLinha('Longo Prazo (%)', 'Longo Prazo AP %', true, 'idented');
-    criarLinhaBranca();
-
-    criarLinha('(+) Curto Prazo (30 dias)', '(+) Curto Prazo (30 dias)', false, 'linhatotal');
-    criarLinha('(-) Longo Prazo (maior que 30 dias)', '(-) Longo Prazo (maior que 30 dias)', false, 'linhatotal');
-    criarLinhaBranca();
-
-    criarLinha('(=) Capital Líquido Circulante', '(=) Capital Líquido Circulante', false, 'linhaSaldo');
-
-    fragment.appendChild(tbody);
-    tabela.appendChild(fragment);
+    } catch (error) {
+        console.error("ERRO DURANTE A RENDERIZAÇÃO: Um erro inesperado ocorreu ao construir a tabela.", error);
+    }
+    console.log("--- Fim do Debug ---");
 }
 
 
