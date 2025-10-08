@@ -282,9 +282,11 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     });
 }
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
+    //salve o valor atual para tentar preservar a seleção mais tarde
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
+    //Se modo de visualização for mensal, popula com anos disponíveis  
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
@@ -295,12 +297,14 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         // Preserva a seleção atual se ainda estiver disponível
         if (anosDisponiveis.includes(valorAtual)) {
             anoSelect.value = valorAtual;
+        // Se não estiver disponível, seleciona o mais recente para realizado e o mais antigo para a realizar
         } else if (projecao == "realizado") {
             anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
         } else {
             anoSelect.value = anosDisponiveis[0] || '';
         }
-    } else { // anual
+    // modo de visualização por periodo anual
+    } else { 
         const duracaoP = 6; // cada período tem 6 anos
         const periodos = [];
         const anosNums = anosDisponiveis.map(a => Number(a));
@@ -308,13 +312,15 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
 
         // Primeiro período
         let primeiroInicio;
+        //Se a projeção for a realizar, o primeiro período começa no ano atual + 5 anos
         if (projecao.toLowerCase() === 'arealizar') {
             primeiroInicio = anoAtual; // AnoAtual-(AnoAtual+5)
         } else {
+        // Se a projeção for realizado, o primeiro período começa 5 anos atrás até o ano atual
             primeiroInicio = anoAtual - duracaoP + 1; // (AnoAtual-5)-AnoAtual
         }
-        const anosDisponiveisSet = new Set(anosNums);
 
+        const anosDisponiveisSet = new Set(anosNums);
         // Função que verifica se ao menos um ano do período está disponível
         const periodoValido = (inicio) => {
             for (let i = 0; i < duracaoP; i++) {
@@ -322,26 +328,29 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             }
             return false;
         };
-        
-        // Adiciona períodos posteriores e anteriores se houver anos disponíveis
+        //Adiciona primeiro ano do período inicial e anteriores
         let inicio = primeiroInicio;
-        const maxAno = Math.max(...anosNums, primeiroInicio + 50); // limite arbitrário futuro
-        const minAno = Math.min(...anosNums, primeiroInicio - 50); // limite arbitrário passado
-        // Gera períodos posteriores
-        let p = primeiroInicio;
-        while (p <= maxAno) {
-            if (periodoValido(p)) periodos.push(p);
-            p += duracaoP;
+        while(true){
+            if(periodoValido(inicio)){
+                periodos.push(inicio);
+                inicio = inicio - duracaoP;
+            } else {
+                break;
+            }
         }
-        // Gera períodos anteriores
-        p = primeiroInicio - duracaoP;
-        while (p >= minAno) {
-            if (periodoValido(p)) periodos.push(p);
-            p -= duracaoP;
+        //Adiciona primeiro ano dos posteriores ao inicial
+        inicio = primeiroInicio + duracaoP;
+        while(true){
+            if(periodoValido(inicio)){
+                periodos.push(inicio);
+                inicio = inicio + duracaoP;
+            } else {
+                break;
+            }
         }
         // Remove duplicados e ordena do mais recente para o mais antigo
         const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
-        // Cria options
+        // Transforma os anos inicials em periodos aaaI-aaaF
         periodosUnicos.forEach(inicio => {
             const fim = inicio + duracaoP - 1;
             const option = document.createElement('option');
@@ -349,11 +358,10 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             option.textContent = `${inicio}-${fim}`;
             anoSelect.appendChild(option);
         });
-
+        
         // Preserva a seleção atual do período se ainda estiver disponível
         const valorAtualNum = Number(valorAtual);
         const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1);
-
         if (periodoAtual !== undefined) {
             anoSelect.value = periodoAtual;
         } else if (projecao.toLowerCase() === "realizado") {
@@ -443,7 +451,6 @@ function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
         console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
         return;
     }
-    
     //Pupula o filtro de projetos
     projSelect.innerHTML = '';
     Array.from(appCache.projetosMap.entries())
@@ -479,7 +486,6 @@ function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
         atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
         atualizarCallback();
     });
-
     // Configura o filtro de ano
     atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
     // Atualiza o filtro de contas com base no projeto selecionado
