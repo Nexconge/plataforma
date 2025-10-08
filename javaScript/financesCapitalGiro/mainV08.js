@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV05.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV06.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV04.js';
 
 // Inicia o chache
@@ -45,7 +45,7 @@ async function handleFiltroChange() {
             const contaId = contasParaProcessar[i];
             const apiResponse = responses[i];
             //Extrai os lançamentos dessa conta de cada titulo
-            let dadosExtraidos = { lancamentos: [], titulos: [] }; // Objeto padrão
+            let dadosExtraidos = { lancamentos: [], titulos: [], capitalDeGiro: [] }; // Objeto padrão
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);

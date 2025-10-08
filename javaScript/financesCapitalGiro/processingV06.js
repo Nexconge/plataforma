@@ -78,7 +78,6 @@ function extrairDadosDosTitulos(titulos) {
             });
         }
     });
-    console.log(capitalDeGiro);
     return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
 }
 function gerarDepartamentosObj(departamentos, valorLancamento) {
@@ -252,7 +251,8 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
 
     // Processa os dados para Capital de Giro
     const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
-
+    const conta = AppCache.contasMap.get(String(contaId));
+    console.log(`Conta: ${conta}`, dadosCapitalDeGiro);
     return {
         realizado: dadosRealizado,
         arealizar: dadosARealizar,
