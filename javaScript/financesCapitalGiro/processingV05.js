@@ -26,7 +26,6 @@ function extrairDadosDosTitulos(titulos) {
             return; // Pula para o próximo título do loop.
         }
 
-
         // 2. Itera sobre cada lançamento individual dentro do título.
         let ValorPago = 0;
         titulo.Lancamentos.forEach(lancamento => {
@@ -79,6 +78,7 @@ function extrairDadosDosTitulos(titulos) {
             });
         }
     });
+    console.log(capitalDeGiro);
     return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
 }
 function gerarDepartamentosObj(departamentos, valorLancamento) {
