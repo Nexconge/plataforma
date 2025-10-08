@@ -264,6 +264,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     const { matrizDRE, matrizDepartamentos, PeUChave, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, PeUChave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
+    console.log(matrizCapitalGiro, colunas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
 /**
