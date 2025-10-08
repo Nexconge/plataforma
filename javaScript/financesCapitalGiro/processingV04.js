@@ -207,17 +207,19 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
             }
 
             // 2. Organiza itens de Contas a Pagar/Receber com datas parseadas
-            const itemProcessado = {
-                ...item,
-                DataEmissao: parseDate(item.DataEmissao),
-                DataVencimento: parseDate(item.DataVencimento),
-                DataPagamento: parseDate(item.DataPagamento)
-            };
+            if (item.DataVencimento && item.DataEmissao){
+                const itemProcessado = {
+                    ...item,
+                    DataEmissao: parseDate(item.DataEmissao),
+                    DataVencimento: parseDate(item.DataVencimento),
+                    DataPagamento: parseDate(item.DataPagamento)
+                };
 
-            if (item.Natureza === 'R') {
-                contasAReceber.push(itemProcessado);
-            } else if (item.Natureza === 'P') {
-                contasAPagar.push(itemProcessado);
+                if (item.Natureza === 'R') {
+                    contasAReceber.push(itemProcessado);
+                } else if (item.Natureza === 'P') {
+                    contasAPagar.push(itemProcessado);
+                }
             }
         });
     }
@@ -540,106 +542,165 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
  * @param {Array} colunasVisiveis - As colunas (períodos 'MM-AAAA') a serem exibidas.
  * @returns {object} A matriz formatada para a tabela de Capital de Giro.
  */
+/**
+ * Consolida os dados de capital de giro de múltiplas contas e gera a matriz final para exibição.
+ * @param {Array} listaDeDadosCapitalGiro - Array com os objetos pré-processados de cada conta.
+ * @param {Array} colunasVisiveis - As colunas (períodos 'MM-AAAA') a serem exibidas.
+ * @returns {object} A matriz formatada para a tabela de Capital de Giro.
+ */
 function gerarMatrizCapitalGiro(listaDeDadosCapitalGiro, colunasVisiveis) {
-    // 1. Agrega dados de todas as contas selecionadas
+    // --- ETAPA 1: AGREGAÇÃO DOS DADOS ---
+    // Nesta etapa, juntamos os dados de todas as contas selecionadas em estruturas únicas.
+
+    // Inicializa a variável que somará o saldo inicial de todas as contas.
     let saldoInicialTotal = 0;
+    // Cria um objeto para armazenar a soma do fluxo de caixa de cada mês (ex: {'01-2025': 15000, '02-2025': -5000}).
     const fluxoCaixaAgregado = {};
+    // Cria um array para guardar todos os itens de "Contas a Receber" de todas as contas.
     const contasAReceberAgregadas = [];
+    // Cria um array para guardar todos os itens de "Contas a Pagar" de todas as contas.
     const contasAPagarAgregadas = [];
 
+    // Itera sobre os dados pré-processados de cada conta.
     listaDeDadosCapitalGiro.forEach(dadosConta => {
+        // Acumula o saldo inicial da conta ao total.
         saldoInicialTotal += dadosConta.saldoInicial || 0;
+        // Adiciona os arrays de contas a receber e a pagar da conta atual aos arrays agregados.
         contasAReceberAgregadas.push(...(dadosConta.contasAReceber || []));
         contasAPagarAgregadas.push(...(dadosConta.contasAPagar || []));
+        // Itera sobre o fluxo de caixa mensal da conta atual.
         for (const periodo in dadosConta.fluxoDeCaixaMensal) {
+            // Soma o valor do fluxo de caixa do período ao objeto agregado.
             fluxoCaixaAgregado[periodo] = (fluxoCaixaAgregado[periodo] || 0) + dadosConta.fluxoDeCaixaMensal[periodo];
         }
     });
 
+    // --- ETAPA 2: INICIALIZAÇÃO DA MATRIZ ---
+    // Prepara a estrutura principal do objeto que será retornado.
+
+    // Cria o objeto 'matriz' que conterá os dados finais.
     const matriz = {};
+    // Define as chaves (linhas) principais da nossa tabela.
     const chaves = ['(+) Caixa', '(+) Clientes a Receber', 'Curto Prazo AR', 'Longo Prazo AR',
-                    '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP'];
+                      '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP'];
+    // Inicializa cada chave da matriz como um objeto vazio, que depois conterá os valores por coluna (ex: {'01-2025': 123}).
     chaves.forEach(chave => matriz[chave] = {});
 
-    // 2. Calcula o saldo de caixa para cada período visível
+    // --- ETAPA 3: CÁLCULO DO SALDO DE CAIXA ---
+    // Calcula o saldo de caixa final para cada mês que será exibido na tabela.
+
+    // O 'caixaAcumulado' começa com o saldo inicial total de todas as contas.
     let caixaAcumulado = saldoInicialTotal;
+    // Pega todos os meses que tiveram movimentação de caixa e os ordena cronologicamente.
     const todosPeriodosHistoricos = Object.keys(fluxoCaixaAgregado).sort(compararChaves);
+    // Pega a primeira coluna (mês) que será visível na tabela para o usuário.
     const primeiraColunaVisivel = [...colunasVisiveis].sort(compararChaves)[0];
 
-    // Acumula o caixa de todos os meses ANTERIORES ao primeiro mês visível
+    // Verifica se existe uma primeira coluna visível para fazer o cálculo.
     if (primeiraColunaVisivel) {
+        // Itera sobre todos os meses com fluxo de caixa da história.
         todosPeriodosHistoricos.forEach(periodo => {
+            // Se o período for ANTERIOR ao primeiro mês visível na tela...
             if (compararChaves(periodo, primeiraColunaVisivel) < 0) {
+                // ...soma seu fluxo de caixa ao 'caixaAcumulado' para termos o saldo inicial correto.
                 caixaAcumulado += fluxoCaixaAgregado[periodo] || 0;
             }
         });
     }
 
-    // Agora, preenche o caixa para as colunas que serão exibidas
+    // Agora, itera apenas sobre os meses que serão visíveis na tabela.
     colunasVisiveis.forEach(coluna => {
+        // Soma o fluxo de caixa do mês atual ao saldo acumulado.
         caixaAcumulado += fluxoCaixaAgregado[coluna] || 0;
+        // Armazena o saldo final do mês na matriz, na linha '(+) Caixa' e na coluna correspondente.
         matriz['(+) Caixa'][coluna] = caixaAcumulado;
     });
 
-    // 3. Calcula Contas a Receber e a Pagar para cada período
+    // --- ETAPA 4: CÁLCULO DE CONTAS A RECEBER E A PAGAR ---
+    // Aplica as regras de negócio para classificar cada item como pendente em cada período.
+
+    // Função auxiliar para obter a data e hora final de um mês (ex: '01-2025' -> 31/01/2025 23:59:59).
     const getFimPeriodo = (periodo) => new Date(periodo.split('-')[1], periodo.split('-')[0], 0, 23, 59, 59, 999);
 
+    // Itera sobre cada coluna (mês) que será visível.
     colunasVisiveis.forEach(coluna => {
+        // Obtém a data final do período que estamos analisando.
         const fimPeriodo = getFimPeriodo(coluna);
-        let cpAR = 0, lpAR = 0, cpAP = 0, lpAP = 0;
+        // Inicializa as variáveis para somar os valores de curto e longo prazo do período.
+        let cpAR = 0, lpAR = 0, cpAP = 0, lpAP = 0; // (Curto/Longo Prazo, A Receber/A Pagar)
 
+        // Cria uma função auxiliar para processar os itens, evitando código repetido.
         const processarItens = (itens, cb) => {
+            // Itera sobre cada item (seja de contas a pagar ou a receber).
             itens.forEach(item => {
-                // Regra: Emitido até o fim do período E (pago após o período OU não pago)
+                // REGRA PRINCIPAL: Um item é considerado "em aberto" no fim do período se:
+                // Foi emitido ANTES ou NO fim do período E (não foi pago AINDA ou foi pago DEPOIS do fim do período).
                 if (item.DataEmissao && item.DataEmissao <= fimPeriodo && (!item.DataPagamento || item.DataPagamento > fimPeriodo)) {
+                    // Se o item cumpre a regra, executa a função de callback para classificá-lo.
                     cb(item);
                 }
             });
         };
 
-        // Processa Contas a Receber
+        // Processa a lista de Contas a Receber.
         processarItens(contasAReceberAgregadas, item => {
             const valor = item.ValorTitulo || 0;
-            // Regra: Vencimento passou em relação ao período = Curto Prazo
+            // REGRA CURTO/LONGO PRAZO: Se o vencimento for ANTES ou NO fim do período, é Curto Prazo (vencido ou a vencer).
             if (item.DataVencimento && item.DataVencimento <= fimPeriodo) cpAR += valor;
+            // Caso contrário, é Longo Prazo.
             else lpAR += valor;
         });
 
-        // Processa Contas a Pagar
+        // Processa a lista de Contas a Pagar usando a mesma lógica.
         processarItens(contasAPagarAgregadas, item => {
             const valor = item.ValorTitulo || 0;
             if (item.DataVencimento && item.DataVencimento <= fimPeriodo) cpAP += valor;
             else lpAP += valor;
         });
 
+        // Armazena os totais calculados na matriz, na coluna do mês correspondente.
         matriz['Curto Prazo AR'][coluna] = cpAR;
         matriz['Longo Prazo AR'][coluna] = lpAR;
         matriz['Curto Prazo AP'][coluna] = cpAP;
         matriz['Longo Prazo AP'][coluna] = lpAP;
     });
 
-    // 4. Calcula os totais, percentuais e linhas finais
+    // --- ETAPA 5: CÁLCULO DAS LINHAS DE TOTAIS E PERCENTUAIS ---
+    // Com os dados base calculados, agora geramos as linhas finais da tabela.
+
+    // Itera novamente sobre as colunas visíveis para calcular os totais de cada mês.
     colunasVisiveis.forEach(coluna => {
+        // Calcula o total de Contas a Receber (Curto + Longo Prazo).
         const totalAR = matriz['Curto Prazo AR'][coluna] + matriz['Longo Prazo AR'][coluna];
+        // Calcula o total de Contas a Pagar (Curto + Longo Prazo).
         const totalAP = matriz['Curto Prazo AP'][coluna] + matriz['Longo Prazo AP'][coluna];
 
+        // Armazena os totais na matriz.
         matriz['(+) Clientes a Receber'][coluna] = totalAR;
         matriz['(-) Fornecedores a Pagar'][coluna] = totalAP;
 
+        // Função auxiliar para garantir que as chaves das linhas calculadas existam na matriz.
         const initKey = k => matriz[k] = matriz[k] || {};
+        // Lista de todas as linhas que são calculadas nesta etapa.
         ['Curto Prazo AR %', 'Longo Prazo AR %', 'Curto Prazo AP %', 'Longo Prazo AP %', '(+) Curto Prazo (30 dias)', '(-) Longo Prazo (maior que 30 dias)', '(=) Capital Líquido Circulante']
         .forEach(initKey);
 
+        // Calcula os percentuais de Curto e Longo Prazo (verificando se o total é > 0 para evitar divisão por zero).
         matriz['Curto Prazo AR %'][coluna] = totalAR > 0 ? (matriz['Curto Prazo AR'][coluna] / totalAR) * 100 : 0;
         matriz['Longo Prazo AR %'][coluna] = totalAR > 0 ? (matriz['Longo Prazo AR'][coluna] / totalAR) * 100 : 0;
         matriz['Curto Prazo AP %'][coluna] = totalAP > 0 ? (matriz['Curto Prazo AP'][coluna] / totalAP) * 100 : 0;
         matriz['Longo Prazo AP %'][coluna] = totalAP > 0 ? (matriz['Longo Prazo AP'][coluna] / totalAP) * 100 : 0;
 
+        // Calcula as linhas de resultado do capital de giro.
+        // Necessidade de Capital de Giro de Curto Prazo.
         matriz['(+) Curto Prazo (30 dias)'][coluna] = matriz['Curto Prazo AR'][coluna] - matriz['Curto Prazo AP'][coluna];
+        // Saldo de Longo Prazo.
         matriz['(-) Longo Prazo (maior que 30 dias)'][coluna] = matriz['Longo Prazo AR'][coluna] - matriz['Longo Prazo AP'][coluna];
+        // Capital Líquido Circulante Total (Caixa + Contas a Receber - Contas a Pagar).
         matriz['(=) Capital Líquido Circulante'][coluna] = matriz['(+) Caixa'][coluna] + totalAR - totalAP;
     });
 
+    // Retorna a matriz completamente preenchida, pronta para ser renderizada na tela.
     return matriz;
 }
 // Obtem a primeira e ultima chave do periodo de dados selecionados
