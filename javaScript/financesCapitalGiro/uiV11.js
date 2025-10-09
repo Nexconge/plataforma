@@ -520,6 +520,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         headerRow.className = 'cabecalho';
         headerRow.insertCell().textContent = 'Capital de Giro';
         colunas.forEach(col => headerRow.insertCell().textContent = col);
+        headerRow.insertCell().textContent = "";
         fragment.appendChild(thead);
 
         const tbody = document.createElement('tbody');
@@ -538,8 +539,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
                 const cell = row.insertCell();
                 cell.textContent = formatFunc(valor);
             });
-            const ultimaCelula = row.insertCell();
-            ultimaCelula.textContent = formatFunc(0);
+            tow.insertCell().textContent = "";
         };
         const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 1}" class="linhaBranco"></td>`;
 
