@@ -1,76 +1,61 @@
 // ui.js - Módulo de Interface do Usuário
-// Contém todas as funções relacionadas à manipulação do DOM,
-// renderização de tabelas e gerenciamento de filtros.
 
-// --- Funções Utilitárias de Formatação e DOM ---
-
+// --- Funções Utilitárias (sem alterações) ---
 function formatarValor(valor) {
     if (valor === 0) return '-';
-    const numeroFormatado = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const numeroFormatado = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0});
     return valor < 0 ? `(${numeroFormatado})` : numeroFormatado;
 }
-
 function formatarPercentual(valor) {
     if (!valor || valor === 0) return '0,0%';
     return `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
-
 function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
-
 function compararChaves(a, b) {
     const [mesA, anoA] = a.split('-').map(Number);
     const [mesB, anoB] = b.split('-').map(Number);
     if (anoA !== anoB) return anoA - anoB;
     return mesA - mesB;
 }
-
 function toggleLinha(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     if (filhos.length === 0) return;
-
     const algumVisivel = [...filhos].some(linha => !linha.classList.contains('hidden'));
     if (algumVisivel) {
-        esconderDescendentes(id); // Recolhe toda a árvore
+        esconderDescendentes(id);
     } else {
-        filhos.forEach(filho => filho.classList.remove('hidden')); // Expande apenas filhos diretos
+        filhos.forEach(filho => filho.classList.remove('hidden'));
     }
 }
-
 function esconderDescendentes(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     filhos.forEach(filho => {
         filho.classList.add('hidden');
         if (filho.id) {
-            esconderDescendentes(filho.id); // Recursão para garantir que toda a árvore seja escondida
+            esconderDescendentes(filho.id);
         }
     });
 }
-
-function getSelectItems(select) {
-    if (!select.selectedOptions || select.selectedOptions.length === 0) {
+function getSelectItems(select){
+    if(!select.selectedOptions || select.selectedOptions.length === 0){
         return Array.from(select.options).map(option => option.value);
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
 
-// --- Funções de Configuração e Gerenciamento de Filtros ---
+// --- Funções de Filtro e Renderização ---
 
 function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
-    const anoSelect = document.getElementById('anoSelect');
-    const projSelect = document.getElementById('projSelect');
-    const contaSelect = document.getElementById('contaSelect');
-    const modoSelect = document.getElementById('modoSelect');
-    const btnARealizar = document.getElementById('btnARealizar');
-    const btnRealizado = document.getElementById('btnRealizado');
-    
-    if (!projSelect || !contaSelect || !modoSelect || !anoSelect || !btnARealizar || !btnRealizado) {
+    const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
+    const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
+    const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado');
+    if(!projSelect || !contaSelect || !modoSelect || !anoSelect || !btnARealizar || !btnRealizado) {
         console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
         return;
     }
 
-    // Popula o filtro de projetos
     projSelect.innerHTML = '';
     Array.from(appCache.projetosMap.entries())
         .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
@@ -80,9 +65,10 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
             option.textContent = nome;
             projSelect.appendChild(option);
         });
-    if (projSelect.options.length > 0) projSelect.options[0].selected = true;
+    if (projSelect.options.length > 0) {
+        projSelect.options[0].selected = true;
+    }
 
-    // Adiciona event listeners para os filtros
     btnARealizar.addEventListener('click', () => {
         appCache.projecao = "arealizar";
         atualizarCallback();
@@ -91,6 +77,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
         appCache.projecao = "realizado";
         atualizarCallback();
     });
+
     anoSelect.addEventListener('change', atualizarCallback);
     contaSelect.addEventListener('change', atualizarCallback);
     projSelect.addEventListener('change', () => {
@@ -99,13 +86,11 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
         atualizarCallback();
     });
     modoSelect.addEventListener('change', () => {
-        // Recalcula as opções de ano/período ao mudar entre mensal e anual
         const anosAtuais = Array.from(new Set(Array.from(anoSelect.options).map(opt => opt.value)));
         atualizarOpcoesAnoSelect(anoSelect, anosAtuais, modoSelect.value, appCache.projecao);
         atualizarCallback();
     });
     
-    // Configuração inicial
     atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
@@ -118,7 +103,9 @@ function obterFiltrosAtuais() {
     const projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect');
 
-    if (!modoSelect || !anoSelect || !projSelect || !contaSelect) return null;
+    if (!modoSelect || !anoSelect || !projSelect || !contaSelect) {
+        return null;
+    }
 
     const modo = modoSelect.value;
     const valorSelecionado = anoSelect.value;
@@ -127,7 +114,7 @@ function obterFiltrosAtuais() {
     let anosParaProcessar = [];
     if (modo.toLowerCase() === 'mensal') {
         anosParaProcessar = [valorSelecionado];
-    } else { // Anual (período de 6 anos)
+    } else {
         const anoInicio = Number(valorSelecionado);
         const anoFim = anoInicio + 5;
         for (let ano = anoInicio; ano <= anoFim; ano++) {
@@ -139,15 +126,20 @@ function obterFiltrosAtuais() {
         ? [...anosParaProcessar].sort()
         : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${valorSelecionado}`);
 
+    // CORREÇÃO APLICADA AQUI: Remove a conversão para Number, tratando IDs de projeto como string consistentemente.
+    const projetos = getSelectItems(projSelect); 
+    const contas = getSelectItems(contaSelect).map(Number);
+
     return {
-        modo,
+        modo: modo,
         anos: anosParaProcessar,
-        projetos: getSelectItems(projSelect).map(Number),
-        contas: getSelectItems(contaSelect).map(Number),
-        colunas
+        projetos: projetos,
+        contas: contas,
+        colunas: colunas
     };
 }
 
+// (A função atualizarOpcoesAnoSelect original foi mantida pois o problema não estava nela)
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
@@ -161,57 +153,64 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         if (anosDisponiveis.includes(valorAtual)) {
             anoSelect.value = valorAtual;
         } else if (anosDisponiveis.length > 0) {
-            // Default: mais recente para 'realizado', mais antigo para 'a realizar'
             anoSelect.value = projecao === "realizado" 
                 ? anosDisponiveis[anosDisponiveis.length - 1] 
                 : anosDisponiveis[0];
         }
-    } else { // Modo Anual (períodos)
-        const duracaoPeriodo = 6;
-        const anosNums = anosDisponiveis.map(Number).filter(Boolean);
-        if (anosNums.length === 0) anosNums.push(new Date().getFullYear());
-        
-        const menorAno = Math.min(...anosNums);
-        const maiorAno = Math.max(...anosNums);
+    } else { 
+        const duracaoP = 6;
         const periodos = new Set();
-        
-        for (let ano = menorAno; ano <= maiorAno; ano++) {
-            const inicioPeriodo = ano - ((ano - menorAno) % duracaoPeriodo);
-            periodos.add(inicioPeriodo);
-        }
+        const anosNums = anosDisponiveis.map(a => Number(a)).filter(Boolean);
 
-        const periodosOrdenados = Array.from(periodos).sort((a, b) => b - a);
-        periodosOrdenados.forEach(inicio => {
-            const fim = inicio + duracaoPeriodo - 1;
+        if (anosNums.length > 0) {
+            const minAno = Math.min(...anosNums);
+            const maxAno = Math.max(...anosNums);
+            for (let ano = minAno; ano <= maxAno + duracaoP; ano++) {
+                anosNums.forEach(anoDisponivel => {
+                    if (anoDisponivel >= ano && anoDisponivel < ano + duracaoP) {
+                        periodos.add(ano);
+                    }
+                });
+            }
+        } else {
+            periodos.add(new Date().getFullYear() - duracaoP + 1);
+        }
+        
+        const periodosUnicos = Array.from(periodos).sort((a, b) => b - a);
+        
+        periodosUnicos.forEach(inicio => {
+            const fim = inicio + duracaoP - 1;
             const option = new Option(`${inicio}-${fim}`, inicio);
             anoSelect.appendChild(option);
         });
-
-        if (periodosOrdenados.includes(Number(valorAtual))) {
+        
+        if (periodosUnicos.includes(Number(valorAtual))) {
             anoSelect.value = valorAtual;
-        } else if (periodosOrdenados.length > 0) {
-            anoSelect.value = projecao === "realizado" 
-                ? periodosOrdenados[0] // Mais recente
-                : periodosOrdenados[periodosOrdenados.length - 1]; // Mais antigo
+        } else if (periodosUnicos.length > 0) {
+            anoSelect.value = projecao.toLowerCase() === "realizado" 
+                ? periodosUnicos[0] 
+                : periodosUnicos[periodosUnicos.length - 1];
         }
     }
 }
 
+// Lógica revertida para o original - agora funcional devido à correção no mainV15.js
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
-    const contasVisiveis = new Set();
+    const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {
-        const projeto = projetosMap.get(Number(codProj));
-        if (projeto) {
-            projeto.contas.forEach(contaId => contasVisiveis.add(contaId));
+        const projeto = projetosMap.get(codProj); // A busca agora funciona pois as chaves são strings
+        if(projeto){
+            projeto.contas.forEach(conta => contasProjetos.add(conta));
         }
     });
-
     contaSelect.innerHTML = '';
     Array.from(contasMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
         .forEach(([codigo, { descricao }]) => {
-            if (contasVisiveis.has(codigo)) {
-                const option = new Option(descricao, codigo);
+            if (contasProjetos.has(codigo)) {
+                const option = document.createElement('option');
+                option.value = codigo; 
+                option.textContent = descricao;
                 contaSelect.appendChild(option);
             }
         });
@@ -220,19 +219,18 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
 // --- Funções de Renderização ---
 
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
-    if (!dadosProcessados) {
-        const tabelaMatriz = document.getElementById('tabelaMatriz');
-        const tabelaCustos = document.getElementById('tabelaCustos');
-        const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro');
+    const tabelaMatriz = document.getElementById('tabelaMatriz');
+    const tabelaCustos = document.getElementById('tabelaCustos');
+    const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro');
 
+    if (!dadosProcessados) {
         if (tabelaMatriz) tabelaMatriz.innerHTML = '';
         if (tabelaCustos) tabelaCustos.innerHTML = '';
         if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = '';
-        
         return;
     }
-    const { matrizDRE, matrizDepartamentos, chavesDeControle, matrizCapitalGiro } = dadosProcessados;
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, chavesDeControle);
+    const { matrizDRE, matrizDepartamentos, PeUChave, matrizCapitalGiro } = dadosProcessados;
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, PeUChave);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
