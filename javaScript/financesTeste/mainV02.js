@@ -4,7 +4,7 @@
 // Importa funções dos outros módulos
 import { buscarTitulos } from './apiV01.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV01.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV02.js';
 
 // Inicia o cache da aplicação
 let appCache = {

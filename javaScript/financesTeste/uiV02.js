@@ -221,9 +221,14 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
 
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (!dadosProcessados) {
-        document.getElementById('tabelaMatriz').innerHTML = '';
-        document.getElementById('tabelaCustos').innerHTML = '';
-        document.getElementById('tabelaCapitalGiro').innerHTML = '';
+        const tabelaMatriz = document.getElementById('tabelaMatriz');
+        const tabelaCustos = document.getElementById('tabelaCustos');
+        const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro');
+
+        if (tabelaMatriz) tabelaMatriz.innerHTML = '';
+        if (tabelaCustos) tabelaCustos.innerHTML = '';
+        if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = '';
+        
         return;
     }
     const { matrizDRE, matrizDepartamentos, chavesDeControle, matrizCapitalGiro } = dadosProcessados;
