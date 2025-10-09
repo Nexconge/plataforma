@@ -539,7 +539,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
                 const cell = row.insertCell();
                 cell.textContent = formatFunc(valor);
             });
-            tow.insertCell().textContent = "";
+            row.insertCell().textContent = "";
         };
         const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 1}" class="linhaBranco"></td>`;
 
