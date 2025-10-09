@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV10.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV11.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV05.js';
 
 // Inicia o chache
@@ -53,7 +53,7 @@ async function handleFiltroChange() {
                     // Filtra para garantir que estamos processando apenas lançamentos da conta correta
                     dadosExtraidos.lancamentos = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
                     dadosExtraidos.titulos = titulosEmAberto;
-                    dadosExtraidos.capitalDeGiro = capitalDeGiro;
+                    dadosExtraidos.capitalDeGiro = capitalDeGiro.filter(cg => Number(cg.CODContaC) === contaId);
                 } catch (e) {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }

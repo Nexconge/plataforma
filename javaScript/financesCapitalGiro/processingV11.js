@@ -46,12 +46,16 @@ function extrairDadosDosTitulos(titulos) {
                 Cliente: titulo.Cliente,
                 Departamentos: departamentosObj
             });
+            
+            let CCgiro = titulo.CODContaC
+            if (CCgiro == 0 ){CCgiro = lancamento.CODContaC}
             capitalDeGiro.push({
                 Natureza: titulo.Natureza,
                 DataPagamento: lancamento.DataLancamento || null,
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
                 ValorTitulo: lancamento.ValorLancamento || 0,
+                CODContaC: CCgiro || null,
             });
             //Subtrai valor do lançamento do valor do titulo (ValorBaixado desconsidera multa e juros)
             ValorPago += lancamento.ValorBaixado
@@ -75,6 +79,7 @@ function extrairDadosDosTitulos(titulos) {
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
                 ValorTitulo: valorFaltante || 0,
+                CODContaC: titulo.CODContaC || null,
             });
         }
     });
