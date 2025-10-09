@@ -1,64 +1,102 @@
 // ui.js
+// Este módulo contém todas as funções relacionadas à manipulação do DOM.
+// Inclui formatação de valores, gerenciamento de filtros, e a renderização das tabelas de dados.
 
-// Funções que não dependem de estado externo
+// --- Funções Utilitárias de Formatação e DOM ---
+/**
+ * Formata um número para exibição monetária no padrão brasileiro.
+ * Números negativos são envolvidos por parênteses. Zeros são exibidos como '-'.
+ * @param {number} valor - O número a ser formatado.
+ * @returns {string} O valor formatado como string.
+ */
 function formatarValor(valor) {
     if (valor === 0) return '-';
     const numeroFormatado = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0});
     return valor < 0 ? `(${numeroFormatado})` : numeroFormatado;
 }
+/**
+ * Formata um número como um percentual com uma casa decimal.
+ * @param {number} valor - O número a ser formatado.
+ * @returns {string} O valor formatado como string de percentual (ex: "15,5%").
+ */
 function formatarPercentual(valor) {
     if (!valor || valor === 0) return '0,0%';
-    // Garante que o número seja formatado com uma casa decimal.
     return `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
+/**
+ * Limpa e sanitiza uma string para que possa ser usada como um ID de elemento HTML.
+ * Remove acentos, caracteres especiais e espaços.
+ * @param {string} str - A string a ser sanitizada.
+ * @returns {string} A string segura para ser usada como ID.
+ */
 function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
+/**
+ * Compara duas chaves de período ("MM-AAAA") para ordenação cronológica.
+ * @param {string} a - Primeira chave.
+ * @param {string} b - Segunda chave.
+ * @returns {number} Negativo se a < b, positivo se a > b, 0 se iguais.
+ */
 function compararChaves(a, b) {
     const [mesA, anoA] = a.split('-').map(Number);
     const [mesB, anoB] = b.split('-').map(Number);
-
     if (anoA !== anoB) return anoA - anoB;
     return mesA - mesB;
 }
+/**
+ * Alterna a visibilidade das linhas filhas diretas de um elemento em uma tabela hierárquica.
+ * @param {string} id - O ID do elemento pai cuja linha foi clicada.
+ */
 function toggleLinha(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     if (filhos.length === 0) return;
-
     const algumVisivel = [...filhos].some(linha => !linha.classList.contains('hidden'));
-
     if (algumVisivel) {
-        // Recolher: esconde todos os filhos e descendentes
-        esconderDescendentes(id);
+        esconderDescendentes(id); // Se algum filho está visível, recolhe toda a árvore.
     } else {
-        // Expandir: mostra apenas os filhos diretos
-        filhos.forEach(filho => filho.classList.remove('hidden'));
+        filhos.forEach(filho => filho.classList.remove('hidden')); // Senão, expande apenas o primeiro nível.
     }
 }
+/**
+ * Esconde recursivamente todos os descendentes de uma linha pai em uma tabela.
+ * @param {string} id - O ID do elemento pai.
+ */
 function esconderDescendentes(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     filhos.forEach(filho => {
         filho.classList.add('hidden');
         if (filho.id) {
-            esconderDescendentes(filho.id); // recursão para esconder toda a árvore
+            esconderDescendentes(filho.id); // Chamada recursiva para garantir que toda a sub-árvore seja escondida.
         }
     });
 }
+/**
+ * Obtém os valores selecionados de um elemento <select>.
+ * Se nenhuma opção estiver selecionada, retorna os valores de todas as opções.
+ * @param {HTMLSelectElement} select - O elemento select do qual obter os itens.
+ * @returns {Array<string>} Um array com os valores das opções selecionadas (ou todas).
+ */
 function getSelectItems(select){
-    if(!select.selectedOptions || select.selectedOptions.length === 0){
+    if (!select.selectedOptions || select.selectedOptions.length === 0){
         return Array.from(select.options).map(option => option.value);
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
-function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
+
+// --- Funções de Gerenciamento de Filtros ---
+/**
+ * Configura os elementos de filtro, popula seus dados iniciais e anexa os event listeners.
+ * @param {object} appCache - O cache da aplicação.
+ * @param {Array<string>} anosDisponiveis - Um array inicial de anos para popular o filtro.
+ * @param {Function} atualizarCallback - A função a ser chamada quando qualquer filtro mudar (geralmente `handleFiltroChange`).
+ */
+function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
-    const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado')
-    if(!projSelect || !contaSelect || !modoSelect || !anoSelect) {
-        console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
-        return;
-    }
-    //Pupula o filtro de projetos
+    const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado');
+
+    // Popula o filtro de projetos.
     projSelect.innerHTML = '';
     Array.from(appCache.projetosMap.entries())
         .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
@@ -67,21 +105,11 @@ function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
             option.value = codProj; option.textContent = nome;
             projSelect.appendChild(option);
         });
-    // Seleciona o primeiro projeto da lista, se houver algum
-    if (projSelect.options.length > 0) {
-        projSelect.options[0].selected = true;
-    }
+    if (projSelect.options.length > 0) projSelect.options[0].selected = true;
 
-    //Adiciona event listeners para atualizar as visualizações
-    btnARealizar.addEventListener('click', () => {
-        appCache.projecao = "arealizar";
-        atualizarCallback();
-    });
-    btnRealizado.addEventListener('click', () => {
-        appCache.projecao = "realizado";
-        atualizarCallback();
-    });
-
+    // Adiciona event listeners para os botões e selects que disparam a atualização dos dados.
+    btnARealizar.addEventListener('click', () => { appCache.projecao = "arealizar"; atualizarCallback(); });
+    btnRealizado.addEventListener('click', () => { appCache.projecao = "realizado"; atualizarCallback(); });
     anoSelect.addEventListener('change', atualizarCallback);
     contaSelect.addEventListener('change', atualizarCallback);
     projSelect.addEventListener('change', () => {
@@ -93,23 +121,32 @@ function configurarFiltros(appCache,anosDisponiveis, atualizarCallback) {
         atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
         atualizarCallback();
     });
-    // Configura o filtro de ano
+
+    // Configuração inicial dos filtros e primeira chamada para carregar os dados.
     atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
-    // Atualiza o filtro de contas com base no projeto selecionado
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
+/**
+ * Lê o estado atual de todos os elementos de filtro na UI e os compila em um objeto.
+ * @returns {object|null} Um objeto contendo o estado dos filtros, ou null se algum elemento não for encontrado.
+ * // Estrutura do objeto de retorno:
+ * // {
+ * //   modo: "mensal",
+ * //   anos: ["2025"],
+ * //   projetos: [123, 456],
+ * //   contas: [789],
+ * //   colunas: ["01-2025", "02-2025", ..., "12-2025"]
+ * // }
+ */
 function obterFiltrosAtuais() {
     const modoSelect = document.getElementById('modoSelect');
     const anoSelect = document.getElementById('anoSelect');
     const projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect');
 
-    if (!modoSelect || !anoSelect || !projSelect || !contaSelect) {
-        console.error("Um ou mais elementos de filtro não foram encontrados no HTML.");
-        return null;
-    }
+    if (!modoSelect || !anoSelect || !projSelect || !contaSelect) return null;
 
     const modo = modoSelect.value;
     const valorSelecionado = anoSelect.value;
@@ -118,14 +155,13 @@ function obterFiltrosAtuais() {
     let anosParaProcessar = [];
     if (modo.toLowerCase() === 'mensal') {
         anosParaProcessar = [valorSelecionado];
-    } else {
+    } else { // Modo anual/período
         const anoInicio = Number(valorSelecionado);
         const anoFim = anoInicio + 5;
-        for (let ano = anoInicio; ano <= anoFim; ano++) {
-            anosParaProcessar.push(String(ano));
-        }
+        for (let ano = anoInicio; ano <= anoFim; ano++) anosParaProcessar.push(String(ano));
     }
     
+    // Gera as colunas para a tabela com base no modo (anual ou mensal).
     const colunas = (modo.toLowerCase() === 'anual')
         ? [...anosParaProcessar].sort()
         : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${valorSelecionado}`);
@@ -133,84 +169,45 @@ function obterFiltrosAtuais() {
     const projetos = getSelectItems(projSelect).map(Number);
     const contas = getSelectItems(contaSelect).map(Number);
 
-    return {
-        modo: modo,
-        anos: anosParaProcessar,
-        projetos: projetos,
-        contas: contas,
-        colunas: colunas
-    };
+    return { modo, anos: anosParaProcessar, projetos, contas, colunas };
 }
+/**
+ * Atualiza as opções do <select> de ano/período com base nos dados disponíveis e no modo de visualização.
+ * @param {HTMLSelectElement} anoSelect - O elemento select a ser atualizado.
+ * @param {Array<string>} anosDisponiveis - Anos com dados para as contas selecionadas.
+ * @param {string} modo - 'mensal' ou 'anual'.
+ * @param {string} projecao - 'realizado' ou 'arealizar'.
+ */
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
-    //salve o valor atual para tentar preservar a seleção mais tarde
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
-    //Se modo de visualização for mensal, popula com anos disponíveis  
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
-            option.value = ano;
-            option.textContent = ano;
+            option.value = ano; option.textContent = ano;
             anoSelect.appendChild(option);
         });
-        // Preserva a seleção atual se ainda estiver disponível
+        // Tenta preservar a seleção anterior ou seleciona um padrão inteligente.
         if (anosDisponiveis.includes(valorAtual)) {
             anoSelect.value = valorAtual;
-        // Se não estiver disponível, seleciona o mais recente para realizado e o mais antigo para a realizar
         } else if (projecao == "realizado") {
-            anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
+            anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || ''; // Último ano disponível
         } else {
-            anoSelect.value = anosDisponiveis[0] || '';
+            anoSelect.value = anosDisponiveis[0] || ''; // Primeiro ano disponível
         }
-    // modo de visualização por periodo anual
-    } else { 
-        const duracaoP = 6; // cada período tem 6 anos
-        const periodos = [];
-        const anosNums = anosDisponiveis.map(a => Number(a));
-        const anoAtual = new Date().getFullYear();
+    } else { // Modo de visualização por período (anual)
+        const duracaoP = 6;
+        const periodos = new Set();
+        const anosNums = new Set(anosDisponiveis.map(a => Number(a)));
+        
+        // Adiciona os períodos relevantes com base nos anos disponíveis.
+        anosNums.forEach(ano => {
+            const inicioPeriodo = ano - ((ano - new Date().getFullYear()) % duracaoP);
+            periodos.add(inicioPeriodo);
+        });
 
-        // Primeiro período
-        let primeiroInicio;
-        //Se a projeção for a realizar, o primeiro período começa no ano atual + 5 anos
-        if (projecao.toLowerCase() === 'arealizar') {
-            primeiroInicio = anoAtual; // AnoAtual-(AnoAtual+5)
-        } else {
-        // Se a projeção for realizado, o primeiro período começa 5 anos atrás até o ano atual
-            primeiroInicio = anoAtual - duracaoP + 1; // (AnoAtual-5)-AnoAtual
-        }
-
-        const anosDisponiveisSet = new Set(anosNums);
-        // Função que verifica se ao menos um ano do período está disponível
-        const periodoValido = (inicio) => {
-            for (let i = 0; i < duracaoP; i++) {
-                if (anosDisponiveisSet.has(inicio + i)) return true;
-            }
-            return false;
-        };
-        //Adiciona primeiro ano do período inicial e anteriores
-        let inicio = primeiroInicio;
-        while(true){
-            if(periodoValido(inicio)){
-                periodos.push(inicio);
-                inicio = inicio - duracaoP;
-            } else {
-                break;
-            }
-        }
-        //Adiciona primeiro ano dos posteriores ao inicial
-        inicio = primeiroInicio + duracaoP;
-        while(true){
-            if(periodoValido(inicio)){
-                periodos.push(inicio);
-                inicio = inicio + duracaoP;
-            } else {
-                break;
-            }
-        }
-        // Remove duplicados e ordena do mais recente para o mais antigo
-        const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
-        // Transforma os anos inicials em periodos aaaI-aaaF
+        const periodosUnicos = Array.from(periodos).sort((a, b) => b - a);
         periodosUnicos.forEach(inicio => {
             const fim = inicio + duracaoP - 1;
             const option = document.createElement('option');
@@ -219,28 +216,34 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             anoSelect.appendChild(option);
         });
         
-        // Preserva a seleção atual do período se ainda estiver disponível
+        // Tenta preservar a seleção do período.
         const valorAtualNum = Number(valorAtual);
-        const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1);
+        const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum < p + duracaoP);
         if (periodoAtual !== undefined) {
             anoSelect.value = periodoAtual;
         } else if (projecao.toLowerCase() === "realizado") {
-            // pega o último período
-            anoSelect.value = periodosUnicos[0] || '';
+            anoSelect.value = periodosUnicos[0] || ''; // Período mais recente
         } else {
-            // pega o primeiro período
-            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || '';
+            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || ''; // Período mais antigo
         }
     }
 }
+/**
+ * Atualiza o <select> de contas, mostrando apenas as contas associadas aos projetos selecionados.
+ * @param {HTMLSelectElement} contaSelect - O elemento select de contas.
+ * @param {Map} projetosMap - O mapa de projetos do cache.
+ * @param {Map} contasMap - O mapa de contas do cache.
+ * @param {Array<string>} projetosSelecionados - IDs dos projetos selecionados.
+ */
 function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
     const contasProjetos = new Set();
     projetosSelecionados.forEach(codProj => {
-        const projeto = projetosMap.get(codProj);
-        if(projeto){
+        const projeto = projetosMap.get(String(codProj)); // Garantir que a chave seja string
+        if (projeto) {
             projeto.contas.forEach(conta => contasProjetos.add(conta));
         }
     });
+
     contaSelect.innerHTML = '';
     Array.from(contasMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
@@ -253,7 +256,13 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
         });
 }
 
-
+// --- Funções de Renderização de Tabelas ---
+/**
+ * Orquestrador principal da renderização. Chama as funções específicas para renderizar cada tabela.
+ * @param {object|null} dadosProcessados - O objeto de dados final vindo de `mergeMatrizes`, ou nulo para limpar as tabelas.
+ * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
+ * @param {object} appCache - O cache da aplicação.
+ */
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (!dadosProcessados) {
         document.getElementById('tabelaMatriz').innerHTML = '';
@@ -267,79 +276,68 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
 /**
- * @param {object} matrizDRE - Os dados processados para o DRE.
- * @param {string[]} colunas - As colunas a serem exibidas (meses ou anos).
+ * Renderiza a tabela principal da DRE (Demonstração de Resultado).
+ * @param {object} matrizDRE - Os dados processados para a DRE.
+ * @param {Array<string>} colunas - As colunas a serem exibidas (meses ou anos).
+ * @param {string} userType - O tipo de usuário, para exibir/ocultar linhas específicas.
+ * @param {object} PeUchave - Objeto com a primeira e última chave de período com dados.
  */
 function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
     const tabela = document.getElementById('tabelaMatriz');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
-    // Define a ordem base das classes que todos os usuários veem
+    // Define a ordem de exibição das linhas da DRE.
     const ordemClasses = [
         '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida', '(-) Custos', '(-) Despesas',
         '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
-    // Adiciona as classes extras APENAS se o usuário for developer
+    // Adiciona linhas extras para usuários 'developer'.
     if (userType && userType.toLowerCase() === 'developer') {
         ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
     }
-    // Adiciona as linhas de saldo, que sempre aparecem no final para todos
     ordemClasses.push('Caixa Inicial', 'Caixa Final');
-    // Adiciona as classes extras APENAS se o usuário for Admin
     if (userType && userType.toLowerCase() === 'developer') {
         ordemClasses.push('(+) Entradas', '(-) Saídas');
     }
 
+    // Cria o cabeçalho da tabela.
     const thead = document.createElement('thead');
     const headerRow = thead.insertRow();
     headerRow.className = 'cabecalho';
     headerRow.insertCell().textContent = 'Classe';
-    colunas.forEach(coluna => {
-        headerRow.insertCell().textContent = coluna;
-    });
+    colunas.forEach(coluna => headerRow.insertCell().textContent = coluna);
     headerRow.insertCell().textContent = 'TOTAL';
-    thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     fragment.appendChild(thead);
     
+    // Cria o corpo da tabela.
     const tbody = document.createElement('tbody');
-
     ordemClasses.forEach(classe => {
+        // Ignora classes que não têm dados.
+        if (!matrizDRE[classe]) return;
+        
         const row = tbody.insertRow();
-        const cellClasse = row.insertCell();
-        cellClasse.textContent = classe;
-
+        row.insertCell().textContent = classe;
+        
+        // Aplica estilos CSS com base no tipo de linha.
         if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.classList.add('linhatotal');
         } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
             row.classList.add('linhaSaldo');
-        } else {
-            cellClasse.classList.add('idented');
         }
 
-        const hoje = new Date();
-        const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-        const anoAtual = new Date().getFullYear();
-        const primeiraChave = PeUchave?.primeiraChave || `${mesAtual}-${anoAtual}`;
-        const ultimaChave = PeUchave?.ultimaChave || colunas[colunas.length - 1];
-        // Renderiza os valores das colunas visíveis
+        // Renderiza os valores para cada coluna do período.
         colunas.forEach(coluna => {
-            let valor = matrizDRE[classe]?.[coluna] || 0;
-            // Se for Caixa Inicial ou Final e a coluna for anterior à primeiraChave → força 0
-            if (classe === 'Caixa Inicial' || classe === 'Caixa Final'){
-                if((compararChaves(coluna, primeiraChave) < 0) || (compararChaves(coluna, ultimaChave) > 0)){
-                    valor = 0
-                }
-            }
+            const valor = matrizDRE[classe]?.[coluna] || 0;
             row.insertCell().textContent = formatarValor(valor);
         });
         
-        // Lê diretamente a propriedade 'TOTAL' pré-calculada
+        // Renderiza o valor da coluna TOTAL (já pré-calculado).
         const total = matrizDRE[classe]?.TOTAL || 0;
         row.insertCell().textContent = formatarValor(total);
         
-        // Adiciona uma linha em branco após certas classes para melhorar a legibilidade
+        // Adiciona linhas em branco para espaçamento visual.
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
         }
@@ -348,6 +346,12 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
+/**
+ * Renderiza a tabela de detalhamento por Departamentos/Categorias/Fornecedores.
+ * @param {Map} categoriasMap - O mapa de categorias para traduzir códigos em nomes.
+ * @param {object} dadosAgrupados - A `matrizDepartamentos` vinda dos dados processados.
+ * @param {Array<string>} colunas - As colunas de período a serem exibidas.
+ */
 function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
@@ -491,64 +495,55 @@ function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
     });
 }
 /**
- * Renderiza a tabela de Capital de Giro no elemento HTML 'tabelaCapitalGiro'.
- * @param {object} matriz - A matriz de dados gerada pela função gerarMatrizCapitalGiro.
- * @param {string[]} colunas - O array de colunas (períodos) a serem exibidos.
+ * Renderiza a tabela de Capital de Giro.
+ * @param {object} matriz - A matriz de dados gerada por `gerarMatrizCapitalGiro`.
+ * @param {Array<string>} colunas - O array de colunas (períodos) a serem exibidos.
  */
 function renderizarTabelaCapitalGiro(matriz, colunas) {
-
     const tabela = document.getElementById('tabelaCapitalGiro');
-
+    // Validação de segurança: verifica se o elemento da tabela existe no DOM.
     if (!tabela) {
-        console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML. A função será interrompida.");
+        console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
         return;
     }
-    
     tabela.innerHTML = '';
-    
+    // Validação de segurança: verifica se há dados para renderizar.
     if (!matriz || Object.keys(matriz).length === 0) {
-        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia ou é inválida. Nada será renderizado.");
+        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Nada será renderizado.");
         return;
     }
-
     try {
         const fragment = document.createDocumentFragment();
 
-        // Cria o Cabeçalho
+        // Cria o Cabeçalho da tabela.
         const thead = document.createElement('thead');
         const headerRow = thead.insertRow();
         headerRow.className = 'cabecalho';
         headerRow.insertCell().textContent = 'Capital de Giro';
         colunas.forEach(col => headerRow.insertCell().textContent = col);
-        headerRow.insertCell().textContent = "";
         fragment.appendChild(thead);
 
         const tbody = document.createElement('tbody');
 
-        // Funções auxiliares
+        // Função auxiliar para criar uma linha de dados na tabela, evitando repetição de código.
         const criarLinha = (label, chaveDados, isPercent = false, cssClass = '') => {
             const row = tbody.insertRow();
             if (cssClass) row.classList.add(cssClass);
             
-            const cellLabel = row.insertCell();
-            cellLabel.textContent = label;
-            
+            row.insertCell().textContent = label;
             const formatFunc = isPercent ? formatarPercentual : formatarValor;
             colunas.forEach(col => {
                 const valor = matriz[chaveDados]?.[col] || 0;
-                const cell = row.insertCell();
-                cell.textContent = formatFunc(valor);
+                row.insertCell().textContent = formatFunc(valor);
             });
-            row.insertCell().textContent = "";
         };
         const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 1}" class="linhaBranco"></td>`;
 
-        // Monta o corpo da tabela
+        // Monta o corpo da tabela usando a função auxiliar.
         criarLinha('(+) Caixa', '(+) Caixa', false, 'linhatotal');
         criarLinhaBranca();
         criarLinha('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
         criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
-        // ... (o restante da montagem da tabela continua aqui dentro)
         criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
         criarLinha('Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
         criarLinha('Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
@@ -564,14 +559,11 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         criarLinhaBranca();
         criarLinha('(=) Capital Líquido Circulante', '(=) Capital Líquido Circulante', false, 'linhaSaldo');
 
-
         fragment.appendChild(tbody);
         tabela.appendChild(fragment);
-
     } catch (error) {
-        console.error("ERRO DURANTE A RENDERIZAÇÃO: Um erro inesperado ocorreu ao construir a tabela.", error);
+        console.error("ERRO DURANTE A RENDERIZAÇÃO: Um erro inesperado ocorreu ao construir a tabela de Capital de Giro.", error);
     }
 }
-
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
