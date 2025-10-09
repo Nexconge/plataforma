@@ -179,7 +179,6 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
 
     return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal };
 }
-// Adicione esta nova função em processingV01.js
 /**
  * Pré-processa os dados de capital de giro para uma única conta.
  * Organiza os itens em listas e calcula o fluxo de caixa mensal.
@@ -194,22 +193,24 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
 
     const nomeConta = contaInfo ? contaInfo.nome : `Conta ${contaId}`;
     console.log(`Processando Capital de Giro para a conta: ${nomeConta} (ID: ${contaId})`);
+
     if (Array.isArray(capitalDeGiro)) {
         capitalDeGiro.forEach(item => {
-            // 1. Calcula o fluxo de caixa real (transações pagas)
-            if (item.DataPagamento) {
+            // --- (1) Soma no fluxo de caixa qualquer item com DataPagamento válida ---
+            if (item.DataPagamento && typeof item.DataPagamento === 'string') {
                 const partesData = item.DataPagamento.split('/');
                 if (partesData.length === 3) {
                     const chavePeriodo = `${partesData[1].padStart(2, '0')}-${partesData[2]}`;
                     let valor = item.ValorTitulo || 0;
                     if (item.Natureza === 'P') valor = -valor;
                     fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
+                } else {
+                    console.warn("DataPagamento inválida ignorada:", item.DataPagamento, item);
                 }
             }
 
-            console.log(item);
-            // 2. Organiza itens de Contas a Pagar/Receber com datas parseadas
-            if (item.DataVencimento && item.DataEmissao){
+            // --- (2) Só entra em previsões se tiver emissão E vencimento ---
+            if (item.DataEmissao && item.DataVencimento) {
                 const itemProcessado = {
                     ...item,
                     DataEmissao: parseDate(item.DataEmissao),
