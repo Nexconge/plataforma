@@ -282,18 +282,18 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     colunasParaCalcular.forEach(coluna => {
         //Função auxiliar para obter o valor de uma classe da DRE para a coluna atual.
         const getValor = (classe) => matrizDRE[classe]?.[coluna] || 0;
-        receitaBruta = getValor('(+) Receita Bruta');
-        deducoes = getValor('(-) Deduções');
-        custos = getValor('(-) Custos');
-        despesas = getValor('(-) Despesas');
-        irpj = getValor('(+/-) IRPJ/CSLL');
-        resultadoFinanceiro = getValor('(+/-) Resultado Financeiro');
-        aportes = getValor('(+/-) Aportes/Retiradas');
-        investimentos = getValor('(+/-) Investimentos');
-        emprestimos = getValor('(+/-) Empréstimos/Consórcios');
-        entradaTransferencia = getValor('Entrada de Transferência');
-        saidaTransferencia = getValor('Saída de Transferência');
-        outros = getValor('Outros');
+        const receitaBruta = getValor('(+) Receita Bruta');
+        const deducoes = getValor('(-) Deduções');
+        const custos = getValor('(-) Custos');
+        const despesas = getValor('(-) Despesas');
+        const irpj = getValor('(+/-) IRPJ/CSLL');
+        const resultadoFinanceiro = getValor('(+/-) Resultado Financeiro');
+        const aportes = getValor('(+/-) Aportes/Retiradas');
+        const investimentos = getValor('(+/-) Investimentos');
+        const emprestimos = getValor('(+/-) Empréstimos/Consórcios');
+        const entradaTransferencia = getValor('Entrada de Transferência');
+        const saidaTransferencia = getValor('Saída de Transferência');
+        const outros = getValor('Outros');
 
         // Calcula a Receita Líquida somando a Receita Bruta com as Deduções (que são negativas).
         const receitaLiquida = receitaBruta + deducoes;
