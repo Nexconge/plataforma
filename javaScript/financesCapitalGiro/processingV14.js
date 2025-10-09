@@ -130,7 +130,11 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
         '(+/-) Empréstimos/Consórcios'
     ]);
     
-    let valorTotal = 0; 
+    let valorTotal = 0;
+    
+    matrizDRE['(+) Entradas'] = {};
+    matrizDRE['(-) Saídas'] = {};
+
     lancamentos.forEach(lancamento => {
         if (contaId != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) return;
@@ -151,6 +155,11 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
 
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
+        if (valor < 0) {
+            matrizDRE['(-) Saídas'][chaveAgregacao] = (matrizDRE['(-) Saídas'][chaveAgregacao] || 0) + valor;
+        } else {
+            matrizDRE['(+) Entradas'][chaveAgregacao] = (matrizDRE['(+) Entradas'][chaveAgregacao] || 0) + valor;
+        }
 
         if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {
             const fornecedor = lancamento.Cliente;
@@ -273,17 +282,29 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     colunasParaCalcular.forEach(coluna => {
         //Função auxiliar para obter o valor de uma classe da DRE para a coluna atual.
         const getValor = (classe) => matrizDRE[classe]?.[coluna] || 0;
+        receitaBruta = getValor('(+) Receita Bruta');
+        deducoes = getValor('(-) Deduções');
+        custos = getValor('(-) Custos');
+        despesas = getValor('(-) Despesas');
+        irpj = getValor('(+/-) IRPJ/CSLL');
+        resultadoFinanceiro = getValor('(+/-) Resultado Financeiro');
+        aportes = getValor('(+/-) Aportes/Retiradas');
+        investimentos = getValor('(+/-) Investimentos');
+        emprestimos = getValor('(+/-) Empréstimos/Consórcios');
+        entradaTransferencia = getValor('Entrada de Transferência');
+        saidaTransferencia = getValor('Saída de Transferência');
+        outros = getValor('Outros');
 
         // Calcula a Receita Líquida somando a Receita Bruta com as Deduções (que são negativas).
-        const receitaLiquida = getValor('(+) Receita Bruta') + getValor('(-) Deduções');
+        const receitaLiquida = receitaBruta + deducoes;
         matrizDRE['(=) Receita Líquida'][coluna] = receitaLiquida;
 
         // Calcula a Geração de Caixa Operacional, que é o resultado da operação principal da empresa.
-        const geracaoCaixa = receitaLiquida + getValor('(-) Custos') + getValor('(-) Despesas') + getValor('(+/-) IRPJ/CSLL');
+        const geracaoCaixa = receitaLiquida + custos + despesas + irpj;
         matrizDRE['(+/-) Geração de Caixa Operacional'][coluna] = geracaoCaixa;
 
         // Soma todas as outras movimentações (financeiras, investimentos, etc.).
-        const movimentacaoNaoOperacional = getValor('(+/-) Resultado Financeiro') + getValor('(+/-) Aportes/Retiradas') + getValor('(+/-) Investimentos') + getValor('(+/-) Empréstimos/Consórcios');
+        const movimentacaoNaoOperacional = resultadoFinanceiro + aportes + investimentos + emprestimos;
         
         // A movimentação total do mês é a soma do resultado operacional com o não operacional.
         const movimentacaoMensal = geracaoCaixa + movimentacaoNaoOperacional;
@@ -293,7 +314,7 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
         matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
         
         // Calcula a variação total de caixa, incluindo transferências e outros lançamentos que afetam o caixa mas não o resultado.
-        const variacaoCaixaTotal = movimentacaoMensal + getValor('Entrada de Transferência') + getValor('Saída de Transferência') + getValor('Outros');
+        const variacaoCaixaTotal = movimentacaoMensal + entradaTransferencia + saidaTransferencia + outros;
         
         // Atualiza o saldo acumulado para o próximo período, somando a variação total de caixa do período atual.
         saldoAcumulado += variacaoCaixaTotal;

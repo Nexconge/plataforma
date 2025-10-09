@@ -281,12 +281,16 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
         '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
-    // Adiciona as classes extras APENAS se o usuário for Admin
+    // Adiciona as classes extras APENAS se o usuário for developer
     if (userType && userType.toLowerCase() === 'developer') {
         ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
     }
     // Adiciona as linhas de saldo, que sempre aparecem no final para todos
     ordemClasses.push('Caixa Inicial', 'Caixa Final');
+    // Adiciona as classes extras APENAS se o usuário for Admin
+    if (userType && userType.toLowerCase() === 'developer') {
+        ordemClasses.push('(+) Entradas', '(-) Saídas');
+    }
 
     const thead = document.createElement('thead');
     const headerRow = thead.insertRow();
