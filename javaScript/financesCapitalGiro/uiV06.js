@@ -539,7 +539,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         // Funções auxiliares
         const criarLinha = (label, chaveDados, isPercent = false, cssClass = '') => {
             const row = tbody.insertRow();
-            if (cssClass) row.className = cssClass;
+            if (cssClass) row.classList.add(cssClass);
             
             const cellLabel = row.insertCell();
             cellLabel.textContent = label;
