@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV09.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV10.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV05.js';
 
 // Inicia o chache
@@ -105,9 +105,7 @@ async function handleFiltroChange() {
     // Atualiza os filtros atuais para casos de de mudança de ano quando um a projeção é alterada e um ano não está mais disponível
     filtrosAtuais = obterFiltrosAtuais();
     // Combina os dados filtrados para exibição
-    console.log('Matrizes para juntar:', matrizesParaJuntar);
     const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    console.log('Dados para exibir:', dadosParaExibir);
     
     // 5. Renderizar a visualização com os dados combinados
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);

@@ -193,9 +193,9 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
 
     const nomeConta = contaInfo ? contaInfo.nome : `Conta ${contaId}`;
     console.log(`Processando Capital de Giro para a conta: ${nomeConta} (ID: ${contaId})`);
-
     if (Array.isArray(capitalDeGiro)) {
         capitalDeGiro.forEach(item => {
+            if (contaId == 1934236949){console.log("Item de Capital de Giro:", item);}
             // --- (1) Soma no fluxo de caixa qualquer item com DataPagamento válida ---
             if (item.DataPagamento && typeof item.DataPagamento === 'string') {
                 const partesData = item.DataPagamento.split('/');
