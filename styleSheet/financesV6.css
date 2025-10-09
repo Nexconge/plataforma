@@ -18,10 +18,6 @@ table tbody tr {
     border-bottom: 1px solid #F7F7F7;
 }
 
-table tbody tr:nth-last-child(n+3):hover {
-    background-color: #F7F7F7;
-}
-
 .cabecalho {
     height: 30px;
     background-color: #1772CB;
