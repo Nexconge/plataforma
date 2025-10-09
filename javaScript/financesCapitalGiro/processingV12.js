@@ -46,16 +46,14 @@ function extrairDadosDosTitulos(titulos) {
                 Cliente: titulo.Cliente,
                 Departamentos: departamentosObj
             });
-            
-            let CCgiro = titulo.CODContaC
-            if (CCgiro == 0 ){CCgiro = lancamento.CODContaC}
             capitalDeGiro.push({
                 Natureza: titulo.Natureza,
                 DataPagamento: lancamento.DataLancamento || null,
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
                 ValorTitulo: lancamento.ValorLancamento || 0,
-                CODContaC: CCgiro || null,
+                CODContaEmissao: titulo.CODContaC || null,
+                CODContaPagamento: lancamento.CODContaC || null
             });
             //Subtrai valor do lançamento do valor do titulo (ValorBaixado desconsidera multa e juros)
             ValorPago += lancamento.ValorBaixado
@@ -79,7 +77,8 @@ function extrairDadosDosTitulos(titulos) {
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
                 ValorTitulo: valorFaltante || 0,
-                CODContaC: titulo.CODContaC || null,
+                CODContaEmissao: titulo.CODContaC || null,
+                CODContaPagamento: null
             });
         }
     });
@@ -201,21 +200,21 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     if (Array.isArray(capitalDeGiro)) {
         capitalDeGiro.forEach(item => {
             if (contaId == 1934236949){console.log("Item de Capital de Giro:", item);}
-            // --- (1) Soma no fluxo de caixa qualquer item com DataPagamento válida ---
-            if (item.DataPagamento && typeof item.DataPagamento === 'string') {
+            // Soma no fluxo de caixa se tiver data de pagamento valida e a conta de pagamento for a conta atual
+            if (item.DataPagamento && typeof item.DataPagamento === 'string' && (item.CODContaPagamento == contaId)) {
                 const partesData = item.DataPagamento.split('/');
                 if (partesData.length === 3) {
                     const chavePeriodo = `${partesData[1].padStart(2, '0')}-${partesData[2]}`;
                     let valor = item.ValorTitulo || 0;
-                    if (item.Natureza === 'P') valor = -valor;
+                    if (item.Natureza === 'P') valor = -valor;                    
                     fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
-                } else {
-                    console.warn("DataPagamento inválida ignorada:", item.DataPagamento, item);
                 }
+            } else {
+                console.warn("DataPagamento inválida ignorada:", item.DataPagamento, item);
             }
-
-            // --- (2) Só entra em previsões se tiver emissão E vencimento ---
-            if (item.DataEmissao && item.DataVencimento) {
+            
+            // --- (2) Só entra em previsões se tiver emissão E vencimento e a conta de emissão for a conta atual ---
+            if (item.DataEmissao && item.DataVencimento && (item.CODContaEmissao == contaId)){
                 const itemProcessado = {
                     ...item,
                     DataEmissao: parseDate(item.DataEmissao),
