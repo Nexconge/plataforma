@@ -209,10 +209,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
                     if (item.Natureza === 'P') valor = -valor;                    
                     fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
                 }
-            } else {
-                console.warn("DataPagamento inválida ignorada:", item.DataPagamento, item);
             }
-            
             // --- (2) Só entra em previsões se tiver emissão E vencimento e a conta de emissão for a conta atual ---
             if (item.DataEmissao && item.DataVencimento && (item.CODContaEmissao == contaId)){
                 const itemProcessado = {

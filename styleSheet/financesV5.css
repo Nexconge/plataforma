@@ -59,7 +59,7 @@ th:nth-child(14) {
     padding-right: 10px;
 }
 
-#tabelaMatriz .linhatotal {
+.linhatotal {
     font-weight: bold;
     border-top: 2px solid #F2F2F2;
     border-bottom: 0px;
