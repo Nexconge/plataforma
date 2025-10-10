@@ -355,7 +355,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     // Cria o corpo da tabela.
     const tbody = document.createElement('tbody');
     ordemClasses.forEach(classe => {
-
         //Renderiza a linha de dre
         const row = renderizarLinhaDRE(classe, colunas, matrizDRE);
         tbody.appendChild(row);
@@ -454,8 +453,10 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
             renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
-    console.log(entradasESaidas)
-    thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+
+    // Linha em branco
+    tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+    // Linhas de total entrada e saida
     Object.keys(entradasESaidas).forEach(classe => {
         const row = renderizarLinhaDRE(classe, colunas, entradasESaidas);
         tbody.appendChild(row);
