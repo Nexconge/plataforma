@@ -179,39 +179,75 @@ function obterFiltrosAtuais() {
  * @param {string} projecao - 'realizado' ou 'arealizar'.
  */
 function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
+    //salve o valor atual para tentar preservar a seleção mais tarde
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
+    //Se modo de visualização for mensal, popula com anos disponíveis  
     if (modo.toLowerCase() === 'mensal') {
         anosDisponiveis.forEach(ano => {
             const option = document.createElement('option');
-            option.value = ano; option.textContent = ano;
+            option.value = ano;
+            option.textContent = ano;
             anoSelect.appendChild(option);
         });
-        // Tenta preservar a seleção anterior ou seleciona um padrão inteligente.
+        // Preserva a seleção atual se ainda estiver disponível
         if (anosDisponiveis.includes(valorAtual)) {
             anoSelect.value = valorAtual;
+        // Se não estiver disponível, seleciona o mais recente para realizado e o mais antigo para a realizar
         } else if (projecao == "realizado") {
-            anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || ''; // Último ano disponível
+            anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
         } else {
-            anoSelect.value = anosDisponiveis[0] || ''; // Primeiro ano disponível
+            anoSelect.value = anosDisponiveis[0] || '';
         }
-    } else { // Modo de visualização por período (anual)
-        const duracaoP = 6;
-        const periodos = new Set();
-        const anosNums = new Set(anosDisponiveis.map(a => Number(a)));
-        
-        // Adiciona os períodos relevantes com base nos anos disponíveis.
-        anosNums.forEach(ano => {
-            const anoAtual = new Date().getFullYear();
-            const diferenca = ano - anoAtual;
-            // Garante que o resultado do módulo seja sempre positivo para que a lógica funcione com anos anteriores.
-            const restoCorrigido = ((diferenca % duracaoP) + duracaoP) % duracaoP; 
-            const inicioPeriodo = ano - restoCorrigido;
-            periodos.add(inicioPeriodo);
-        });
+    // modo de visualização por periodo anual
+    } else { 
+        const duracaoP = 6; // cada período tem 6 anos
+        const periodos = [];
+        const anosNums = anosDisponiveis.map(a => Number(a));
+        const anoAtual = new Date().getFullYear();
 
-        const periodosUnicos = Array.from(periodos).sort((a, b) => b - a);
+        // Primeiro período
+        let primeiroInicio;
+        //Se a projeção for a realizar, o primeiro período começa no ano atual + 5 anos
+        if (projecao.toLowerCase() === 'arealizar') {
+            primeiroInicio = anoAtual; // AnoAtual-(AnoAtual+5)
+        } else {
+        // Se a projeção for realizado, o primeiro período começa 5 anos atrás até o ano atual
+            primeiroInicio = anoAtual - duracaoP + 1; // (AnoAtual-5)-AnoAtual
+        }
+
+        const anosDisponiveisSet = new Set(anosNums);
+        // Função que verifica se ao menos um ano do período está disponível
+        const periodoValido = (inicio) => {
+            for (let i = 0; i < duracaoP; i++) {
+                if (anosDisponiveisSet.has(inicio + i)) return true;
+            }
+            return false;
+        };
+        //Adiciona primeiro ano do período inicial e anteriores
+        let inicio = primeiroInicio;
+        while(true){
+            if(periodoValido(inicio)){
+                periodos.push(inicio);
+                inicio = inicio - duracaoP;
+            } else {
+                break;
+            }
+        }
+        //Adiciona primeiro ano dos posteriores ao inicial
+        inicio = primeiroInicio + duracaoP;
+        while(true){
+            if(periodoValido(inicio)){
+                periodos.push(inicio);
+                inicio = inicio + duracaoP;
+            } else {
+                break;
+            }
+        }
+        // Remove duplicados e ordena do mais recente para o mais antigo
+        const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
+        // Transforma os anos inicials em periodos aaaI-aaaF
         periodosUnicos.forEach(inicio => {
             const fim = inicio + duracaoP - 1;
             const option = document.createElement('option');
@@ -220,15 +256,17 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
             anoSelect.appendChild(option);
         });
         
-        // Tenta preservar a seleção do período.
+        // Preserva a seleção atual do período se ainda estiver disponível
         const valorAtualNum = Number(valorAtual);
-        const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum < p + duracaoP);
+        const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1);
         if (periodoAtual !== undefined) {
             anoSelect.value = periodoAtual;
         } else if (projecao.toLowerCase() === "realizado") {
-            anoSelect.value = periodosUnicos[0] || ''; // Período mais recente
+            // pega o último período
+            anoSelect.value = periodosUnicos[0] || '';
         } else {
-            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || ''; // Período mais antigo
+            // pega o primeiro período
+            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || '';
         }
     }
 }
