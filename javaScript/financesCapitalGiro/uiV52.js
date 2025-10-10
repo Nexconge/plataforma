@@ -311,9 +311,9 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
         document.getElementById('tabelaCapitalGiro').innerHTML = '';
         return;
     }
-    const { matrizDRE, matrizDepartamentos, matrizCapitalGiro } = dadosProcessados;
+    const { matrizDRE, matrizDepartamentos, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
-    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
+    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas, entradasESaidas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
 /**
@@ -355,27 +355,10 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     // Cria o corpo da tabela.
     const tbody = document.createElement('tbody');
     ordemClasses.forEach(classe => {
-        
-        const row = tbody.insertRow();
-        row.insertCell().textContent = classe;
-        
-        // Aplica estilos CSS com base no tipo de linha.
-        if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
-            row.classList.add('linhatotal');
-        } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
-            row.classList.add('linhaSaldo');
-        }
 
-        // Renderiza os valores para cada coluna do período.
-        colunas.forEach(coluna => {
-            const valor = matrizDRE[classe]?.[coluna] || 0;
-            row.insertCell().textContent = formatarValor(valor);
-        });
-        
-        // Renderiza o valor da coluna TOTAL (já pré-calculado).
-        const total = matrizDRE[classe]?.TOTAL || 0;
-        row.insertCell().textContent = formatarValor(total);
-        
+        //Renderiza a linha de dre
+        const row = renderizarLinhaDRE(classe, colunas, matrizDRE, userType);
+        tbody.appendChild(row);
         // Adiciona linhas em branco para espaçamento visual.
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
@@ -385,13 +368,41 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
+function renderizarLinhaDRE(classe, colunas, matrizDRE, userType) {
+    const row = document.createElement('tr');
+
+    // Coluna da Classe
+    const cellClasse = row.insertCell();
+    cellClasse.textContent = classe;
+
+    // Aplica estilos CSS com base no tipo de linha
+    if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
+        row.classList.add('linhatotal');
+    } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe)) {
+        row.classList.add('linhaSaldo');
+    }
+
+    // Renderiza os valores das colunas
+    colunas.forEach(coluna => {
+        const cell = row.insertCell();
+        const valor = matrizDRE[classe]?.[coluna] || 0;
+        cell.textContent = formatarValor(valor);
+    });
+
+    // Valor total
+    const cellTotal = row.insertCell();
+    const total = matrizDRE[classe]?.TOTAL || 0;
+    cellTotal.textContent = formatarValor(total);
+
+    return row;
+}
 /**
  * Renderiza a tabela de detalhamento por Departamentos/Categorias/Fornecedores.
  * @param {Map} categoriasMap - O mapa de categorias para traduzir códigos em nomes.
  * @param {object} dadosAgrupados - A `matrizDepartamentos` vinda dos dados processados.
  * @param {Array<string>} colunas - As colunas de período a serem exibidas.
  */
-function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
+function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, entradasESaidas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
@@ -433,21 +444,27 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     // Renderiza as classes na ordem definida
     ordemClasses.forEach(classe => {
         if (classesMap[classe]) {
-            renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
+            renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
 
     // Caso existam classes não previstas em ordemClasses, renderiza no fim
     Object.keys(classesMap).forEach(classe => {
         if (!ordemClasses.includes(classe)) {
-            renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
+            renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
+    });
+    thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+    entradasESaidas.forEach(classe => {
+        //Renderiza a linha de dre
+        const row = renderizarLinhaDRE(classe, colunas, matrizDRE, userType);
+        tbody.appendChild(row);
     });
 
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
-function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
+function renderLinhaDepartamento(classe, departamentos, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
     rowClasse.className = 'linhaClasseDetalhamento';

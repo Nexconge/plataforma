@@ -147,10 +147,12 @@ function parseDate(dateString) {
  * //   matrizDepartamentos: { "NomeDepto|Classe": { nome, classe, categorias: { ... } }, ... },
  * //   chavesComDados: Set("03-2025", "04-2025", ...),
  * //   valorTotal: 3500
+ * //   entradasESaidas { "Entradas":{ "02-2023": 1500...}, "Saidas" {"01-2024": 2000...}...}
  * // }
  */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
+    const entradasESaidas = {};
     // Classes que terão seus dados detalhados por departamento/categoria/fornecedor.
     const classesParaDetalhar = new Set([
         '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
@@ -161,8 +163,8 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     let valorTotal = 0;
     
     // Inicializa as classes de entrada/saída para garantir que sempre existam.
-    matrizDRE['(+) Entradas'] = {};
-    matrizDRE['(-) Saídas'] = {};
+    const entradas = entradasESaidas['(+) Entradas'] = {};
+    const saidas = entradasESaidas['(-) Saídas'] = {};
 
     lancamentos.forEach(lancamento => {
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
@@ -192,9 +194,9 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
 
         // Adiciona também às linhas totalizadoras de entradas e saídas.
         if (valor < 0) {
-            matrizDRE['(-) Saídas'][chaveAgregacao] = (matrizDRE['(-) Saídas'][chaveAgregacao] || 0) + valor;
+            saidas[chaveAgregacao] = (saidas[chaveAgregacao] || 0) + valor;
         } else {
-            matrizDRE['(+) Entradas'][chaveAgregacao] = (matrizDRE['(+) Entradas'][chaveAgregacao] || 0) + valor;
+            entradas[chaveAgregacao] = (entradas[chaveAgregacao] || 0) + valor;
         }
 
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.
@@ -237,7 +239,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         calcularLinhasDeTotalDRE(matrizDRE, colunasOrdenadas, saldoIni);
     });
 
-    return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal };
+    return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal, entradasESaidas };
 }
 /**
  * Pré-processa os dados de capital de giro para uma única conta.
@@ -414,7 +416,7 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * // }
  */
 function mergeDadosMensais(listaDeDadosProcessados) {
-    const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {} };
+    const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {}, entradasESaidas: {}};
     const todasChaves = new Set(); // Armazena todos os períodos únicos (ex: '01-2024', '02-2024')
 
     // Soma o saldo inicial de todas as contas para obter um saldo base consolidado.
@@ -427,6 +429,13 @@ function mergeDadosMensais(listaDeDadosProcessados) {
             if (!monthlyMerged.matrizDRE[classe]) monthlyMerged.matrizDRE[classe] = {};
             for (const periodo in dados.matrizDRE[classe]) {
                 monthlyMerged.matrizDRE[classe][periodo] = (monthlyMerged.matrizDRE[classe][periodo] || 0) + dados.matrizDRE[classe][periodo];
+            }
+        }
+        // Mescla os dados de Entradas E Saidas 
+        for (const classe in dados.entradasESaidas) {
+            if (!monthlyMerged.entradasESaidas[classe]) monthlyMerged.entradasESaidas[classe] = {};
+            for (const periodo in dados.entradasESaidas[classe]) {
+                monthlyMerged.entradasESaidas[classe][periodo] = (monthlyMerged.entradasESaidas[classe][periodo] || 0) + dados.entradasESaidas[classe][periodo];
             }
         }
 
@@ -530,7 +539,7 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
  * @returns {object} Um novo objeto de dados com a mesma estrutura, mas com valores agregados por ano.
  */
 function agregarDadosParaAnual(monthlyData) {
-    const annualData = { matrizDRE: {}, matrizDepartamentos: {} };
+    const annualData = { matrizDRE: {}, matrizDepartamentos: {}, entradasESaidas: {}};
     const saldosAnuais = {}; // { 'Caixa Final': { '2025': { mes: '12', valor: 1000 }, ... } }
 
     // Agrega DRE
@@ -539,7 +548,6 @@ function agregarDadosParaAnual(monthlyData) {
         for (const periodoMensal in monthlyData.matrizDRE[classe]) {
             const [mes, ano] = periodoMensal.split('-');
             const valor = monthlyData.matrizDRE[classe][periodoMensal];
-
             // Lógica de exceção para saldos
             if (classe === 'Caixa Inicial' || classe === 'Caixa Final') {
                 if (!saldosAnuais[classe]) saldosAnuais[classe] = {};
@@ -555,6 +563,14 @@ function agregarDadosParaAnual(monthlyData) {
                 // Lógica padrão de soma
                 annualData.matrizDRE[classe][ano] = (annualData.matrizDRE[classe][ano] || 0) + valor;
             }
+        }
+    }
+    for (const classe in monthlyData.entradasESaidas) {
+        annualData.entradasESaidas[classe] = {};
+        for (const periodoMensal in monthlyData.entradasESaidas[classe]) {
+            const [mes, ano] = periodoMensal.split('-');
+            const valor = monthlyData.entradasESaidas[classe][periodoMensal];
+            annualData.entradasESaidas[classe][ano] = (annualData.entradasESaidas[classe][ano] || 0) + valor;
         }
     }
 

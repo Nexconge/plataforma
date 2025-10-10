@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV50.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV50.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV51.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV51.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV52.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -106,7 +106,6 @@ async function handleFiltroChange() {
     const anosArray = Array.from(anosDisponiveis).sort();
     if (anosArray.length === 0) anosArray.push(String(new Date().getFullYear()));
     
-    console.log(anosArray);
     // Atualiza o select de anos, usando a flag para evitar nova chamada a handleFiltroChange.
     appCache.flagAnos = true;
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value, appCache.projecao);
