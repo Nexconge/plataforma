@@ -456,8 +456,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
     });
     console.log(entradasESaidas)
     thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
-    entradasESaidas.forEach(classe => {
-        //Renderiza a linha de dre
+    Object.keys(entradasESaidas).forEach(classe => {
         const row = renderizarLinhaDRE(classe, colunas, matrizDRE, userType);
         tbody.appendChild(row);
     });
