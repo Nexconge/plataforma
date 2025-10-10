@@ -357,7 +357,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     ordemClasses.forEach(classe => {
 
         //Renderiza a linha de dre
-        const row = renderizarLinhaDRE(classe, colunas, matrizDRE, userType);
+        const row = renderizarLinhaDRE(classe, colunas, matrizDRE);
         tbody.appendChild(row);
         // Adiciona linhas em branco para espaçamento visual.
         if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
@@ -368,7 +368,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
-function renderizarLinhaDRE(classe, colunas, matrizDRE, userType) {
+function renderizarLinhaDRE(classe, colunas, matrizDRE) {
     const row = document.createElement('tr');
 
     // Coluna da Classe
@@ -457,7 +457,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
     console.log(entradasESaidas)
     thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     Object.keys(entradasESaidas).forEach(classe => {
-        const row = renderizarLinhaDRE(classe, colunas, entradasESaidas, userType);
+        const row = renderizarLinhaDRE(classe, colunas, entradasESaidas);
         tbody.appendChild(row);
     });
 
