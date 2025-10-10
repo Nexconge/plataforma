@@ -455,6 +455,8 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     tabela.appendChild(fragment);
 }
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
+
+    console.log(`Renderiziando classe: ${classe}`)
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
     rowClasse.className = 'linhaClasseDetalhamento';
