@@ -615,10 +615,19 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
     // 4. Calcula o Saldo Inicial Consolidado com base na projeção
-    let saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            const saldoIni = dadosConta.dadosARealizar.saldoIni || 0;
+    let saldoInicialConsolidado = 0;
+    if (projecao.toLowerCase() === 'arealizar') {
+        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
+            const saldoIni = dadosConta.dadosARealizar?.saldoIni || 0;
             return acc + saldoIni + movimentacaoRealizado;
-        }, 0)
+        }, 0);
+    } else {
+        // Para "Realizado", o saldo inicial é simplesmente a soma dos saldos iniciais de cada conta.
+        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
+            const saldoIni = dadosConta.dadosRealizado?.saldoIni || 0;
+            return acc + saldoIni;
+        }, 0);
+    }
 
     //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
     const colunasOrdenadas = Array.from(todasChaves).sort(compararChaves);
