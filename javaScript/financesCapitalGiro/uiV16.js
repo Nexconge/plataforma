@@ -255,7 +255,6 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
             }
         });
 }
-
 // --- Funções de Renderização de Tabelas ---
 /**
  * Orquestrador principal da renderização. Chama as funções específicas para renderizar cada tabela.

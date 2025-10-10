@@ -2,7 +2,7 @@
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV02.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV21.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV15.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV16.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -106,6 +106,7 @@ async function handleFiltroChange() {
     const anosArray = Array.from(anosDisponiveis).sort();
     if (anosArray.length === 0) anosArray.push(String(new Date().getFullYear()));
     
+    console.log(anosArray);
     // Atualiza o select de anos, usando a flag para evitar nova chamada a handleFiltroChange.
     appCache.flagAnos = true;
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value, appCache.projecao);
