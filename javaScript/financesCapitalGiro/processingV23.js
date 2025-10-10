@@ -615,14 +615,14 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
     if(i > 0) colSaldFim = colunasVisiveis[0]
 
     if (colunasVisiveis.length > 0) {
-        if(dadosAntesDosTotais.matrizDRE['Caixa Inicial']) {
+        if(matrizDRE['Caixa Inicial']) {
             const {mesA, anoA} = colunasVisiveis[0].split("-");
             const {mesB, anoB} = primeiraChave.split("-");
             if (anoA != anoB)
-            dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colSaldIni] || 0;
+            matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][colSaldIni] || 0;
         }
-        if(dadosAntesDosTotais.matrizDRE['Caixa Final']) {
-            dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colSaldFim] || 0;
+        if(matrizDRE['Caixa Final']) {
+            matrizDRE['Caixa Final'].TOTAL = matrizDRE['Caixa Final'][colSaldFim] || 0;
         }
     }
 }
