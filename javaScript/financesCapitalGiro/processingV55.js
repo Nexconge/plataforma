@@ -568,8 +568,6 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
     //Verifica se o período visivel possui colunas sem dados e ajusta a referencia de saldo inicial e final para a coluna de total
     let colSaldIni
     let colSaldFim
-    console.log(PeUChave.primeiraChave)
-    console.log(colunasVisiveis[0])
     let i = compararChaves(PeUChave.primeiraChave, colunasVisiveis[0])
     if(i >= 0) colSaldIni = PeUChave.primeiraChave;
     if(i < 0) colSaldIni = colunasVisiveis[0]
@@ -623,6 +621,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
         : monthlyMerged;
 
     // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
+    console.log(todasChaves)
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
     // 4. Calcula a coluna "TOTAL" para a tabela de DRE
