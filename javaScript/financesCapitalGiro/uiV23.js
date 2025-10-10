@@ -407,9 +407,19 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
 
     const tbody = document.createElement('tbody');
 
+    const totais = {
+        '(+) Entradas': dadosAgrupados['(+) Entradas'],
+        '(-) Saídas': dadosAgrupados['(-) Saídas']
+    };
+    const dadosFiltrados = Object.fromEntries(
+        Object.entries(dadosAgrupados).filter(([chave]) =>
+            chave !== '(+) Entradas' && chave !== '(-) Saídas'
+        )
+    );
+
     // Agrupa departamentos por classe
     const classesMap = {};
-    Object.entries(dadosAgrupados).forEach(([chave, deptoData]) => {
+    Object.entries(dadosFiltrados).forEach(([chave, deptoData]) => {
         const { nome, classe, categorias } = deptoData;
         if (!classesMap[classe]) {
             classesMap[classe] = [];
@@ -433,7 +443,6 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
             renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
-
     // Caso existam classes não previstas em ordemClasses, renderiza no fim
     Object.keys(classesMap).forEach(classe => {
         if (!ordemClasses.includes(classe)) {
@@ -444,12 +453,12 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     let row = tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     row.insertCell().textContent = "(+) Entradas"
     colunas.forEach(col => {
-        row.insertCell().textContent = matrizDepartamentos['(+) Entradas'][col]
+        row.insertCell().textContent = totais['(+) Entradas'][col]
     })
     row = tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     row.insertCell().textContent = "(-) Saídas"
     colunas.forEach(col => {
-        row.insertCell().textContent = matrizDepartamentos['(-) Saídas'][col]
+        row.insertCell().textContent = totais['(-) Saídas'][col]
     })
 
     fragment.appendChild(tbody);
