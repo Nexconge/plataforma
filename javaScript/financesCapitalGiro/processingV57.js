@@ -566,7 +566,7 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
 
     //Linhas de saldo
     //Verifica se o período visivel possui colunas sem dados e ajusta a referencia de saldo inicial e final para a coluna de total
-    if(PeUChave){
+    if(PeUChave.primeiraChave){
         let colSaldIni
         let colSaldFim
         let i = compararChaves(PeUChave.primeiraChave, colunasVisiveis[0])
