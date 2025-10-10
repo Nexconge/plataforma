@@ -339,6 +339,9 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
     }
     ordemClasses.push('Caixa Inicial', 'Caixa Final');
+    if (userType && userType.toLowerCase() === 'developer') {
+        ordemClasses.push('(+) Entradas', '(-) Saídas');
+    }
 
     // Cria o cabeçalho da tabela.
     const thead = document.createElement('thead');
@@ -355,6 +358,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         
         const row = tbody.insertRow();
         row.insertCell().textContent = classe;
+        
         // Aplica estilos CSS com base no tipo de linha.
         if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.classList.add('linhatotal');
@@ -392,7 +396,6 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
-    console.log(dadosAgrupados);
     // Cabeçalho
     const thead = document.createElement('thead');
     const headRow = thead.insertRow();
@@ -406,8 +409,6 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     fragment.appendChild(thead);
 
     const tbody = document.createElement('tbody');
-    const saidas = dadosAgrupados.totais['(-) Saídas'];
-    const entradas = dadosAgrupados.totais['(+) Entradas'];
 
     // Agrupa departamentos por classe
     const classesMap = {};
@@ -435,6 +436,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
             renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
+
     // Caso existam classes não previstas em ordemClasses, renderiza no fim
     Object.keys(classesMap).forEach(classe => {
         if (!ordemClasses.includes(classe)) {
@@ -442,27 +444,10 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
         }
     });
 
-    tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
-
-    let row = tbody.insertRow()
-    row.className = "linhaSaldo"
-    row.insertCell().textContent = "(+) Entradas"
-    colunas.forEach(col => {
-        row.insertCell().textContent = formatarValor(entradas[col])
-    })
-    row = tbody.insertRow()
-    row.insertCell().textContent = "(-) Saídas"
-    row.className = "linhaSaldo"
-    colunas.forEach(col => {
-        row.insertCell().textContent = formatarValor(saidas[col])
-    })
-
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
 function renderClasse(classe, departamentos, tbody, categoriasMap, colunas) {
-
-    console.log(`Renderiziando classe: ${classe}`)
     const classeId = `classe_${sanitizeId(classe)}`;
     const rowClasse = tbody.insertRow();
     rowClasse.className = 'linhaClasseDetalhamento';

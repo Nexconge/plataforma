@@ -151,7 +151,6 @@ function parseDate(dateString) {
  */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
-    matrizDepartamentos.totais = {};
     // Classes que terão seus dados detalhados por departamento/categoria/fornecedor.
     const classesParaDetalhar = new Set([
         '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
@@ -162,8 +161,8 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     let valorTotal = 0;
     
     // Inicializa as classes de entrada/saída para garantir que sempre existam.
-    matrizDepartamentos.totais['(+) Entradas'] = {};
-    matrizDepartamentos.totais['(-) Saídas'] = {};
+    matrizDRE['(+) Entradas'] = {};
+    matrizDRE['(-) Saídas'] = {};
 
     lancamentos.forEach(lancamento => {
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
@@ -191,11 +190,11 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
-        // Adiciona também às linhas totalizadoras de entradas e saídas para a matriz de departamentos
+        // Adiciona também às linhas totalizadoras de entradas e saídas.
         if (valor < 0) {
-            matrizDepartamentos.totais['(-) Saídas'][chaveAgregacao] = (matrizDepartamentos.totais['(-) Saídas'][chaveAgregacao] || 0) + valor;
+            matrizDRE['(-) Saídas'][chaveAgregacao] = (matrizDRE['(-) Saídas'][chaveAgregacao] || 0) + valor;
         } else {
-            matrizDepartamentos.totais['(+) Entradas'][chaveAgregacao] = (matrizDepartamentos.totais['(+) Entradas'][chaveAgregacao] || 0) + valor;
+            matrizDRE['(+) Entradas'][chaveAgregacao] = (matrizDRE['(+) Entradas'][chaveAgregacao] || 0) + valor;
         }
 
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.
