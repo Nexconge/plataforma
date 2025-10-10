@@ -619,10 +619,9 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     if (projecao.toLowerCase() === 'arealizar') {
         saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
             const saldoIni = dadosConta.dadosARealizar?.saldoIni || 0;
-            return acc + saldoIni + movimentacaoRealizado;
+            return acc + saldoIni;
         }, 0);
     } else {
-        // Para "Realizado", o saldo inicial é simplesmente a soma dos saldos iniciais de cada conta.
         saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
             const saldoIni = dadosConta.dadosRealizado?.saldoIni || 0;
             return acc + saldoIni;
