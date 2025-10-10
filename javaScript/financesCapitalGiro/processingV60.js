@@ -327,9 +327,8 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
     const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
 
     // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
-    console.log(saldoIniARealizar)
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
-
+    console.log(saldoIniARealizar)
     // Processa os dados para o modo A REALIZAR (previsões futuras).
     const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
     // Processa os dados para o relatório de Capital de Giro.
