@@ -474,11 +474,10 @@ function mergeDadosMensais(listaDeDadosProcessados) {
                 }
             }
         }
-    }, 0);
+    }, 0); //0 é o valor inicial para uma coluna/chave, garante que linhas sem dados aparecam.
 
     return { monthlyMerged, todasChaves };
 }
-
 /**
  * Agrega os dados mensais consolidados em totais anuais, tratando corretamente as linhas de saldo.
  * @param {object} monthlyData - O objeto de dados mesclados com valores mensais.
@@ -569,6 +568,8 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
     //Verifica se o período visivel possui colunas sem dados e ajusta a referencia de saldo inicial e final para a coluna de total
     let colSaldIni
     let colSaldFim
+    console.log(PeUChave.primeiraChave)
+    console.log(colunasVisiveis[0])
     let i = compararChaves(PeUChave.primeiraChave, colunasVisiveis[0])
     if(i >= 0) colSaldIni = PeUChave.primeiraChave;
     if(i < 0) colSaldIni = colunasVisiveis[0]
