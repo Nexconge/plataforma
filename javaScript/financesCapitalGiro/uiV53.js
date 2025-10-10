@@ -454,6 +454,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
             renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
+    console.log(entradasESaidas)
     thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     entradasESaidas.forEach(classe => {
         //Renderiza a linha de dre
