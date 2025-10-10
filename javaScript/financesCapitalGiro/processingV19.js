@@ -157,16 +157,12 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', 
         '(+/-) Empréstimos/Consórcios'
     ]);
-    
+
     let valorTotal = 0;
     
     // Inicializa as classes de entrada/saída para garantir que sempre existam.
     matrizDRE['(+) Entradas'] = {};
     matrizDRE['(-) Saídas'] = {};
-
-    classesParaDetalhar.forEach(classe => {
-        if (!matrizDRE[classe]) matrizDRE[classe] = {};
-    });
 
     lancamentos.forEach(lancamento => {
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
@@ -191,6 +187,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         const classe = classeInfo ? classeInfo.classe : 'Outros';
 
         // Adiciona o valor à matriz DRE na classe e período corretos.
+        if (!matrizDRE[classe]) matrizDRE[classe] = {};
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         // Adiciona também às linhas totalizadoras de entradas e saídas.
