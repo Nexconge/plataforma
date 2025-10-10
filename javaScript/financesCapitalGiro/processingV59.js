@@ -263,9 +263,6 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     const fluxoDeCaixaMensal = {};
     const contasAReceber = [];
     const contasAPagar = [];
-
-    const nomeConta = contaInfo ? contaInfo.nome : `Conta ${contaId}`;
-    console.log(`Processando Capital de Giro para a conta: ${nomeConta} (ID: ${contaId})`);
     
     if (Array.isArray(capitalDeGiro)) {
         capitalDeGiro.forEach(item => {
@@ -330,6 +327,7 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
     const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
 
     // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
+    console.log(saldoIniARealizar)
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
 
     // Processa os dados para o modo A REALIZAR (previsões futuras).
@@ -352,7 +350,6 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
  * @returns {void} A função não retorna um valor, pois modifica o objeto `matrizDRE` por referência.
  */
 function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) {
-    console.log(saldoInicial)
     // Inicia o saldo acumulado com o saldo inicial fornecido. Este valor será atualizado a cada coluna (período).
     let saldoAcumulado = saldoInicial;
 
