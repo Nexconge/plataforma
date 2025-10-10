@@ -314,8 +314,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
     // Cria o corpo da tabela.
     const tbody = document.createElement('tbody');
     ordemClasses.forEach(classe => {
-        // Ignora classes que não têm dados.
-        if (!matrizDRE[classe]) return;
         
         const row = tbody.insertRow();
         row.insertCell().textContent = classe;
