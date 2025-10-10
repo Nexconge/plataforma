@@ -597,10 +597,34 @@ function agregarDadosParaAnual(monthlyData) {
  * @param {string[]} colunasVisiveis - As colunas que devem ser somadas no total.
  * @returns {void}
  */
-function calcularColunaTotalDRE(matrizDRE, colunasVisiveis) {
+function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
+    //Outras linhas
     Object.values(matrizDRE).forEach(periodos => {
         periodos.TOTAL = colunasVisiveis.reduce((acc, coluna) => acc + (periodos[coluna] || 0), 0);
     });
+
+    //Linhas de saldo
+    //Verifica se o período visivel possui colunas sem dados e ajusta a referencia de saldo inicial e final para a coluna de total
+    let i = compararChaves(PeUChave.primeiraChave, colunasVisiveis[0])
+    let colSaldIni
+    let colSaldFim
+    if(i >= 0) colSaldIni = PeUChave.primeiraChave;
+    if(i < 0) colSaldIni = colunasVisiveis[0]
+    i = compararChaves(PeUChave.ultimaChave, colunasVisiveis[colunasVisiveis.length - 1])
+    if(i <= 0) colSaldFim = PeUChave.ultimaChave;
+    if(i > 0) colSaldFim = colunasVisiveis[0]
+
+    if (colunasVisiveis.length > 0) {
+        if(dadosAntesDosTotais.matrizDRE['Caixa Inicial']) {
+            const {mesA, anoA} = colunasVisiveis[0].split("-");
+            const {mesB, anoB} = primeiraChave.split("-");
+            if (anoA != anoB)
+            dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colSaldIni] || 0;
+        }
+        if(dadosAntesDosTotais.matrizDRE['Caixa Final']) {
+            dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colSaldFim] || 0;
+        }
+    }
 }
 /**
  * Função principal que orquestra a mesclagem e o processamento final dos dados de múltiplas contas.
@@ -638,20 +662,11 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
         ? agregarDadosParaAnual(monthlyMerged)
         : monthlyMerged;
 
-    // 3. Calcula a coluna "TOTAL".
-    calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis);
-    // Casos especiais para a coluna TOTAL: Caixa Inicial é o do primeiro período, Caixa Final é o do último.
-    if (colunasVisiveis.length > 0) {
-        if(dadosAntesDosTotais.matrizDRE['Caixa Inicial']) {
-            dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
-        }
-        if(dadosAntesDosTotais.matrizDRE['Caixa Final']) {
-            dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
-        }
-    }
-    
-    // 4. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
+    // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);
+
+    // 4. Calcula a coluna "TOTAL" para a tabela de DRE
+    calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis, PeUChave);
 
     // 5. Gera a Matriz de Capital de Giro.
     let matrizCapitalGiro = {};
