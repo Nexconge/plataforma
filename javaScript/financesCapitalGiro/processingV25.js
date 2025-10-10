@@ -612,7 +612,7 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
     if(i < 0) colSaldIni = colunasVisiveis[0]
     i = compararChaves(PeUChave.ultimaChave, colunasVisiveis[colunasVisiveis.length - 1])
     if(i <= 0) colSaldFim = PeUChave.ultimaChave;
-    if(i > 0) colSaldFim = colunasVisiveis[0]
+    if(i > 0) colSaldFim = colunasVisiveis[colunasVisiveis.length - 1]
 
     if (colunasVisiveis.length > 0) {
         if(matrizDRE['Caixa Inicial']) {
