@@ -149,7 +149,7 @@ function parseDate(dateString) {
  * //   valorTotal: 3500
  * // }
  */
-function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
+function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
     // Classes que terão seus dados detalhados por departamento/categoria/fornecedor.
     const classesParaDetalhar = new Set([
@@ -228,6 +228,13 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId) {
                 catData.fornecedores[fornecedor].total += valorRateio;
             });
         }
+
+        //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
+        const colunasOrdenadas = Array.from(chavesComDados).sort(compararChaves);
+        ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
+            if (!matrizDRE[classe]) matrizDRE[classe] = {};
+        });
+        calcularLinhasDeTotalDRE(matrizDRE, colunasOrdenadas, saldoIni);
     });
 
     return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal };
@@ -313,12 +320,18 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
 function processarDadosDaConta(AppCache, dadosApi, contaId) {
     const { lancamentos, titulos , capitalDeGiro } = dadosApi;
 
-    // Processa os dados para o modo REALIZADO (transações passadas).
-    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId);
+    //Obtém o saldo inicial da conta para passá-lo para a função de processamento.
+    const contaInfo = AppCache.contasMap.get(String(contaId));
+    const saldoIniCC = contaInfo ? Number(contaInfo.saldoIni) : 0;
     
-    // Processa os dados para o modo A REALIZAR (previsões futuras).
-    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId);
+    // Processa os dados para o modo REALIZADO (transações passadas).
+    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
 
+    // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
+    const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
+
+    // Processa os dados para o modo A REALIZAR (previsões futuras).
+    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
     // Processa os dados para o relatório de Capital de Giro.
     const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
 
@@ -512,24 +525,50 @@ function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, s
     return saldoBaseTotal + saldoAcumuladoAntesDoPeriodo;
 }
 /**
- * Agrega os dados mensais consolidados em totais anuais, caso o modo de visualização seja 'anual'.
- * @param {object} monthlyData - O objeto de dados mesclados com valores mensais (saída de `mergeDadosMensais`).
+ * Agrega os dados mensais consolidados em totais anuais, tratando corretamente as linhas de saldo.
+ * @param {object} monthlyData - O objeto de dados mesclados com valores mensais.
  * @returns {object} Um novo objeto de dados com a mesma estrutura, mas com valores agregados por ano.
  */
 function agregarDadosParaAnual(monthlyData) {
     const annualData = { matrizDRE: {}, matrizDepartamentos: {} };
+    const saldosAnuais = {}; // { 'Caixa Final': { '2025': { mes: '12', valor: 1000 }, ... } }
+
     // Agrega DRE
     for (const classe in monthlyData.matrizDRE) {
         annualData.matrizDRE[classe] = {};
         for (const periodoMensal in monthlyData.matrizDRE[classe]) {
-            const ano = periodoMensal.split('-')[1];
-            annualData.matrizDRE[classe][ano] = (annualData.matrizDRE[classe][ano] || 0) + monthlyData.matrizDRE[classe][periodoMensal];
+            const [mes, ano] = periodoMensal.split('-');
+            const valor = monthlyData.matrizDRE[classe][periodoMensal];
+
+            // Lógica de exceção para saldos
+            if (classe === 'Caixa Inicial' || classe === 'Caixa Final') {
+                if (!saldosAnuais[classe]) saldosAnuais[classe] = {};
+                const MaisRecente = !saldosAnuais[classe][ano] || mes > saldosAnuais[classe][ano].mes;
+                const MaisAntigo = !saldosAnuais[classe][ano] || mes < saldosAnuais[classe][ano].mes;
+                if (classe === 'Caixa Final' && MaisRecente) {
+                    saldosAnuais[classe][ano] = { mes, valor };
+                }
+                if (classe === 'Caixa Inicial' && MaisAntigo) {
+                    saldosAnuais[classe][ano] = { mes, valor };
+                }
+            } else {
+                // Lógica padrão de soma
+                annualData.matrizDRE[classe][ano] = (annualData.matrizDRE[classe][ano] || 0) + valor;
+            }
         }
     }
+
+    // Atribui os saldos anuais corretos que foram calculados
+    for (const classe in saldosAnuais) {
+        for (const ano in saldosAnuais[classe]) {
+            annualData.matrizDRE[classe][ano] = saldosAnuais[classe][ano].valor;
+        }
+    }
+
     // Agrega Departamentos
     for (const chaveDepto in monthlyData.matrizDepartamentos) {
         const deptoData = monthlyData.matrizDepartamentos[chaveDepto];
-        annualData.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(deptoData)); // Cópia profunda
+        annualData.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(deptoData)); 
         const annualDepto = annualData.matrizDepartamentos[chaveDepto];
         for (const codCat in annualDepto.categorias) {
             const catData = annualDepto.categorias[codCat];
@@ -588,36 +627,27 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
 
     // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
-        return { matrizDRE: {}, matrizDepartamentos: {}, saldoInicialPeriodo: 0, matrizCapitalGiro: {} };
+        return { matrizDRE: {}, matrizDepartamentos: {}, matrizCapitalGiro: {} };
     }
 
     // 1. Mescla os dados mensais de todas as contas.
-    const { monthlyMerged, saldoBaseTotal, todasChaves } = mergeDadosMensais(dadosSelecionados);
+    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados);
     
-    // 2. Calcula o saldo inicial correto para o primeiro período que será exibido.
-    const saldoInicialPeriodo = calcularSaldoInicialPeriodo(monthlyMerged.matrizDRE, todasChaves, colunasVisiveis, saldoBaseTotal);
-    
-    // 3. Agrega os dados de mensais para anuais, se o modo for 'anual'.
+    // 2. Agrega os dados de mensais para anuais, se o modo for 'anual'.
     const dadosAntesDosTotais = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged)
         : monthlyMerged;
 
-    // 4. Calcula as linhas totalizadoras (Receita Líquida, Caixa Final, etc.).
-    ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
-        if (!dadosAntesDosTotais.matrizDRE[classe]) dadosAntesDosTotais.matrizDRE[classe] = {};
-    });
-    calcularLinhasDeTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis, saldoInicialPeriodo);
-    
-    // 5. Calcula a coluna "TOTAL".
+    // 3. Calcula a coluna "TOTAL".
     calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis);
     // Casos especiais para a coluna TOTAL: Caixa Inicial é o do primeiro período, Caixa Final é o do último.
     dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
     dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
     
-    // 6. Obtém a primeira e a última chave de período para controle na UI.
+    // 4. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
-    // 7. Gera a Matriz de Capital de Giro (apenas na visão mensal).
+    // 5. Gera a Matriz de Capital de Giro.
     let matrizCapitalGiro = {};
     if (modo.toLowerCase() === 'mensal') {
         const dadosCapitalGiro = listaDeDadosProcessados.map(c => c.capitalDeGiro).filter(Boolean);
