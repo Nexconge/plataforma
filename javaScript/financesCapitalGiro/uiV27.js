@@ -406,20 +406,12 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     fragment.appendChild(thead);
 
     const tbody = document.createElement('tbody');
-
-    const totais = {
-        '(+) Entradas': dadosAgrupados['(+) Entradas'],
-        '(-) Saídas': dadosAgrupados['(-) Saídas']
-    };
-    const dadosFiltrados = Object.fromEntries(
-        Object.entries(dadosAgrupados).filter(([chave]) =>
-            chave !== '(+) Entradas' && chave !== '(-) Saídas'
-        )
-    );
+    const saidas = dadosAgrupados.totais['(-) Saídas'];
+    const entradas = dadosAgrupados.totais['(+) Entradas'];
 
     // Agrupa departamentos por classe
     const classesMap = {};
-    Object.entries(dadosFiltrados).forEach(([chave, deptoData]) => {
+    Object.entries(dadosAgrupados).forEach(([chave, deptoData]) => {
         const { nome, classe, categorias } = deptoData;
         if (!classesMap[classe]) {
             classesMap[classe] = [];
@@ -456,13 +448,13 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     row.className = "linhaSaldo"
     row.insertCell().textContent = "(+) Entradas"
     colunas.forEach(col => {
-        row.insertCell().textContent = formatarValor(totais['(+) Entradas'][col])
+        row.insertCell().textContent = formatarValor(entradas[col])
     })
     row = tbody.insertRow()
     row.insertCell().textContent = "(-) Saídas"
     row.className = "linhaSaldo"
     colunas.forEach(col => {
-        row.insertCell().textContent = formatarValor(totais['(-) Saídas'][col])
+        row.insertCell().textContent = formatarValor(saidas[col])
     })
 
     fragment.appendChild(tbody);
