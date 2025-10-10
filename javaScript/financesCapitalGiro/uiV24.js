@@ -450,13 +450,16 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
         }
     });
 
-    let row = tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+    tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+
+    let row = tbody.insertRow()
+    row.className = "linhaSaldo"
     row.insertCell().textContent = "(+) Entradas"
     colunas.forEach(col => {
         row.insertCell().textContent = totais['(+) Entradas'][col]
     })
-    row = tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     row.insertCell().textContent = "(-) Saídas"
+    row.className = "linhaSaldo"
     colunas.forEach(col => {
         row.insertCell().textContent = totais['(-) Saídas'][col]
     })
