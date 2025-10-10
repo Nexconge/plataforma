@@ -456,13 +456,13 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     row.className = "linhaSaldo"
     row.insertCell().textContent = "(+) Entradas"
     colunas.forEach(col => {
-        row.insertCell().textContent = totais['(+) Entradas'][col]
+        row.insertCell().textContent = formatarValor(totais['(+) Entradas'][col])
     })
     row = tbody.insertRow()
     row.insertCell().textContent = "(-) Saídas"
     row.className = "linhaSaldo"
     colunas.forEach(col => {
-        row.insertCell().textContent = totais['(-) Saídas'][col]
+        row.insertCell().textContent = formatarValor(totais['(-) Saídas'][col])
     })
 
     fragment.appendChild(tbody);
