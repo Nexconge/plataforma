@@ -339,9 +339,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
     }
     ordemClasses.push('Caixa Inicial', 'Caixa Final');
-    if (userType && userType.toLowerCase() === 'developer') {
-        ordemClasses.push('(+) Entradas', '(-) Saídas');
-    }
 
     // Cria o cabeçalho da tabela.
     const thead = document.createElement('thead');
