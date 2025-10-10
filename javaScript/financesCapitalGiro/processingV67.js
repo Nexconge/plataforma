@@ -606,41 +606,51 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     // 1. Mescla os dados mensais de todas as contas.
     const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados);
     
-    // 2. Agrega os dados de mensais para anuais, se o modo for 'anual'.
-    const dadosAntesDosTotais = (modo.toLowerCase() === 'anual')
+    // 2. Agrega os dados para o formato ANUAL, se necessário.
+    const dadosParaCalcular = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged)
         : monthlyMerged;
 
     // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
-    // 4. Calcula o Saldo Inicial Consolidado com base na projeção
+    // 4. Calcula o Saldo Inicial Consolidado usando a sua nova abordagem.
+    // Esta lógica está correta e mais simples!
     let saldoInicialConsolidado = 0;
     if (projecao.toLowerCase() === 'arealizar') {
         saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            const saldoIni = dadosConta.dadosARealizar?.saldoIni || 0;
+            // Soma o saldo inicial de "A Realizar" de cada conta.
+            const saldoIni = dadosConta.arealizar?.saldoIni || 0;
             return acc + saldoIni;
         }, 0);
     } else {
         saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            const saldoIni = dadosConta.dadosRealizado?.saldoIni || 0;
+            // Soma o saldo inicial de "Realizado" de cada conta.
+            const saldoIni = dadosConta.realizado?.saldoIni || 0;
             return acc + saldoIni;
         }, 0);
     }
 
-    //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
-    const colunasOrdenadas = Array.from(todasChaves).sort(compararChaves);
-    const matrizDRE = dadosAntesDosTotais.matrizDRE;
+    // 5. Prepara as colunas e a matriz para o cálculo de totais.
+    const matrizDRE = dadosParaCalcular.matrizDRE;
+    
+    // Determina se as colunas para o cálculo de balanço são MESES ou ANOS.
+    const colunasParaCalcular = (modo.toLowerCase() === 'anual')
+        ? Array.from(new Set(Array.from(todasChaves).map(chave => chave.split('-')[1]))).sort()
+        : Array.from(todasChaves).sort(compararChaves);
 
+    // Garante que as linhas de total existam na matriz.
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
     });
-    calcularLinhasDeTotalDRE(matrizDRE, colunasOrdenadas, saldoInicialConsolidado);
+    
+    // 6. Executa o cálculo das linhas de total sobre os dados consolidados.
+    calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
 
-    // 4. Calcula a coluna "TOTAL" para a tabela de DRE
-    calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis, PeUChave);
+    // 7. Calcula a coluna "TOTAL" final.
+    calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
 
-    // 5. Gera a Matriz de Capital de Giro.
+    // 8. Gera a Matriz de Capital de Giro.
     let matrizCapitalGiro = {};
     if (modo.toLowerCase() === 'mensal') {
         const dadosCapitalGiro = listaDeDadosProcessados.map(c => c.capitalDeGiro).filter(Boolean);
@@ -648,7 +658,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     }
 
     // Retorna o objeto final, pronto para a renderização.
-    return { ...dadosAntesDosTotais, matrizCapitalGiro };
+    return { ...dadosParaCalcular, matrizCapitalGiro };
 }
 /**
  * Consolida os dados de capital de giro de múltiplas contas e gera a matriz final para exibição.
