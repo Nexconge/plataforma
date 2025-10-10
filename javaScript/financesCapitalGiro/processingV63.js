@@ -634,6 +634,8 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
 
     //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
     const colunasOrdenadas = Array.from(todasChaves).sort(compararChaves);
+    const matrizDRE = dadosAntesDosTotais.matrizDRE;
+
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
     });
