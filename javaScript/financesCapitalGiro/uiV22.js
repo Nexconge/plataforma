@@ -392,6 +392,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
+    console.log(dadosAgrupados);
     // Cabeçalho
     const thead = document.createElement('thead');
     const headRow = thead.insertRow();
