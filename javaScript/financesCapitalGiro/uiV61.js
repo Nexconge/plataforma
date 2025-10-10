@@ -10,7 +10,7 @@
  * @returns {string} O valor formatado como string.
  */
 function formatarValor(valor) {
-    if (valor === 0) return '-';
+    if (valor < 0.01 && valor > -0.01) return '-';
     const numeroFormatado = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0});
     return valor < 0 ? `(${numeroFormatado})` : numeroFormatado;
 }
