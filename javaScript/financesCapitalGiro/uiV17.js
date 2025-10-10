@@ -203,7 +203,11 @@ function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
         
         // Adiciona os períodos relevantes com base nos anos disponíveis.
         anosNums.forEach(ano => {
-            const inicioPeriodo = ano - ((ano - new Date().getFullYear()) % duracaoP);
+            const anoAtual = new Date().getFullYear();
+            const diferenca = ano - anoAtual;
+            // Garante que o resultado do módulo seja sempre positivo para que a lógica funcione com anos anteriores.
+            const restoCorrigido = ((diferenca % duracaoP) + duracaoP) % duracaoP; 
+            const inicioPeriodo = ano - restoCorrigido;
             periodos.add(inicioPeriodo);
         });
 
