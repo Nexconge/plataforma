@@ -616,9 +616,6 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
 
     if (colunasVisiveis.length > 0) {
         if(matrizDRE['Caixa Inicial']) {
-            const {mesA, anoA} = colunasVisiveis[0].split("-");
-            const {mesB, anoB} = primeiraChave.split("-");
-            if (anoA != anoB)
             matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][colSaldIni] || 0;
         }
         if(matrizDRE['Caixa Final']) {
