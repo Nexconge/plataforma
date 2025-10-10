@@ -230,13 +230,6 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
                 catData.fornecedores[fornecedor].total += valorRateio;
             });
         }
-
-        //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
-        const colunasOrdenadas = Array.from(chavesComDados).sort(compararChaves);
-        ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
-            if (!matrizDRE[classe]) matrizDRE[classe] = {};
-        });
-        calcularLinhasDeTotalDRE(matrizDRE, colunasOrdenadas, saldoIni);
     });
 
     return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal, entradasESaidas };
@@ -328,7 +321,6 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
 
     // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
-    console.log(saldoIniARealizar)
     // Processa os dados para o modo A REALIZAR (previsões futuras).
     const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
     // Processa os dados para o relatório de Capital de Giro.
@@ -417,7 +409,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
     const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {}, entradasESaidas: {}};
     const todasChaves = new Set(); // Armazena todos os períodos únicos (ex: '01-2024', '02-2024')
 
-    // Soma o saldo inicial de todas as contas para obter um saldo base consolidado.
+        // Soma o saldo inicial de todas as contas para obter um saldo base consolidado.
     listaDeDadosProcessados.reduce((acc, dados) => {
         // Coleta todas as chaves de período de todas as contas.
         dados.chavesComDados.forEach(chave => todasChaves.add(chave));
@@ -472,7 +464,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
             }
         }
     }, 0); //0 é o valor inicial para uma coluna/chave, garante que linhas sem dados aparecam.
-
+    
     return { monthlyMerged, todasChaves };
 }
 /**
@@ -621,6 +613,31 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
 
     // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);
+
+    // 4. Calcula o Saldo Inicial Consolidado com base na projeção
+    let saldoInicialConsolidado = 0;
+    if (projecao.toLowerCase() === 'arealizar') {
+        // Para "A Realizar", o saldo inicial é o saldo final do "Realizado".
+        // Saldo Final Realizado = (Soma Saldos Iniciais das Contas) + (Soma Movimentação Total do Realizado)
+        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
+            const saldoIni = dadosConta.capitalDeGiro?.saldoInicial || 0;
+            const movimentacaoRealizado = dadosConta.realizado?.valorTotal || 0;
+            return acc + saldoIni + movimentacaoRealizado;
+        }, 0);
+    } else {
+        // Para "Realizado", o saldo inicial é simplesmente a soma dos saldos iniciais de cada conta.
+        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
+            const saldoIni = dadosConta.capitalDeGiro?.saldoInicial || 0;
+            return acc + saldoIni;
+        }, 0);
+    }
+
+    //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
+    const colunasOrdenadas = Array.from(chavesComDados).sort(compararChaves);
+    ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
+        if (!matrizDRE[classe]) matrizDRE[classe] = {};
+    });
+    calcularLinhasDeTotalDRE(matrizDRE, colunasOrdenadas, saldoInicialConsolidado);
 
     // 4. Calcula a coluna "TOTAL" para a tabela de DRE
     calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis, PeUChave);
