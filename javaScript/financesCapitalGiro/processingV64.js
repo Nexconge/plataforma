@@ -232,7 +232,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         }
     });
 
-    return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal, entradasESaidas };
+    return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal, entradasESaidas, saldoIni };
 }
 /**
  * Pré-processa os dados de capital de giro para uma única conta.
@@ -615,22 +615,10 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
     // 4. Calcula o Saldo Inicial Consolidado com base na projeção
-    let saldoInicialConsolidado = 0;
-    if (projecao.toLowerCase() === 'arealizar') {
-        // Para "A Realizar", o saldo inicial é o saldo final do "Realizado".
-        // Saldo Final Realizado = (Soma Saldos Iniciais das Contas) + (Soma Movimentação Total do Realizado)
-        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            const saldoIni = dadosConta.capitalDeGiro?.saldoInicial || 0;
-            const movimentacaoRealizado = dadosConta.realizado?.valorTotal || 0;
+    let saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
+            const saldoIni = dadosConta.dadosARealizar.saldoIni || 0;
             return acc + saldoIni + movimentacaoRealizado;
-        }, 0);
-    } else {
-        // Para "Realizado", o saldo inicial é simplesmente a soma dos saldos iniciais de cada conta.
-        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            const saldoIni = dadosConta.capitalDeGiro?.saldoInicial || 0;
-            return acc + saldoIni;
-        }, 0);
-    }
+        }, 0)
 
     //Calcula as linhas totalizadoras (Saldo inicial e final, Receita Liquida, Geração de Caixa, etc.)
     const colunasOrdenadas = Array.from(todasChaves).sort(compararChaves);
