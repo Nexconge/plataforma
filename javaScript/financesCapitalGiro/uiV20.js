@@ -339,9 +339,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         ordemClasses.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
     }
     ordemClasses.push('Caixa Inicial', 'Caixa Final');
-    if (userType && userType.toLowerCase() === 'developer') {
-        ordemClasses.push('(+) Entradas', '(-) Saídas');
-    }
 
     // Cria o cabeçalho da tabela.
     const thead = document.createElement('thead');
@@ -358,7 +355,6 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         
         const row = tbody.insertRow();
         row.insertCell().textContent = classe;
-        
         // Aplica estilos CSS com base no tipo de linha.
         if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.classList.add('linhatotal');
@@ -443,6 +439,17 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
             renderClasse(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
+
+    let row = tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+    row.insertCell().textContent = "(+) Entradas"
+    colunas.forEach(col => {
+        row.insertCell().textContent = matrizDepartamentos['(+) Entradas'][col]
+    })
+    row = tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+    row.insertCell().textContent = "(-) Saídas"
+    colunas.forEach(col => {
+        row.insertCell().textContent = matrizDepartamentos['(-) Saídas'][col]
+    })
 
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);

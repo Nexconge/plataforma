@@ -161,8 +161,8 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     let valorTotal = 0;
     
     // Inicializa as classes de entrada/saída para garantir que sempre existam.
-    matrizDRE['(+) Entradas'] = {};
-    matrizDRE['(-) Saídas'] = {};
+    matrizDepartamentos['(+) Entradas'] = {};
+    matrizDepartamentos['(-) Saídas'] = {};
 
     lancamentos.forEach(lancamento => {
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
@@ -190,11 +190,11 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
-        // Adiciona também às linhas totalizadoras de entradas e saídas.
+        // Adiciona também às linhas totalizadoras de entradas e saídas para a matriz de departamentos
         if (valor < 0) {
-            matrizDRE['(-) Saídas'][chaveAgregacao] = (matrizDRE['(-) Saídas'][chaveAgregacao] || 0) + valor;
+            matrizDepartamentos['(-) Saídas'][chaveAgregacao] = (matrizDepartamentos['(-) Saídas'][chaveAgregacao] || 0) + valor;
         } else {
-            matrizDRE['(+) Entradas'][chaveAgregacao] = (matrizDRE['(+) Entradas'][chaveAgregacao] || 0) + valor;
+            matrizDepartamentos['(+) Entradas'][chaveAgregacao] = (matrizDepartamentos['(+) Entradas'][chaveAgregacao] || 0) + valor;
         }
 
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.
