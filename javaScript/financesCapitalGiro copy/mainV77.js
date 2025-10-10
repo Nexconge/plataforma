@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV50.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV50.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV50.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV67.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV61.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -89,7 +89,7 @@ async function handleFiltroChange() {
     }
 
     // 4. Junta os dados de todas as contas selecionadas que estão no cache.
-    const matrizesParaJuntar = contasSelecionadas
+    const dadosParaJuntar = contasSelecionadas
         .map(id => appCache.matrizesPorConta.get(id))
         .filter(Boolean); // Filtra nulos/placeholders
 
@@ -97,7 +97,7 @@ async function handleFiltroChange() {
     const anoSelect = document.getElementById('anoSelect');
     const modoSelect = document.getElementById('modoSelect');
     let anosDisponiveis = new Set();
-    matrizesParaJuntar.forEach(d => {
+    dadosParaJuntar.forEach(d => {
         const dadosProjecao = d[appCache.projecao.toLowerCase()];
         if (dadosProjecao && dadosProjecao.chavesComDados) {
             dadosProjecao.chavesComDados.forEach(chave => anosDisponiveis.add(chave.split('-')[1]));
@@ -106,7 +106,6 @@ async function handleFiltroChange() {
     const anosArray = Array.from(anosDisponiveis).sort();
     if (anosArray.length === 0) anosArray.push(String(new Date().getFullYear()));
     
-    console.log(anosArray);
     // Atualiza o select de anos, usando a flag para evitar nova chamada a handleFiltroChange.
     appCache.flagAnos = true;
     atualizarOpcoesAnoSelect(anoSelect, anosArray, modoSelect.value, appCache.projecao);
@@ -117,7 +116,7 @@ async function handleFiltroChange() {
     
     // Consolida os dados de todas as contas selecionadas em uma única matriz para exibição.
     // Retorna um objeto final com a estrutura: { matrizDRE, matrizDepartamentos, ... }
-    const dadosParaExibir = mergeMatrizes(matrizesParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
+    const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
     // 5. Renderiza as tabelas na UI com os dados finais.
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
