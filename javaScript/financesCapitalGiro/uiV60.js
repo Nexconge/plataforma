@@ -439,7 +439,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
 
     // Renderiza as classes na ordem definida
     ordemClasses.forEach(classe => {
-        if (classe) {
+        if (classesMap[classe]) {
             renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
         }
     });
