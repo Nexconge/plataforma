@@ -311,8 +311,8 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
         document.getElementById('tabelaCapitalGiro').innerHTML = '';
         return;
     }
-    const { matrizDRE, matrizDepartamentos, PeUChave, matrizCapitalGiro } = dadosProcessados;
-    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType, PeUChave);
+    const { matrizDRE, matrizDepartamentos, matrizCapitalGiro } = dadosProcessados;
+    renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
@@ -323,7 +323,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
  * @param {string} userType - O tipo de usuário, para exibir/ocultar linhas específicas.
  * @param {object} PeUchave - Objeto com a primeira e última chave de período com dados.
  */
-function renderizarTabelaDRE(matrizDRE, colunas, userType, PeUchave) {
+function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     const tabela = document.getElementById('tabelaMatriz');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();

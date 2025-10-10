@@ -673,7 +673,7 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     }
 
     // Retorna o objeto final, pronto para a renderização.
-    return { ...dadosAntesDosTotais, PeUChave, matrizCapitalGiro };
+    return { ...dadosAntesDosTotais, matrizCapitalGiro };
 }
 /**
  * Consolida os dados de capital de giro de múltiplas contas e gera a matriz final para exibição.
