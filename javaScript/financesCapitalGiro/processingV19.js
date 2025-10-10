@@ -164,6 +164,10 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     matrizDRE['(+) Entradas'] = {};
     matrizDRE['(-) Saídas'] = {};
 
+    classesParaDetalhar.forEach(classe => {
+        if (!matrizDRE[classe]) matrizDRE[classe] = {};
+    });
+
     lancamentos.forEach(lancamento => {
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
         if (contaId != Number(lancamento.CODContaC)) return;
@@ -187,7 +191,6 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         const classe = classeInfo ? classeInfo.classe : 'Outros';
 
         // Adiciona o valor à matriz DRE na classe e período corretos.
-        if (!matrizDRE[classe]) matrizDRE[classe] = {};
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         // Adiciona também às linhas totalizadoras de entradas e saídas.
