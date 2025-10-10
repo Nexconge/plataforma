@@ -474,7 +474,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
                 }
             }
         }
-    });
+    }, 0);
 
     return { monthlyMerged, todasChaves };
 }
