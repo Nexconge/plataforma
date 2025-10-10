@@ -410,6 +410,7 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * //   monthlyMerged: { 
  * //     matrizDRE: { "Classe": { "03-2025": valorTotal } }, 
  * //     matrizDepartamentos: { "Depto|Classe": { ...dados consolidados } } 
+ *        entradasESaidas: 
  * //   },
  * //   saldoBaseTotal: 15000, // Soma dos saldos iniciais de todas as contas.
  * //   todasChaves: Set("01-2025", "02-2025", ...) // Um Set com todos os períodos únicos.
@@ -420,7 +421,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
     const todasChaves = new Set(); // Armazena todos os períodos únicos (ex: '01-2024', '02-2024')
 
     // Soma o saldo inicial de todas as contas para obter um saldo base consolidado.
-    const saldoBaseTotal = listaDeDadosProcessados.reduce((acc, dados) => {
+    listaDeDadosProcessados.reduce((acc, dados) => {
         // Coleta todas as chaves de período de todas as contas.
         dados.chavesComDados.forEach(chave => todasChaves.add(chave));
 
@@ -473,66 +474,11 @@ function mergeDadosMensais(listaDeDadosProcessados) {
                 }
             }
         }
-        // Acumula o saldo inicial de cada conta.
-        return acc + (dados.saldoIni || 0);
-    }, 0);
-
-    return { monthlyMerged, saldoBaseTotal, todasChaves };
-}
-/**
- * Calcula o saldo de caixa inicial para um período de visualização específico.
- * Isso é feito somando o saldo base de todas as contas com a variação de caixa de todos os meses ANTERIORES ao primeiro mês visível.
- * @param {object} monthlyDRE - Objeto com os dados financeiros mensais consolidados.
- * @param {Set|Array} todasChaves - Todas as chaves de período (MM-AAAA) disponíveis nos dados.
- * @param {Array<string>} colunasVisiveis - As colunas/períodos selecionados para exibição.
- * @param {number} saldoBaseTotal - O saldo de caixa inicial absoluto (soma dos saldos das contas).
- * @returns {number} O saldo de caixa inicial correto para o primeiro período visível.
- */
-function calcularSaldoInicialPeriodo(monthlyDRE, todasChaves, colunasVisiveis, saldoBaseTotal) {
-    // Função auxiliar para comparar datas no formato 'MM-AAAA'.
-    const compararPeriodos = (a, b) => {
-        const [mesA, anoA] = a.split('-');
-        const [mesB, anoB] = b.split('-');
-        return new Date(anoA, mesA - 1) - new Date(anoB, mesB - 1);
-    };
-
-    // 1. Ordena todas as chaves de período cronologicamente.
-    const colunasHistoricasOrdenadas = Array.from(todasChaves).sort(compararPeriodos);
-
-    // 2. Garante que as colunas visíveis também estejam ordenadas.
-    const colunasVisiveisOrdenadas = [...colunasVisiveis].sort(compararPeriodos);
-    if (colunasVisiveisOrdenadas.length === 0) return saldoBaseTotal;
-
-    // 3. Cria uma cópia temporária da DRE para calcular movimentações sem alterar a original.
-    const tempDRE = JSON.parse(JSON.stringify(monthlyDRE));
-    ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
-        if (!tempDRE[classe]) tempDRE[classe] = {};
     });
 
-    // 4. Calcula a 'Movimentação de Caixa Mensal' de todo o histórico, partindo de um saldo zero.
-    calcularLinhasDeTotalDRE(tempDRE, colunasHistoricasOrdenadas, 0);
-
-    let saldoAcumuladoAntesDoPeriodo = 0;
-    const primeiraColunaVisivel = colunasVisiveisOrdenadas[0];
-    
-    // 5. Itera sobre os períodos históricos e soma a variação de caixa de todos os meses ANTES do primeiro mês visível.
-    for (const periodo of colunasHistoricasOrdenadas) {
-        // Interrompe a soma quando chegamos no primeiro mês que será exibido.
-        if (compararPeriodos(periodo, primeiraColunaVisivel) >= 0) {
-            break;
-        }
-        // A variação do período inclui a movimentação mensal e outras transações de caixa (transferências, etc).
-        const variacaoDoPeriodo = (tempDRE['(=) Movimentação de Caixa Mensal']?.[periodo] || 0) +
-                                  (tempDRE['Entrada de Transferência']?.[periodo] || 0) +
-                                  (tempDRE['Saída de Transferência']?.[periodo] || 0) +
-                                  (tempDRE['Outros']?.[periodo] || 0);
-                            
-        saldoAcumuladoAntesDoPeriodo += variacaoDoPeriodo;
-    }
-
-    // 6. O saldo inicial final é a soma do saldo base com a variação de caixa acumulada dos meses anteriores.
-    return saldoBaseTotal + saldoAcumuladoAntesDoPeriodo;
+    return { monthlyMerged, todasChaves };
 }
+
 /**
  * Agrega os dados mensais consolidados em totais anuais, tratando corretamente as linhas de saldo.
  * @param {object} monthlyData - O objeto de dados mesclados com valores mensais.
