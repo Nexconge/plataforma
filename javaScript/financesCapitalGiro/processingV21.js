@@ -641,8 +641,14 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     // 3. Calcula a coluna "TOTAL".
     calcularColunaTotalDRE(dadosAntesDosTotais.matrizDRE, colunasVisiveis);
     // Casos especiais para a coluna TOTAL: Caixa Inicial é o do primeiro período, Caixa Final é o do último.
-    dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
-    dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
+    if (colunasVisiveis.length > 0) {
+        if(dadosAntesDosTotais.matrizDRE['Caixa Inicial']) {
+            dadosAntesDosTotais.matrizDRE['Caixa Inicial'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Inicial'][colunasVisiveis[0]] || 0;
+        }
+        if(dadosAntesDosTotais.matrizDRE['Caixa Final']) {
+            dadosAntesDosTotais.matrizDRE['Caixa Final'].TOTAL = dadosAntesDosTotais.matrizDRE['Caixa Final'][colunasVisiveis[colunasVisiveis.length - 1]] || 0;
+        }
+    }
     
     // 4. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);

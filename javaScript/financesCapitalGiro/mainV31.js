@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV02.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV20.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV21.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV15.js';
 
 /**
