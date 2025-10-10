@@ -458,6 +458,7 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas) {
     colunas.forEach(col => {
         row.insertCell().textContent = totais['(+) Entradas'][col]
     })
+    row = tbody.insertRow()
     row.insertCell().textContent = "(-) Saídas"
     row.className = "linhaSaldo"
     colunas.forEach(col => {
