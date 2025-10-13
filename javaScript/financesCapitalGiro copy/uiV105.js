@@ -33,18 +33,6 @@ function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
 /**
- * Compara duas chaves de período ("MM-AAAA") para ordenação cronológica.
- * @param {string} a - Primeira chave.
- * @param {string} b - Segunda chave.
- * @returns {number} Negativo se a < b, positivo se a > b, 0 se iguais.
- */
-function compararChaves(a, b) {
-    const [mesA, anoA] = a.split('-').map(Number);
-    const [mesB, anoB] = b.split('-').map(Number);
-    if (anoA !== anoB) return anoA - anoB;
-    return mesA - mesB;
-}
-/**
  * Alterna a visibilidade das linhas filhas diretas de um elemento em uma tabela hierárquica.
  * @param {string} id - O ID do elemento pai cuja linha foi clicada.
  */
@@ -79,7 +67,7 @@ function esconderDescendentes(id) {
  */
 function getSelectItems(select){
     if (!select.selectedOptions || select.selectedOptions.length === 0){
-        return Array.from(select.options).map(option => option.value);
+        return [];
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
@@ -296,6 +284,10 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
                 contaSelect.appendChild(option);
             }
         });
+    
+    if (contaSelect.options.length > 0) {
+        contaSelect.options[0].selected = true;
+    }
 }
 // --- Funções de Renderização de Tabelas ---
 /**
@@ -305,10 +297,13 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
  * @param {object} appCache - O cache da aplicação.
  */
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
+    const tabelaMatriz = document.getElementById('tabelaMatriz')
+    const tabelaCustos = document.getElementById('tabelaCustos')
+    const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
     if (!dadosProcessados) {
-        document.getElementById('tabelaMatriz').innerHTML = '';
-        document.getElementById('tabelaCustos').innerHTML = '';
-        document.getElementById('tabelaCapitalGiro').innerHTML = '';
+        if (tabelaMatriz) tabelaMatriz.innerHTML = ''
+        if (tabelaCustos) tabelaCustos.innerHTML = ''
+        if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
         return;
     }
     const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro } = dadosProcessados;

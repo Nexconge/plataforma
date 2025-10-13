@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV100.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV101.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV100.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV102.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV105.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -42,9 +42,7 @@ async function handleFiltroChange() {
 
     // Se nenhuma conta estiver selecionada, limpa as tabelas.
     if (contasSelecionadas.length === 0) {
-        atualizarVisualizacoes(null, [], appCache); 
-        document.body.classList.remove('loading');
-        return;
+        exibirTabelasVazias();
     }
 
     // 2. Identifica quais das contas selecionadas ainda não tiveram seus dados buscados e processados.
@@ -121,6 +119,30 @@ async function handleFiltroChange() {
     // 5. Renderiza as tabelas na UI com os dados finais.
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
+}
+
+function exibirTabelasVazias(){
+    const anoAtual = String(new Date().getFullYear());
+        const modoAtual = document.getElementById('modoSelect')?.value || 'mensal';
+        
+        // Gera as colunas para o ano atual com base no modo ('mensal' ou 'anual')
+        const colunasVazias = (modoAtual.toLowerCase() === 'anual')
+            ? [anoAtual]
+            : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${anoAtual}`);
+        
+        // Cria uma estrutura de dados vazia que as funções de renderização esperam.
+        const dadosVaziosParaExibir = {
+            matrizDRE: {},
+            matrizDetalhamento: {},
+            entradasESaidas: {},
+            matrizCapitalGiro: {}
+        };
+
+        // Chama a função de renderização com a estrutura vazia.
+        atualizarVisualizacoes(dadosVaziosParaExibir, colunasVazias, appCache);
+        
+        document.body.classList.remove('loading');
+        return; // Interrompe a execução para não buscar dados da API.
 }
 
 /**
