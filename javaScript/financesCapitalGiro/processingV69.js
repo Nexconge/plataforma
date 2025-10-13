@@ -312,18 +312,18 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
  * // }
  */
 function processarDadosDaConta(AppCache, dadosApi, contaId) {
-    const { lancamentos, titulos , capitalDeGiro } = dadosApi;
+    const { lancamentosProcessados, titulosEmAberto , capitalDeGiro } = dadosApi;
 
     //Obtém o saldo inicial da conta para passá-lo para a função de processamento.
     const contaInfo = AppCache.contasMap.get(String(contaId));
     const saldoIniCC = contaInfo ? Number(contaInfo.saldoIni) : 0;
     
     // Processa os dados para o modo REALIZADO (transações passadas).
-    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
+    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentosProcessados, contaId, saldoIniCC);
     // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
     // Processa os dados para o modo A REALIZAR (previsões futuras).
-    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
+    const dadosARealizar = processarRealizadoRealizar(AppCache, titulosEmAberto, contaId, saldoIniARealizar);
     // Processa os dados para o relatório de Capital de Giro.
     const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
 
