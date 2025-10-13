@@ -197,6 +197,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.
          if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {
             const fornecedor = lancamento.Cliente || "Não informado";
+            const codCategoria = lancamento.CODCategoria
             const chavePrimaria = `${classe}|${chaveAgregacao}`; // Ex: "(-) Despesas|09-2025"
 
             // Garante a existência da entrada principal
