@@ -13,7 +13,7 @@
  * //   capitalDeGiro: [ { Natureza, DataPagamento, DataVencimento, DataEmissao, ValorTitulo, CODContaEmissao, CODContaPagamento } ]
  * // }
  */
-function extrairDadosDosTitulos(titulos) {
+function extrairDadosDosTitulos(titulos, contaId) {
     const lancamentosProcessados = [];
     const titulosEmAberto = [];
     const capitalDeGiro = [];
