@@ -33,18 +33,6 @@ function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
 /**
- * Compara duas chaves de período ("MM-AAAA") para ordenação cronológica.
- * @param {string} a - Primeira chave.
- * @param {string} b - Segunda chave.
- * @returns {number} Negativo se a < b, positivo se a > b, 0 se iguais.
- */
-function compararChaves(a, b) {
-    const [mesA, anoA] = a.split('-').map(Number);
-    const [mesB, anoB] = b.split('-').map(Number);
-    if (anoA !== anoB) return anoA - anoB;
-    return mesA - mesB;
-}
-/**
  * Alterna a visibilidade das linhas filhas diretas de um elemento em uma tabela hierárquica.
  * @param {string} id - O ID do elemento pai cuja linha foi clicada.
  */
@@ -79,7 +67,7 @@ function esconderDescendentes(id) {
  */
 function getSelectItems(select){
     if (!select.selectedOptions || select.selectedOptions.length === 0){
-        return Array.from(select.options).map(option => option.value);
+        return null;
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
