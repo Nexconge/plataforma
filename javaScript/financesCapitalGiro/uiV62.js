@@ -311,9 +311,9 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
         document.getElementById('tabelaCapitalGiro').innerHTML = '';
         return;
     }
-    const { matrizDRE, matrizDepartamentos, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
+    const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
-    renderizarTabelaDepartamentos(appCache.categoriasMap, matrizDepartamentos, colunas, entradasESaidas);
+    renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
 }
 /**
@@ -395,10 +395,10 @@ function renderizarLinhaDRE(classe, colunas, matrizDRE) {
 /**
  * Renderiza a tabela de detalhamento por Departamentos/Categorias/Fornecedores.
  * @param {Map} categoriasMap - O mapa de categorias para traduzir códigos em nomes.
- * @param {object} dadosAgrupados - A `matrizDepartamentos` vinda dos dados processados.
+ * @param {object} dadosAgrupados - A `matrizDetalhamento` vinda dos dados processados.
  * @param {Array<string>} colunas - As colunas de período a serem exibidas.
  */
-function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, entradasESaidas) {
+function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, entradasESaidas) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
@@ -408,52 +408,43 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
     const headRow = thead.insertRow();
     headRow.className = 'cabecalho';
     headRow.insertCell().textContent = 'Classe / Departamento / Categoria / Fornecedor';
-    colunas.forEach(coluna => {
-        headRow.insertCell().textContent = coluna;
-    });
+    colunas.forEach(coluna => headRow.insertCell().textContent = coluna);
     headRow.insertCell().textContent = 'TOTAL';
     thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     fragment.appendChild(thead);
 
     const tbody = document.createElement('tbody');
 
-    // Agrupa departamentos por classe
-    const classesMap = {};
-    Object.entries(dadosAgrupados).forEach(([chave, deptoData]) => {
-        const { nome, classe, categorias } = deptoData;
-        if (!classesMap[classe]) {
-            classesMap[classe] = [];
+    // ETAPA 1: Pré-processa os dados, agrupando por classe
+    const dadosPorClasse = {};
+    Object.entries(dadosAgrupados).forEach(([chave, dados]) => {
+        const [classe, periodo] = chave.split('|');
+        if (!dadosPorClasse[classe]) {
+            dadosPorClasse[classe] = {};
         }
-        classesMap[classe].push({ nome, categorias });
+        dadosPorClasse[classe][periodo] = dados;
     });
 
-    // Ordem fixa das classes
     const ordemClasses = [
-        '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida',
-        '(-) Custos', '(-) Despesas',
-        '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional',
-        '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
-        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios',
-        '(=) Movimentação de Caixa Mensal'
+        '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
+        '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios'
     ];
 
-    // Renderiza as classes na ordem definida
     ordemClasses.forEach(classe => {
-        if (classesMap[classe]) {
-            renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
+        if (dadosPorClasse[classe]) {
+            renderLinhaDepartamento(classe, dadosPorClasse[classe], tbody, categoriasMap, colunas);
         }
     });
 
-    // Caso existam classes não previstas em ordemClasses, renderiza no fim
-    Object.keys(classesMap).forEach(classe => {
+    // Renderiza classes restantes
+    Object.keys(dadosPorClasse).forEach(classe => {
         if (!ordemClasses.includes(classe)) {
-            renderLinhaDepartamento(classe, classesMap[classe], tbody, categoriasMap, colunas);
+            renderLinhaDepartamento(classe, dadosPorClasse[classe], tbody, categoriasMap, colunas);
         }
     });
 
-    // Linha em branco
+    // Linhas finais
     tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
-    // Linhas de total entrada e saida
     Object.keys(entradasESaidas).forEach(classe => {
         const row = renderizarLinhaDRE(classe, colunas, entradasESaidas);
         tbody.appendChild(row);
@@ -462,89 +453,88 @@ function renderizarTabelaDepartamentos(categoriasMap, dadosAgrupados, colunas, e
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
-function renderLinhaDepartamento(classe, departamentos, tbody, categoriasMap, colunas) {
+function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, colunas) {
     const classeId = `classe_${sanitizeId(classe)}`;
+    
+    // LINHA DA CLASSE
     const rowClasse = tbody.insertRow();
     rowClasse.className = 'linhaClasseDetalhamento';
     rowClasse.id = classeId;
     rowClasse.onclick = () => toggleLinha(classeId);
+    rowClasse.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
 
-    const cellClasse = rowClasse.insertCell();
-    cellClasse.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
-
-    // Totais da classe
-    const totaisClasse = Array(colunas.length).fill(0);
-    departamentos.forEach(dep => {
-        Object.values(dep.categorias).forEach(cat => {
-            colunas.forEach((coluna, idx) => {
-                totaisClasse[idx] += cat.valores[coluna] || 0;
-            });
-        });
-    });
-    totaisClasse.forEach(valor => {
+    let totalGeralClasse = 0;
+    colunas.forEach(col => {
+        const valor = dadosDaClasse[col]?.total || 0;
+        totalGeralClasse += valor;
         rowClasse.insertCell().textContent = formatarValor(valor);
     });
-    rowClasse.insertCell().textContent = formatarValor(totaisClasse.reduce((a, b) => a + b, 0));
+    rowClasse.insertCell().textContent = formatarValor(totalGeralClasse);
 
-    // Renderiza departamentos
-    departamentos.forEach(dep => {
-        const deptoId = `depto_${sanitizeId(dep.nome)}_${sanitizeId(classe)}`;
+    // ETAPA 2: Agrega todos os filhos (depts, cats, forns) de todos os períodos
+    const filhosAgregados = {};
+    for (const periodo in dadosDaClasse) {
+        for (const nomeDepto in dadosDaClasse[periodo].departamentos) {
+            if (!filhosAgregados[nomeDepto]) filhosAgregados[nomeDepto] = { categorias: {} };
+            for (const codCat in dadosDaClasse[periodo].departamentos[nomeDepto].categorias) {
+                if (!filhosAgregados[nomeDepto].categorias[codCat]) filhosAgregados[nomeDepto].categorias[codCat] = { fornecedores: {} };
+                for (const nomeForn in dadosDaClasse[periodo].departamentos[nomeDepto].categorias[codCat].fornecedores) {
+                    if (!filhosAgregados[nomeDepto].categorias[codCat].fornecedores[nomeForn]) filhosAgregados[nomeDepto].categorias[codCat].fornecedores[nomeForn] = {};
+                }
+            }
+        }
+    }
+
+    // ETAPA 3: Renderiza os filhos
+    Object.keys(filhosAgregados).sort().forEach(nomeDepto => {
+        const deptoId = `${classeId}_depto_${sanitizeId(nomeDepto)}`;
         const rowDepto = tbody.insertRow();
         rowDepto.className = `linhaDepto parent-${classeId} hidden`;
         rowDepto.id = deptoId;
         rowDepto.onclick = () => toggleLinha(deptoId);
+        rowDepto.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${nomeDepto}`;
 
-        const cellDepto = rowDepto.insertCell();
-        cellDepto.innerHTML = `<span class="expand-btn">[+]</span> ${dep.nome}`;
-
-        const totaisDepto = Array(colunas.length).fill(0);
-        Object.values(dep.categorias).forEach(cat => {
-            colunas.forEach((coluna, idx) => {
-                totaisDepto[idx] += cat.valores[coluna] || 0;
-            });
-        });
-        totaisDepto.forEach(valor => {
+        let totalGeralDepto = 0;
+        colunas.forEach(col => {
+            const valor = dadosDaClasse[col]?.departamentos[nomeDepto]?.total || 0;
+            totalGeralDepto += valor;
             rowDepto.insertCell().textContent = formatarValor(valor);
         });
-        rowDepto.insertCell().textContent = formatarValor(totaisDepto.reduce((a, b) => a + b, 0));
+        rowDepto.insertCell().textContent = formatarValor(totalGeralDepto);
 
-        // Categorias
-        Object.entries(dep.categorias).forEach(([codCategoria, catData]) => {
-            const catId = `${deptoId}_cat_${sanitizeId(codCategoria)}`;
+        Object.keys(filhosAgregados[nomeDepto].categorias).sort().forEach(codCat => {
+            const catId = `${deptoId}_cat_${sanitizeId(codCat)}`;
             const rowCat = tbody.insertRow();
             rowCat.className = `linha-categoria parent-${deptoId} hidden`;
             rowCat.id = catId;
             rowCat.onclick = (e) => { e.stopPropagation(); toggleLinha(catId); };
-
             const cellCat = rowCat.insertCell();
             cellCat.className = 'idented';
-            cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${categoriasMap.get(codCategoria) || 'Categoria desconhecida'}`;
+            cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${categoriasMap.get(codCat) || 'Categoria desconhecida'}`;
 
-            let totalCategoria = 0;
-            colunas.forEach(coluna => {
-                const valor = catData.valores[coluna] || 0;
-                totalCategoria += valor;
+            let totalGeralCat = 0;
+            colunas.forEach(col => {
+                const valor = dadosDaClasse[col]?.departamentos[nomeDepto]?.categorias[codCat]?.total || 0;
+                totalGeralCat += valor;
                 rowCat.insertCell().textContent = formatarValor(valor);
             });
-            rowCat.insertCell().textContent = formatarValor(totalCategoria);
+            rowCat.insertCell().textContent = formatarValor(totalGeralCat);
+            
+            Object.keys(filhosAgregados[nomeDepto].categorias[codCat].fornecedores).sort().forEach(nomeForn => {
+                const rowForn = tbody.insertRow();
+                rowForn.className = `linha-lancamento parent-${catId} hidden`;
+                const cellForn = rowForn.insertCell();
+                cellForn.className = 'idented2';
+                cellForn.textContent = nomeForn;
 
-            Object.values(catData.fornecedores)
-                .sort((a, b) => b.total - a.total)
-                .forEach(fornecedorData => {
-                    const rowLan = tbody.insertRow();
-                    rowLan.className = `linha-lancamento parent-${catId} hidden`;
-                    const cellLan = rowLan.insertCell();
-                    cellLan.className = 'idented2';
-                    cellLan.textContent = fornecedorData.fornecedor;
-
-                    let totalFornecedor = 0;
-                    colunas.forEach(coluna => {
-                        const valor = fornecedorData.valores[coluna] || 0;
-                        totalFornecedor += valor;
-                        rowLan.insertCell().textContent = formatarValor(valor);
-                    });
-                    rowLan.insertCell().textContent = formatarValor(totalFornecedor);
+                let totalGeralForn = 0;
+                colunas.forEach(col => {
+                    const valor = dadosDaClasse[col]?.departamentos[nomeDepto]?.categorias[codCat]?.fornecedores[nomeForn]?.total || 0;
+                    totalGeralForn += valor;
+                    rowForn.insertCell().textContent = formatarValor(valor);
                 });
+                rowForn.insertCell().textContent = formatarValor(totalGeralForn);
+            });
         });
     });
 }

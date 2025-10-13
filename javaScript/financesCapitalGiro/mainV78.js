@@ -1,8 +1,8 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos } from './apiV50.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV67.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV61.js';
+import { buscarTitulos } from './apiV51.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV68.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV62.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -71,7 +71,7 @@ async function handleFiltroChange() {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
                     const { lancamentosProcessados, titulosEmAberto, capitalDeGiro } = extrairDadosDosTitulos(titulos, contaId);
                     
-                    dadosExtraidos.lancamentos = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
+                    dadosExtraidos.lancamentos = lancamentosProcessados;
                     dadosExtraidos.titulos = titulosEmAberto;
                     dadosExtraidos.capitalDeGiro = capitalDeGiro;
                 } catch (e) {
@@ -115,7 +115,7 @@ async function handleFiltroChange() {
     filtrosAtuais = obterFiltrosAtuais();
     
     // Consolida os dados de todas as contas selecionadas em uma única matriz para exibição.
-    // Retorna um objeto final com a estrutura: { matrizDRE, matrizDepartamentos, ... }
+    // Retorna um objeto final com a estrutura: { matrizDRE, matrizDetalhamento, ... }
     const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
     // 5. Renderiza as tabelas na UI com os dados finais.
