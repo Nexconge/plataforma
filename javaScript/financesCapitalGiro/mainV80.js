@@ -64,13 +64,13 @@ async function handleFiltroChange() {
             const contaId = contasParaProcessar[i];
             const apiResponse = responses[i];
 
+            let dadosExtraidos;
             // Extrai os dados da resposta da API.
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-
                     //dados extraidos = {lancamentosProcessados, titulosEmAberto, capitalDeGiro }
-                    const dadosExtraidos = extrairDadosDosTitulos(titulos, contaId);
+                    dadosExtraidos = extrairDadosDosTitulos(titulos, contaId);
                 } catch (e) {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }
