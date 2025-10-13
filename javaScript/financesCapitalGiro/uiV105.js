@@ -284,6 +284,10 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
                 contaSelect.appendChild(option);
             }
         });
+    
+    if (contaSelect.options.length > 0) {
+        contaSelect.options[0].selected = true;
+    }
 }
 // --- Funções de Renderização de Tabelas ---
 /**
