@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV50.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV67.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV68.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV61.js';
 
 /**
@@ -69,9 +69,9 @@ async function handleFiltroChange() {
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                    const { lancamentosProcessados, titulosEmAberto, capitalDeGiro } = extrairDadosDosTitulos(titulos, contaId);
+                    const dadosExtraidos = extrairDadosDosTitulos(titulos, contaId);
                     
-                    dadosExtraidos.lancamentos = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
+                    dadosExtraidos.lancamentos = lancamentosProcessados;
                     dadosExtraidos.titulos = titulosEmAberto;
                     dadosExtraidos.capitalDeGiro = capitalDeGiro;
                 } catch (e) {
