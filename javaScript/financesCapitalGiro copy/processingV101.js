@@ -13,7 +13,7 @@
  * //   capitalDeGiro: [ { Natureza, DataPagamento, DataVencimento, DataEmissao, ValorTitulo, CODContaEmissao, CODContaPagamento } ]
  * // }
  */
-function extrairDadosDosTitulos(titulos) {
+function extrairDadosDosTitulos(titulos, contaId) {
     const lancamentosProcessados = [];
     const titulosEmAberto = [];
     const capitalDeGiro = [];
@@ -44,15 +44,18 @@ function extrairDadosDosTitulos(titulos) {
             let departamentosObj = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
             
             // Monta o objeto de lançamento e adiciona ao array de lançamentos processados
-            lancamentosProcessados.push({
-                Natureza: titulo.Natureza,
-                DataLancamento: lancamento.DataLancamento,
-                CODContaC: lancamento.CODContaC,
-                ValorLancamento: lancamento.ValorLancamento,
-                CODCategoria: titulo.Categoria,
-                Cliente: titulo.Cliente,
-                Departamentos: departamentosObj
-            });
+            // Filtra lançamentos que não foram pagos por está conta  
+            if (Number(lancamento.CODContaC) === contaId) {
+                lancamentosProcessados.push({
+                    Natureza: titulo.Natureza,
+                    DataLancamento: lancamento.DataLancamento,
+                    CODContaC: lancamento.CODContaC,
+                    ValorLancamento: lancamento.ValorLancamento,
+                    CODCategoria: titulo.Categoria,
+                    Cliente: titulo.Cliente,
+                    Departamentos: departamentosObj
+                });
+            }
 
             // Adiciona a transação à lista de capital de giro como um evento de caixa realizado.
             capitalDeGiro.push({
@@ -144,37 +147,33 @@ function parseDate(dateString) {
  * // Estrutura do objeto de retorno:
  * // {
  * //   matrizDRE: { "ClasseExemplo": { "03-2025": 1500, "04-2025": 2000 }, ... },
- * //   matrizDepartamentos: { "NomeDepto|Classe": { nome, classe, categorias: { ... } }, ... },
- * //   chavesComDados: Set("03-2025", "04-2025", ...),
+ * //   matrizDetalhamento: { "Classe|Periodo": { Categorias[{ total, departamentos [{total, fornecedores { fornecedors, total }}]}] }
+ * //   chavesComDados: ("03-2025", "04-2025", ...),
  * //   valorTotal: 3500
  * //   entradasESaidas { "Entradas":{ "02-2023": 1500...}, "Saidas" {"01-2024": 2000...}...}
  * // }
  */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
-    const matrizDRE = {}, matrizDepartamentos = {}, chavesComDados = new Set();
+    const matrizDRE = {}, matrizDetalhamento = {}, chavesComDados = new Set();
     const entradasESaidas = {};
+    const entradas = entradasESaidas['(+) Entradas'] = {};
+    const saidas = entradasESaidas['(-) Saídas'] = {};
+    let valorTotal = 0;
+    
     // Classes que terão seus dados detalhados por departamento/categoria/fornecedor.
     const classesParaDetalhar = new Set([
         '(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL',
         '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', 
         '(+/-) Empréstimos/Consórcios'
     ]);
-
-    let valorTotal = 0;
     
-    // Inicializa as classes de entrada/saída para garantir que sempre existam.
-    const entradas = entradasESaidas['(+) Entradas'] = {};
-    const saidas = entradasESaidas['(-) Saídas'] = {};
-
     lancamentos.forEach(lancamento => {
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
         if (contaId != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) return;
         
         // Cria a chave de agregação no formato 'MM-AAAA'.
-        const partesData = lancamento.DataLancamento.split('/');
-        if (partesData.length !== 3) return; 
-        const [dia, mesRaw, ano] = partesData;
+        const [dia, mesRaw, ano] = lancamento.DataLancamento.split('/');
         const chaveAgregacao = `${mesRaw.padStart(2, '0')}-${ano}`;
         chavesComDados.add(chaveAgregacao);
     
@@ -184,8 +183,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         valorTotal += valor;
 
         // Encontra a classe da DRE correspondente à categoria do lançamento.
-        const codCategoria = lancamento.CODCategoria || 'SemCategoria';
-        const classeInfo = dadosBase.classesMap.get(codCategoria);
+        const classeInfo = dadosBase.classesMap.get(lancamento.CODCategoria);
         const classe = classeInfo ? classeInfo.classe : 'Outros';
 
         // Adiciona o valor à matriz DRE na classe e período corretos.
@@ -193,46 +191,49 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         // Adiciona também às linhas totalizadoras de entradas e saídas.
-        if (valor < 0) {
-            saidas[chaveAgregacao] = (saidas[chaveAgregacao] || 0) + valor;
-        } else {
-            entradas[chaveAgregacao] = (entradas[chaveAgregacao] || 0) + valor;
-        }
+        if (valor < 0) { saidas[chaveAgregacao] = (saidas[chaveAgregacao] || 0) + valor;
+        } else { entradas[chaveAgregacao] = (entradas[chaveAgregacao] || 0) + valor; }
 
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.
-        if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {
-            const fornecedor = lancamento.Cliente;
+         if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {
+            const fornecedor = lancamento.Cliente || "Não informado";
+            const codCategoria = lancamento.CODCategoria
+            const chavePrimaria = `${classe}|${chaveAgregacao}`; // Ex: "(-) Despesas|09-2025"
+
+            // Garante a existência da entrada principal
+            if (!matrizDetalhamento[chavePrimaria]) {
+                matrizDetalhamento[chavePrimaria] = { total: 0, departamentos: {} };
+            }
+            const entradaMatriz = matrizDetalhamento[chavePrimaria];
+
             lancamento.Departamentos.forEach(depto => {
                 let valorRateio = depto.ValorDepto;
                 if (lancamento.Natureza === "P") valorRateio = -valorRateio;
                 
+                entradaMatriz.total += valorRateio; // Adiciona ao total da classe/período
                 const nomeDepto = dadosBase.departamentosMap.get(depto.CodDpto) || 'Outros Departamentos';
-                const chaveDepto = `${nomeDepto}|${classe}`;
+
+                if (!entradaMatriz.departamentos[nomeDepto]) {
+                    entradaMatriz.departamentos[nomeDepto] = { total: 0, categorias: {} };
+                }
+                const deptoRef = entradaMatriz.departamentos[nomeDepto];
+                deptoRef.total += valorRateio;
+
+                if (!deptoRef.categorias[codCategoria]) {
+                    deptoRef.categorias[codCategoria] = { total: 0, fornecedores: {} };
+                }
+                const catRef = deptoRef.categorias[codCategoria];
+                catRef.total += valorRateio;
                 
-                // Inicializa a estrutura do departamento se ainda não existir.
-                if (!matrizDepartamentos[chaveDepto]) {
-                    matrizDepartamentos[chaveDepto] = { nome: nomeDepto, classe, categorias: {} };
+                if (!catRef.fornecedores[fornecedor]) {
+                    catRef.fornecedores[fornecedor] = { total: 0 };
                 }
-                const categoriaRef = matrizDepartamentos[chaveDepto].categorias;
-                if (!categoriaRef[codCategoria]) {
-                    categoriaRef[codCategoria] = { valores: {}, fornecedores: {} };
-                }
-                const catData = categoriaRef[codCategoria];
-                // Acumula o valor na categoria e período corretos.
-                catData.valores[chaveAgregacao] = (catData.valores[chaveAgregacao] || 0) + valorRateio;
-                
-                // Detalha por fornecedor.
-                if (!catData.fornecedores[fornecedor]) {
-                    catData.fornecedores[fornecedor] = { fornecedor, valores: {}, total: 0 };
-                }
-                catData.fornecedores[fornecedor].valores[chaveAgregacao] =
-                    (catData.fornecedores[fornecedor].valores[chaveAgregacao] || 0) + valorRateio;
-                catData.fornecedores[fornecedor].total += valorRateio;
+                catRef.fornecedores[fornecedor].total += valorRateio;
             });
         }
     });
 
-    return { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal, entradasESaidas, saldoIni };
+    return { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal, entradasESaidas, saldoIni };
 }
 /**
  * Pré-processa os dados de capital de giro para uma única conta.
@@ -304,8 +305,8 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
  * @returns {object} Um objeto estruturado contendo todos os dados processados para a conta.
  * // Estrutura do objeto de retorno:
  * // {
- * //   realizado: { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal },
- * //   arealizar: { matrizDRE, matrizDepartamentos, chavesComDados, valorTotal },
+ * //   realizado: { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal },
+ * //   arealizar: { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal },
  * //   capitalDeGiro: { saldoInicial, fluxoDeCaixaMensal, contasAReceber, contasAPagar }
  * // }
  */
@@ -318,7 +319,6 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
     
     // Processa os dados para o modo REALIZADO (transações passadas).
     const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
-
     // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
     // Processa os dados para o modo A REALIZAR (previsões futuras).
@@ -398,7 +398,7 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * // {
  * //   monthlyMerged: { 
  * //     matrizDRE: { "Classe": { "03-2025": valorTotal } }, 
- * //     matrizDepartamentos: { "Depto|Classe": { ...dados consolidados } } 
+ * //     matrizDetalhamento: { "Classe|Periodo": { ...dados consolidados } } 
  *        entradasESaidas: 
  * //   },
  * //   saldoBaseTotal: 15000, // Soma dos saldos iniciais de todas as contas.
@@ -406,56 +406,58 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * // }
  */
 function mergeDadosMensais(listaDeDadosProcessados) {
-    const monthlyMerged = { matrizDRE: {}, matrizDepartamentos: {}, entradasESaidas: {}};
-    const todasChaves = new Set(); // Armazena todos os períodos únicos (ex: '01-2024', '02-2024')
+    const monthlyMerged = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}};
+    const todasChaves = new Set();
 
-        // Soma o saldo inicial de todas as contas para obter um saldo base consolidado.
-    listaDeDadosProcessados.reduce((acc, dados) => {
-        // Coleta todas as chaves de período de todas as contas.
+    listaDeDadosProcessados.forEach(dados => {
         dados.chavesComDados.forEach(chave => todasChaves.add(chave));
-
-        // Mescla os dados da DRE somando os valores de cada classe/período.
+        // Mescla a matrizDRE
         for (const classe in dados.matrizDRE) {
             if (!monthlyMerged.matrizDRE[classe]) monthlyMerged.matrizDRE[classe] = {};
             for (const periodo in dados.matrizDRE[classe]) {
                 monthlyMerged.matrizDRE[classe][periodo] = (monthlyMerged.matrizDRE[classe][periodo] || 0) + dados.matrizDRE[classe][periodo];
             }
         }
-        // Mescla os dados de Entradas E Saidas 
+        // Mescla entradasESaidas
         for (const classe in dados.entradasESaidas) {
             if (!monthlyMerged.entradasESaidas[classe]) monthlyMerged.entradasESaidas[classe] = {};
             for (const periodo in dados.entradasESaidas[classe]) {
                 monthlyMerged.entradasESaidas[classe][periodo] = (monthlyMerged.entradasESaidas[classe][periodo] || 0) + dados.entradasESaidas[classe][periodo];
             }
         }
-
-        // Mescla os dados dos Departamentos (uma estrutura mais complexa).
-        for (const chaveDepto in dados.matrizDepartamentos) {
-            // Se o departamento ainda não existe no objeto mesclado, faz uma cópia profunda para evitar mutação.
-            if (!monthlyMerged.matrizDepartamentos[chaveDepto]) {
-                monthlyMerged.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(dados.matrizDepartamentos[chaveDepto]));
+        // Mescla matrizDetalhamento
+        for (const chavePrimaria in dados.matrizDetalhamento) {
+            const dadosOrigem = dados.matrizDetalhamento[chavePrimaria];
+            
+            if (!monthlyMerged.matrizDetalhamento[chavePrimaria]) {
+                monthlyMerged.matrizDetalhamento[chavePrimaria] = JSON.parse(JSON.stringify(dadosOrigem));
             } else {
-                // Se já existe, itera sobre as categorias e fornecedores para somar os valores.
-                const mergedDepto = monthlyMerged.matrizDepartamentos[chaveDepto];
-                const deptoData = dados.matrizDepartamentos[chaveDepto];
-                for (const codCat in deptoData.categorias) {
-                    if (!mergedDepto.categorias[codCat]) {
-                        mergedDepto.categorias[codCat] = JSON.parse(JSON.stringify(deptoData.categorias[codCat]));
+                const dadosDestino = monthlyMerged.matrizDetalhamento[chavePrimaria];
+                dadosDestino.total += dadosOrigem.total;
+
+                for (const nomeDepto in dadosOrigem.departamentos) {
+                    const deptoOrigem = dadosOrigem.departamentos[nomeDepto];
+                    if (!dadosDestino.departamentos[nomeDepto]) {
+                        dadosDestino.departamentos[nomeDepto] = JSON.parse(JSON.stringify(deptoOrigem));
                     } else {
-                        const mergedCat = mergedDepto.categorias[codCat];
-                        const catData = deptoData.categorias[codCat];
-                        // Soma valores mensais da categoria.
-                        for (const periodo in catData.valores) {
-                            mergedCat.valores[periodo] = (mergedCat.valores[periodo] || 0) + catData.valores[periodo];
-                        }
-                        // Soma valores dos fornecedores dentro da categoria.
-                        for (const forn in catData.fornecedores) {
-                            if (!mergedCat.fornecedores[forn]) {
-                                mergedCat.fornecedores[forn] = JSON.parse(JSON.stringify(catData.fornecedores[forn]));
+                        const deptoDestino = dadosDestino.departamentos[nomeDepto];
+                        deptoDestino.total += deptoOrigem.total;
+
+                        for (const codCat in deptoOrigem.categorias) {
+                            const catOrigem = deptoOrigem.categorias[codCat];
+                            if (!deptoDestino.categorias[codCat]) {
+                                deptoDestino.categorias[codCat] = JSON.parse(JSON.stringify(catOrigem));
                             } else {
-                                mergedCat.fornecedores[forn].total += catData.fornecedores[forn].total;
-                                for (const periodo in catData.fornecedores[forn].valores) {
-                                    mergedCat.fornecedores[forn].valores[periodo] = (mergedCat.fornecedores[forn].valores[periodo] || 0) + catData.fornecedores[forn].valores[periodo];
+                                const catDestino = deptoDestino.categorias[codCat];
+                                catDestino.total += catOrigem.total;
+
+                                for (const nomeForn in catOrigem.fornecedores) {
+                                    const fornOrigem = catOrigem.fornecedores[nomeForn];
+                                    if (!catDestino.fornecedores[nomeForn]) {
+                                        catDestino.fornecedores[nomeForn] = JSON.parse(JSON.stringify(fornOrigem));
+                                    } else {
+                                        catDestino.fornecedores[nomeForn].total += fornOrigem.total;
+                                    }
                                 }
                             }
                         }
@@ -463,7 +465,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
                 }
             }
         }
-    }, 0); //0 é o valor inicial para uma coluna/chave, garante que linhas sem dados aparecam.
+    });
     
     return { monthlyMerged, todasChaves };
 }
@@ -473,7 +475,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
  * @returns {object} Um novo objeto de dados com a mesma estrutura, mas com valores agregados por ano.
  */
 function agregarDadosParaAnual(monthlyData) {
-    const annualData = { matrizDRE: {}, matrizDepartamentos: {}, entradasESaidas: {}};
+    const annualData = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}};
     const saldosAnuais = {}; // { 'Caixa Final': { '2025': { mes: '12', valor: 1000 }, ... } }
 
     // Agrega DRE
@@ -499,6 +501,7 @@ function agregarDadosParaAnual(monthlyData) {
             }
         }
     }
+    // Agrega entradasESaidas
     for (const classe in monthlyData.entradasESaidas) {
         annualData.entradasESaidas[classe] = {};
         for (const periodoMensal in monthlyData.entradasESaidas[classe]) {
@@ -507,34 +510,49 @@ function agregarDadosParaAnual(monthlyData) {
             annualData.entradasESaidas[classe][ano] = (annualData.entradasESaidas[classe][ano] || 0) + valor;
         }
     }
-
     // Atribui os saldos anuais corretos que foram calculados
     for (const classe in saldosAnuais) {
         for (const ano in saldosAnuais[classe]) {
             annualData.matrizDRE[classe][ano] = saldosAnuais[classe][ano].valor;
         }
     }
-
     // Agrega Departamentos
-    for (const chaveDepto in monthlyData.matrizDepartamentos) {
-        const deptoData = monthlyData.matrizDepartamentos[chaveDepto];
-        annualData.matrizDepartamentos[chaveDepto] = JSON.parse(JSON.stringify(deptoData)); 
-        const annualDepto = annualData.matrizDepartamentos[chaveDepto];
-        for (const codCat in annualDepto.categorias) {
-            const catData = annualDepto.categorias[codCat];
-            const valoresAnuais = {};
-            for (const periodoMensal in catData.valores) {
-                const ano = periodoMensal.split('-')[1];
-                valoresAnuais[ano] = (valoresAnuais[ano] || 0) + catData.valores[periodoMensal];
+    for (const chaveMensal in monthlyData.matrizDetalhamento) {
+        const dadosMensais = monthlyData.matrizDetalhamento[chaveMensal];
+        const [classe, periodoMensal] = chaveMensal.split('|');
+        const ano = periodoMensal.split('-')[1];
+        const chaveAnual = `${classe}|${ano}`;
+        // Garante que a entrada anual exista
+        if (!annualData.matrizDetalhamento[chaveAnual]) {
+            annualData.matrizDetalhamento[chaveAnual] = { total: 0, departamentos: {} };
+        }
+        const dadosAnuais = annualData.matrizDetalhamento[chaveAnual];
+        // Soma o total da classe para o ano
+        dadosAnuais.total += dadosMensais.total;
+        // Itera sobre os departamentos do mês
+        for (const nomeDepto in dadosMensais.departamentos) {
+            const deptoMensal = dadosMensais.departamentos[nomeDepto];
+            if (!dadosAnuais.departamentos[nomeDepto]) {
+                dadosAnuais.departamentos[nomeDepto] = { total: 0, categorias: {} };
             }
-            catData.valores = valoresAnuais;
-            for (const forn in catData.fornecedores) {
-                const valoresAnuaisForn = {};
-                for (const periodoMensal in catData.fornecedores[forn].valores) {
-                    const ano = periodoMensal.split('-')[1];
-                    valoresAnuaisForn[ano] = (valoresAnuaisForn[ano] || 0) + catData.fornecedores[forn].valores[periodoMensal];
+            const deptoAnual = dadosAnuais.departamentos[nomeDepto];
+            deptoAnual.total += deptoMensal.total;
+            // Itera sobre as categorias do departamento
+            for (const codCat in deptoMensal.categorias) {
+                const catMensal = deptoMensal.categorias[codCat];
+                if (!deptoAnual.categorias[codCat]) {
+                    deptoAnual.categorias[codCat] = { total: 0, fornecedores: {} };
                 }
-                catData.fornecedores[forn].valores = valoresAnuaisForn;
+                const catAnual = deptoAnual.categorias[codCat];
+                catAnual.total += catMensal.total;
+                // Itera sobre os fornecedores da categoria
+                for (const nomeForn in catMensal.fornecedores) {
+                    const fornMensal = catMensal.fornecedores[nomeForn];
+                    if (!catAnual.fornecedores[nomeForn]) {
+                        catAnual.fornecedores[nomeForn] = { total: 0 };
+                    }
+                    catAnual.fornecedores[nomeForn].total += fornMensal.total;
+                }
             }
         }
     }
@@ -586,53 +604,42 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
  * // Estrutura do objeto de retorno:
  * // {
  * //   matrizDRE: { "Classe": { "MM-AAAA": valor, "TOTAL": valorTotal, ... }, ... },
- * //   matrizDepartamentos: { "NomeDepto|Classe": { ...dados detalhados... } },
+ * //   matrizDetalhamento: { "NomeDepto|Classe": { ...dados detalhados... } },
  * //   saldoInicialPeriodo: 12345.67,
  * //   PeUChave: { ultimaChave: "12-2025", primeiraChave: "01-2025" },
  * //   matrizCapitalGiro: { "(+) Caixa": { "01-2025": 5000, ... }, ... }
  * // }
  */
-function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao) {
+function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     // Seleciona os dados corretos (realizado ou a realizar) de cada conta.
-    const dadosSelecionados = listaDeDadosProcessados
+    const dadosSelecionados = dadosProcessados
         .map(dadosConta => dadosConta[projecao.toLowerCase()])
         .filter(Boolean);
 
     // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
-        return { matrizDRE: {}, matrizDepartamentos: {}, matrizCapitalGiro: {} };
+        return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {} };
     }
 
     // 1. Mescla os dados mensais de todas as contas.
     const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados);
     
     // 2. Agrega os dados para o formato ANUAL, se necessário.
-    const dadosParaCalcular = (modo.toLowerCase() === 'anual')
+    const dadosParaExibir = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged)
         : monthlyMerged;
 
     // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
-    // 4. Calcula o Saldo Inicial Consolidado usando a sua nova abordagem.
-    // Esta lógica está correta e mais simples!
-    let saldoInicialConsolidado = 0;
-    if (projecao.toLowerCase() === 'arealizar') {
-        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            // Soma o saldo inicial de "A Realizar" de cada conta.
-            const saldoIni = dadosConta.arealizar?.saldoIni || 0;
-            return acc + saldoIni;
-        }, 0);
-    } else {
-        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
-            // Soma o saldo inicial de "Realizado" de cada conta.
-            const saldoIni = dadosConta.realizado?.saldoIni || 0;
-            return acc + saldoIni;
-        }, 0);
-    }
-
+    // 4. Somo o saldo inicial das contas selecionadas
+    let saldoInicialConsolidado = dadosProcessados.reduce((acc, dadosConta) => {
+        const saldoIni = dadosConta[projecao.toLowerCase()]?.saldoIni || 0;
+        return acc + saldoIni;
+    },0);
+    
     // 5. Prepara as colunas e a matriz para o cálculo de totais.
-    const matrizDRE = dadosParaCalcular.matrizDRE;
+    const matrizDRE = dadosParaExibir.matrizDRE;
     
     // Determina se as colunas para o cálculo de balanço são MESES ou ANOS.
     const colunasParaCalcular = (modo.toLowerCase() === 'anual')
@@ -653,12 +660,12 @@ function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao)
     // 8. Gera a Matriz de Capital de Giro.
     let matrizCapitalGiro = {};
     if (modo.toLowerCase() === 'mensal') {
-        const dadosCapitalGiro = listaDeDadosProcessados.map(c => c.capitalDeGiro).filter(Boolean);
+        const dadosCapitalGiro = dadosProcessados.map(c => c.capitalDeGiro).filter(Boolean);
         matrizCapitalGiro = gerarMatrizCapitalGiro(dadosCapitalGiro, colunasVisiveis);
     }
 
     // Retorna o objeto final, pronto para a renderização.
-    return { ...dadosParaCalcular, matrizCapitalGiro };
+    return { ...dadosParaExibir, matrizCapitalGiro };
 }
 /**
  * Consolida os dados de capital de giro de múltiplas contas e gera a matriz final para exibição.
