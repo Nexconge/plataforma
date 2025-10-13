@@ -618,7 +618,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
 
     // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
-        return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {} };
+        return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {}, entradasESaidas: {} };
     }
 
     // 1. Mescla os dados mensais de todas as contas.
