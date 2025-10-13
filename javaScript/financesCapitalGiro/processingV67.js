@@ -13,7 +13,7 @@
  * //   capitalDeGiro: [ { Natureza, DataPagamento, DataVencimento, DataEmissao, ValorTitulo, CODContaEmissao, CODContaPagamento } ]
  * // }
  */
-function extrairDadosDosTitulos(titulos, contaId) {
+function extrairDadosDosTitulos(titulos) {
     const lancamentosProcessados = [];
     const titulosEmAberto = [];
     const capitalDeGiro = [];
@@ -44,18 +44,16 @@ function extrairDadosDosTitulos(titulos, contaId) {
             let departamentosObj = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
             
             // Monta o objeto de lançamento e adiciona ao array de lançamentos processados
-            // Para evitar somar valores lançados em uma conta e pagos por outra filtra aqui  
-            if (lancamento.CODContaC == contaId){
-                lancamentosProcessados.push({
-                    Natureza: titulo.Natureza,
-                    DataLancamento: lancamento.DataLancamento,
-                    CODContaC: lancamento.CODContaC,
-                    ValorLancamento: lancamento.ValorLancamento,
-                    CODCategoria: titulo.Categoria,
-                    Cliente: titulo.Cliente,
-                    Departamentos: departamentosObj
-                });
-            }  
+            lancamentosProcessados.push({
+                Natureza: titulo.Natureza,
+                DataLancamento: lancamento.DataLancamento,
+                CODContaC: lancamento.CODContaC,
+                ValorLancamento: lancamento.ValorLancamento,
+                CODCategoria: titulo.Categoria,
+                Cliente: titulo.Cliente,
+                Departamentos: departamentosObj
+            });
+
             // Adiciona a transação à lista de capital de giro como um evento de caixa realizado.
             capitalDeGiro.push({
                 Natureza: titulo.Natureza,
@@ -312,18 +310,19 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
  * // }
  */
 function processarDadosDaConta(AppCache, dadosApi, contaId) {
-    const { lancamentosProcessados, titulosEmAberto , capitalDeGiro } = dadosApi;
+    const { lancamentos, titulos , capitalDeGiro } = dadosApi;
 
     //Obtém o saldo inicial da conta para passá-lo para a função de processamento.
     const contaInfo = AppCache.contasMap.get(String(contaId));
     const saldoIniCC = contaInfo ? Number(contaInfo.saldoIni) : 0;
     
     // Processa os dados para o modo REALIZADO (transações passadas).
-    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentosProcessados, contaId, saldoIniCC);
+    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
+
     // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
     // Processa os dados para o modo A REALIZAR (previsões futuras).
-    const dadosARealizar = processarRealizadoRealizar(AppCache, titulosEmAberto, contaId, saldoIniARealizar);
+    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
     // Processa os dados para o relatório de Capital de Giro.
     const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
 
@@ -593,9 +592,9 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
  * //   matrizCapitalGiro: { "(+) Caixa": { "01-2025": 5000, ... }, ... }
  * // }
  */
-function mergeMatrizes(dadosParaMesclar, modo, colunasVisiveis, projecao) {
+function mergeMatrizes(listaDeDadosProcessados, modo, colunasVisiveis, projecao) {
     // Seleciona os dados corretos (realizado ou a realizar) de cada conta.
-    const dadosSelecionados = dadosParaMesclar
+    const dadosSelecionados = listaDeDadosProcessados
         .map(dadosConta => dadosConta[projecao.toLowerCase()])
         .filter(Boolean);
 
@@ -608,7 +607,7 @@ function mergeMatrizes(dadosParaMesclar, modo, colunasVisiveis, projecao) {
     const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados);
     
     // 2. Agrega os dados para o formato ANUAL, se necessário.
-    const dadosMesclados = (modo.toLowerCase() === 'anual')
+    const dadosParaCalcular = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged)
         : monthlyMerged;
 
@@ -619,13 +618,13 @@ function mergeMatrizes(dadosParaMesclar, modo, colunasVisiveis, projecao) {
     // Esta lógica está correta e mais simples!
     let saldoInicialConsolidado = 0;
     if (projecao.toLowerCase() === 'arealizar') {
-        saldoInicialConsolidado = dadosParaMesclar.reduce((acc, dadosConta) => {
+        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
             // Soma o saldo inicial de "A Realizar" de cada conta.
             const saldoIni = dadosConta.arealizar?.saldoIni || 0;
             return acc + saldoIni;
         }, 0);
     } else {
-        saldoInicialConsolidado = dadosParaMesclar.reduce((acc, dadosConta) => {
+        saldoInicialConsolidado = listaDeDadosProcessados.reduce((acc, dadosConta) => {
             // Soma o saldo inicial de "Realizado" de cada conta.
             const saldoIni = dadosConta.realizado?.saldoIni || 0;
             return acc + saldoIni;
@@ -633,7 +632,7 @@ function mergeMatrizes(dadosParaMesclar, modo, colunasVisiveis, projecao) {
     }
 
     // 5. Prepara as colunas e a matriz para o cálculo de totais.
-    const matrizDRE = dadosMesclados.matrizDRE;
+    const matrizDRE = dadosParaCalcular.matrizDRE;
     
     // Determina se as colunas para o cálculo de balanço são MESES ou ANOS.
     const colunasParaCalcular = (modo.toLowerCase() === 'anual')
@@ -654,12 +653,12 @@ function mergeMatrizes(dadosParaMesclar, modo, colunasVisiveis, projecao) {
     // 8. Gera a Matriz de Capital de Giro.
     let matrizCapitalGiro = {};
     if (modo.toLowerCase() === 'mensal') {
-        const dadosCapitalGiro = dadosParaMesclar.map(c => c.capitalDeGiro).filter(Boolean);
-        matrizCapitalGiro = mergeCapitalGiro(dadosCapitalGiro, colunasVisiveis);
+        const dadosCapitalGiro = listaDeDadosProcessados.map(c => c.capitalDeGiro).filter(Boolean);
+        matrizCapitalGiro = gerarMatrizCapitalGiro(dadosCapitalGiro, colunasVisiveis);
     }
 
     // Retorna o objeto final, pronto para a renderização.
-    return { ...dadosMesclados, matrizCapitalGiro };
+    return { ...dadosParaCalcular, matrizCapitalGiro };
 }
 /**
  * Consolida os dados de capital de giro de múltiplas contas e gera a matriz final para exibição.
@@ -667,7 +666,7 @@ function mergeMatrizes(dadosParaMesclar, modo, colunasVisiveis, projecao) {
  * @param {Array<string>} colunasVisiveis - As colunas (períodos 'MM-AAAA') a serem exibidas.
  * @returns {object} A matriz formatada para a tabela de Capital de Giro, onde cada chave é uma linha da tabela.
  */
-function mergeCapitalGiro(listaDeDadosCapitalGiro, colunasVisiveis) {
+function gerarMatrizCapitalGiro(listaDeDadosCapitalGiro, colunasVisiveis) {
     // ETAPA 1: AGREGAÇÃO DOS DADOS DE TODAS AS CONTAS
     let saldoInicialTotal = 0;
     const fluxoCaixaAgregado = {};

@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV50.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV69.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV67.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV61.js';
 
 /**
@@ -64,13 +64,16 @@ async function handleFiltroChange() {
             const contaId = contasParaProcessar[i];
             const apiResponse = responses[i];
 
-            let dadosExtraidos;
             // Extrai os dados da resposta da API.
+            let dadosExtraidos = { lancamentos: [], titulos: [], capitalDeGiro: [] };
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
-                    //dados extraidos = {lancamentosProcessados, titulosEmAberto, capitalDeGiro }
-                    dadosExtraidos = extrairDadosDosTitulos(titulos, contaId);
+                    const { lancamentosProcessados, titulosEmAberto, capitalDeGiro } = extrairDadosDosTitulos(titulos, contaId);
+                    
+                    dadosExtraidos.lancamentos = lancamentosProcessados.filter(l => Number(l.CODContaC) === contaId);
+                    dadosExtraidos.titulos = titulosEmAberto;
+                    dadosExtraidos.capitalDeGiro = capitalDeGiro;
                 } catch (e) {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }
