@@ -67,7 +67,7 @@ function esconderDescendentes(id) {
  */
 function getSelectItems(select){
     if (!select.selectedOptions || select.selectedOptions.length === 0){
-        return null;
+        return [];
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
