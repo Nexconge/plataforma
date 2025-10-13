@@ -293,10 +293,10 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
  * @param {object} appCache - O cache da aplicação.
  */
 function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
+    const tabelaMatriz = document.getElementById('tabelaMatriz')
+    const tabelaCustos = document.getElementById('tabelaCustos')
+    const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
     if (!dadosProcessados) {
-        const tabelaMatriz = document.getElementById('tabelaMatriz')
-        const tabelaCustos = document.getElementById('tabelaCustos')
-        const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
         if (tabelaMatriz) tabelaMatriz.innerHTML = ''
         if (tabelaCustos) tabelaCustos.innerHTML = ''
         if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
