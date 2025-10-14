@@ -47,6 +47,7 @@ td:first-child {
 td:nth-child(n+2):nth-child(-n+13),
 th:nth-child(n+2):nth-child(-n+13) {
     width: 85px;
+    padding-right: 10px;
 }
 
 td:nth-child(14),
