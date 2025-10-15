@@ -253,7 +253,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
 function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     const contaInfo = dadosBase.contasMap.get(String(contaId));
     const saldoInicial = contaInfo ? Number(contaInfo.saldoIni) : 0;
-    const todasAsChaves = new Set(); 
+    const todasAsChaves = new Set();
 
     const fluxoDeCaixaMensal = {};
     const matrizCapitalGiro = {};
@@ -265,6 +265,10 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     ];
     linhasMatriz.forEach(linha => matrizCapitalGiro[linha] = {});
 
+    const anoAtual = new Date().getFullYear();
+    const mesAtual = new Date().getMonth() + 1; // +1 porque getMonth() é 0-indexed
+    const chaveMesAtual = `${String(mesAtual).padStart(2, '0')}-${anoAtual}`;
+
     if (!Array.isArray(capitalDeGiro)) return { saldoInicial, fluxoDeCaixaMensal, matrizCapitalGiro };
 
     for (const item of capitalDeGiro) {
@@ -275,6 +279,8 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
         if (item.DataPagamento && item.CODContaPagamento == contaId) {
             const [dia, mes, ano] = item.DataPagamento.split('/');
             const chavePeriodo = `${mes.padStart(2, '0')}-${ano}`;
+
+            if(compararChaves(chavePeriodo, chaveMesAtual) >= 0) continue;
             fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
             todasAsChaves.add(chavePeriodo);
         }
@@ -307,6 +313,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
                     const proximaChave = incrementarMes(chave);
                     // A projeção existe até o mês do vencimento/pagamento.
                     // O valor é de "curto prazo" no mês final.
+                    if(compararChaves(chave, chaveMesAtual) >= 0) break;
                     const isUltimo = compararChaves(chave, chaveFinal) === 0;
 
                     if (item.Natureza === 'P') {
@@ -367,7 +374,6 @@ function incrementarMes(chave) {
     }
     return `${mes.toString().padStart(2, '0')}-${ano}`;
 }
-
 /**
  * Orquestra o processamento completo dos dados de uma única conta.
  * Chama as funções de processamento para DRE (realizado e a realizar) e para Capital de Giro.
@@ -602,13 +608,21 @@ function agregarDadosParaAnual(monthlyData, projecao) {
     // --- Agrega Matriz Capital de Giro ---
     if(projecao.toLowerCase() == "realizado"){
         const saldosAnuaisCG = {};
+        const anoAtual = new Date().getFullYear();
+        const mesAnterior = new Date().getMonth(); // +1 porque getMonth() é 0-indexed (Janeiro=0)
+
         for (const linha in monthlyData.matrizCapitalGiro) {
             annualData.matrizCapitalGiro[linha] = {};
 
             for (const periodoMensal in monthlyData.matrizCapitalGiro[linha]) {
                 const [mes, ano] = periodoMensal.split('-');
+                const anoNum = Number(ano);
+                const mesNum = Number(mes);
                 const valor = monthlyData.matrizCapitalGiro[linha][periodoMensal];
 
+                if (anoNum === anoAtual && mesNum > mesAnterior) {
+                    continue; // Pula este mês futuro
+                }
                 if (!saldosAnuaisCG[linha]) saldosAnuaisCG[linha] = {};
                 const existente = saldosAnuaisCG[linha][ano];
                 // Guarda o valor do último mês
