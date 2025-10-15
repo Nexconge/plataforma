@@ -291,8 +291,14 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
                 chaveFinal = `${mesP.padStart(2, '0')}-${anoP}`;
             }
 
+            if (!chaveEmissao || !chaveFinal) {
+                console.warn('Chave inválida, pulando item:', item);
+                continue;
+            }
+
             // Itera pelos meses entre emissão e pagamento/vencimento
             for (let chave = chaveEmissao; chave !== chaveFinal; chave = incrementarMes(chave)) {
+                if (!chave) break; // segurança extra
                 const isUltimo = incrementarMes(chave) === chaveFinal;
 
                 if (item.Natureza === 'P') {
@@ -324,20 +330,22 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     return { saldoInicial, fluxoDeCaixaMensal, matrizCapitalGiro };
 }
 function incrementarMes(chave) {
-    if (!/^\d{2}-\d{4}$/.test(chave)) {
-        console.error(`Chave inválida: "${chave}". Esperado formato MM-AAAA.`);
-        return null;
-    }
+    if (!chave) return null;
+    const partes = chave.split('-');
+    if (partes.length !== 2) return null;
+    let [mesStr, anoStr] = partes;
+    let mes = parseInt(mesStr, 10);
+    let ano = parseInt(anoStr, 10);
+    if (isNaN(mes) || isNaN(ano)) return null;
 
-    let [mes, ano] = chave.split('-').map(Number);
     mes += 1;
-
     if (mes > 12) {
         mes = 1;
         ano += 1;
     }
-    return `${String(mes).padStart(2, '0')}-${ano}`;
+    return `${mes.toString().padStart(2, '0')}-${ano}`;
 }
+
 /**
  * Orquestra o processamento completo dos dados de uma única conta.
  * Chama as funções de processamento para DRE (realizado e a realizar) e para Capital de Giro.
