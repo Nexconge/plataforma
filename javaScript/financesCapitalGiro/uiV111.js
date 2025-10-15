@@ -83,7 +83,6 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
     const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado');
-    const groupCapitalG = document.getElementById('groupCapitalGiro');
 
     // Popula o filtro de projetos.
     projSelect.innerHTML = '';
@@ -127,6 +126,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     atualizarCallback();
 }
 function atualizarVisibilidadeCapitalGiro(projecao){
+    const groupCapitalG = document.getElementById('groupCapitalGiro');
     if (projecao === "arealizar") {
         groupCapitalG.style.display = "none";
     } else {
