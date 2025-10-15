@@ -603,29 +603,16 @@ function agregarDadosParaAnual(monthlyData) {
     const saldosAnuaisCG = {};
     for (const linha in monthlyData.matrizCapitalGiro) {
         annualData.matrizCapitalGiro[linha] = {};
-        const isSaldo = [
-            '(+) Caixa', 
-            '(+) Clientes a Receber', 
-            '(-) Fornecedores a Pagar',
-            'Curto Prazo TT', // Tratar como saldo
-            'Longo Prazo TT', // Tratar como saldo
-            'Capital Liquido' // Tratar como saldo
-        ].includes(linha);
 
         for (const periodoMensal in monthlyData.matrizCapitalGiro[linha]) {
             const [mes, ano] = periodoMensal.split('-');
             const valor = monthlyData.matrizCapitalGiro[linha][periodoMensal];
 
-            if (isSaldo) {
-                if (!saldosAnuaisCG[linha]) saldosAnuaisCG[linha] = {};
-                const existente = saldosAnuaisCG[linha][ano];
-                // Guarda o valor do último mês
-                if (!existente || mes > existente.mes) {
-                    saldosAnuaisCG[linha][ano] = { mes, valor };
-                }
-            } else {
-                // Para as demais linhas (Curto/Longo Prazo), a soma está correta
-                annualData.matrizCapitalGiro[linha][ano] = (annualData.matrizCapitalGiro[linha][ano] || 0) + valor;
+            if (!saldosAnuaisCG[linha]) saldosAnuaisCG[linha] = {};
+            const existente = saldosAnuaisCG[linha][ano];
+            // Guarda o valor do último mês
+            if (!existente || mes > existente.mes) {
+                saldosAnuaisCG[linha][ano] = { mes, valor };
             }
         }
     }
