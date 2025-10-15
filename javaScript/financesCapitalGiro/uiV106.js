@@ -545,15 +545,10 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
         return;
     }
-    tabela.innerHTML = '';
-    // Validação de segurança: verifica se há dados para renderizar.
-    if (!matriz || Object.keys(matriz).length === 0) {
-        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Nada será renderizado.");
-        return;
-    }
-    try {
-        const fragment = document.createDocumentFragment();
 
+    // Se houver colunas cria o cabeçalho mesmo que a matriz esteja vazia
+    if (colunas) {
+        const fragment = document.createDocumentFragment();
         // Cria o Cabeçalho da tabela.
         const thead = document.createElement('thead');
         const headerRow = thead.insertRow();
@@ -562,7 +557,14 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         colunas.forEach(col => headerRow.insertCell().textContent = col);
         headerRow.insertCell().textContent = "";
         fragment.appendChild(thead);
+    }
 
+    // Validação de segurança: verifica se há dados para renderizar.
+    if (!matriz || Object.keys(matriz).length === 0) {
+        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Nada será renderizado.");
+        return;
+    }
+    try {
         const tbody = document.createElement('tbody');
 
         // Função auxiliar para criar uma linha de dados na tabela, evitando repetição de código.
