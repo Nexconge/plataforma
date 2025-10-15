@@ -128,7 +128,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
 }
 function atualizarVisibilidadeCapitalGiro(projecao, modo){
     const groupCapitalG = document.getElementById('groupCapitalGiro');
-    if (projecao === "arealizar" || modo === "anual") {
+    if (projecao === "arealizar" || modo === "Anual") {
         groupCapitalG.style.display = "none";
     } else {
         groupCapitalG.style.display = "";

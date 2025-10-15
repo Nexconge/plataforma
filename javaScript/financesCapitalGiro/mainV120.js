@@ -2,7 +2,7 @@
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV100.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV103.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV115.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV116.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
