@@ -48,13 +48,13 @@ label {
   font-weight: 900;
   font-size: 20px !important; /* 🔹 força o tamanho real */
   line-height: 1 !important;
-  color: #111;
+  color: #000000;
 
-  -webkit-text-stroke: 1px #a7a7a7;
+  -webkit-text-stroke: 1px #ffffff;
   text-shadow:
-    0 0 2px rgba(255,255,255,0.9),
-    0 0 4px rgb(248, 248, 248),
-    0 0 6px rgba(255, 255, 255, 0.658);
+    0 0 2px rgba(255, 255, 255, 0.9),
+    0 0 4px rgb(255, 255, 255),
+    0 0 6px rgb(255, 255, 255);
 
   background: none !important;
   border: none !important;
