@@ -83,6 +83,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     const anoSelect = document.getElementById('anoSelect'), projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect'), modoSelect = document.getElementById('modoSelect');
     const btnARealizar = document.getElementById('btnARealizar'), btnRealizado = document.getElementById('btnRealizado');
+    const groupCapitalG = document.getElementById('groupCapitalGiro');
 
     // Popula o filtro de projetos.
     projSelect.innerHTML = '';
@@ -95,9 +96,18 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
         });
     if (projSelect.options.length > 0) projSelect.options[0].selected = true;
 
-    // Adiciona event listeners para os botões e selects que disparam a atualização dos dados.
-    btnARealizar.addEventListener('click', () => { appCache.projecao = "arealizar"; atualizarCallback(); });
-    btnRealizado.addEventListener('click', () => { appCache.projecao = "realizado"; atualizarCallback(); });
+    // Adiciona event listeners para os botões e selects.
+    btnARealizar.addEventListener('click', () => {
+        appCache.projecao = "arealizar";
+        atualizarVisibilidadeCapitalGiro("arealizar");
+        atualizarCallback();
+    });
+    btnRealizado.addEventListener('click', () => {
+        appCache.projecao = "realizado";
+        atualizarVisibilidadeCapitalGiro("realizado");
+        atualizarCallback();
+    });
+
     anoSelect.addEventListener('change', atualizarCallback);
     contaSelect.addEventListener('change', atualizarCallback);
     projSelect.addEventListener('change', () => {
@@ -116,6 +126,14 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
+function atualizarVisibilidadeCapitalGiro(projecao){
+    if (projecao === "arealizar") {
+        groupCapitalG.style.display = "none";
+    } else {
+        groupCapitalG.style.display = "";
+    }
+};
+
 /**
  * Lê o estado atual de todos os elementos de filtro na UI e os compila em um objeto.
  * @returns {object|null} Um objeto contendo o estado dos filtros, ou null se algum elemento não for encontrado.
