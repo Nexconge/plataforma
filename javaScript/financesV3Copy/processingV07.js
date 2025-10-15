@@ -338,7 +338,6 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
         matrizCapitalGiro['(+) Caixa'][chave] = saldoAcumulado;
     });
     
-    console.log(matrizCapitalGiro)
     return { saldoInicial, matrizCapitalGiro };
 }
 function incrementarMes(chave) {
@@ -750,7 +749,8 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
 
     // 7. Calcula a coluna "TOTAL" final.
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
-
+    
+    console.log(dadosParaExibir.matrizCapitalGiro)
     // Retorna o objeto final, pronto para a renderização.
     return { ...dadosParaExibir};
 }
