@@ -300,12 +300,10 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     const tabelaMatriz = document.getElementById('tabelaMatriz')
     const tabelaCustos = document.getElementById('tabelaCustos')
     const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
-    if (!dadosProcessados) {
-        if (tabelaMatriz) tabelaMatriz.innerHTML = ''
-        if (tabelaCustos) tabelaCustos.innerHTML = ''
-        if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
-        return;
-    }
+    if (tabelaMatriz) tabelaMatriz.innerHTML = ''
+    if (tabelaCustos) tabelaCustos.innerHTML = ''
+    if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
+
     const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas);
