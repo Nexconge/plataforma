@@ -297,12 +297,15 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
             }
 
             // Itera pelos meses entre emissão e pagamento/vencimento
-            if (compararChaves(chaveEmissao, chaveFinal) <= 0) { // Executa apenas se a emissão for antes ou no mesmo mês do vencimento
-                for (let chave = chaveEmissao; compararChaves(chave, chaveFinal) < 0; chave = incrementarMes(chave)) {
-                    if (!chave) break;
+            if (compararChaves(chaveEmissao, chaveFinal) <= 0) {
+                let chave = chaveEmissao;
+                do {
+                    if (!chave) break; // Segurança
 
                     const proximaChave = incrementarMes(chave);
-                    const isUltimo = !proximaChave || compararChaves(proximaChave, chaveFinal) >= 0;
+                    // A projeção existe até o mês do vencimento/pagamento.
+                    // O valor é de "curto prazo" no mês final.
+                    const isUltimo = compararChaves(chave, chaveFinal) === 0;
 
                     if (item.Natureza === 'P') {
                         matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] = (matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] || 0) + valor;
@@ -317,7 +320,11 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
                         else
                             matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
                     }
-                }
+
+                    if (isUltimo) break; // Sai do loop após processar o mês final
+                    chave = proximaChave;
+
+                } while (chave && compararChaves(chave, chaveFinal) <= 0);
             }
         }
     }
