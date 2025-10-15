@@ -50,11 +50,11 @@ label {
   line-height: 1 !important;
   color: #111;
 
-  -webkit-text-stroke: 1px #fff;
+  -webkit-text-stroke: 1px #000000;
   text-shadow:
     0 0 2px rgba(255,255,255,0.9),
-    0 0 4px rgba(255,255,255,0.7),
-    0 0 6px rgba(255,255,255,0.5);
+    0 0 4px rgba(0, 0, 0, 0.7),
+    0 0 6px rgba(0, 0, 0, 0.5);
 
   background: none !important;
   border: none !important;
