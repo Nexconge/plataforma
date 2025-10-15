@@ -477,7 +477,7 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * //   todasChaves: Set("01-2025", "02-2025", ...) // Um Set com todos os períodos únicos.
  * // }
  */
-function mergeDadosMensais(listaDeDadosProcessados) {
+function mergeDadosMensais(listaDeDadosProcessados, projecao) {
     const monthlyMerged = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}, matrizCapitalGiro: {}};
     const todasChaves = new Set();
 
@@ -486,7 +486,7 @@ function mergeDadosMensais(listaDeDadosProcessados) {
 
         mergeGenericoMensal(dados.matrizDRE, monthlyMerged.matrizDRE);
         mergeGenericoMensal(dados.entradasESaidas, monthlyMerged.entradasESaidas);
-        mergeGenericoMensal(dados.matrizCapitalGiro, monthlyMerged.matrizCapitalGiro);
+        if(projecao.toLowerCase() == "realizado") mergeGenericoMensal(dados.matrizCapitalGiro, monthlyMerged.matrizCapitalGiro) 
         
         // Mescla matrizDetalhamento
         for (const chavePrimaria in dados.matrizDetalhamento) {
@@ -550,7 +550,7 @@ function mergeGenericoMensal(origem, destino) {
  * @param {object} monthlyData - O objeto de dados mesclados com valores mensais.
  * @returns {object} Um novo objeto de dados com a mesma estrutura, mas com valores agregados por ano.
  */
-function agregarDadosParaAnual(monthlyData) {
+function agregarDadosParaAnual(monthlyData, projecao) {
     const annualData = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}, matrizCapitalGiro: {} };
     const saldosAnuais = {};
 
@@ -600,28 +600,30 @@ function agregarDadosParaAnual(monthlyData) {
     }
 
     // --- Agrega Matriz Capital de Giro ---
-    const saldosAnuaisCG = {};
-    for (const linha in monthlyData.matrizCapitalGiro) {
-        annualData.matrizCapitalGiro[linha] = {};
+    if(projecao.toLowerCase() == "realizado"){
+        const saldosAnuaisCG = {};
+        for (const linha in monthlyData.matrizCapitalGiro) {
+            annualData.matrizCapitalGiro[linha] = {};
 
-        for (const periodoMensal in monthlyData.matrizCapitalGiro[linha]) {
-            const [mes, ano] = periodoMensal.split('-');
-            const valor = monthlyData.matrizCapitalGiro[linha][periodoMensal];
+            for (const periodoMensal in monthlyData.matrizCapitalGiro[linha]) {
+                const [mes, ano] = periodoMensal.split('-');
+                const valor = monthlyData.matrizCapitalGiro[linha][periodoMensal];
 
-            if (!saldosAnuaisCG[linha]) saldosAnuaisCG[linha] = {};
-            const existente = saldosAnuaisCG[linha][ano];
-            // Guarda o valor do último mês
-            if (!existente || mes > existente.mes) {
-                saldosAnuaisCG[linha][ano] = { mes, valor };
+                if (!saldosAnuaisCG[linha]) saldosAnuaisCG[linha] = {};
+                const existente = saldosAnuaisCG[linha][ano];
+                // Guarda o valor do último mês
+                if (!existente || mes > existente.mes) {
+                    saldosAnuaisCG[linha][ano] = { mes, valor };
+                }
+            }
+        }
+        for (const linha in saldosAnuaisCG) {
+            for (const ano in saldosAnuaisCG[linha]) {
+                annualData.matrizCapitalGiro[linha][ano] = saldosAnuaisCG[linha][ano].valor;
             }
         }
     }
-    for (const linha in saldosAnuaisCG) {
-        for (const ano in saldosAnuaisCG[linha]) {
-            annualData.matrizCapitalGiro[linha][ano] = saldosAnuaisCG[linha][ano].valor;
-        }
-    }
-
+    
     return annualData;
 }
 /**
@@ -727,7 +729,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     }
 
     // 1. Mescla os dados mensais de todas as contas.
-    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados);
+    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados, projecao);
     
     // 2. Agrega os dados para o formato ANUAL, se necessário.
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
