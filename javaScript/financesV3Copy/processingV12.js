@@ -733,7 +733,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     
     // 2. Agrega os dados para o formato ANUAL, se necessário.
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
-        ? agregarDadosParaAnual(monthlyMerged)
+        ? agregarDadosParaAnual(monthlyMerged, projecao)
         : monthlyMerged;
 
     // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
