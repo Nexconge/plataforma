@@ -98,12 +98,12 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     // Adiciona event listeners para os botões e selects.
     btnARealizar.addEventListener('click', () => {
         appCache.projecao = "arealizar";
-        atualizarVisibilidadeCapitalGiro("arealizar");
+        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
         atualizarCallback();
     });
     btnRealizado.addEventListener('click', () => {
         appCache.projecao = "realizado";
-        atualizarVisibilidadeCapitalGiro("realizado");
+        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
         atualizarCallback();
     });
 
@@ -116,6 +116,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     });
     modoSelect.addEventListener('change', () => {
         atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
+        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
         atualizarCallback();
     });
 
@@ -125,9 +126,9 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
-function atualizarVisibilidadeCapitalGiro(projecao){
+function atualizarVisibilidadeCapitalGiro(projecao, modo){
     const groupCapitalG = document.getElementById('groupCapitalGiro');
-    if (projecao === "arealizar") {
+    if (projecao === "arealizar" || modo === "anual") {
         groupCapitalG.style.display = "none";
     } else {
         groupCapitalG.style.display = "";
