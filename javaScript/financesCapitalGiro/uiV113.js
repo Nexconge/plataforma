@@ -595,7 +595,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
                 // 🔹 Se for percentual e o valor for 0, exibe apenas vazio
                 let textoCelula = '';
                 if (isPercent) {
-                    textoCelula = valor === 0 ? '' : formatarPercentual(valor);
+                    textoCelula = valor === 0 ? formatarValor(valor) : formatarPercentual(valor);
                 } else {
                     textoCelula = formatarValor(valor);
                 }
