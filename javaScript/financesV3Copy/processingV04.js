@@ -297,22 +297,26 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
             }
 
             // Itera pelos meses entre emissão e pagamento/vencimento
-            for (let chave = chaveEmissao; chave !== chaveFinal; chave = incrementarMes(chave)) {
-                if (!chave) break; // segurança extra
-                const isUltimo = incrementarMes(chave) === chaveFinal;
+            if (compararChaves(chaveEmissao, chaveFinal) <= 0) { // Executa apenas se a emissão for antes ou no mesmo mês do vencimento
+                for (let chave = chaveEmissao; compararChaves(chave, chaveFinal) < 0; chave = incrementarMes(chave)) {
+                    if (!chave) break;
 
-                if (item.Natureza === 'P') {
-                    matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] = (matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] || 0) + valor;
-                    if (isUltimo)
-                        matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;
-                    else
-                        matrizCapitalGiro['Longo Prazo AP'][chave] = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + valor;
-                } else if (item.Natureza === 'R') {
-                    matrizCapitalGiro['(+) Clientes a Receber'][chave] = (matrizCapitalGiro['(+) Clientes a Receber'][chave] || 0) + valor;
-                    if (isUltimo)
-                        matrizCapitalGiro['Curto Prazo AR'][chave] = (matrizCapitalGiro['Curto Prazo AR'][chave] || 0) + valor;
-                    else
-                        matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
+                    const proximaChave = incrementarMes(chave);
+                    const isUltimo = !proximaChave || compararChaves(proximaChave, chaveFinal) >= 0;
+
+                    if (item.Natureza === 'P') {
+                        matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] = (matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] || 0) + valor;
+                        if (isUltimo)
+                            matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;
+                        else
+                            matrizCapitalGiro['Longo Prazo AP'][chave] = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + valor;
+                    } else if (item.Natureza === 'R') {
+                        matrizCapitalGiro['(+) Clientes a Receber'][chave] = (matrizCapitalGiro['(+) Clientes a Receber'][chave] || 0) + valor;
+                        if (isUltimo)
+                            matrizCapitalGiro['Curto Prazo AR'][chave] = (matrizCapitalGiro['Curto Prazo AR'][chave] || 0) + valor;
+                        else
+                            matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
+                    }
                 }
             }
         }
@@ -578,11 +582,31 @@ function agregarDadosParaAnual(monthlyData) {
     }
 
     // --- Agrega Matriz Capital de Giro ---
+    const saldosAnuaisCG = {};
     for (const linha in monthlyData.matrizCapitalGiro) {
         annualData.matrizCapitalGiro[linha] = {};
+        const isSaldo = ['(+) Caixa', '(+) Clientes a Receber', '(-) Fornecedores a Pagar'].includes(linha);
+
         for (const periodoMensal in monthlyData.matrizCapitalGiro[linha]) {
             const [mes, ano] = periodoMensal.split('-');
-            annualData.matrizCapitalGiro[linha][ano] = (annualData.matrizCapitalGiro[linha][ano] || 0) + monthlyData.matrizCapitalGiro[linha][periodoMensal];
+            const valor = monthlyData.matrizCapitalGiro[linha][periodoMensal];
+
+            if (isSaldo) {
+                if (!saldosAnuaisCG[linha]) saldosAnuaisCG[linha] = {};
+                const existente = saldosAnuaisCG[linha][ano];
+                // Guarda o valor do último mês
+                if (!existente || mes > existente.mes) {
+                    saldosAnuaisCG[linha][ano] = { mes, valor };
+                }
+            } else {
+                // Para as demais linhas (Curto/Longo Prazo), a soma está correta
+                annualData.matrizCapitalGiro[linha][ano] = (annualData.matrizCapitalGiro[linha][ano] || 0) + valor;
+            }
+        }
+    }
+    for (const linha in saldosAnuaisCG) {
+        for (const ano in saldosAnuaisCG[linha]) {
+            annualData.matrizCapitalGiro[linha][ano] = saldosAnuaisCG[linha][ano].valor;
         }
     }
 
