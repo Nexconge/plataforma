@@ -589,12 +589,19 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
             if (cssClass) row.classList.add(cssClass);
             
             row.insertCell().textContent = label;
-            const formatFunc = isPercent ? formatarPercentual : formatarValor;
             colunas.forEach(col => {
-                const valor = matriz[chaveDados]?.[col] || 0;
-                row.insertCell().textContent = formatFunc(valor);
+                const valor = matriz[chaveDados]?.[col] ?? 0;
+
+                // 🔹 Se for percentual e o valor for 0, exibe apenas vazio
+                let textoCelula = '';
+                if (isPercent) {
+                    textoCelula = valor === 0 ? '' : formatarPercentual(valor);
+                } else {
+                    textoCelula = formatarValor(valor);
+                }
+
+                row.insertCell().textContent = textoCelula;
             });
-            row.insertCell().textContent = ""
         };
         const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
 
