@@ -116,7 +116,6 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     });
     modoSelect.addEventListener('change', () => {
         atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
-        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
         atualizarCallback();
     });
 
@@ -126,9 +125,9 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
-function atualizarVisibilidadeCapitalGiro(projecao, modo){
+function atualizarVisibilidadeCapitalGiro(projecao){
     const groupCapitalG = document.getElementById('groupCapitalGiro');
-    if (projecao === "arealizar" || modo === "Anual") {
+    if (projecao === "arealizar") {
         groupCapitalG.style.display = "none";
     } else {
         groupCapitalG.style.display = "";
