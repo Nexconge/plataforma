@@ -338,7 +338,8 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
         matrizCapitalGiro['(+) Caixa'][chave] = saldoAcumulado;
     });
     
-    return { saldoInicial, fluxoDeCaixaMensal, matrizCapitalGiro };
+    console.log(matrizCapitalGiro)
+    return { saldoInicial, matrizCapitalGiro };
 }
 function incrementarMes(chave) {
     if (!chave) return null;
