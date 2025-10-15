@@ -602,6 +602,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
 
                 row.insertCell().textContent = textoCelula;
             });
+            row.insertCell().textContent = '';
         };
         const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
 
