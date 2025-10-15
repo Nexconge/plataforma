@@ -704,10 +704,17 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
  * // }
  */
 function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
-    // Seleciona os dados corretos (realizado ou a realizar) de cada conta.
-    const dadosSelecionados = dadosProcessados
-        .map(dadosConta => dadosConta[projecao.toLowerCase()])
-        .filter(Boolean);
+    // Seleciona os dados da projeção correta E anexa a matriz de capital de giro ao objeto 'realizado'.
+    const dadosSelecionados = dadosProcessados.map(dadosConta => {
+        const projData = dadosConta[projecao.toLowerCase()];
+        if (!projData) return null;
+
+        // Se a projeção for 'realizado', injeta a matrizCapitalGiro para que ela não seja perdida.
+        if (projecao.toLowerCase() === 'realizado' && dadosConta.capitalDeGiro) {
+            projData.matrizCapitalGiro = dadosConta.capitalDeGiro.matrizCapitalGiro;
+        }
+        return projData;
+    }).filter(Boolean);
 
     // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
