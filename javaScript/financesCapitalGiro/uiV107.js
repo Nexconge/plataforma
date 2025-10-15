@@ -540,16 +540,13 @@ function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, co
  */
 function renderizarTabelaCapitalGiro(matriz, colunas) {
     const tabela = document.getElementById('tabelaCapitalGiro');
-    // Validação de segurança: verifica se o elemento da tabela existe no DOM.
     if (!tabela) {
         console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
         return;
     }
 
-    // Se houver colunas cria o cabeçalho mesmo que a matriz esteja vazia
-    if (colunas) {
-        const fragment = document.createDocumentFragment();
-        // Cria o Cabeçalho da tabela.
+    // Cabeçalho — sempre criado se houver colunas
+    if (colunas && colunas.length) {
         const thead = document.createElement('thead');
         const headerRow = thead.insertRow();
         headerRow.className = 'cabecalho';
@@ -559,9 +556,10 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         fragment.appendChild(thead);
     }
 
-    // Validação de segurança: verifica se há dados para renderizar.
+    // Se matriz estiver vazia, ainda assim exibe o cabeçalho (para estrutura visual)
     if (!matriz || Object.keys(matriz).length === 0) {
-        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Nada será renderizado.");
+        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Renderizando tabela vazia.");
+        tabela.appendChild(fragment);
         return;
     }
     try {
