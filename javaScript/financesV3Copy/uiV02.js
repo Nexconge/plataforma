@@ -558,80 +558,68 @@ function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, co
 function renderizarTabelaCapitalGiro(matriz, colunas) {
     const tabela = document.getElementById('tabelaCapitalGiro');
     if (!tabela) {
-        console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
+        console.error("ERRO: elemento 'tabelaCapitalGiro' não encontrado.");
         return;
     }
-    
-    // Cria o fragmento principal (antes de usar)
+    tabela.innerHTML = ''; // limpa tabela
     const fragment = document.createDocumentFragment();
-    // Cabeçalho — sempre criado se houver colunas
+
+    // --- Cabeçalho ---
     if (colunas && colunas.length) {
         const thead = document.createElement('thead');
         const headerRow = thead.insertRow();
         headerRow.className = 'cabecalho';
         headerRow.insertCell().textContent = 'Capital de Giro';
-        colunas.forEach(col => headerRow.insertCell().textContent = col);
-        headerRow.insertCell().textContent = "";
+        colunas.forEach(c => headerRow.insertCell().textContent = c);
+        headerRow.insertCell().textContent = '';
         fragment.appendChild(thead);
     }
 
-    // Se matriz estiver vazia, ainda assim exibe o cabeçalho (para estrutura visual)
     if (!matriz || Object.keys(matriz).length === 0) {
-        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Renderizando tabela vazia.");
         tabela.appendChild(fragment);
         return;
     }
-    try {
-        const tbody = document.createElement('tbody');
-
-        // Função auxiliar para criar uma linha de dados na tabela, evitando repetição de código.
-        const criarLinha = (label, chaveDados, isPercent = false, cssClass = '') => {
-            const row = tbody.insertRow();
-            if (cssClass) row.classList.add(cssClass);
-            
-            row.insertCell().textContent = label;
-            colunas.forEach(col => {
-                const valor = matriz[chaveDados]?.[col] ?? 0;
-
-                // 🔹 Se for percentual e o valor for 0, exibe apenas vazio
-                let textoCelula = '';
-                if (isPercent) {
-                    textoCelula = valor === 0 ? formatarValor(valor) : formatarPercentual(valor);
-                } else {
-                    textoCelula = formatarValor(valor);
-                }
-
-                row.insertCell().textContent = textoCelula;
-            });
-            row.insertCell().textContent = '';
-        };
-        const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
-
-        // Monta o corpo da tabela usando a função auxiliar.
-        criarLinha('(+) Caixa', '(+) Caixa', false, 'linhatotal');
-        criarLinhaBranca();
-        criarLinha('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
-        criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
-        criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
-        criarLinha('Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
-        criarLinha('Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
-        criarLinhaBranca();
-        criarLinha('(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
-        criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
-        criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
-        criarLinha('Curto Prazo (%)', 'Curto Prazo AP %', true, 'idented');
-        criarLinha('Longo Prazo (%)', 'Longo Prazo AP %', true, 'idented');
-        criarLinhaBranca();
-        criarLinha('(+) Curto Prazo (30 dias)', '(+) Curto Prazo (30 dias)', false, 'linhatotal');
-        criarLinha('(-) Longo Prazo (maior que 30 dias)', '(-) Longo Prazo (maior que 30 dias)', false, 'linhatotal');
-        criarLinhaBranca();
-        criarLinha('(=) Capital Líquido Circulante', '(=) Capital Líquido Circulante', false, 'linhaSaldo');
-
-        fragment.appendChild(tbody);
-        tabela.appendChild(fragment);
-    } catch (error) {
-        console.error("ERRO DURANTE A RENDERIZAÇÃO: Um erro inesperado ocorreu ao construir a tabela de Capital de Giro.", error);
+    const tbody = document.createElement('tbody');
+    
+    // --- Calcula linhas de % ---
+    calcularPercentuaisCG(matriz, colunas);
+    // --- Renderiza linhas (pode ser genérico) ---
+    for (const linha of Object.keys(matriz)) {
+        const isPercent = linha.includes('%');
+        let cssClass = '';
+        if (linha.includes('Caixa') || linha.includes('Curto Prazo') || linha.includes('Longo Prazo')) cssClass = 'linhatotal';
+        renderLinhaCG(tbody, matriz, colunas, linha, linha, isPercent, cssClass);
     }
-}
 
+    fragment.appendChild(tbody);
+    tabela.appendChild(fragment);
+}
+function renderLinhaCG(tbody, matriz, colunas, label, chave, isPercent = false, cssClass = '') {
+    const row = tbody.insertRow();
+    if (cssClass) row.classList.add(cssClass);
+    row.insertCell().textContent = label;
+    colunas.forEach(col => {
+        const valor = matriz[chave]?.[col] ?? 0;
+        row.insertCell().textContent = isPercent && valor !== 0 ? formatarPercentual(valor) : formatarValor(valor);
+    });
+    row.insertCell().textContent = '';
+};
+function calcularPercentuaisCG(matriz, colunas) {
+    ['AR', 'AP'].forEach(tipo => {
+        const curto = `Curto Prazo ${tipo}`;
+        const longo = `Longo Prazo ${tipo}`;
+        const total = col => (matriz[curto][col] || 0) + (matriz[longo][col] || 0);
+
+        // Criar linhas percentuais
+        ['Curto Prazo', 'Longo Prazo'].forEach((prazo, i) => {
+            const chavePercent = `${prazo} ${tipo} %`;
+            matriz[chavePercent] = {};
+            colunas.forEach(col => {
+                const linha = i === 0 ? curto : longo;
+                const t = total(col);
+                matriz[chavePercent][col] = t ? (matriz[linha][col] / t) * 100 : 0;
+            });
+        });
+    });
+}
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
