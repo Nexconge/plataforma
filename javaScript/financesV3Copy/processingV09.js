@@ -253,28 +253,30 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
 function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     const contaInfo = dadosBase.contasMap.get(String(contaId));
     const saldoInicial = contaInfo ? Number(contaInfo.saldoIni) : 0;
+    const todasAsChaves = new Set(); 
 
     const fluxoDeCaixaMensal = {};
     const matrizCapitalGiro = {};
     const linhasMatriz = [
         '(+) Caixa',
         '(+) Clientes a Receber', 'Curto Prazo AR', 'Longo Prazo AR',
-        '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP'
+        '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP',
+        'Curto Prazo TT', 'Longo Prazo TT', 'Capital Liquido'
     ];
     linhasMatriz.forEach(linha => matrizCapitalGiro[linha] = {});
 
     if (!Array.isArray(capitalDeGiro)) return { saldoInicial, fluxoDeCaixaMensal, matrizCapitalGiro };
 
     for (const item of capitalDeGiro) {
-        const valor = Number(item.ValorTitulo) || 0;
+        const valor = item.Natureza === 'P' ? -item.ValorTitulo : item.ValorTitulo;
         if (!valor) continue;
 
         // --- (1) Fluxo de caixa (pagamentos efetivos) ---
         if (item.DataPagamento && item.CODContaPagamento == contaId) {
             const [dia, mes, ano] = item.DataPagamento.split('/');
             const chavePeriodo = `${mes.padStart(2, '0')}-${ano}`;
-            const valorEfetivo = item.Natureza === 'P' ? -valor : valor;
-            fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valorEfetivo;
+            fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
+            todasAsChaves.add(chavePeriodo);
         }
 
         // --- (2) Projeções de A Pagar / A Receber ---
@@ -309,18 +311,21 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
 
                     if (item.Natureza === 'P') {
                         matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] = (matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] || 0) + valor;
-                        if (isUltimo)
-                            matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;
-                        else
+                        if (isUltimo){
+                            matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;     
+                        } else{
                             matrizCapitalGiro['Longo Prazo AP'][chave] = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + valor;
+                        }
                     } else if (item.Natureza === 'R') {
                         matrizCapitalGiro['(+) Clientes a Receber'][chave] = (matrizCapitalGiro['(+) Clientes a Receber'][chave] || 0) + valor;
-                        if (isUltimo)
+                        if (isUltimo){
                             matrizCapitalGiro['Curto Prazo AR'][chave] = (matrizCapitalGiro['Curto Prazo AR'][chave] || 0) + valor;
-                        else
+                        } else{
                             matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
+                        }
                     }
 
+                    todasAsChaves.add(chave)
                     if (isUltimo) break; // Sai do loop após processar o mês final
                     chave = proximaChave;
 
@@ -330,12 +335,18 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     }
 
     // --- (3) Preenche a linha '(+) Caixa' usando o fluxo de caixa mensal ---
-    const todasChaves = Object.keys(fluxoDeCaixaMensal).sort(compararChaves); // garante ordem temporal
+    const chavesOrdenadas = Array.from(todasAsChaves).sort(compararChaves); // garante ordem temporal
     let saldoAcumulado = saldoInicial;
 
-    todasChaves.forEach(chave => {
+    chavesOrdenadas.forEach(chave => {
+        const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
+        const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
+
         saldoAcumulado += fluxoDeCaixaMensal[chave] || 0;
         matrizCapitalGiro['(+) Caixa'][chave] = saldoAcumulado;
+        matrizCapitalGiro['Curto Prazo TT'][chave] = curtoPrazo
+        matrizCapitalGiro['Longo Prazo TT'][chave] = longoPrazo
+        matrizCapitalGiro['Capital Liquido'][chave] = curtoPrazo + longoPrazo + saldoAcumulado;
     });
     
     return { saldoInicial, matrizCapitalGiro };
@@ -592,7 +603,14 @@ function agregarDadosParaAnual(monthlyData) {
     const saldosAnuaisCG = {};
     for (const linha in monthlyData.matrizCapitalGiro) {
         annualData.matrizCapitalGiro[linha] = {};
-        const isSaldo = ['(+) Caixa', '(+) Clientes a Receber', '(-) Fornecedores a Pagar'].includes(linha);
+        const isSaldo = [
+            '(+) Caixa', 
+            '(+) Clientes a Receber', 
+            '(-) Fornecedores a Pagar',
+            'Curto Prazo TT', // Tratar como saldo
+            'Longo Prazo TT', // Tratar como saldo
+            'Capital Liquido' // Tratar como saldo
+        ].includes(linha);
 
         for (const periodoMensal in monthlyData.matrizCapitalGiro[linha]) {
             const [mes, ano] = periodoMensal.split('-');
