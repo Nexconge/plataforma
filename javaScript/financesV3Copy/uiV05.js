@@ -585,24 +585,24 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
     const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     
     // Define a estrutura e a ordem da tabela
-    renderLinhaCG(tbody, matriz, colunas, '(+) Caixa', '(+) Caixa', false, 'bold');
+    renderLinhaCG(tbody, matriz, colunas, '(+) Caixa', '(+) Caixa', false, 'linhatotal');
     criarLinhaBranca();
-    renderLinhaCG(tbody, matriz, colunas, '(+) Clientes a Receber', '(+) Clientes a Receber', false, 'bold');
-    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'indent-1');
-    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'indent-1');
-    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AR %', true, 'indent-1');
-    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AR %', true, 'indent-1');
+    renderLinhaCG(tbody, matriz, colunas, '(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
     criarLinhaBranca();
-    renderLinhaCG(tbody, matriz, colunas, '(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'bold');
-    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'indent-1');
-    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'indent-1');
-    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AP %', true, 'indent-1');
-    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AP %', true, 'indent-1');
+    renderLinhaCG(tbody, matriz, colunas, '(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AP %', true, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AP %', true, 'idented');
     criarLinhaBranca();
-    renderLinhaCG(tbody, matriz, colunas, '(+) Curto Prazo (30 dias)', 'Curto Prazo TT', false, 'bold');
-    renderLinhaCG(tbody, matriz, colunas, '(-) Longo Prazo (maior que 30 dias)', 'Longo Prazo TT', false, 'bold');
+    renderLinhaCG(tbody, matriz, colunas, '(=) Curto Prazo (30 dias)', 'Curto Prazo TT', false, 'linhatotal');
+    renderLinhaCG(tbody, matriz, colunas, '(=) Longo Prazo (maior que 30 dias)', 'Longo Prazo TT', false, 'linhatotal');
     criarLinhaBranca();
-    renderLinhaCG(tbody, matriz, colunas, '(=) Capital Líquido Circulante', 'Capital Liquido', false, 'bold total-blue');
+    renderLinhaCG(tbody, matriz, colunas, '(=) Capital Líquido Circulante', 'Capital Liquido', false, 'linhaSaldo');
 
 
     fragment.appendChild(tbody);
