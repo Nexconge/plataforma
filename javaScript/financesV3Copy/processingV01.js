@@ -674,6 +674,11 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
  * @returns {object} A matriz formatada para a tabela de Capital de Giro, onde cada chave é uma linha da tabela.
  */
 function gerarMatrizCapitalGiro(listaDeDadosCapitalGiro, colunasVisiveis) {
+    //Remove mes atual e futuros da tabela
+    const hoje = new Date();
+    const periodoAtual = `${String(hoje.getMonth()).padStart(2, '0')}-${hoje.getFullYear()}`;
+    colunasVisiveis = colunasVisiveis.filter(col => compararChaves(col, periodoAtual) <= 0);
+
     // ETAPA 1: AGREGAÇÃO DOS DADOS DE TODAS AS CONTAS
     let saldoInicialTotal = 0;
     const fluxoCaixaAgregado = {};

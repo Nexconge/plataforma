@@ -95,9 +95,18 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
         });
     if (projSelect.options.length > 0) projSelect.options[0].selected = true;
 
-    // Adiciona event listeners para os botões e selects que disparam a atualização dos dados.
-    btnARealizar.addEventListener('click', () => { appCache.projecao = "arealizar"; atualizarCallback(); });
-    btnRealizado.addEventListener('click', () => { appCache.projecao = "realizado"; atualizarCallback(); });
+    // Adiciona event listeners para os botões e selects.
+    btnARealizar.addEventListener('click', () => {
+        appCache.projecao = "arealizar";
+        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
+        atualizarCallback();
+    });
+    btnRealizado.addEventListener('click', () => {
+        appCache.projecao = "realizado";
+        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
+        atualizarCallback();
+    });
+
     anoSelect.addEventListener('change', atualizarCallback);
     contaSelect.addEventListener('change', atualizarCallback);
     projSelect.addEventListener('change', () => {
@@ -107,6 +116,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     });
     modoSelect.addEventListener('change', () => {
         atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
+        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
         atualizarCallback();
     });
 
@@ -116,6 +126,15 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
+function atualizarVisibilidadeCapitalGiro(projecao, modo){
+    const groupCapitalG = document.getElementById('groupCapitalGiro');
+    if (projecao === "arealizar" || modo === "Anual") {
+        groupCapitalG.style.display = "none";
+    } else {
+        groupCapitalG.style.display = "";
+    }
+};
+
 /**
  * Lê o estado atual de todos os elementos de filtro na UI e os compila em um objeto.
  * @returns {object|null} Um objeto contendo o estado dos filtros, ou null se algum elemento não for encontrado.
@@ -300,12 +319,10 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     const tabelaMatriz = document.getElementById('tabelaMatriz')
     const tabelaCustos = document.getElementById('tabelaCustos')
     const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
-    if (!dadosProcessados) {
-        if (tabelaMatriz) tabelaMatriz.innerHTML = ''
-        if (tabelaCustos) tabelaCustos.innerHTML = ''
-        if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
-        return;
-    }
+    if (tabelaMatriz) tabelaMatriz.innerHTML = ''
+    if (tabelaCustos) tabelaCustos.innerHTML = ''
+    if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
+
     const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas);
@@ -540,21 +557,15 @@ function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, co
  */
 function renderizarTabelaCapitalGiro(matriz, colunas) {
     const tabela = document.getElementById('tabelaCapitalGiro');
-    // Validação de segurança: verifica se o elemento da tabela existe no DOM.
     if (!tabela) {
         console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
         return;
     }
-    tabela.innerHTML = '';
-    // Validação de segurança: verifica se há dados para renderizar.
-    if (!matriz || Object.keys(matriz).length === 0) {
-        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Nada será renderizado.");
-        return;
-    }
-    try {
-        const fragment = document.createDocumentFragment();
-
-        // Cria o Cabeçalho da tabela.
+    
+    // Cria o fragmento principal (antes de usar)
+    const fragment = document.createDocumentFragment();
+    // Cabeçalho — sempre criado se houver colunas
+    if (colunas && colunas.length) {
         const thead = document.createElement('thead');
         const headerRow = thead.insertRow();
         headerRow.className = 'cabecalho';
@@ -562,7 +573,15 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         colunas.forEach(col => headerRow.insertCell().textContent = col);
         headerRow.insertCell().textContent = "";
         fragment.appendChild(thead);
+    }
 
+    // Se matriz estiver vazia, ainda assim exibe o cabeçalho (para estrutura visual)
+    if (!matriz || Object.keys(matriz).length === 0) {
+        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Renderizando tabela vazia.");
+        tabela.appendChild(fragment);
+        return;
+    }
+    try {
         const tbody = document.createElement('tbody');
 
         // Função auxiliar para criar uma linha de dados na tabela, evitando repetição de código.
@@ -571,12 +590,20 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
             if (cssClass) row.classList.add(cssClass);
             
             row.insertCell().textContent = label;
-            const formatFunc = isPercent ? formatarPercentual : formatarValor;
             colunas.forEach(col => {
-                const valor = matriz[chaveDados]?.[col] || 0;
-                row.insertCell().textContent = formatFunc(valor);
+                const valor = matriz[chaveDados]?.[col] ?? 0;
+
+                // 🔹 Se for percentual e o valor for 0, exibe apenas vazio
+                let textoCelula = '';
+                if (isPercent) {
+                    textoCelula = valor === 0 ? formatarValor(valor) : formatarPercentual(valor);
+                } else {
+                    textoCelula = formatarValor(valor);
+                }
+
+                row.insertCell().textContent = textoCelula;
             });
-            row.insertCell().textContent = ""
+            row.insertCell().textContent = '';
         };
         const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
 
