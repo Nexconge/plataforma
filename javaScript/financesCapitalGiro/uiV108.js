@@ -544,7 +544,9 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
         console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
         return;
     }
-
+    
+    // Cria o fragmento principal (antes de usar)
+    const fragment = document.createDocumentFragment();
     // Cabeçalho — sempre criado se houver colunas
     if (colunas && colunas.length) {
         const thead = document.createElement('thead');
