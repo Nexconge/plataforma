@@ -284,7 +284,6 @@ window.gerarNotaPromissoria = async function () {
         doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Garantidor", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        yAtual -= 20;
     }
 
     if (dados.nomeAvalista_3 !== "" && dados.cpfCnpjAvalista_3 !== "") {
