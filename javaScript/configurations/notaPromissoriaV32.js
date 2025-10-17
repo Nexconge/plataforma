@@ -258,11 +258,11 @@ window.gerarNotaPromissoria = async function () {
         doc.text(dados.nomeAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAssinanteAdc, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Assinante Adicional", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        yAtual += 20;
     }
 
     // Assinatura Avalistas
     if (dados.nomeAvalista_1 !== "" && dados.cpfCnpjAvalista_1 !== "") {
-        yAtual += 20;
         startX = margemLateral;
         endX = margemLateral + 85;
         doc.line(startX, yAtual, endX, yAtual);
