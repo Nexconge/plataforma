@@ -271,10 +271,10 @@ window.gerarNotaPromissoria = async function () {
         doc.text(dados.nomeAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Garantidor", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        yAtual -= 20;
     }
 
     if (dados.nomeAvalista_2 !== "" && dados.cpfCnpjAvalista_2 !== "") {
-        yAtual -= 20;
         startX = larguraPagina - margemLateral - 85;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual, endX, yAtual);
