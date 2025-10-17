@@ -260,10 +260,9 @@ window.gerarNotaPromissoria = async function () {
         doc.text("Assinante Adicional", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
     }
 
-    yAtual += 20;
-
     // Assinatura Avalistas
     if (dados.nomeAvalista_1 !== "" && dados.cpfCnpjAvalista_1 !== "") {
+        yAtual += 20;
         startX = margemLateral;
         endX = margemLateral + 85;
         doc.line(startX, yAtual, endX, yAtual);
@@ -272,10 +271,11 @@ window.gerarNotaPromissoria = async function () {
         doc.text(dados.nomeAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_1, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Garantidor", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        yAtual -= 20;
+        yAtual -= 40;
     }
 
     if (dados.nomeAvalista_2 !== "" && dados.cpfCnpjAvalista_2 !== "") {
+        yAtual += 20;
         startX = larguraPagina - margemLateral - 85;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual, endX, yAtual);
@@ -284,11 +284,11 @@ window.gerarNotaPromissoria = async function () {
         doc.text(dados.nomeAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_2, (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Garantidor", (startX + ((endX - startX) / 2)), yAtual, { align: "center" }); yAtual += 5;
+        yAtual -= 20;
     }
 
-    yAtual += 20;
-
     if (dados.nomeAvalista_3 !== "" && dados.cpfCnpjAvalista_3 !== "") {
+        yAtual += 20;
         startX = margemLateral;
         endX = margemLateral + 85;
         doc.line(startX, yAtual, endX, yAtual);
@@ -297,10 +297,11 @@ window.gerarNotaPromissoria = async function () {
         doc.text(dados.nomeAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text(dados.cpfCnpjAvalista_3, (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
         doc.text("Garantidor", (margemLateral + ((endX - margemLateral) / 2)), yAtual, { align: "center" }); yAtual += 5;
-        yAtual -= 20;
+        yAtual -= 40;
     }
 
     if (dados.nomeAvalista_4 !== "" && dados.cpfCnpjAvalista_4 !== "") {
+        yAtual += 20;
         startX = larguraPagina - margemLateral - 85;
         endX = larguraPagina - margemLateral;
         doc.line(startX, yAtual, endX, yAtual);
