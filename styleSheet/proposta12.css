@@ -107,3 +107,35 @@
         .btn-gerar:hover {
             background-color: #004494;
         }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            padding-left: 5px;
+            padding-right: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            border: 1px solid #ccc;
+            flex: 1 1 160px;
+        }
+
+        /* descrição superior */
+        .card .label {
+            font-size: 0.70rem;
+            color: #6b7280;
+            letter-spacing: 0.02em;
+        }
+
+        /* valor em destaque (parte de baixo) */
+        .card .value {
+            margin-top: 5px;
+            font-size: 1.0rem;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1;
+            word-wrap: anywhere;
+        }
