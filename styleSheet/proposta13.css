@@ -139,3 +139,14 @@
             line-height: 1;
             word-wrap: anywhere;
         }
+
+        .info-lote-cards {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            align-items: stretch;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
