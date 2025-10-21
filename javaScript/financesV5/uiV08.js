@@ -3,6 +3,14 @@
 // Inclui formatação de valores, gerenciamento de filtros, e a renderização das tabelas de dados.
 
 // --- Funções Utilitárias de Formatação e DOM ---
+let graficosAtuais = {
+    saldoCaixa: null,
+    acumulado: null,
+    mensal: null
+};
+
+
+// --- Funções auxiliares --- 
 /**
  * Formata um número para exibição monetária no padrão brasileiro.
  * Números negativos são envolvidos por parênteses. Zeros são exibidos como '-'.
@@ -653,7 +661,7 @@ function calcularPercentuaisCG(matriz, colunas) {
  * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
  */
 function renderizarGraficos(dadosProcessados, colunas) {
-    if (!dadosProcessados || !Chart) return;
+    if (!dadosProcessados || !window.Chart) return;
 
     const { matrizDRE, entradasESaidas } = dadosProcessados;
     const labels = colunas; // As colunas (ex: "01-2025") são nossos labels do eixo X
@@ -710,7 +718,7 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
         }]
     };
 
-    graficosAtuais.saldoCaixa = new Chart(ctx.getContext('2d'), {
+    graficosAtuais.saldoCaixa = new window.Chart(ctx.getContext('2d'), {
         type: 'line',
         data: data,
         options: {
@@ -766,7 +774,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
         ]
     };
 
-    graficosAtuais.acumulado = new Chart(ctx.getContext('2d'), {
+    graficosAtuais.acumulado = new window.Chart(ctx.getContext('2d'), {
         type: 'line', // Gráfico de linha com 'fill: true' vira gráfico de área
         data: data,
         options: {
@@ -819,7 +827,7 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
         ]
     };
 
-    graficosAtuais.mensal = new Chart(ctx.getContext('2d'), {
+    graficosAtuais.mensal = new window.Chart(ctx.getContext('2d'), {
         type: 'line',
         data: data,
         options: {
