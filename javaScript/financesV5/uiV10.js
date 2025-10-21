@@ -661,20 +661,35 @@ function calcularPercentuaisCG(matriz, colunas) {
  * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
  */
 function renderizarGraficos(dadosProcessados, colunas) {
-    if (!dadosProcessados || !window.Chart) return;
+    console.log("--- [DEBUG] Iniciando renderizarGraficos ---");
+
+    if (!dadosProcessados || !window.Chart) {
+        console.log("[DEBUG] RETORNOU CEDO: dadosProcessados ou window.Chart está faltando.", dadosProcessados, window.Chart);
+        return;
+    }
 
     const { matrizDRE, entradasESaidas } = dadosProcessados;
-    const labels = colunas; // As colunas (ex: "01-2025") são nossos labels do eixo X
+    const labels = colunas;
+
+    if (!matrizDRE || !entradasESaidas) {
+        console.log("[DEBUG] RETORNOU CEDO: matrizDRE ou entradasESaidas está faltando.", matrizDRE, entradasESaidas);
+        return;
+    }
+    console.log("[DEBUG] Labels (Colunas):", JSON.stringify(labels));
+    console.log("[DEBUG] Objeto matrizDRE:", matrizDRE);
+    console.log("[DEBUG] Objeto entradasESaidas:", entradasESaidas);
+
 
     // --- 1. Dados para Gráfico Saldo de Caixa Acumulado ---
-    // Usamos o 'Caixa Final' de cada período, que já é o saldo acumulado.
     const dadosSaldo = labels.map(col => matrizDRE['Caixa Final']?.[col] ?? 0);
+    console.log("[DEBUG] Dados Saldo (Caixa Final):", JSON.stringify(dadosSaldo));
     renderizarGraficoSaldoCaixa(labels, dadosSaldo);
 
     // --- 2. Dados para Gráficos Mensal e Acumulado de E/S ---
     const dadosRecebimentos = labels.map(col => entradasESaidas['(+) Entradas']?.[col] ?? 0);
-    // Usamos Math.abs() para tornar os pagamentos (que são negativos) em positivos para o gráfico
     const dadosPagamentos = labels.map(col => Math.abs(entradasESaidas['(-) Saídas']?.[col] ?? 0));
+    console.log("[DEBUG] Dados Recebimentos (Mensal):", JSON.stringify(dadosRecebimentos));
+    console.log("[DEBUG] Dados Pagamentos (Mensal):", JSON.stringify(dadosPagamentos));
 
     // 2a. Renderiza o gráfico Mensal
     renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos);
@@ -690,6 +705,8 @@ function renderizarGraficos(dadosProcessados, colunas) {
         dadosRecebimentosAcumulados.push(accRec);
         dadosPagamentosAcumulados.push(accPag);
     }
+    console.log("[DEBUG] Dados Recebimentos (Acumulado):", JSON.stringify(dadosRecebimentosAcumulados));
+    console.log("[DEBUG] Dados Pagamentos (Acumulado):", JSON.stringify(dadosPagamentosAcumulados));
     renderizarGraficoAcumulado(labels, dadosRecebimentosAcumulados, dadosPagamentosAcumulados);
 }
 /**
@@ -702,7 +719,10 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
         graficosAtuais.saldoCaixa.destroy(); // Destrói o gráfico anterior
     }
     const ctx = document.getElementById('graficoSaldoCaixa');
-    if (!ctx) return;
+    if (!ctx) {
+        console.log("--- [DEBUG] ERRO: Canvas 'graficoSaldoCaixa' não encontrado. ---");
+        return;
+    }
 
     const data = {
         labels: labels,
@@ -717,7 +737,8 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
             }
         }]
     };
-
+    
+    console.log("--- [DEBUG] Renderizando 'graficoSaldoCaixa' com dados:", { labels, dadosSaldo });
     graficosAtuais.saldoCaixa = new window.Chart(ctx.getContext('2d'), {
         type: 'line',
         data: data,
@@ -805,8 +826,10 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
         graficosAtuais.mensal.destroy();
     }
     const ctx = document.getElementById('graficoEntradasSaidasMensal');
-    if (!ctx) return;
-
+    if (!ctx) {
+        console.log("html não encontrado")
+        return;
+    }
     const data = {
         labels: labels,
         datasets: [
