@@ -157,12 +157,12 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDetalhamento = {}, chavesComDados = new Set();
     const entradasESaidas = {
         '(+) Entradas': {},
-        '(-) Saídas:': {},
+        '(-) Saídas': {},
         '(+) Entradas de Transferência': {},
         '(-) Saídas de Transferência': {}
     };
     const ent = entradasESaidas["(+) Entradas"]
-    const sai = entradasESaidas["(-) Saídas:"]
+    const sai = entradasESaidas["(-) Saídas"]
     const entT = entradasESaidas["(+) Entradas de Transferência"]
     const saiT = entradasESaidas["(-) Saídas de Transferência"]
 
