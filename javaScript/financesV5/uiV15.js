@@ -506,15 +506,15 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     // Linhas finais
     tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     // Linhas de entradas e saidas
-    let row = renderizarLinhaDRE(classe, colunas, entradasESaidas.Entradas);
+    let row = renderizarLinhaDRE('(+) Entradas', colunas, entradasESaidas.Entradas);
     tbody.appendChild(row);
-    row = renderizarLinhaDRE(classe, colunas, entradasESaidas.Saidas);
+    row = renderizarLinhaDRE('(-) Saidas', colunas, entradasESaidas.Saidas);
     tbody.appendChild(row);
     //Se o usuario for developer renderiza entradas e saidas de transferencias  
     if(userType && userType.toLowerCase() === 'developer'){
-        row = renderizarLinhaDRE(classe, colunas, entradasESaidas.EntradasTransf);
+        row = renderizarLinhaDRE('(+) Entradas de Transferência', colunas, entradasESaidas.EntradasTransf);
         tbody.appendChild(row);
-        row = renderizarLinhaDRE(classe, colunas, entradasESaidas.SaidasTransf);
+        row = renderizarLinhaDRE('(-) Saidas de Transferência', colunas, entradasESaidas.SaidasTransf);
         tbody.appendChild(row);
     }
 
