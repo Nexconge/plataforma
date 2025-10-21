@@ -72,6 +72,7 @@ function getSelectItems(select){
     return Array.from(select.selectedOptions).map(option => option.value);
 }
 
+
 // --- Funções de Gerenciamento de Filtros ---
 /**
  * Configura os elementos de filtro, popula seus dados iniciais e anexa os event listeners.
@@ -116,7 +117,6 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     });
     modoSelect.addEventListener('change', () => {
         atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
-        atualizarVisibilidadeCapitalGiro(appCache.projecao, modoSelect.value);
         atualizarCallback();
     });
 
@@ -126,9 +126,9 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
     atualizarCallback();
 }
-function atualizarVisibilidadeCapitalGiro(projecao, modo){
+function atualizarVisibilidadeCapitalGiro(projecao){
     const groupCapitalG = document.getElementById('groupCapitalGiro');
-    if (projecao === "arealizar" || modo === "Anual") {
+    if (projecao === "arealizar") {
         groupCapitalG.style.display = "none";
     } else {
         groupCapitalG.style.display = "";
@@ -308,6 +308,8 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
         contaSelect.options[0].selected = true;
     }
 }
+
+
 // --- Funções de Renderização de Tabelas ---
 /**
  * Orquestrador principal da renderização. Chama as funções específicas para renderizar cada tabela.
@@ -327,7 +329,10 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
+    renderizarGraficos(dadosProcessados, colunas);
 }
+
+//1 - Tabela DRE
 /**
  * Renderiza a tabela principal da DRE (Demonstração de Resultado).
  * @param {object} matrizDRE - Os dados processados para a DRE.
@@ -404,6 +409,8 @@ function renderizarLinhaDRE(classe, colunas, matrizDRE) {
 
     return row;
 }
+
+//2 - Tabela Detalhamento
 /**
  * Renderiza a tabela de detalhamento por Departamentos/Categorias/Fornecedores.
  * @param {Map} categoriasMap - O mapa de categorias para traduzir códigos em nomes.
@@ -550,6 +557,8 @@ function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, co
         });
     });
 }
+
+//3 - Tabela Capital de Giro
 /**
  * Renderiza a tabela de Capital de Giro.
  * @param {object} matriz - A matriz de dados gerada por `gerarMatrizCapitalGiro`.
@@ -558,80 +567,277 @@ function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, co
 function renderizarTabelaCapitalGiro(matriz, colunas) {
     const tabela = document.getElementById('tabelaCapitalGiro');
     if (!tabela) {
-        console.error("ERRO CRÍTICO: O elemento com id 'tabelaCapitalGiro' não foi encontrado no HTML.");
+        console.error("ERRO: elemento 'tabelaCapitalGiro' não encontrado.");
         return;
     }
-    
-    // Cria o fragmento principal (antes de usar)
+    tabela.innerHTML = ''; // limpa tabela
     const fragment = document.createDocumentFragment();
-    // Cabeçalho — sempre criado se houver colunas
+
+    // --- Cabeçalho ---
     if (colunas && colunas.length) {
         const thead = document.createElement('thead');
         const headerRow = thead.insertRow();
         headerRow.className = 'cabecalho';
         headerRow.insertCell().textContent = 'Capital de Giro';
-        colunas.forEach(col => headerRow.insertCell().textContent = col);
-        headerRow.insertCell().textContent = "";
+        colunas.forEach(c => headerRow.insertCell().textContent = c);
+        headerRow.insertCell().textContent = '';
         fragment.appendChild(thead);
     }
 
-    // Se matriz estiver vazia, ainda assim exibe o cabeçalho (para estrutura visual)
     if (!matriz || Object.keys(matriz).length === 0) {
-        console.warn("AVISO: A matriz de dados (matrizCapitalGiro) está vazia. Renderizando tabela vazia.");
         tabela.appendChild(fragment);
         return;
     }
-    try {
-        const tbody = document.createElement('tbody');
+    const tbody = document.createElement('tbody');
+    
+    // --- Calcula linhas de % ---
+    calcularPercentuaisCG(matriz, colunas);
+    const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+    
+    // Define a estrutura e a ordem da tabela
+    renderLinhaCG(tbody, matriz, colunas, '(+) Caixa', '(+) Caixa', false, 'linhatotal');
+    criarLinhaBranca();
+    renderLinhaCG(tbody, matriz, colunas, '(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
+    criarLinhaBranca();
+    renderLinhaCG(tbody, matriz, colunas, '(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AP %', true, 'idented');
+    renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AP %', true, 'idented');
+    criarLinhaBranca();
+    renderLinhaCG(tbody, matriz, colunas, '(=) Curto Prazo (30 dias)', 'Curto Prazo TT', false, 'linhatotal');
+    renderLinhaCG(tbody, matriz, colunas, '(=) Longo Prazo (maior que 30 dias)', 'Longo Prazo TT', false, 'linhatotal');
+    criarLinhaBranca();
+    renderLinhaCG(tbody, matriz, colunas, '(=) Capital Líquido Circulante', 'Capital Liquido', false, 'linhaSaldo');
 
-        // Função auxiliar para criar uma linha de dados na tabela, evitando repetição de código.
-        const criarLinha = (label, chaveDados, isPercent = false, cssClass = '') => {
-            const row = tbody.insertRow();
-            if (cssClass) row.classList.add(cssClass);
-            
-            row.insertCell().textContent = label;
+
+    fragment.appendChild(tbody);
+    tabela.appendChild(fragment);
+}
+function renderLinhaCG(tbody, matriz, colunas, label, chave, isPercent = false, cssClass = '') {
+    const row = tbody.insertRow();
+    if (cssClass) row.classList.add(cssClass);
+    row.insertCell().textContent = label;
+    colunas.forEach(col => {
+        const valor = matriz[chave]?.[col] ?? 0;
+        row.insertCell().textContent = isPercent && valor !== 0 ? formatarPercentual(valor) : formatarValor(valor);
+    });
+    row.insertCell().textContent = '';
+};
+function calcularPercentuaisCG(matriz, colunas) {
+    ['AR', 'AP'].forEach(tipo => {
+        const curto = `Curto Prazo ${tipo}`;
+        const longo = `Longo Prazo ${tipo}`;
+        const total = col => (matriz[curto][col] || 0) + (matriz[longo][col] || 0);
+
+        // Criar linhas percentuais
+        ['Curto Prazo', 'Longo Prazo'].forEach((prazo, i) => {
+            const chavePercent = `${prazo} ${tipo} %`;
+            matriz[chavePercent] = {};
             colunas.forEach(col => {
-                const valor = matriz[chaveDados]?.[col] ?? 0;
-
-                // 🔹 Se for percentual e o valor for 0, exibe apenas vazio
-                let textoCelula = '';
-                if (isPercent) {
-                    textoCelula = valor === 0 ? formatarValor(valor) : formatarPercentual(valor);
-                } else {
-                    textoCelula = formatarValor(valor);
-                }
-
-                row.insertCell().textContent = textoCelula;
+                const linha = i === 0 ? curto : longo;
+                const t = total(col);
+                matriz[chavePercent][col] = t ? (matriz[linha][col] / t) * 100 : 0;
             });
-            row.insertCell().textContent = '';
-        };
-        const criarLinhaBranca = () => tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
+        });
+    });
+}
 
-        // Monta o corpo da tabela usando a função auxiliar.
-        criarLinha('(+) Caixa', '(+) Caixa', false, 'linhatotal');
-        criarLinhaBranca();
-        criarLinha('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'linhatotal');
-        criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AR', false, 'idented');
-        criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AR', false, 'idented');
-        criarLinha('Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
-        criarLinha('Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
-        criarLinhaBranca();
-        criarLinha('(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
-        criarLinha('Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
-        criarLinha('Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
-        criarLinha('Curto Prazo (%)', 'Curto Prazo AP %', true, 'idented');
-        criarLinha('Longo Prazo (%)', 'Longo Prazo AP %', true, 'idented');
-        criarLinhaBranca();
-        criarLinha('(+) Curto Prazo (30 dias)', '(+) Curto Prazo (30 dias)', false, 'linhatotal');
-        criarLinha('(-) Longo Prazo (maior que 30 dias)', '(-) Longo Prazo (maior que 30 dias)', false, 'linhatotal');
-        criarLinhaBranca();
-        criarLinha('(=) Capital Líquido Circulante', '(=) Capital Líquido Circulante', false, 'linhaSaldo');
+/**
+ * Orquestrador principal da renderização dos gráficos.
+ * @param {object|null} dadosProcessados - O objeto de dados final vindo de `mergeMatrizes`.
+ * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
+ */
+function renderizarGraficos(dadosProcessados, colunas) {
+    if (!dadosProcessados || !Chart) return;
 
-        fragment.appendChild(tbody);
-        tabela.appendChild(fragment);
-    } catch (error) {
-        console.error("ERRO DURANTE A RENDERIZAÇÃO: Um erro inesperado ocorreu ao construir a tabela de Capital de Giro.", error);
+    const { matrizDRE, entradasESaidas } = dadosProcessados;
+    const labels = colunas; // As colunas (ex: "01-2025") são nossos labels do eixo X
+
+    // --- 1. Dados para Gráfico Saldo de Caixa Acumulado ---
+    // Usamos o 'Caixa Final' de cada período, que já é o saldo acumulado.
+    const dadosSaldo = labels.map(col => matrizDRE['Caixa Final']?.[col] ?? 0);
+    renderizarGraficoSaldoCaixa(labels, dadosSaldo);
+
+    // --- 2. Dados para Gráficos Mensal e Acumulado de E/S ---
+    const dadosRecebimentos = labels.map(col => entradasESaidas['(+) Entradas']?.[col] ?? 0);
+    // Usamos Math.abs() para tornar os pagamentos (que são negativos) em positivos para o gráfico
+    const dadosPagamentos = labels.map(col => Math.abs(entradasESaidas['(-) Saídas']?.[col] ?? 0));
+
+    // 2a. Renderiza o gráfico Mensal
+    renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos);
+
+    // 2b. Calcula e renderiza o gráfico Acumulado
+    const dadosRecebimentosAcumulados = [];
+    const dadosPagamentosAcumulados = [];
+    let accRec = 0;
+    let accPag = 0;
+    for (let i = 0; i < dadosRecebimentos.length; i++) {
+        accRec += dadosRecebimentos[i];
+        accPag += dadosPagamentos[i];
+        dadosRecebimentosAcumulados.push(accRec);
+        dadosPagamentosAcumulados.push(accPag);
     }
+    renderizarGraficoAcumulado(labels, dadosRecebimentosAcumulados, dadosPagamentosAcumulados);
+}
+/**
+ * Renderiza o gráfico de Saldo de Caixa Acumulado (Gráfico 1).
+ * @param {Array<string>} labels - Os períodos (ex: "01-2025").
+ * @param {Array<number>} dadosSaldo - Os valores do caixa final para cada período.
+ */
+function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
+    if (graficosAtuais.saldoCaixa) {
+        graficosAtuais.saldoCaixa.destroy(); // Destrói o gráfico anterior
+    }
+    const ctx = document.getElementById('graficoSaldoCaixa');
+    if (!ctx) return;
+
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: 'Saldo de Caixa',
+            data: dadosSaldo,
+            fill: false,
+            tension: 0.1, // Linha suave, como na imagem
+            // Muda a cor da linha para vermelho se o saldo for negativo
+            segment: {
+                borderColor: context => dadosSaldo[context.p1DataIndex] < 0 ? 'rgb(220, 53, 69)' : 'rgb(40, 167, 69)',
+            }
+        }]
+    };
+
+    graficosAtuais.saldoCaixa = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Saldo de Caixa Acumulado (R$)', font: { size: 16 } },
+                legend: { display: false } // Esconde a legenda, como na imagem
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        // Formata o eixo Y como moeda
+                        callback: value => `R$ ${value.toLocaleString('pt-BR')}`
+                    }
+                }
+            }
+        }
+    });
+}
+/**
+ * Renderiza o gráfico de Evolução de Desembolso (Acumulado) (Gráfico 2).
+ * @param {Array<string>} labels - Os períodos.
+ * @param {Array<number>} dadosRecebimentos - Valores acumulados de recebimentos.
+ * @param {Array<number>} dadosPagamentos - Valores acumulados de pagamentos.
+ */
+function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) {
+    if (graficosAtuais.acumulado) {
+        graficosAtuais.acumulado.destroy();
+    }
+    const ctx = document.getElementById('graficoRecebientoPagamentoAcumulado');
+    if (!ctx) return;
+
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Recebimentos Acumulados',
+                data: dadosRecebimentos,
+                borderColor: 'rgb(40, 167, 69)',
+                backgroundColor: 'rgba(40, 167, 69, 0.3)', // Verde com transparência
+                fill: true, // Cria a área preenchida
+                tension: 0.1
+            },
+            {
+                label: 'Pagamentos Acumulados',
+                data: dadosPagamentos,
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgba(220, 53, 69, 0.3)', // Vermelho com transparência
+                fill: true,
+                tension: 0.1
+            }
+        ]
+    };
+
+    graficosAtuais.acumulado = new Chart(ctx.getContext('2d'), {
+        type: 'line', // Gráfico de linha com 'fill: true' vira gráfico de área
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Evolução Desembolso (R$)', font: { size: 16 } },
+                legend: { position: 'bottom' } // Legenda abaixo, como na imagem
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: value => `R$ ${value.toLocaleString('pt-BR')}`
+                    }
+                }
+            }
+        }
+    });
+}
+/**
+ * Renderiza o gráfico de Recebimentos e Pagamentos Mensais (Gráfico 3).
+ * @param {Array<string>} labels - Os períodos.
+ * @param {Array<number>} dadosRecebimentos - Valores mensais de recebimentos.
+ * @param {Array<number>} dadosPagamentos - Valores mensais de pagamentos (positivos).
+ */
+function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
+    if (graficosAtuais.mensal) {
+        graficosAtuais.mensal.destroy();
+    }
+    const ctx = document.getElementById('graficoEntradasSaidasMensal');
+    if (!ctx) return;
+
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Recebimentos Mensais',
+                data: dadosRecebimentos,
+                borderColor: 'rgb(40, 167, 69)',
+                backgroundColor: 'rgb(40, 167, 69)',
+                stepped: true, // Cria o gráfico "escadinha", como na imagem
+            },
+            {
+                label: 'Pagamentos Mensais',
+                data: dadosPagamentos,
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgb(220, 53, 69)',
+                stepped: true, // Cria o gráfico "escadinha"
+            }
+        ]
+    };
+
+    graficosAtuais.mensal = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Recebimentos e Pagamentos Mensais (R$)', font: { size: 16 } },
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: value => `R$ ${value.toLocaleString('pt-BR')}`
+                    }
+                }
+            }
+        }
+    });
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
