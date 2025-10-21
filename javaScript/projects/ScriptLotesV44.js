@@ -18,7 +18,7 @@ class MapaLotesManager {
     // --- Inicialização ---
     // MUDANÇA: A função agora espera um JSON com a lista de empreendimentos (id e nome)
     async init(empreendimentosJSON) {
-        if (!document.getElementById(this.mapId) || !empreendimentosJSON) {
+        /*if (!document.getElementById(this.mapId) || !empreendimentosJSON) {
             console.error("Div do mapa ou JSON de empreendimentos não encontrados.");
             return;
         }
@@ -29,7 +29,7 @@ class MapaLotesManager {
         } catch (e) {
             console.error("Erro ao parsear JSON de empreendimentos:", e);
             return;
-        }
+        }*/
 
         this._initMap();
         this._setupEventListeners();
@@ -44,7 +44,7 @@ class MapaLotesManager {
         }
 
         this._renderLotes(this.allLotes);
-        this._populateEmpreendimentoFilter();
+        //this._populateEmpreendimentoFilter();
         this._centralizeView();
     }
 
