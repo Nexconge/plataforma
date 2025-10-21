@@ -871,14 +871,14 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
                 data: dadosRecebimentos,
                 borderColor: 'rgb(40, 167, 69)',
                 backgroundColor: 'rgb(40, 167, 69)',
-                stepped: true, // Cria o gráfico "escadinha", como na imagem
+                tension: 0.1
             },
             {
                 label: 'Pagamentos Mensais',
                 data: dadosPagamentos,
                 borderColor: 'rgb(220, 53, 69)',
                 backgroundColor: 'rgb(220, 53, 69)',
-                stepped: true, // Cria o gráfico "escadinha"
+                tension: 0.1
             }
         ]
     };
