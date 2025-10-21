@@ -510,7 +510,8 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     if(userType && userType.toLowerCase() === 'developer') classesES.push('(+) Entradas de Transferência', '(-) Saídas de Transferência');
     classesES.forEach(classe => {
         if (entradasESaidas[classe]){
-            renderizarLinhaDRE(classe, colunas, entradasESaidas)
+            const row = renderizarLinhaDRE(classe, colunas, entradasESaidas)
+            tbody.appendChild(row);
         }
     });
 
