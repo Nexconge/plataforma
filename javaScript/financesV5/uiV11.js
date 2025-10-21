@@ -8,7 +8,7 @@ let graficosAtuais = {
     acumulado: null,
     mensal: null
 };
-
+let chartJsPromise = null;
 
 // --- Funções auxiliares --- 
 /**
@@ -79,7 +79,39 @@ function getSelectItems(select){
     }
     return Array.from(select.selectedOptions).map(option => option.value);
 }
+function carregarChartJs() {
+    // Se Chart.js já está disponível, retorna uma promessa resolvida imediatamente.
+    if (window.Chart) {
+        return Promise.resolve();
+    }
 
+    // Se já estamos carregando, retorna a promessa existente.
+    if (chartJsPromise) {
+        return chartJsPromise;
+    }
+
+    // Inicia o carregamento
+    chartJsPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.async = true;
+        
+        script.onload = () => {
+            console.log("Chart.js carregado dinamicamente.");
+            resolve();
+        };
+        
+        script.onerror = () => {
+            console.error("Falha ao carregar Chart.js.");
+            chartJsPromise = null; // Permite tentar novamente em uma futura chamada
+            reject(new Error('Falha ao carregar Chart.js'));
+        };
+        
+        document.body.appendChild(script);
+    });
+
+    return chartJsPromise;
+}
 
 // --- Funções de Gerenciamento de Filtros ---
 /**
@@ -129,6 +161,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
     });
 
     // Configuração inicial dos filtros e primeira chamada para carregar os dados.
+    carregarChartJs();
     atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
