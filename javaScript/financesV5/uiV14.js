@@ -2,8 +2,6 @@
 // Este módulo contém todas as funções relacionadas à manipulação do DOM.
 // Inclui formatação de valores, gerenciamento de filtros, e a renderização das tabelas de dados.
 
-import { use } from "react";
-
 // --- Funções Utilitárias de Formatação e DOM ---
 let graficosAtuais = {
     saldoCaixa: null,
