@@ -156,11 +156,16 @@ function parseDate(dateString) {
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDetalhamento = {}, chavesComDados = new Set();
     const entradasESaidas = {
-        Entradas: {},
-        Saidas: {},
-        EntradasTransf: {},
-        SaidasTransf: {}
+        '(+) Entradas': {},
+        '(-) Saídas:': {},
+        '(+) Entradas de Transferência': {},
+        '(-) Saídas de Transferência': {}
     };
+    const ent = entradasESaidas["(+) Entradas"]
+    const sai = entradasESaidas["(-) Saídas:"]
+    const entT = entradasESaidas["(+) Entradas de Transferência"]
+    const saiT = entradasESaidas["(-) Saídas de Transferência"]
+
     let valorTotal = 0;
     
     // Classes que terão seus dados detalhados por departamento/categoria/fornecedor.
@@ -196,11 +201,11 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
 
         // Adiciona também às linhas totalizadoras de entradas e saídas.
         if (valor < 0) { 
-            if (codCat.startsWith("0.01")){ entradasESaidas.SaidasTransf[chaveAgregacao] = (entradasESaidas.SaidasTransf[chaveAgregacao] || 0) + valor
-            } else entradasESaidas.Saidas[chaveAgregacao] = (entradasESaidas.Saidas[chaveAgregacao] || 0) + valor
+            if (codCat.startsWith("0.01")){ saiT[chaveAgregacao] = (saiT[chaveAgregacao] || 0) + valor
+            } else sai[chaveAgregacao] = (sai[chaveAgregacao] || 0) + valor
         } else {
-            if (codCat.startsWith("0.01")){ entradasESaidas.EntradasTransf[chaveAgregacao] = (entradasESaidas.EntradasTransf[chaveAgregacao] || 0) + valor
-            } else entradasESaidas.Entradas[chaveAgregacao] = (entradasESaidas.Entradas[chaveAgregacao] || 0) + valor
+            if (codCat.startsWith("0.01")){ entT[chaveAgregacao] = (entT[chaveAgregacao] || 0) + valor
+            } else ent[chaveAgregacao] = (ent[chaveAgregacao] || 0) + valor
         }
 
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.

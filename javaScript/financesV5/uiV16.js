@@ -432,7 +432,7 @@ function renderizarLinhaDRE(classe, colunas, matrizDRE) {
     // Aplica estilos CSS com base no tipo de linha
     if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
         row.classList.add('linhatotal');
-    } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe)) {
+    } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas','(-) Saídas de Transferência','(+) Entradas de Transferência'].includes(classe)) {
         row.classList.add('linhaSaldo');
     }
 
@@ -506,17 +506,13 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     // Linhas finais
     tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     // Linhas de entradas e saidas
-    let row = renderizarLinhaDRE('(+) Entradas', colunas, entradasESaidas.Entradas);
-    tbody.appendChild(row);
-    row = renderizarLinhaDRE('(-) Saidas', colunas, entradasESaidas.Saidas);
-    tbody.appendChild(row);
-    //Se o usuario for developer renderiza entradas e saidas de transferencias  
-    if(userType && userType.toLowerCase() === 'developer'){
-        row = renderizarLinhaDRE('(+) Entradas de Transferência', colunas, entradasESaidas.EntradasTransf);
-        tbody.appendChild(row);
-        row = renderizarLinhaDRE('(-) Saidas de Transferência', colunas, entradasESaidas.SaidasTransf);
-        tbody.appendChild(row);
-    }
+    const classesES = ['(+) Entradas', '(-) Saídas']
+    if(userType && userType.toLowerCase() === 'developer') classesES.push('(+) Entradas de Transferência', '(-) Saídas de Transferência');
+    classesES.forEach(classe => {
+        if (entradasESaidas[classe]){
+            renderizarLinhaDRE(classe, colunas, entradasESaidas)
+        }
+    });
 
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
@@ -702,36 +698,25 @@ function calcularPercentuaisCG(matriz, colunas) {
  * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
  */
 function renderizarGraficos(dadosProcessados, colunas) {
-    console.log("--- [DEBUG] Iniciando renderizarGraficos ---");
 
     if (!dadosProcessados || !window.Chart) {
         console.log("[DEBUG] RETORNOU CEDO: dadosProcessados ou window.Chart está faltando.", dadosProcessados, window.Chart);
         return;
     }
-
     const { matrizDRE, entradasESaidas } = dadosProcessados;
     const labels = colunas;
-
     if (!matrizDRE || !entradasESaidas) {
         console.log("[DEBUG] RETORNOU CEDO: matrizDRE ou entradasESaidas está faltando.", matrizDRE, entradasESaidas);
         return;
     }
-    console.log("[DEBUG] Labels (Colunas):", JSON.stringify(labels));
-    console.log("[DEBUG] Objeto matrizDRE:", matrizDRE);
-    console.log("[DEBUG] Objeto entradasESaidas:", entradasESaidas);
-
 
     // --- 1. Dados para Gráfico Saldo de Caixa Acumulado ---
     const dadosSaldo = labels.map(col => matrizDRE['Caixa Final']?.[col] ?? 0);
-    console.log("[DEBUG] Dados Saldo (Caixa Final):", JSON.stringify(dadosSaldo));
     renderizarGraficoSaldoCaixa(labels, dadosSaldo);
 
     // --- 2. Dados para Gráficos Mensal e Acumulado de E/S ---
     const dadosRecebimentos = labels.map(col => entradasESaidas['(+) Entradas']?.[col] ?? 0);
     const dadosPagamentos = labels.map(col => Math.abs(entradasESaidas['(-) Saídas']?.[col] ?? 0));
-    console.log("[DEBUG] Dados Recebimentos (Mensal):", JSON.stringify(dadosRecebimentos));
-    console.log("[DEBUG] Dados Pagamentos (Mensal):", JSON.stringify(dadosPagamentos));
-
     // 2a. Renderiza o gráfico Mensal
     renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos);
 
@@ -746,8 +731,7 @@ function renderizarGraficos(dadosProcessados, colunas) {
         dadosRecebimentosAcumulados.push(accRec);
         dadosPagamentosAcumulados.push(accPag);
     }
-    console.log("[DEBUG] Dados Recebimentos (Acumulado):", JSON.stringify(dadosRecebimentosAcumulados));
-    console.log("[DEBUG] Dados Pagamentos (Acumulado):", JSON.stringify(dadosPagamentosAcumulados));
+
     renderizarGraficoAcumulado(labels, dadosRecebimentosAcumulados, dadosPagamentosAcumulados);
 }
 /**
