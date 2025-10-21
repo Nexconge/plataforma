@@ -171,7 +171,7 @@ class MapaLotesManager {
         });
 
         // Aplica o filtro inicial
-        this._handleFilterChange();
+        //this._handleFilterChange();
     }
 
     
