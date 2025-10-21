@@ -155,9 +155,12 @@ function parseDate(dateString) {
  */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDetalhamento = {}, chavesComDados = new Set();
-    const entradasESaidas = {};
-    const entradas = entradasESaidas['(+) Entradas'] = {};
-    const saidas = entradasESaidas['(-) Saídas'] = {};
+    const entradasESaidas = {
+        Entradas: {},
+        Saidas: {},
+        EntradasTransf: {},
+        SaidasTransf: {}
+    };
     let valorTotal = 0;
     
     // Classes que terão seus dados detalhados por departamento/categoria/fornecedor.
@@ -183,6 +186,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         valorTotal += valor;
 
         // Encontra a classe da DRE correspondente à categoria do lançamento.
+        const codCat = lancamento.CODCategoria
         const classeInfo = dadosBase.classesMap.get(lancamento.CODCategoria);
         const classe = classeInfo ? classeInfo.classe : 'Outros';
 
@@ -191,8 +195,13 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         matrizDRE[classe][chaveAgregacao] = (matrizDRE[classe][chaveAgregacao] || 0) + valor;
 
         // Adiciona também às linhas totalizadoras de entradas e saídas.
-        if (valor < 0) { saidas[chaveAgregacao] = (saidas[chaveAgregacao] || 0) + valor;
-        } else { entradas[chaveAgregacao] = (entradas[chaveAgregacao] || 0) + valor; }
+        if (valor < 0) { 
+            if (codCat.startsWith("0.01")){ entradasESaidas.SaidasTransf[chaveAgregacao] = (entradasESaidas.SaidasTransf[chaveAgregacao] || 0) + valor
+            } else entradasESaidas.Saidas[chaveAgregacao] = (entradasESaidas.Saidas[chaveAgregacao] || 0) + valor
+        } else {
+            if (codCat.startsWith("0.01")){ entradasESaidas.EntradasTransf[chaveAgregacao] = (entradasESaidas.EntradasTransf[chaveAgregacao] || 0) + valor
+            } else entradasESaidas.Entradas[chaveAgregacao] = (entradasESaidas.Entradas[chaveAgregacao] || 0) + valor
+        }
 
         // Se a classe do lançamento deve ser detalhada, processa os departamentos.
          if (classesParaDetalhar.has(classe) && Array.isArray(lancamento.Departamentos) && lancamento.Departamentos.length > 0) {

@@ -2,6 +2,8 @@
 // Este módulo contém todas as funções relacionadas à manipulação do DOM.
 // Inclui formatação de valores, gerenciamento de filtros, e a renderização das tabelas de dados.
 
+import { use } from "react";
+
 // --- Funções Utilitárias de Formatação e DOM ---
 let graficosAtuais = {
     saldoCaixa: null,
@@ -368,7 +370,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
 
     const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
-    renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas);
+    renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
     renderizarGraficos(dadosProcessados, colunas);
 }
@@ -458,7 +460,7 @@ function renderizarLinhaDRE(classe, colunas, matrizDRE) {
  * @param {object} dadosAgrupados - A `matrizDetalhamento` vinda dos dados processados.
  * @param {Array<string>} colunas - As colunas de período a serem exibidas.
  */
-function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, entradasESaidas) {
+function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, entradasESaidas, userType) {
     const tabela = document.getElementById('tabelaCustos');
     tabela.innerHTML = '';
     const fragment = document.createDocumentFragment();
@@ -505,10 +507,18 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
 
     // Linhas finais
     tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
-    Object.keys(entradasESaidas).forEach(classe => {
-        const row = renderizarLinhaDRE(classe, colunas, entradasESaidas);
+    // Linhas de entradas e saidas
+    let row = renderizarLinhaDRE(classe, colunas, entradasESaidas.Entradas);
+    tbody.appendChild(row);
+    row = renderizarLinhaDRE(classe, colunas, entradasESaidas.Saidas);
+    tbody.appendChild(row);
+    //Se o usuario for developer renderiza entradas e saidas de transferencias  
+    if(userType && userType.toLowerCase() === 'developer'){
+        row = renderizarLinhaDRE(classe, colunas, entradasESaidas.EntradasTransf);
         tbody.appendChild(row);
-    });
+        row = renderizarLinhaDRE(classe, colunas, entradasESaidas.SaidasTransf);
+        tbody.appendChild(row);
+    }
 
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
