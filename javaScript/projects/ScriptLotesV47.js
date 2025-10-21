@@ -100,6 +100,7 @@ class MapaLotesManager {
         }
 
         console.log(`Busca finalizada. Total de lotes carregados: ${todosOsLotes.length}`);
+        console.log(todosOsLotes)
         return todosOsLotes;
     }
 
