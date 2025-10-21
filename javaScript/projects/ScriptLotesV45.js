@@ -279,10 +279,11 @@ class MapaLotesManager {
 
     _handleFilterChange() {
         const selectedEmpreendimentoId = document.getElementById("empreendimentoSelect").value;
+        console.log(selectedEmpreendimentoId)
 
         Object.values(this.polygons).forEach(p => {
             const shouldBeVisible = !selectedEmpreendimentoId || p.loteData.Empreendimento === selectedEmpreendimentoId;
-
+            console.log(p.loteData.empreendimento)
             if (shouldBeVisible && !this.map.hasLayer(p)) {
                 this.map.addLayer(p);
             } else if (!shouldBeVisible && this.map.hasLayer(p)) {
