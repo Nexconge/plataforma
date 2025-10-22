@@ -867,8 +867,18 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                     bodyColor: 'black',
                     borderWidth: 0,
                     padding: 12,
-                    callbacks: { label: value => `R$ ${value.toLocaleString('pt-BR')}`
-                    }
+                    callbacks: { label: function(context) {
+                        let valor = context.raw;
+                        let valorFormatado = valor.toLocaleString('pt-BR')
+                        let textoToolTip = '';
+                        if (context.dataset.label === 'Recebimentos Acumulados') {
+                            textoToolTip = ' Recebimentos Acumulados: R$ ';
+                        }
+                        if (context.dataset.label === 'Pagamentos Acumulados') {
+                            textoToolTip = ' Pagamentos Acumulados: R$ ';
+                        }
+                        return textoToolTip + valorFormatado;
+                    }}
                 }
             },
             scales: {
