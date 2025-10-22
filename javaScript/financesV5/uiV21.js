@@ -402,7 +402,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     const thead = document.createElement('thead');
     const headerRow = thead.insertRow();
     headerRow.className = 'cabecalho';
-    headerRow.insertCell().textContent = 'Classe';
+    headerRow.insertCell().textContent = 'Fluxo de Caixa'; // Inserir aqui o título da primeira coluna
     colunas.forEach(coluna => headerRow.insertCell().textContent = coluna);
     headerRow.insertCell().textContent = 'TOTAL';
     fragment.appendChild(thead);
@@ -468,7 +468,7 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     const thead = document.createElement('thead');
     const headRow = thead.insertRow();
     headRow.className = 'cabecalho';
-    headRow.insertCell().textContent = 'Classe / Departamento / Categoria / Fornecedor';
+    headRow.insertCell().textContent = 'Detalhamento';
     colunas.forEach(coluna => headRow.insertCell().textContent = coluna);
     headRow.insertCell().textContent = 'TOTAL';
     thead.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
