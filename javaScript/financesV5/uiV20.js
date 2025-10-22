@@ -409,6 +409,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     
     // Cria o corpo da tabela.
     const tbody = document.createElement('tbody');
+    tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     ordemClasses.forEach(classe => {
         //Renderiza a linha de dre
         const row = renderizarLinhaDRE(classe, colunas, matrizDRE);
