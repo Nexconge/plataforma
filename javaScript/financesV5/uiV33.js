@@ -870,10 +870,10 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                     callbacks: { label: function(context) {
                         let valor = context.raw;
                         let textoToolTip = '';
-                        if (context.dataset.label === ' Recebimentos Acumulados') {
+                        if (context.dataset.label === 'Recebimentos Acumulados') {
                             textoToolTip = ' Recebimentos Acumulados: R$ ';
                         }
-                        if (context.dataset.label === ' Pagamentos Acumulados') {
+                        if (context.dataset.label === 'Pagamentos Acumulados') {
                             textoToolTip = ' Pagamentos Acumulados: R$ ';
                         }
                         return textoToolTip + valor.toLocaleString('pt-BR');
