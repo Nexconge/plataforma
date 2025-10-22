@@ -171,7 +171,7 @@ class MapaLotesManager {
         });
 
         // Aplica o filtro inicial
-        //this._handleFilterChange();
+        this._handleFilterChange();
     }
 
     
@@ -280,11 +280,9 @@ class MapaLotesManager {
     _handleFilterChange() {
         const dropdownVal = document.getElementById("empreendimentoSelect").value;
         const selectedEmpreendimentoId = (dropdownVal.split('__LOOKUP__')[1]).slice(0, -1);
-        console.log(selectedEmpreendimentoId)
 
         Object.values(this.polygons).forEach(p => {
             const shouldBeVisible = !selectedEmpreendimentoId || p.loteData.Empreendimento === selectedEmpreendimentoId;
-            console.log(p.loteData.empreendimento)
             if (shouldBeVisible && !this.map.hasLayer(p)) {
                 this.map.addLayer(p);
             } else if (!shouldBeVisible && this.map.hasLayer(p)) {
