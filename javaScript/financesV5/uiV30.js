@@ -867,7 +867,8 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                     bodyColor: 'black',
                     borderWidth: 0,
                     padding: 12,
-                    label: `R$ ${value.toLocaleString('pt-BR')}`
+                    callbacks: { label: value => `R$ ${value.toLocaleString('pt-BR')}`
+                    }
                 }
             },
             scales: {
