@@ -414,7 +414,7 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
         const row = renderizarLinhaDRE(classe, colunas, matrizDRE);
         tbody.appendChild(row);
         // Adiciona linhas em branco para espaçamento visual.
-        if(['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
+        if(['(+/-) Geração de Caixa Operacional','(=) Movimentação de Caixa Mensal','Outros'].includes(classe)){
            tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
         }
     });
