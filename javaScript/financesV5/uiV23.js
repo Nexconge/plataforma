@@ -763,6 +763,14 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
             // Muda a cor da linha para vermelho se o saldo for negativo
             segment: {
                 borderColor: context => dadosSaldo[context.p1DataIndex] < 0 ? 'rgb(220, 53, 69)' : 'rgb(40, 167, 69)',
+            },
+            borderColor: function(context) {
+                const valor = context.raw;
+                return valor <= 0 ? 'rgb(220, 53, 69)' : 'rgb(40, 167, 69)';
+            },
+            backgroundColor: function(context) {
+                const valor = context.raw;
+                return valor <= 0 ? 'rgb(220, 53, 69, 0.2)' : 'rgb(40, 167, 69, 0.2)';
             }
         }]
     };
