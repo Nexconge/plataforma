@@ -100,7 +100,6 @@ class MapaLotesManager {
         }
 
         console.log(`Busca finalizada. Total de lotes carregados: ${todosOsLotes.length}`);
-        console.log(todosOsLotes)
         return todosOsLotes;
     }
 
@@ -279,7 +278,8 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
-        const selectedEmpreendimentoId = document.getElementById("empreendimentoSelect").value;
+        const dropdownVal = document.getElementById("empreendimentoSelect").value;
+        const selectedEmpreendimentoId = dropdownVal.split('__LOOKUP__')[1];
         console.log(selectedEmpreendimentoId)
 
         Object.values(this.polygons).forEach(p => {
