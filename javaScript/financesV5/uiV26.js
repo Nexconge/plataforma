@@ -875,7 +875,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                 },
                 y: {
                     ticks: {
-                        callback: value => value < 0 ? `R$ (${value.toLocaleString('pt-BR')})` : `R$ ${value.toLocaleString('pt-BR')}` 
+                        callback: value => `R$ ${value.toLocaleString('pt-BR')}`
                     }
                 }
             }
