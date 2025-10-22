@@ -756,8 +756,10 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
         datasets: [{
             label: 'Saldo de Caixa',
             data: dadosSaldo,
+            pointRadius: 0,
+            pointHitRadius: 20,
             fill: false,
-            tension: 0.1, // Linha suave, como na imagem
+            tension: 0.3, // Linha suave, como na imagem
             // Muda a cor da linha para vermelho se o saldo for negativo
             segment: {
                 borderColor: context => dadosSaldo[context.p1DataIndex] < 0 ? 'rgb(220, 53, 69)' : 'rgb(40, 167, 69)',
@@ -774,9 +776,25 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
             maintainAspectRatio: false,
             plugins: {
                 title: { display: true, text: 'Saldo de Caixa Acumulado (R$)', font: { size: 16 } },
-                legend: { display: false } // Esconde a legenda, como na imagem
+                legend: { display: false }, // Esconde a legenda, como na imagem
+                tooltip: {
+                    backgroundColor: 'rgba(200, 200, 200, 0.2)',
+                    titleColor: 'black',
+                    bodyColor: 'black',
+                    borderWidth: 0,
+                    padding: 12,
+                    callbacks: {label: function(context) {
+                        let valor = context.raw;
+                        let valorFormatado = new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(Math.abs(valor));
+                        if (valor < 0) {return ' Saldo de Caixa: R$ (' + valorFormatado + ')'}
+                        return ' Saldo de Caixa: R$ ' + valorFormatado;
+                    }},
+                }
             },
             scales: {
+                x: {
+                    grid: {display: false},
+                },
                 y: {
                     ticks: {
                         // Formata o eixo Y como moeda
