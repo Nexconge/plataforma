@@ -830,7 +830,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
         labels: labels,
         datasets: [
             {
-                label: ' Recebimentos Acumulados',
+                label: 'Recebimentos Acumulados',
                 data: dadosRecebimentos,
                 borderColor: 'rgb(40, 167, 69)',
                 backgroundColor: 'rgba(40, 167, 69, 0.2)', // Verde com transparência
@@ -840,7 +840,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                 tension: 0.1
             },
             {
-                label: ' Pagamentos Acumulados',
+                label: 'Pagamentos Acumulados',
                 data: dadosPagamentos,
                 borderColor: 'rgb(220, 53, 69)',
                 backgroundColor: 'rgba(220, 53, 69, 0.2)', // Vermelho com transparência
@@ -869,15 +869,14 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                     padding: 12,
                     callbacks: { label: function(context) {
                         let valor = context.raw;
-                        let valorFormatado = valor.toLocaleString('pt-BR')
                         let textoToolTip = '';
-                        if (context.dataset.label === 'Recebimentos Acumulados') {
+                        if (context.dataset.label === ' Recebimentos Acumulados') {
                             textoToolTip = ' Recebimentos Acumulados: R$ ';
                         }
-                        if (context.dataset.label === 'Pagamentos Acumulados') {
+                        if (context.dataset.label === ' Pagamentos Acumulados') {
                             textoToolTip = ' Pagamentos Acumulados: R$ ';
                         }
-                        return textoToolTip + valorFormatado;
+                        return textoToolTip + valor.toLocaleString('pt-BR');
                     }}
                 }
             },
