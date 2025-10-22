@@ -279,7 +279,7 @@ class MapaLotesManager {
 
     _handleFilterChange() {
         const dropdownVal = document.getElementById("empreendimentoSelect").value;
-        const selectedEmpreendimentoId = dropdownVal.split('__LOOKUP__')[1];
+        const selectedEmpreendimentoId = (dropdownVal.split('__LOOKUP__')[1]).slice(0, -1);
         console.log(selectedEmpreendimentoId)
 
         Object.values(this.polygons).forEach(p => {

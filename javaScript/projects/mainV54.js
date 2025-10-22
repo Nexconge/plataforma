@@ -1,5 +1,5 @@
 // Importa as funções públicas dos outros módulos
-import { iniciarMapa } from './ScriptLotesV48.js';
+import { iniciarMapa } from './ScriptLotesV49.js';
 import { abrirEPreencherModalProposta } from './ScriptPropostaV02.js';
 
 // Função principal de inicialização do aplicativo
