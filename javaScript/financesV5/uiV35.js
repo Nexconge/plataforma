@@ -876,7 +876,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                         if (context.dataset.label === 'Pagamentos Acumulados') {
                             textoToolTip = ' Pagamentos Acumulados: R$ ';
                         }
-                        return textoToolTip + valor.toLocaleString('pt-BR');
+                        return textoToolTip + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     }}
                 }
             },
@@ -956,7 +956,7 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
                         if (context.dataset.label === 'Pagamentos Mensais') {
                             textoToolTip = ' Pagamentos: R$ ';
                         }
-                        return textoToolTip + valor.toLocaleString('pt-BR');
+                        return textoToolTip + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     }}
                 }
             },
