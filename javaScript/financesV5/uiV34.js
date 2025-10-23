@@ -837,7 +837,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                 pointRadius: 0,
                 pointHitRadius: 20,
                 fill: true, // Cria a área preenchida
-                tension: 0.1
+                tension: 0.3
             },
             {
                 label: 'Pagamentos Acumulados',
@@ -847,7 +847,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                 pointRadius: 0,
                 pointHitRadius: 20,
                 fill: true,
-                tension: 0.1
+                tension: 0.3
             }
         ]
     };
@@ -915,15 +915,19 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
                 label: 'Recebimentos Mensais',
                 data: dadosRecebimentos,
                 borderColor: 'rgb(40, 167, 69)',
-                backgroundColor: 'rgb(40, 167, 69)',
-                tension: 0.1
+                backgroundColor: 'rgb(40, 167, 69, 0.2)',
+                pointRadius: 0,
+                pointHitRadius: 20,
+                tension: 0.3
             },
             {
                 label: 'Pagamentos Mensais',
                 data: dadosPagamentos,
                 borderColor: 'rgb(220, 53, 69)',
-                backgroundColor: 'rgb(220, 53, 69)',
-                tension: 0.1
+                backgroundColor: 'rgb(220, 53, 69, 0.2)',
+                pointRadius: 0,
+                pointHitRadius: 20,
+                tension: 0.3
             }
         ]
     };
@@ -936,9 +940,30 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
             maintainAspectRatio: false,
             plugins: {
                 title: { display: true, text: 'Recebimentos e Pagamentos Mensais (R$)', font: { size: 16 } },
-                legend: { position: 'bottom' }
+                legend: { position: 'bottom' },
+                tooltip: {
+                    backgroundColor: 'rgba(200, 200, 200, 0.2)',
+                    titleColor: 'black',
+                    bodyColor: 'black',
+                    borderWidth: 0,
+                    padding: 12,
+                    callbacks: { label: function(context) {
+                        let valor = context.raw;
+                        let textoToolTip = '';
+                        if (context.dataset.label === 'Recebimentos Mensais') {
+                            textoToolTip = ' Recebimentos: R$ ';
+                        }
+                        if (context.dataset.label === 'Pagamentos Mensais') {
+                            textoToolTip = ' Pagamentos: R$ ';
+                        }
+                        return textoToolTip + valor.toLocaleString('pt-BR');
+                    }}
+                }
             },
             scales: {
+                x: {
+                    grid: {display: false},
+                },
                 y: {
                     ticks: {
                         callback: value => `R$ ${value.toLocaleString('pt-BR')}`
