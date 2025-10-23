@@ -793,7 +793,7 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
                     padding: 12,
                     callbacks: {label: function(context) {
                         let valor = context.raw;
-                        let valorFormatado = new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(Math.abs(valor));
+                        let valorFormatado = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Math.abs(valor));
                         if (valor < 0) {return ' Saldo de Caixa: R$ (' + valorFormatado + ')'}
                         return ' Saldo de Caixa: R$ ' + valorFormatado;
                     }},
@@ -876,7 +876,7 @@ function renderizarGraficoAcumulado(labels, dadosRecebimentos, dadosPagamentos) 
                         if (context.dataset.label === 'Pagamentos Acumulados') {
                             textoToolTip = ' Pagamentos Acumulados: R$ ';
                         }
-                        return textoToolTip + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        return textoToolTip + valor.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
                     }}
                 }
             },
@@ -956,7 +956,7 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
                         if (context.dataset.label === 'Pagamentos Mensais') {
                             textoToolTip = ' Pagamentos: R$ ';
                         }
-                        return textoToolTip + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        return textoToolTip + valor.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
                     }}
                 }
             },
