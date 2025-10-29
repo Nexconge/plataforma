@@ -995,6 +995,8 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     cellDescricaoHeader.textContent = 'Descrição';
     const cellValorHeader = headerRow.insertCell();
     cellValorHeader.textContent = 'Valor (R$)';
+    const cellValorSaldo = headerRow.insertCell();
+    cellValorSaldo.textContent = 'Saldo (R$)';
     headerRow.className = 'cabecalho';
 
     //Insere as linhas
