@@ -977,23 +977,30 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 }
 
 //5 - Fluxo de caixa diário
-function renderizarFluxoDiario(fluxoDeCaixa, colunas){
+function renderizarFluxoDiario(fluxoDeCaixa, colunas) {
     const tabela = document.getElementById('tabelaFluxoDiario');
-    tabela.innerHTML = '';
+    tabela.textContent = '';
 
-    fluxoDeCaixa.forEach( item => {
-        const {dia, mes, ano} = item.data.split('/');
+    const colunasSet = new Set(colunas);
+
+    fluxoDeCaixa.forEach(item => {
+        const [dia, mes, ano] = item.data;
+
         const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
-        if(colunas.includes(chaveAgregacao)){
+
+        if (colunasSet.has(chaveAgregacao)) {
             const row = tabela.insertRow();
+
             const cellData = row.insertCell();
-            cellData.textContent = item.data;
+            cellData.textContent = dataNormalizada;
+
             const cellDescricao = row.insertCell();
-            cellDescricao.textContent = item.descricao;
+            cellDescricao.textContent = item.descricao ?? '';
+
             const cellValor = row.insertCell();
             cellValor.textContent = formatarValor(item.valor);
         }
-    })
+    });
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
