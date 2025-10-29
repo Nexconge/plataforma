@@ -371,7 +371,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
     renderizarGraficos(dadosProcessados, colunas);
-    const saldoIni = matrizDRE['Caixa Inicial'][primeiraColunaVisivel] || 0;
+    const saldoIni = matrizDRE['Caixa Inicial'][colunas[0]] || 0;
     renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni);
 }
 
