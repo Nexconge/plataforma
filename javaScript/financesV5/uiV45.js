@@ -979,34 +979,37 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 
 //5 - Fluxo de caixa diário
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
-    //Limpa a tabela
     const tabela = document.getElementById('tabelaFluxoDiario');
     tabela.textContent = '';
 
-    //Formata os dados
     const colunasSet = new Set(colunas);
     let saldo = saldoIni || 0;
 
-    //Cabeçalho
-    const headerRow = tabela.insertRow();
-    const cellDataHeader = headerRow.insertCell();
-    cellDataHeader.textContent = 'Data';
-    const cellDescricaoHeader = headerRow.insertCell();
-    cellDescricaoHeader.textContent = 'Descrição';
-    const cellValorHeader = headerRow.insertCell();
-    cellValorHeader.textContent = 'Valor (R$)';
-    const cellValorSaldo = headerRow.insertCell();
-    cellValorSaldo.textContent = 'Saldo (R$)';
-    headerRow.className = 'cabecalho';
+    const thead = tabela.createTHead();
+    const headerRow = thead.insertRow();
+    headerRow.classList.add('cabecalho');
 
-    //Insere as linhas
+    const cellDataHeader = document.createElement('th');
+    cellDataHeader.textContent = 'Data';
+    headerRow.appendChild(cellDataHeader);
+    const cellDescricaoHeader = document.createElement('th');
+    cellDescricaoHeader.textContent = 'Descrição';
+    headerRow.appendChild(cellDescricaoHeader);
+    const cellValorHeader = document.createElement('th');
+    cellValorHeader.textContent = 'Valor (R$)';
+    headerRow.appendChild(cellValorHeader);
+    const cellSaldoHeader = document.createElement('th');
+    cellSaldoHeader.textContent = 'Saldo (R$)';
+    headerRow.appendChild(cellSaldoHeader);
+    const tbody = tabela.createTBody();
+
+    // Linhas de dados
     fluxoDeCaixa.forEach(item => {
         const [dia, mes, ano] = item.data.split('/');
-
         const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
 
         if (colunasSet.has(chaveAgregacao)) {
-            const row = tabela.insertRow();
+            const row = tbody.insertRow();
 
             const cellData = row.insertCell();
             cellData.textContent = item.data;

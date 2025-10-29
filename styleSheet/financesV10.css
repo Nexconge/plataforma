@@ -237,43 +237,46 @@ label[for="anoSelect"] {
   color: #000;
   background-color: #fff;
 }
-#tabelaFluxoDiario .cabecalho {
+
+/* Cabeçalho */
+#tabelaFluxoDiario thead .cabecalho {
   background-color: #0066cc;
   color: white;
   font-weight: bold;
   text-align: left;
 }
 
-#tabelaFluxoDiario .cabecalho td {
+#tabelaFluxoDiario thead th {
   padding: 10px 16px;
+  border-bottom: 2px solid #0052a3;
 }
-/* Linhas alternadas */
-#tabelaFluxoDiario tr:nth-child(even) {
+
+/* Linhas */
+#tabelaFluxoDiario tbody td {
+  padding: 8px 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+#tabelaFluxoDiario tbody tr:nth-child(even) {
   background-color: #f5f5f5;
 }
-#tabelaFluxoDiario tr:nth-child(odd) {
+
+#tabelaFluxoDiario tbody tr:nth-child(odd) {
   background-color: #ffffff;
 }
-#tabelaFluxoDiario td:nth-child(1) {
-  width: 100px;          /* Data */
-  text-align: left;
-}
-#tabelaFluxoDiario td:nth-child(2) {
-  text-align: left;      /* Descrição */
-  width: 60%;
-}
+
+/* Alinhamento de colunas */
+#tabelaFluxoDiario td:nth-child(1) { width: 100px; text-align: left; }
+#tabelaFluxoDiario td:nth-child(2) { text-align: left; width: 60%; }
 #tabelaFluxoDiario td:nth-child(3),
 #tabelaFluxoDiario td:nth-child(4) {
-  text-align: right;     /* Valores e saldos */
+  text-align: right;
   width: 120px;
   font-family: monospace;
 }
-#tabelaFluxoDiario .cabecalho {
-  background-color: #0066cc;
-  color: white;
-  font-weight: bold;
-  text-align: left;
-}
-#tabelaFluxoDiario .cabecalho td {
-  padding: 10px 16px;
+
+/* Hover */
+#tabelaFluxoDiario tbody tr:hover {
+  background-color: #e6f0ff;
+  transition: background-color 0.2s ease;
 }
