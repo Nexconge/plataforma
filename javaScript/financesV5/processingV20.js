@@ -509,7 +509,7 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  */
 function mergeDadosMensais(listaDeDadosProcessados, projecao) {
     const monthlyMerged = { matrizDRE: {}, matrizDetalhamento: {},
-    entradasESaidas: {}, matrizCapitalGiro: {}, fluxoDeCaixa: {} };
+    entradasESaidas: {}, matrizCapitalGiro: {}, fluxoDeCaixa: [] };
     const todasChaves = new Set();
 
     listaDeDadosProcessados.forEach(dados => {
@@ -519,7 +519,7 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao) {
         mergeGenericoMensal(dados.entradasESaidas, monthlyMerged.entradasESaidas);
         if(projecao.toLowerCase() == "realizado") mergeGenericoMensal(dados.matrizCapitalGiro, monthlyMerged.matrizCapitalGiro) 
         
-        monthlyMerged.fluxoDeCaixa = monthlyMerged.fluxoDeCaixa.concat(dados.fluxoDeCaixa);
+        monthlyMerged.fluxoDeCaixa.push(...dados.fluxoDeCaixa);
 
         // Mescla matrizDetalhamento
         for (const chavePrimaria in dados.matrizDetalhamento) {
@@ -562,6 +562,7 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao) {
             }
         }
     });
+    monthlyMerged.fluxoDeCaixa.sort((a, b) => new Date(a.data) - new Date(b.data));
     
     return { monthlyMerged, todasChaves };
 }
