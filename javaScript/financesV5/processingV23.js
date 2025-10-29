@@ -811,7 +811,6 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     // 7. Calcula a coluna "TOTAL" final.
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
     
-    console.log(dadosParaExibir.matrizCapitalGiro)
     // Retorna o objeto final, pronto para a renderização.
     return { ...dadosParaExibir, saldoInicialConsolidado };
 }

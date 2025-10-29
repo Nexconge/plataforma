@@ -371,7 +371,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache, saldoIni) {
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
     renderizarGraficos(dadosProcessados, colunas);
-    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni );
+    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, dadosProcessados.saldoInicialConsolidado);
 }
 
 //1 - Tabela DRE
