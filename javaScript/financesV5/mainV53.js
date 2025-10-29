@@ -1,9 +1,9 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV20.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV21.js';
 import { configurarFiltros, atualizarVisualizacoes, 
-    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV38.js';
+    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV39.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -115,10 +115,10 @@ async function handleFiltroChange() {
     
     // Consolida os dados de todas as contas selecionadas em uma única matriz para exibição.
     // Retorna um objeto final com a estrutura: { matrizDRE, matrizDetalhamento, ... }
-    const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
+    const { dadosParaExibir, saldoIni } = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
     // 5. Renderiza as tabelas na UI com os dados finais.
-    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
+    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache, saldoIni);
     document.body.classList.remove('loading');
 }
 

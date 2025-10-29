@@ -813,7 +813,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     
     console.log(dadosParaExibir.matrizCapitalGiro)
     // Retorna o objeto final, pronto para a renderização.
-    return { ...dadosParaExibir};
+    return { ...dadosParaExibir, saldoInicialConsolidado };
 }
 /**
  * Obtém a primeira e a última chave de período (MM-AAAA ou AAAA) de um conjunto de chaves.

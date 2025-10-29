@@ -358,7 +358,7 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
  * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
  * @param {object} appCache - O cache da aplicação.
  */
-function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
+function atualizarVisualizacoes(dadosProcessados, colunas, appCache, saldoIni) {
     const tabelaMatriz = document.getElementById('tabelaMatriz')
     const tabelaCustos = document.getElementById('tabelaCustos')
     const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
@@ -371,7 +371,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
     renderizarGraficos(dadosProcessados, colunas);
-    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas);
+    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni );
 }
 
 //1 - Tabela DRE
@@ -977,14 +977,27 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 }
 
 //5 - Fluxo de caixa diário
-function renderizarFluxoDiario(fluxoDeCaixa, colunas) {
+function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
+    //Limpa a tabela
     const tabela = document.getElementById('tabelaFluxoDiario');
     tabela.textContent = '';
 
+    //Formata os dados
     const colunasSet = new Set(colunas);
+    let saldo = saldoIni || 0;
 
+    //Cabeçalho
+    const headerRow = tabela.insertRow();
+    const cellDataHeader = headerRow.insertCell();
+    cellDataHeader.textContent = 'Data';
+    const cellDescricaoHeader = headerRow.insertCell();
+    cellDescricaoHeader.textContent = 'Descrição';
+    const cellValorHeader = headerRow.insertCell();
+    cellValorHeader.textContent = 'Valor (R$)';
+
+    //Insere as linhas
     fluxoDeCaixa.forEach(item => {
-        const [dia, mes, ano] = item.data;
+        const [dia, mes, ano] = item.data.split('/');
 
         const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
 
@@ -992,13 +1005,17 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas) {
             const row = tabela.insertRow();
 
             const cellData = row.insertCell();
-            cellData.textContent = dataNormalizada;
+            cellData.textContent = item.data;
 
             const cellDescricao = row.insertCell();
-            cellDescricao.textContent = item.descricao ?? '';
+            cellDescricao.textContent = item.fornecedor ?? '';
 
             const cellValor = row.insertCell();
             cellValor.textContent = formatarValor(item.valor);
+
+            const cellSaldo = row.insertCell();
+            saldo += item.valor;
+            cellSaldo.textContent = formatarValor(saldo);
         }
     });
 }
