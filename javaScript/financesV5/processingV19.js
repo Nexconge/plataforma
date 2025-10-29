@@ -155,7 +155,7 @@ function parseDate(dateString) {
  */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDetalhamento = {}, chavesComDados = new Set();
-    const fluxoDeCaixa = {};
+    const fluxoDeCaixa = [];
     const entradasESaidas = {
         '(+) Entradas': {},
         '(-) Saídas': {},
@@ -184,7 +184,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
             data: lancamento.DataLancamento
         }
         fluxoDeCaixa.push(lancamentoFluxoDiario);
-
+        
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
         if (contaId != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) return;
@@ -255,7 +255,8 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
             });
         }
     });
-
+    fluxoDeCaixa.sort((a, b) => new Date(a.data) - new Date(b.data));
+    
     return { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal, entradasESaidas, saldoIni, fluxoDeCaixa };
 }
 /**
