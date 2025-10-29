@@ -155,6 +155,7 @@ function parseDate(dateString) {
  */
 function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     const matrizDRE = {}, matrizDetalhamento = {}, chavesComDados = new Set();
+    const fluxoDeCaixa = {};
     const entradasESaidas = {
         '(+) Entradas': {},
         '(-) Saídas': {},
@@ -176,6 +177,14 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     ]);
     
     lancamentos.forEach(lancamento => {
+
+        const lancamentoFluxoDiario = {
+            valor: lancamento.ValorLancamento,
+            fornecedor: lancamento.Cliente,
+            data: lancamento.DataLancamento
+        }
+        fluxoDeCaixa.push(lancamentoFluxoDiario);
+
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
         if (contaId != Number(lancamento.CODContaC)) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) return;
@@ -247,7 +256,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         }
     });
 
-    return { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal, entradasESaidas, saldoIni };
+    return { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal, entradasESaidas, saldoIni, fluxoDeCaixa };
 }
 /**
  * Pré-processa os dados de capital de giro para uma única conta.
@@ -498,7 +507,8 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * // }
  */
 function mergeDadosMensais(listaDeDadosProcessados, projecao) {
-    const monthlyMerged = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}, matrizCapitalGiro: {}};
+    const monthlyMerged = { matrizDRE: {}, matrizDetalhamento: {},
+    entradasESaidas: {}, matrizCapitalGiro: {}, fluxoDeCaixa: {} };
     const todasChaves = new Set();
 
     listaDeDadosProcessados.forEach(dados => {
@@ -508,6 +518,8 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao) {
         mergeGenericoMensal(dados.entradasESaidas, monthlyMerged.entradasESaidas);
         if(projecao.toLowerCase() == "realizado") mergeGenericoMensal(dados.matrizCapitalGiro, monthlyMerged.matrizCapitalGiro) 
         
+        monthlyMerged.fluxoDeCaixa = monthlyMerged.fluxoDeCaixa.concat(dados.fluxoDeCaixa);
+
         // Mescla matrizDetalhamento
         for (const chavePrimaria in dados.matrizDetalhamento) {
             const dadosOrigem = dados.matrizDetalhamento[chavePrimaria];
@@ -571,8 +583,12 @@ function mergeGenericoMensal(origem, destino) {
  * @returns {object} Um novo objeto de dados com a mesma estrutura, mas com valores agregados por ano.
  */
 function agregarDadosParaAnual(monthlyData, projecao) {
-    const annualData = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}, matrizCapitalGiro: {} };
+    const annualData = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {},
+    matrizCapitalGiro: {}, fluxoDeCaixa: {} };
     const saldosAnuais = {};
+
+    // --- Fluxo de Caixa ---
+    annualData.fluxoDeCaixa = monthlyData.fluxoDeCaixa;
 
     // --- Matriz DRE ---
     for (const classe in monthlyData.matrizDRE) {
@@ -753,7 +769,8 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
 
     // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
-        return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {}, entradasESaidas: {} };
+        return { matrizDRE: {}, matrizDetalhamento: {},
+        matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {} };
     }
 
     // 1. Mescla os dados mensais de todas as contas.

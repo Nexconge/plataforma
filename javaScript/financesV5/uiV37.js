@@ -371,6 +371,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
     renderizarGraficos(dadosProcessados, colunas);
+    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas);
 }
 
 //1 - Tabela DRE
@@ -694,6 +695,7 @@ function calcularPercentuaisCG(matriz, colunas) {
     });
 }
 
+//4 - Gráficos de DRE
 /**
  * Orquestrador principal da renderização dos gráficos.
  * @param {object|null} dadosProcessados - O objeto de dados final vindo de `mergeMatrizes`.
@@ -972,6 +974,26 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
             }
         }
     });
+}
+
+//5 - Fluxo de caixa diário
+function renderizarFluxoDiario(fluxoDeCaixa, colunas){
+    const tabela = document.getElementById('tabelaFluxoDiario');
+    tabela.innerHTML = '';
+
+    fluxoDeCaixa.forEach( item => {
+        const {dia, mes, ano} = item.data.split('/');
+        const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
+        if(colunas.includes(chaveAgregacao)){
+            const row = tabela.insertRow();
+            const cellData = row.insertCell();
+            cellData.textContent = item.data;
+            const cellDescricao = row.insertCell();
+            cellDescricao.textContent = item.descricao;
+            const cellValor = row.insertCell();
+            cellValor.textContent = formatarValor(item.valor);
+        }
+    })
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
