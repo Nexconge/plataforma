@@ -255,7 +255,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
             });
         }
     });
-    fluxoDeCaixa.sort((a, b) => new Date(a.data) - new Date(b.data));
+    fluxoDeCaixa.sort((a, b) => parseDate(a.data) - parseDate(b.data));
     
     return { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal, entradasESaidas, saldoIni, fluxoDeCaixa };
 }
@@ -562,7 +562,7 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao) {
             }
         }
     });
-    monthlyMerged.fluxoDeCaixa.sort((a, b) => new Date(a.data) - new Date(b.data));
+    monthlyMerged.fluxoDeCaixa.sort((a, b) => parseDate(a.data) - parseDate(b.data));
     
     return { monthlyMerged, todasChaves };
 }
