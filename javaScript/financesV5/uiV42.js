@@ -358,7 +358,7 @@ function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSele
  * @param {Array<string>} colunas - As colunas (períodos) a serem exibidas.
  * @param {object} appCache - O cache da aplicação.
  */
-function atualizarVisualizacoes(dadosProcessados, colunas, appCache, saldoIni) {
+function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     const tabelaMatriz = document.getElementById('tabelaMatriz')
     const tabelaCustos = document.getElementById('tabelaCustos')
     const tabelaCapitalGiro = document.getElementById('tabelaCapitalGiro')
@@ -371,7 +371,8 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache, saldoIni) {
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
     renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
     renderizarGraficos(dadosProcessados, colunas);
-    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, dadosProcessados.saldoInicialConsolidado);
+    const saldoIni = matrizDRE['Caixa Inicial'][primeiraColunaVisivel] || 0;
+    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni);
 }
 
 //1 - Tabela DRE
@@ -994,6 +995,7 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     cellDescricaoHeader.textContent = 'Descrição';
     const cellValorHeader = headerRow.insertCell();
     cellValorHeader.textContent = 'Valor (R$)';
+    headerRow.className = 'cabecalho';
 
     //Insere as linhas
     fluxoDeCaixa.forEach(item => {

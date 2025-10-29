@@ -1,9 +1,9 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV23.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV24.js';
 import { configurarFiltros, atualizarVisualizacoes, 
-    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV40.js';
+    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV42.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e

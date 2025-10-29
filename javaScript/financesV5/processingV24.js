@@ -177,13 +177,6 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     ]);
     
     lancamentos.forEach(lancamento => {
-
-        const lancamentoFluxoDiario = {
-            valor: lancamento.ValorLancamento,
-            fornecedor: lancamento.Cliente,
-            data: lancamento.DataLancamento
-        }
-        fluxoDeCaixa.push(lancamentoFluxoDiario);
         
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
         if (contaId != Number(lancamento.CODContaC)) return;
@@ -198,6 +191,13 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         let valor = lancamento.ValorLancamento;
         if (lancamento.Natureza === "P") valor = -valor;
         valorTotal += valor;
+
+        const lancamentoFluxoDiario = {
+            valor: valor,
+            fornecedor: lancamento.Cliente,
+            data: lancamento.DataLancamento
+        }
+        fluxoDeCaixa.push(lancamentoFluxoDiario);
 
         // Encontra a classe da DRE correspondente à categoria do lançamento.
         const codCat = lancamento.CODCategoria
@@ -812,7 +812,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
     
     // Retorna o objeto final, pronto para a renderização.
-    return { ...dadosParaExibir, saldoInicialConsolidado };
+    return { ...dadosParaExibir };
 }
 /**
  * Obtém a primeira e a última chave de período (MM-AAAA ou AAAA) de um conjunto de chaves.
