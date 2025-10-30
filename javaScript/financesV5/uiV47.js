@@ -981,15 +981,13 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 //5 - Fluxo de caixa diário
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     const tabela = document.getElementById('tabelaFluxoDiario');
-    tabela.textContent = '';
+    tabela.textContent = ''; // Limpa a tabela
 
     const colunasSet = new Set(colunas);
-    let saldo = saldoIni || 0;
     const periodosDisponiveis = new Set();
     const itensFiltrados = [];
 
     // --- PASSO 1: Coletar dados e períodos disponíveis ---
-    // Filtra os itens pelo filtro principal (colunas) e coleta os períodos únicos
     fluxoDeCaixa.forEach(item => {
         const [dia, mes, ano] = item.data.split('/');
         const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
@@ -1000,6 +998,11 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
         }
     });
 
+    const periodosOrdenados = Array.from(periodosDisponiveis).sort();
+    
+    // O TBody é criado aqui para que a função de atualização possa acessá-lo
+    const tbody = tabela.createTBody(); 
+
     // --- PASSO 2: Renderizar Cabeçalho com Filtro ---
     const thead = tabela.createTHead();
     const headerRow = thead.insertRow();
@@ -1007,46 +1010,162 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
 
     // Célula de Data (com filtro)
     const cellDataHeader = document.createElement('th');
-    cellDataHeader.style.position = 'relative'; // Necessário para o dropdown
-    
-    // Conteúdo do cabeçalho de data
+    cellDataHeader.style.position = 'relative'; 
     const dataHeaderContent = document.createElement('div');
     dataHeaderContent.style.display = 'flex';
     dataHeaderContent.style.justifyContent = 'space-between';
     dataHeaderContent.style.alignItems = 'center';
-    dataHeaderContent.textContent = 'Data';
     
-    // Botão de Filtro
+    const headerLabel = document.createElement('span');
+    headerLabel.textContent = 'Data';
+    headerLabel.style.flexGrow = '1';
+    headerLabel.style.whiteSpace = 'nowrap';
+    headerLabel.style.overflow = 'hidden';
+    headerLabel.style.textOverflow = 'ellipsis'; 
+    
     const filterButton = document.createElement('span');
     filterButton.textContent = ' ▼';
     filterButton.style.cursor = 'pointer';
-    filterButton.style.paddingLeft = '10px';
+    filterButton.style.padding = '0 10px'; 
+    
+    dataHeaderContent.appendChild(headerLabel);
     dataHeaderContent.appendChild(filterButton);
     
-    // Dropdown de Filtro (inicialmente oculto)
+    // Dropdown de Filtro
     const filterDropdown = document.createElement('div');
     filterDropdown.className = 'filtro-dropdown';
-    filterDropdown.style.display = 'none';
-    filterDropdown.style.position = 'absolute';
-    filterDropdown.style.backgroundColor = 'white';
-    filterDropdown.style.border = '1px solid #ccc';
-    filterDropdown.style.padding = '10px';
-    filterDropdown.style.zIndex = '100';
-    filterDropdown.style.maxHeight = '200px';
-    filterDropdown.style.overflowY = 'auto';
+    filterDropdown.style.cssText = `
+        display: none; position: absolute; background-color: white;
+        border: 1px solid #ccc; padding: 10px; z-index: 100;
+        max-height: 200px; overflow-y: auto; text-align: left;
+    `;
+
+    const allCheckboxes = [];
+    
+    // --- NOVO: Função unificada para RECALCULAR a tabela E atualizar o cabeçalho ---
+    const atualizarFiltroFluxoDiario = () => {
+        const periodosSelecionados = new Set();
+        let totalSelecionado = 0;
+        const totalPeriodos = allCheckboxes.length;
+
+        allCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                periodosSelecionados.add(cb.value);
+                totalSelecionado++;
+            }
+        });
+
+        // Atualiza o estado do "Selecionar Tudo"
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = (totalSelecionado === totalPeriodos);
+            selectAllCheckbox.indeterminate = (totalSelecionado > 0 && totalSelecionado < totalPeriodos);
+        }
+
+        // Atualiza o texto do cabeçalho
+        if (totalSelecionado === totalPeriodos) {
+            headerLabel.textContent = 'Data';
+            headerLabel.title = '';
+        } else if (totalSelecionado === 0) {
+            headerLabel.textContent = 'Data (Nenhum)';
+            headerLabel.title = 'Nenhum período selecionado';
+        } else if (totalSelecionado === 1) {
+            const unicoSelecionado = periodosSelecionados.values().next().value;
+            headerLabel.textContent = `Data (${unicoSelecionado})`;
+            headerLabel.title = unicoSelecionado;
+        } else {
+            headerLabel.textContent = 'Data (Múltiplos)';
+            headerLabel.title = Array.from(periodosSelecionados).join(', ');
+        }
+
+        // --- Lógica de Recálculo do TBody ---
+        tbody.innerHTML = ''; // Limpa o corpo da tabela
+        let saldoInicialCalculado = saldoIni;
+        let saldoCorrente = 0;
+        let encontrouPrimeiroItemVisivel = false;
+
+        // 1. Calcular o saldo inicial ANTES do primeiro item visível
+        for (const item of itensFiltrados) {
+            if (periodosSelecionados.has(item.chaveAgregacao)) {
+                // Este é o primeiro item que VAI aparecer.
+                encontrouPrimeiroItemVisivel = true;
+                saldoCorrente = saldoInicialCalculado; // O saldo corrente começa aqui
+                break; 
+            }
+            // Se ainda não encontrou, acumula o valor no saldo inicial
+            saldoInicialCalculado += item.valor;
+        }
+
+        // Se nenhum período foi selecionado, não renderiza nada no corpo
+        if (totalSelecionado === 0) {
+            return;
+        }
+        
+        // Se todos os períodos foram varridos e nenhum item encontrado (raro),
+        // ou se nenhum item foi filtrado, usa o último saldo calculado
+        if (!encontrouPrimeiroItemVisivel) {
+             saldoCorrente = saldoInicialCalculado;
+        }
+        
+        // 2. Adicionar a linha de Saldo Inicial
+        const rowInicial = tbody.insertRow();
+        rowInicial.className = 'linhaSaldo'; // Reutiliza classe de estilo
+        rowInicial.insertCell().textContent = ''; // Coluna Data
+        
+        const cellDesc = rowInicial.insertCell();
+        cellDesc.textContent = 'Saldo Inicial do Período';
+        cellDesc.style.fontWeight = 'bold';
+        
+        rowInicial.insertCell().textContent = ''; // Coluna Valor
+        
+        const cellSaldoIni = rowInicial.insertCell();
+        cellSaldoIni.textContent = formatarValor(saldoCorrente); // Usa o saldo calculado
+        cellSaldoIni.style.fontWeight = 'bold';
+
+        // 3. Renderizar as linhas filtradas
+        for (const item of itensFiltrados) {
+            if (periodosSelecionados.has(item.chaveAgregacao)) {
+                const row = tbody.insertRow();
+                row.setAttribute('data-periodo', item.chaveAgregacao);
+                row.insertCell().textContent = item.data;
+                row.insertCell().textContent = item.fornecedor ?? '';
+                
+                const cellValor = row.insertCell();
+                cellValor.textContent = formatarValor(item.valor);
+
+                const cellSaldo = row.insertCell();
+                saldoCorrente += item.valor; 
+                cellSaldo.textContent = formatarValor(saldoCorrente);
+            }
+        }
+    };
+
+    // --- Checkbox "Selecionar Tudo" ---
+    const selectAllLabel = document.createElement('label');
+    selectAllLabel.style.cssText = "display: block; white-space: nowrap; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 5px; color: #000;";
+    
+    const selectAllCheckbox = document.createElement('input');
+    selectAllCheckbox.type = 'checkbox';
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.addEventListener('change', () => {
+        allCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+        atualizarFiltroFluxoDiario(); // Chama a função de recálculo
+    });
+    
+    selectAllLabel.appendChild(selectAllCheckbox);
+    selectAllLabel.appendChild(document.createTextNode(' (Selecionar Tudo)'));
+    filterDropdown.appendChild(selectAllLabel);
 
     // Popula o dropdown com os períodos
-    const periodosOrdenados = Array.from(periodosDisponiveis).sort(); // Ordena os períodos
     periodosOrdenados.forEach(periodo => {
         const label = document.createElement('label');
-        label.style.display = 'block';
-        label.style.whiteSpace = 'nowrap';
+        label.style.cssText = "display: block; white-space: nowrap; color: #000;";
         
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.value = periodo;
         checkbox.checked = true;
         
+        allCheckboxes.push(checkbox); 
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(` ${periodo}`));
         filterDropdown.appendChild(label);
@@ -1057,70 +1176,32 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     headerRow.appendChild(cellDataHeader);
     
     // Outras células do cabeçalho
-    const cellDescricaoHeader = document.createElement('th');
-    cellDescricaoHeader.textContent = 'Descrição';
-    headerRow.appendChild(cellDescricaoHeader);
-    const cellValorHeader = document.createElement('th');
-    cellValorHeader.textContent = 'Valor (R$)';
-    headerRow.appendChild(cellValorHeader);
-    const cellSaldoHeader = document.createElement('th');
-    cellSaldoHeader.textContent = 'Saldo (R$)';
-    headerRow.appendChild(cellSaldoHeader);
-
-    // --- PASSO 3: Renderizar Corpo da Tabela ---
-    const tbody = tabela.createTBody();
-    
-    itensFiltrados.forEach(item => {
-        const row = tbody.insertRow();
-        // Adiciona o atributo data-periodo para ser usado pelo filtro
-        row.setAttribute('data-periodo', item.chaveAgregacao);
-
-        const cellData = row.insertCell();
-        cellData.textContent = item.data;
-
-        const cellDescricao = row.insertCell();
-        cellDescricao.textContent = item.fornecedor ?? '';
-
-        const cellValor = row.insertCell();
-        cellValor.textContent = formatarValor(item.valor);
-
-        const cellSaldo = row.insertCell();
-        saldo += item.valor; // O saldo é calculado sequencialmente
-        cellSaldo.textContent = formatarValor(saldo);
-    });
+    headerRow.insertCell().textContent = 'Descrição';
+    headerRow.insertCell().textContent = 'Valor (R$)';
+    headerRow.insertCell().textContent = 'Saldo (R$)';
     
     // --- PASSO 4: Adicionar Lógica de Evento ---
     
-    // Evento para mostrar/esconder o dropdown
     filterButton.addEventListener('click', (e) => {
-        e.stopPropagation(); // Evita que o clique feche o dropdown imediatamente
-        const isVisible = filterDropdown.style.display === 'block';
-        filterDropdown.style.display = isVisible ? 'none' : 'block';
+        e.stopPropagation(); 
+        filterDropdown.style.display = (filterDropdown.style.display === 'block') ? 'none' : 'block';
     });
 
-    // Evento para aplicar o filtro quando um checkbox mudar
-    filterDropdown.addEventListener('change', () => {
-        const periodosSelecionados = new Set();
-        filterDropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            periodosSelecionados.add(cb.value);
-        });
-
-        tbody.querySelectorAll('tr').forEach(row => {
-            const periodoDaLinha = row.getAttribute('data-periodo');
-            if (periodosSelecionados.has(periodoDaLinha)) {
-                row.style.display = ''; // Mostra a linha
-            } else {
-                row.style.display = 'none'; // Esconde a linha
-            }
-        });
+    filterDropdown.addEventListener('change', (e) => {
+        if (e.target !== selectAllCheckbox) {
+            atualizarFiltroFluxoDiario(); // Chama a função de recálculo
+        }
     });
 
-    // Evento para fechar o dropdown se clicar em qualquer outro lugar
     document.addEventListener('click', (e) => {
         if (!cellDataHeader.contains(e.target)) {
             filterDropdown.style.display = 'none';
         }
     });
+
+    // --- PASSO 5: Renderização Inicial ---
+    // Chama a função pela primeira vez para renderizar a tabela com tudo selecionado
+    atualizarFiltroFluxoDiario(); 
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
