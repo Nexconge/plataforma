@@ -369,15 +369,6 @@ table tbody tr:last-child td:last-child {
   font-size: 0.9em;
   font-weight: normal;
   border-radius: 6px;
-  opacity: 0;
-  transform: translateY(-5px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.filtro-dropdown.show {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .filtro-dropdown label {
