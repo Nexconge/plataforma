@@ -1099,8 +1099,15 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
             saldoInicialCalculado += item.valor;
         }
 
-        // Se nenhum período foi selecionado, retorna (tabela fica vazia)
+        // Se nenhum período foi selecionado, mostra mensagem
         if (totalSelecionado === 0) {
+            const rowVazia = tbody.insertRow();
+            const cell = rowVazia.insertCell();
+            cell.colSpan = 4;
+            cell.textContent = 'Nenhum período selecionado.';
+            cell.style.textAlign = 'center';
+            cell.style.color = '#666';
+            cell.style.fontStyle = 'italic';
             return;
         }
         

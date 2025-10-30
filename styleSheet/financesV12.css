@@ -319,3 +319,9 @@ label[for="anoSelect"] {
 .filtro-dropdown label:hover {
     background-color: #f4f4f4;
 }
+
+#tabelaFluxoDiario tbody tr td[colspan="4"] {
+  background-color: #fafafa;
+  font-size: 13px;
+  padding: 12px;
+}
