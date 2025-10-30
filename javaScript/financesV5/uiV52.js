@@ -1101,18 +1101,23 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
 
         // Se nenhum período foi selecionado, mostra mensagem
         let i = 0;
+        let j = 0;
         if (totalSelecionado === 0) {
-            for (i=0; i < 4; i++) {
+            for (i=0; i < 6; i++) {
                 const emptyRow = tbody.insertRow();
-                emptyRow.insertCell().textContent = '';
+                for (j=0; j < 4; j++){
+                    emptyRow.insertCell().textContent = '';
+                }
             }
             const rowVazia = tbody.insertRow();
-            const cell = rowVazia.insertCell();
-            cell.colSpan = 4;
+            let cell = rowVazia.insertCell().textContent = '';
+            cell = rowVazia.insertCell();
             cell.textContent = 'Nenhum período selecionado.';
             cell.style.textAlign = 'center';
             cell.style.color = '#666';
             cell.style.fontStyle = 'italic';
+            cell = rowVazia.insertCell().textContent = '';
+            cell = rowVazia.insertCell().textContent = '';
             return;
         }
         
