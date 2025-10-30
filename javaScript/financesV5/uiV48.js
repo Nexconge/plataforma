@@ -978,7 +978,6 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 }
 
 //5 - Fluxo de caixa diário
-//5 - Fluxo de caixa diário
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     const tabela = document.getElementById('tabelaFluxoDiario');
     tabela.textContent = ''; // Limpa a tabela
@@ -1042,7 +1041,7 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
 
     const allCheckboxes = [];
     
-    // --- NOVO: Função unificada para RECALCULAR a tabela E atualizar o cabeçalho ---
+    // --- Função unificada para RECALCULAR a tabela E atualizar o cabeçalho ---
     const atualizarFiltroFluxoDiario = () => {
         const periodosSelecionados = new Set();
         let totalSelecionado = 0;
@@ -1057,8 +1056,13 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
 
         // Atualiza o estado do "Selecionar Tudo"
         if (selectAllCheckbox) {
-            selectAllCheckbox.checked = (totalSelecionado === totalPeriodos);
-            selectAllCheckbox.indeterminate = (totalSelecionado > 0 && totalSelecionado < totalPeriodos);
+            // CORREÇÃO: Lidar com o caso de totalPeriodos ser 0
+            if (totalPeriodos > 0) {
+                selectAllCheckbox.checked = (totalSelecionado === totalPeriodos);
+                selectAllCheckbox.indeterminate = (totalSelecionado > 0 && totalSelecionado < totalPeriodos);
+            } else {
+                selectAllCheckbox.checked = false; // Se não há itens, não pode "Selecionar Tudo"
+            }
         }
 
         // Atualiza o texto do cabeçalho
@@ -1095,7 +1099,7 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
             saldoInicialCalculado += item.valor;
         }
 
-        // Se nenhum período foi selecionado, não renderiza nada no corpo
+        // Se nenhum período foi selecionado, retorna (tabela fica vazia)
         if (totalSelecionado === 0) {
             return;
         }
@@ -1108,7 +1112,6 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
         
         // 2. Adicionar a linha de Saldo Inicial
         const rowInicial = tbody.insertRow();
-        rowInicial.className = 'linhaSaldo'; // Reutiliza classe de estilo
         rowInicial.insertCell().textContent = ''; // Coluna Data
         
         const cellDesc = rowInicial.insertCell();
@@ -1187,10 +1190,16 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
         filterDropdown.style.display = (filterDropdown.style.display === 'block') ? 'none' : 'block';
     });
 
+    // CORREÇÃO: Removemos a verificação `if (e.target !== selectAllCheckbox)`
+    // Isso garante que qualquer 'change' dentro do dropdown (seja de um item ou
+    // do "Selecionar Tudo") acione a atualização.
     filterDropdown.addEventListener('change', (e) => {
-        if (e.target !== selectAllCheckbox) {
-            atualizarFiltroFluxoDiario(); // Chama a função de recálculo
+        // Se o clique foi no "Selecionar Tudo", a função já foi chamada
+        // pelo listener específico dele. Isso evita uma chamada dupla.
+        if (e.target === selectAllCheckbox) {
+            return;
         }
+        atualizarFiltroFluxoDiario(); // Chama a função de recálculo
     });
 
     document.addEventListener('click', (e) => {
