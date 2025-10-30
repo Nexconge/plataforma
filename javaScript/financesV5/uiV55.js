@@ -1003,11 +1003,11 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
   const { selectInicio, selectFim } = criarCabecalho(
     tabela,
     periodosOrdenados,
-    (inicio, fim) => atualizarTabela(tbody, itensFiltrados, saldoIni, inicio, fim)
+    (inicio, fim) => atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicio, fim)
   );
 
   // Renderização inicial com tudo selecionado
-  atualizarTabela(tbody, itensFiltrados, saldoIni, selectInicio.value, selectFim.value);
+  atualizarTabelaFD(tbody, itensFiltrados, saldoIni, selectInicio.value, selectFim.value);
 }
 /**
  * Cria o dropdown de seleção de período inicial/final.
@@ -1049,7 +1049,7 @@ function criarDropdownPeriodo(periodosOrdenados, onChange) {
 /**
  * Cria o cabeçalho da tabela com botão de filtro e dropdown de seleção de períodos.
  */
-function criarCabecalho(tabela, periodosOrdenados, atualizarTabela) {
+function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
   const thead = tabela.createTHead();
   const headerRow = thead.insertRow();
   headerRow.classList.add('cabecalho');
@@ -1077,7 +1077,7 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabela) {
   // Cria dropdown de período inicial/final
   const { dropdown, selectInicio, selectFim } = criarDropdownPeriodo(periodosOrdenados, (inicio, fim) => {
     headerLabel.textContent = `Data (${inicio} → ${fim})`;
-    atualizarTabela(inicio, fim);
+    atualizarTabelaFD(inicio, fim);
   });
 
   thData.appendChild(dropdown);
@@ -1103,7 +1103,7 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabela) {
 /**
  * Renderiza o corpo da tabela com base nos períodos selecionados.
  */
-function atualizarTabela(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
+function atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
   tbody.innerHTML = '';
 
   const [mesIni, anoIni] = inicioSel.split('-').map(Number);
