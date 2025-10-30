@@ -1165,4 +1165,12 @@ function atualizarTabela(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
     cellSaldo.textContent = formatarValor(saldo);
   }
 }
+/**
+ * Cria e retorna um elemento <th> com conteúdo e estilo.
+ */
+function criarTh(texto) {
+  const th = document.createElement('th');
+  th.textContent = texto;
+  return th;
+}
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
