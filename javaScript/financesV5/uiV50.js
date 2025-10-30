@@ -1101,6 +1101,10 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
 
         // Se nenhum período foi selecionado, mostra mensagem
         if (totalSelecionado === 0) {
+            for (i=0; i < 4; i++) {
+                const emptyRow = tbody.insertRow();
+                emptyRow.insertCell().textContent = '';
+            }
             const rowVazia = tbody.insertRow();
             const cell = rowVazia.insertCell();
             cell.colSpan = 4;
