@@ -978,6 +978,7 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 }
 
 //5 - Fluxo de caixa diário
+const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
   const tabela = document.getElementById('tabelaFluxoDiario');
   tabela.textContent = '';
@@ -1000,51 +1001,133 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
   const tbody = tabela.createTBody();
 
   // Cabeçalho e filtro
-  const { selectInicio, selectFim } = criarCabecalho(
+  const { initialStart, initialEnd } = criarCabecalho(
     tabela,
     periodosOrdenados,
     (inicio, fim) => atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicio, fim)
   );
 
   // Renderização inicial com tudo selecionado
-  atualizarTabelaFD(tbody, itensFiltrados, saldoIni, selectInicio.value, selectFim.value);
+  atualizarTabelaFD(tbody, itensFiltrados, saldoIni, initialStart, initialEnd);
 }
 /**
- * Cria o dropdown de seleção de período inicial/final.
- * Retorna o container com os selects e a função de atualização.
+ * Cria o dropdown visual de seleção de período (estilo calendário).
+ * Retorna o container com o seletor visual e os valores iniciais.
  */
-function criarDropdownPeriodo(periodosOrdenados, onChange) {
-  const dropdown = document.createElement('div');
-  dropdown.className = 'filtro-dropdown';
-  dropdown.style.display = 'none';
+function criarDropdownPeriodoVisual(periodosOrdenados, onChange) {
+    const dropdown = document.createElement('div');
+    dropdown.className = 'filtro-dropdown filtro-calendario';
+    dropdown.style.display = 'none';
 
-  const labelInicio = document.createElement('label');
-  labelInicio.textContent = 'Período inicial: ';
-  const selectInicio = document.createElement('select');
+    let selectionStart = periodosOrdenados[0] || null;
+    let selectionEnd = periodosOrdenados[periodosOrdenados.length - 1] || null;
+    
+    // 1. Agrupa períodos por ano
+    const periodosPorAno = periodosOrdenados.reduce((acc, periodo) => {
+        const [mes, ano] = periodo.split('-');
+        if (!acc[ano]) acc[ano] = [];
+        acc[ano].push(mes);
+        return acc;
+    }, {});
 
-  const labelFim = document.createElement('label');
-  labelFim.textContent = 'Período final: ';
-  const selectFim = document.createElement('select');
+    // 2. Gera o HTML para os grupos de ano/mês
+    const anosOrdenados = Object.keys(periodosPorAno).sort((a, b) => b - a); // Mais recente primeiro
+    anosOrdenados.forEach(ano => {
+        const anoGrupo = document.createElement('div');
+        anoGrupo.className = 'filtro-ano-grupo';
+        
+        const anoHeader = document.createElement('div');
+        anoHeader.className = 'filtro-ano-header';
+        anoHeader.textContent = ano;
+        anoGrupo.appendChild(anoHeader);
 
-  // Adiciona opções nos selects
-  periodosOrdenados.forEach(p => {
-    const opt1 = new Option(p, p);
-    const opt2 = new Option(p, p);
-    selectInicio.add(opt1);
-    selectFim.add(opt2);
-  });
+        const mesesGrid = document.createElement('div');
+        mesesGrid.className = 'filtro-meses-grid';
+        const mesesDisponiveis = new Set(periodosPorAno[ano]);
 
-  selectInicio.selectedIndex = 0;
-  selectFim.selectedIndex = periodosOrdenados.length - 1;
+        for (let i = 0; i < 12; i++) {
+            const mesNumStr = String(i + 1).padStart(2, '0');
+            if (mesesDisponiveis.has(mesNumStr)) {
+                const periodo = `${mesNumStr}-${ano}`;
+                const btn = document.createElement('button');
+                btn.className = 'filtro-mes-btn';
+                btn.textContent = MESES_ABREV[i];
+                btn.dataset.periodo = periodo;
+                mesesGrid.appendChild(btn);
+            } else {
+                // Adiciona um placeholder para manter o alinhamento
+                const slot = document.createElement('span');
+                slot.className = 'filtro-mes-slot';
+                slot.textContent = MESES_ABREV[i];
+                mesesGrid.appendChild(slot);
+            }
+        }
+        anoGrupo.appendChild(mesesGrid);
+        dropdown.appendChild(anoGrupo);
+    });
 
-  // Eventos de atualização
-  selectInicio.addEventListener('change', () => onChange(selectInicio.value, selectFim.value));
-  selectFim.addEventListener('change', () => onChange(selectInicio.value, selectFim.value));
+    // 3. Lógica de clique (delegação de evento)
+    dropdown.addEventListener('click', e => {
+        if (!e.target.matches('button.filtro-mes-btn')) return;
+        
+        const periodo = e.target.dataset.periodo;
+        
+        if (!selectionStart || selectionEnd) {
+            // Inicia uma nova seleção (ou estava vazio, ou o range estava completo)
+            selectionStart = periodo;
+            selectionEnd = null;
+        } else {
+            // Completa a seleção
+            if (compararChaves(periodo, selectionStart) < 0) {
+                // Clicou antes do início, define como novo início
+                selectionStart = periodo;
+            } else {
+                // Clicou depois do início, define como fim
+                selectionEnd = periodo;
+            }
+        }
+        
+        // Atualiza o visual
+        atualizarEstiloVisual(dropdown, selectionStart, selectionEnd);
 
-  // Layout vertical
-  dropdown.append(labelInicio, selectInicio, document.createElement('br'), labelFim, selectFim);
+        // Se o range está completo, chama o callback
+        if (selectionStart && selectionEnd) {
+            onChange(selectionStart, selectionEnd);
+            // Opcional: fechar o dropdown após selecionar um range
+            // setTimeout(() => dropdown.style.display = 'none', 100); 
+        }
+    });
 
-  return { dropdown, selectInicio, selectFim };
+    // 4. Aplica o estilo inicial
+    // Deferir a atualização de estilo para garantir que o DOM esteja pronto
+    setTimeout(() => atualizarEstiloVisual(dropdown, selectionStart, selectionEnd), 0);
+    
+    return { dropdown, initialStart: selectionStart, initialEnd: selectionEnd };
+}
+/**
+ * Atualiza os estilos visuais dos botões de mês no seletor de período.
+ * @param {HTMLElement} gridContainer - O elemento que contém os botões de mês.
+ * @param {string|null} start - O período inicial selecionado (ex: "01-2025").
+ * @param {string|null} end - O período final selecionado (ex: "03-2025").
+ */
+function atualizarEstiloVisual(gridContainer, start, end) {
+    const buttons = gridContainer.querySelectorAll('button.filtro-mes-btn');
+    buttons.forEach(btn => {
+        const periodo = btn.dataset.periodo;
+        btn.classList.remove('selected-start', 'selected-end', 'in-range');
+
+        if (start && end) {
+            // Se um intervalo completo está selecionado
+            const compStart = compararChaves(periodo, start);
+            const compEnd = compararChaves(periodo, end);
+            if (compStart === 0) btn.classList.add('selected-start');
+            if (compEnd === 0) btn.classList.add('selected-end');
+            if (compStart > 0 && compEnd < 0) btn.classList.add('in-range');
+        } else if (start) {
+            // Se apenas o início está selecionado
+            if (periodo === start) btn.classList.add('selected-start');
+        }
+    });
 }
 /**
  * Cria o cabeçalho da tabela com botão de filtro e dropdown de seleção de períodos.
@@ -1075,10 +1158,15 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
   thData.appendChild(headerContent);
 
   // Cria dropdown de período inicial/final
-  const { dropdown, selectInicio, selectFim } = criarDropdownPeriodo(periodosOrdenados, (inicio, fim) => {
+  const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (inicio, fim) => {
     headerLabel.textContent = `Data (${inicio} → ${fim})`;
     atualizarTabelaFD(inicio, fim);
   });
+  
+  // Define o texto inicial do cabeçalho
+  if (initialStart && initialEnd) {
+      headerLabel.textContent = `Data (${initialStart} → ${initialEnd})`;
+  }
 
   thData.appendChild(dropdown);
   headerRow.appendChild(thData);
@@ -1098,7 +1186,7 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
     if (!thData.contains(e.target)) dropdown.style.display = 'none';
   });
 
-  return { selectInicio, selectFim };
+  return { initialStart, initialEnd };
 }
 /**
  * Renderiza o corpo da tabela com base nos períodos selecionados.
@@ -1106,6 +1194,23 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
 function atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
   tbody.innerHTML = '';
 
+  if (!inicioSel || !fimSel) {
+    // Mensagem de vazio
+    for (let i = 0; i < 6; i++) {
+      const empty = tbody.insertRow();
+      for (let j = 0; j < 4; j++) empty.insertCell().textContent = '';
+    }
+    const msgRow = tbody.insertRow();
+    msgRow.insertCell(); // data
+    const cellMsg = msgRow.insertCell();
+    cellMsg.textContent = 'Nenhum dado disponível para os períodos.'; // Mensagem mais clara
+    cellMsg.colSpan = 3;
+    cellMsg.style.textAlign = 'center';
+    cellMsg.style.color = '#666';
+    cellMsg.style.fontStyle = 'italic';
+    return;
+  }
+  
   const [mesIni, anoIni] = inicioSel.split('-').map(Number);
   const [mesFim, anoFim] = fimSel.split('-').map(Number);
 
@@ -1119,15 +1224,11 @@ function atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
   const visiveis = itensFiltrados.filter(it => dentroDoPeriodo(it.chaveAgregacao));
 
   if (visiveis.length === 0) {
-    // Mensagem de vazio
-    for (let i = 0; i < 6; i++) {
-      const empty = tbody.insertRow();
-      for (let j = 0; j < 4; j++) empty.insertCell().textContent = '';
-    }
+    // (A lógica de 'Nenhum período selecionado' foi movida para cima)
     const msgRow = tbody.insertRow();
     msgRow.insertCell(); // data
     const cellMsg = msgRow.insertCell();
-    cellMsg.textContent = 'Nenhum período selecionado.';
+    cellMsg.textContent = 'Nenhum lançamento encontrado para o período selecionado.';
     cellMsg.colSpan = 3;
     cellMsg.style.textAlign = 'center';
     cellMsg.style.color = '#666';
@@ -1138,7 +1239,7 @@ function atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
   // Calcula saldo inicial
   let saldo = saldoIni;
   for (const item of itensFiltrados) {
-    if (dentroDoPeriodo(item.chaveAgregacao)) break;
+    if (compararChaves(item.chaveAgregacao, inicioSel) >= 0) break; // Usa a função auxiliar
     saldo += item.valor;
   }
 
@@ -1172,5 +1273,20 @@ function criarTh(texto) {
   const th = document.createElement('th');
   th.textContent = texto;
   return th;
+}
+/**
+ * Compara duas chaves de período no formato "MM-AAAA" para ordenação cronológica.
+ * @param {string} a - A primeira chave.
+ * @param {string} b - A segunda chave.
+ * @returns {number} Um número negativo se a < b, positivo se a > b, e 0 se a === b.
+ */
+function compararChaves(a, b) {
+    // Trata casos onde 'a' ou 'b' possam ser null/undefined
+    if (!a || !b) return 0; 
+    const [mesA, anoA] = a.split('-').map(Number);
+    const [mesB, anoB] = b.split('-').map(Number);
+
+    if (anoA !== anoB) return anoA - anoB;
+    return mesA - mesB;
 }
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };

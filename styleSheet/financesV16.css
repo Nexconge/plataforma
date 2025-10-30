@@ -349,11 +349,13 @@ table tbody tr:last-child td:last-child {
   padding: 12px;
 }
 
-/* ---------------- DROPDOWN DE FILTRO ---------------- */
-#tabelaFluxoDiario .cabecalho th {
-  position: relative;
-}
+/* =========================================================
+   DROPDOWN DE FILTRO DE PERÍODO (CALENDÁRIO)
+========================================================= */
 
+/* Atualiza o container .filtro-dropdown existente para 
+  comportar o novo layout de calendário.
+*/
 .filtro-dropdown {
   display: none;
   position: absolute;
@@ -367,26 +369,80 @@ table tbody tr:last-child td:last-child {
   font-size: 0.9em;
   font-weight: normal;
   border-radius: 6px;
+  width: 320px; /* Ajuste a largura conforme necessário */
 }
 
-.filtro-dropdown label {
-  display: block;
-  padding: 4px 0;
-  white-space: nowrap;
-}
-
-.filtro-dropdown label:hover {
-  background-color: #f4f4f4;
-}
-
+/* Remove estilos antigos que não são mais necessários */
+.filtro-dropdown label,
 .filtro-dropdown select {
-  display: block;
-  margin-top: 4px;
+  display: none; /* Esconde os selects antigos se existirem */
+}
+
+/* Estilos específicos para o novo seletor de calendário */
+.filtro-calendario {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.filtro-ano-grupo {
+  margin-bottom: 10px;
+}
+
+.filtro-ano-header {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
   margin-bottom: 8px;
-  width: 140px;
-  padding: 4px;
-  font-size: 13px;
-  border: 1px solid #bbb;
+}
+
+.filtro-meses-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 colunas */
+  gap: 5px;
+}
+
+.filtro-mes-slot,
+.filtro-mes-btn {
+  padding: 8px 5px;
+  text-align: center;
   border-radius: 4px;
-  background-color: #fff;
+  font-size: 13px;
+}
+
+/* Slot de mês desabilitado (sem dados) */
+.filtro-mes-slot {
+  color: #ccc;
+  background-color: #f9f9f9;
+}
+
+/* Botão de mês habilitado (com dados) */
+.filtro-mes-btn {
+  font-weight: 600;
+  color: #0052a3;
+  background-color: #f0f8ff;
+  border: 1px solid #d6eaff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filtro-mes-btn:hover {
+  background-color: #d6eaff;
+  border-color: #0066cc;
+}
+
+/* Estilos de seleção de intervalo */
+.filtro-mes-btn.in-range {
+  background-color: #e6f0ff;
+  color: #0052a3;
+  border-color: #c0d8ff;
+}
+
+.filtro-mes-btn.selected-start,
+.filtro-mes-btn.selected-end {
+  background-color: #0066cc;
+  color: #fff;
+  border-color: #0052a3;
+  font-weight: bold;
 }
