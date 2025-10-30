@@ -280,3 +280,42 @@ label[for="anoSelect"] {
   background-color: #e6f0ff;
   transition: background-color 0.2s ease;
 }
+/* Estiliza o botão de filtro no cabeçalho */
+#tabelaFluxoDiario .cabecalho th {
+    position: relative; /* Garante que o dropdown se posicione corretamente */
+}
+
+#tabelaFluxoDiario .cabecalho span.filtro-btn {
+    cursor: pointer;
+    font-size: 0.8em;
+    margin-left: 8px;
+    user-select: none; /* Impede a seleção do texto do ícone */
+}
+
+/* O container do dropdown */
+.filtro-dropdown {
+    display: none;       /* O JS controla a exibição */
+    position: absolute;
+    top: 100%;           /* Posiciona abaixo do cabeçalho */
+    left: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 10px;
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.9em;    /* Texto menor dentro do filtro */
+    font-weight: normal; /* Texto normal, não negrito como o cabeçalho */
+}
+
+/* Estilo para cada item (checkbox + label) no dropdown */
+.filtro-dropdown label {
+    display: block;
+    padding: 4px 0;
+    white-space: nowrap; /* Impede que "01-2025" quebre a linha */
+}
+
+.filtro-dropdown label:hover {
+    background-color: #f4f4f4;
+}
