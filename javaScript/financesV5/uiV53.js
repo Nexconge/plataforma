@@ -979,255 +979,190 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
 
 //5 - Fluxo de caixa diário
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
-    const tabela = document.getElementById('tabelaFluxoDiario');
-    tabela.textContent = ''; // Limpa a tabela
+  const tabela = document.getElementById('tabelaFluxoDiario');
+  tabela.textContent = '';
 
-    const colunasSet = new Set(colunas);
-    const periodosDisponiveis = new Set();
-    const itensFiltrados = [];
+  const colunasSet = new Set(colunas);
+  const itensFiltrados = [];
 
-    // --- PASSO 1: Coletar dados e períodos disponíveis ---
-    fluxoDeCaixa.forEach(item => {
-        const [dia, mes, ano] = item.data.split('/');
-        const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
+  // --- Coleta dados válidos e períodos ---
+  const periodos = new Set();
+  fluxoDeCaixa.forEach(item => {
+    const [dia, mes, ano] = item.data.split('/');
+    const chaveAgregacao = `${mes.padStart(2, '0')}-${ano}`;
+    if (colunasSet.has(chaveAgregacao)) {
+      periodos.add(chaveAgregacao);
+      itensFiltrados.push({ ...item, chaveAgregacao });
+    }
+  });
 
-        if (colunasSet.has(chaveAgregacao)) {
-            periodosDisponiveis.add(chaveAgregacao);
-            itensFiltrados.push({ ...item, chaveAgregacao });
-        }
-    });
+  const periodosOrdenados = Array.from(periodos).sort();
+  const tbody = tabela.createTBody();
 
-    const periodosOrdenados = Array.from(periodosDisponiveis).sort();
-    
-    // O TBody é criado aqui para que a função de atualização possa acessá-lo
-    const tbody = tabela.createTBody(); 
+  // Cabeçalho e filtro
+  const { selectInicio, selectFim } = criarCabecalho(
+    tabela,
+    periodosOrdenados,
+    (inicio, fim) => atualizarTabela(tbody, itensFiltrados, saldoIni, inicio, fim)
+  );
 
-    // --- PASSO 2: Renderizar Cabeçalho com Filtro ---
-    const thead = tabela.createTHead();
-    const headerRow = thead.insertRow();
-    headerRow.classList.add('cabecalho');
-
-    // Célula de Data (com filtro)
-    const cellDataHeader = document.createElement('th');
-    cellDataHeader.style.position = 'relative'; 
-    const dataHeaderContent = document.createElement('div');
-    dataHeaderContent.style.display = 'flex';
-    dataHeaderContent.style.justifyContent = 'space-between';
-    dataHeaderContent.style.alignItems = 'center';
-    
-    const headerLabel = document.createElement('span');
-    headerLabel.textContent = 'Data';
-    headerLabel.style.flexGrow = '1';
-    headerLabel.style.whiteSpace = 'nowrap';
-    headerLabel.style.overflow = 'hidden';
-    headerLabel.style.textOverflow = 'ellipsis'; 
-    
-    const filterButton = document.createElement('span');
-    filterButton.textContent = ' ▼';
-    filterButton.style.cursor = 'pointer';
-    filterButton.style.padding = '0 10px'; 
-    
-    dataHeaderContent.appendChild(headerLabel);
-    dataHeaderContent.appendChild(filterButton);
-    
-    // Dropdown de Filtro
-    const filterDropdown = document.createElement('div');
-    filterDropdown.className = 'filtro-dropdown';
-    filterDropdown.style.cssText = `
-        display: none; position: absolute; background-color: white;
-        border: 1px solid #ccc; padding: 10px; z-index: 100;
-        max-height: 200px; overflow-y: auto; text-align: left;
-    `;
-
-    const allCheckboxes = [];
-    
-    // --- Função unificada para RECALCULAR a tabela E atualizar o cabeçalho ---
-    const atualizarFiltroFluxoDiario = () => {
-        const periodosSelecionados = new Set();
-        let totalSelecionado = 0;
-        const totalPeriodos = allCheckboxes.length;
-
-        allCheckboxes.forEach(cb => {
-            if (cb.checked) {
-                periodosSelecionados.add(cb.value);
-                totalSelecionado++;
-            }
-        });
-
-        // Atualiza o estado do "Selecionar Tudo"
-        if (selectAllCheckbox) {
-            // CORREÇÃO: Lidar com o caso de totalPeriodos ser 0
-            if (totalPeriodos > 0) {
-                selectAllCheckbox.checked = (totalSelecionado === totalPeriodos);
-                selectAllCheckbox.indeterminate = (totalSelecionado > 0 && totalSelecionado < totalPeriodos);
-            } else {
-                selectAllCheckbox.checked = false; // Se não há itens, não pode "Selecionar Tudo"
-            }
-        }
-
-        // Atualiza o texto do cabeçalho
-        if (totalSelecionado === totalPeriodos) {
-            headerLabel.textContent = 'Data';
-            headerLabel.title = '';
-        } else if (totalSelecionado === 0) {
-            headerLabel.textContent = 'Data (Nenhum)';
-            headerLabel.title = 'Nenhum período selecionado';
-        } else if (totalSelecionado === 1) {
-            const unicoSelecionado = periodosSelecionados.values().next().value;
-            headerLabel.textContent = `Data (${unicoSelecionado})`;
-            headerLabel.title = unicoSelecionado;
-        } else {
-            headerLabel.textContent = 'Data (Múltiplos)';
-            headerLabel.title = Array.from(periodosSelecionados).join(', ');
-        }
-
-        // --- Lógica de Recálculo do TBody ---
-        tbody.innerHTML = ''; // Limpa o corpo da tabela
-        let saldoInicialCalculado = saldoIni;
-        let saldoCorrente = 0;
-        let encontrouPrimeiroItemVisivel = false;
-
-        // 1. Calcular o saldo inicial ANTES do primeiro item visível
-        for (const item of itensFiltrados) {
-            if (periodosSelecionados.has(item.chaveAgregacao)) {
-                // Este é o primeiro item que VAI aparecer.
-                encontrouPrimeiroItemVisivel = true;
-                saldoCorrente = saldoInicialCalculado; // O saldo corrente começa aqui
-                break; 
-            }
-            // Se ainda não encontrou, acumula o valor no saldo inicial
-            saldoInicialCalculado += item.valor;
-        }
-
-        // Se nenhum período foi selecionado, mostra mensagem
-        let i = 0;
-        let j = 0;
-        if (totalSelecionado === 0) {
-            for (i=0; i < 6; i++) {
-                const emptyRow = tbody.insertRow();
-                for (j=0; j < 4; j++){
-                    emptyRow.insertCell().textContent = '';
-                }
-            }
-            const rowVazia = tbody.insertRow();
-            let cell = rowVazia.insertCell().textContent = '';
-            cell = rowVazia.insertCell();
-            cell.textContent = 'Nenhum período selecionado.';
-            cell.style.textAlign = 'center';
-            cell.style.color = '#666';
-            cell.style.fontStyle = 'italic';
-            cell = rowVazia.insertCell().textContent = '';
-            cell = rowVazia.insertCell().textContent = '';
-            return;
-        }
-        
-        // Se todos os períodos foram varridos e nenhum item encontrado (raro),
-        // ou se nenhum item foi filtrado, usa o último saldo calculado
-        if (!encontrouPrimeiroItemVisivel) {
-             saldoCorrente = saldoInicialCalculado;
-        }
-        
-        // 2. Adicionar a linha de Saldo Inicial
-        const rowInicial = tbody.insertRow();
-        rowInicial.insertCell().textContent = ''; // Coluna Data
-        
-        const cellDesc = rowInicial.insertCell();
-        cellDesc.textContent = 'Saldo Inicial do Período';
-        cellDesc.style.fontWeight = 'bold';
-        
-        rowInicial.insertCell().textContent = ''; // Coluna Valor
-        
-        const cellSaldoIni = rowInicial.insertCell();
-        cellSaldoIni.textContent = formatarValor(saldoCorrente); // Usa o saldo calculado
-        cellSaldoIni.style.fontWeight = 'bold';
-
-        // 3. Renderizar as linhas filtradas
-        for (const item of itensFiltrados) {
-            if (periodosSelecionados.has(item.chaveAgregacao)) {
-                const row = tbody.insertRow();
-                row.setAttribute('data-periodo', item.chaveAgregacao);
-                row.insertCell().textContent = item.data;
-                row.insertCell().textContent = item.fornecedor ?? '';
-                
-                const cellValor = row.insertCell();
-                cellValor.textContent = formatarValor(item.valor);
-
-                const cellSaldo = row.insertCell();
-                saldoCorrente += item.valor; 
-                cellSaldo.textContent = formatarValor(saldoCorrente);
-            }
-        }
-    };
-
-    // --- Checkbox "Selecionar Tudo" ---
-    const selectAllLabel = document.createElement('label');
-    selectAllLabel.style.cssText = "display: block; white-space: nowrap; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 5px; color: #000;";
-    
-    const selectAllCheckbox = document.createElement('input');
-    selectAllCheckbox.type = 'checkbox';
-    selectAllCheckbox.checked = true;
-    selectAllCheckbox.addEventListener('change', () => {
-        allCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
-        atualizarFiltroFluxoDiario(); // Chama a função de recálculo
-    });
-    
-    selectAllLabel.appendChild(selectAllCheckbox);
-    selectAllLabel.appendChild(document.createTextNode(' (Selecionar Tudo)'));
-    filterDropdown.appendChild(selectAllLabel);
-
-    // Popula o dropdown com os períodos
-    periodosOrdenados.forEach(periodo => {
-        const label = document.createElement('label');
-        label.style.cssText = "display: block; white-space: nowrap; color: #000;";
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = periodo;
-        checkbox.checked = true;
-        
-        allCheckboxes.push(checkbox); 
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(` ${periodo}`));
-        filterDropdown.appendChild(label);
-    });
-
-    cellDataHeader.appendChild(dataHeaderContent);
-    cellDataHeader.appendChild(filterDropdown);
-    headerRow.appendChild(cellDataHeader);
-    
-    // Outras células do cabeçalho
-    headerRow.insertCell().textContent = 'Descrição';
-    headerRow.insertCell().textContent = 'Valor (R$)';
-    headerRow.insertCell().textContent = 'Saldo (R$)';
-    
-    // --- PASSO 4: Adicionar Lógica de Evento ---
-    
-    filterButton.addEventListener('click', (e) => {
-        e.stopPropagation(); 
-        filterDropdown.style.display = (filterDropdown.style.display === 'block') ? 'none' : 'block';
-    });
-
-    // CORREÇÃO: Removemos a verificação `if (e.target !== selectAllCheckbox)`
-    // Isso garante que qualquer 'change' dentro do dropdown (seja de um item ou
-    // do "Selecionar Tudo") acione a atualização.
-    filterDropdown.addEventListener('change', (e) => {
-        // Se o clique foi no "Selecionar Tudo", a função já foi chamada
-        // pelo listener específico dele. Isso evita uma chamada dupla.
-        if (e.target === selectAllCheckbox) {
-            return;
-        }
-        atualizarFiltroFluxoDiario(); // Chama a função de recálculo
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!cellDataHeader.contains(e.target)) {
-            filterDropdown.style.display = 'none';
-        }
-    });
-
-    // --- PASSO 5: Renderização Inicial ---
-    // Chama a função pela primeira vez para renderizar a tabela com tudo selecionado
-    atualizarFiltroFluxoDiario(); 
+  // Renderização inicial com tudo selecionado
+  atualizarTabela(tbody, itensFiltrados, saldoIni, selectInicio.value, selectFim.value);
 }
+/**
+ * Cria o dropdown de seleção de período inicial/final.
+ * Retorna o container com os selects e a função de atualização.
+ */
+function criarDropdownPeriodo(periodosOrdenados, onChange) {
+  const dropdown = document.createElement('div');
+  dropdown.className = 'filtro-dropdown';
+  dropdown.style.display = 'none';
 
+  const labelInicio = document.createElement('label');
+  labelInicio.textContent = 'Período inicial: ';
+  const selectInicio = document.createElement('select');
+
+  const labelFim = document.createElement('label');
+  labelFim.textContent = 'Período final: ';
+  const selectFim = document.createElement('select');
+
+  // Adiciona opções nos selects
+  periodosOrdenados.forEach(p => {
+    const opt1 = new Option(p, p);
+    const opt2 = new Option(p, p);
+    selectInicio.add(opt1);
+    selectFim.add(opt2);
+  });
+
+  selectInicio.selectedIndex = 0;
+  selectFim.selectedIndex = periodosOrdenados.length - 1;
+
+  // Eventos de atualização
+  selectInicio.addEventListener('change', () => onChange(selectInicio.value, selectFim.value));
+  selectFim.addEventListener('change', () => onChange(selectInicio.value, selectFim.value));
+
+  // Layout vertical
+  dropdown.append(labelInicio, selectInicio, document.createElement('br'), labelFim, selectFim);
+
+  return { dropdown, selectInicio, selectFim };
+}
+/**
+ * Cria o cabeçalho da tabela com botão de filtro e dropdown de seleção de períodos.
+ */
+function criarCabecalho(tabela, periodosOrdenados, atualizarTabela) {
+  const thead = tabela.createTHead();
+  const headerRow = thead.insertRow();
+  headerRow.classList.add('cabecalho');
+
+  // --- Célula de Data + Filtro ---
+  const thData = document.createElement('th');
+  thData.style.position = 'relative';
+
+  const headerContent = document.createElement('div');
+  headerContent.style.display = 'flex';
+  headerContent.style.justifyContent = 'space-between';
+  headerContent.style.alignItems = 'center';
+
+  const headerLabel = document.createElement('span');
+  headerLabel.textContent = 'Data';
+  headerLabel.style.flexGrow = '1';
+
+  const filterButton = document.createElement('span');
+  filterButton.textContent = ' ▼';
+  filterButton.className = 'filtro-btn';
+
+  headerContent.append(headerLabel, filterButton);
+  thData.appendChild(headerContent);
+
+  // Cria dropdown de período inicial/final
+  const { dropdown, selectInicio, selectFim } = criarDropdownPeriodo(periodosOrdenados, (inicio, fim) => {
+    headerLabel.textContent = `Data (${inicio} → ${fim})`;
+    atualizarTabela(inicio, fim);
+  });
+
+  thData.appendChild(dropdown);
+  headerRow.appendChild(thData);
+
+  // --- Outras colunas ---
+  headerRow.appendChild(criarTh('Descrição'));
+  headerRow.appendChild(criarTh('Valor (R$)'));
+  headerRow.appendChild(criarTh('Saldo (R$)'));
+
+  // --- Lógica de abertura/fechamento ---
+  filterButton.addEventListener('click', e => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  document.addEventListener('click', e => {
+    if (!thData.contains(e.target)) dropdown.style.display = 'none';
+  });
+
+  return { selectInicio, selectFim };
+}
+/**
+ * Renderiza o corpo da tabela com base nos períodos selecionados.
+ */
+function atualizarTabela(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
+  tbody.innerHTML = '';
+
+  const [mesIni, anoIni] = inicioSel.split('-').map(Number);
+  const [mesFim, anoFim] = fimSel.split('-').map(Number);
+
+  // Função para verificar se o período está dentro do intervalo selecionado
+  const dentroDoPeriodo = (chave) => {
+    const [mes, ano] = chave.split('-').map(Number);
+    const dataNum = ano * 100 + mes;
+    return dataNum >= anoIni * 100 + mesIni && dataNum <= anoFim * 100 + mesFim;
+  };
+
+  const visiveis = itensFiltrados.filter(it => dentroDoPeriodo(it.chaveAgregacao));
+
+  if (visiveis.length === 0) {
+    // Mensagem de vazio
+    for (let i = 0; i < 6; i++) {
+      const empty = tbody.insertRow();
+      for (let j = 0; j < 4; j++) empty.insertCell().textContent = '';
+    }
+    const msgRow = tbody.insertRow();
+    msgRow.insertCell(); // data
+    const cellMsg = msgRow.insertCell();
+    cellMsg.textContent = 'Nenhum período selecionado.';
+    cellMsg.colSpan = 3;
+    cellMsg.style.textAlign = 'center';
+    cellMsg.style.color = '#666';
+    cellMsg.style.fontStyle = 'italic';
+    return;
+  }
+
+  // Calcula saldo inicial
+  let saldo = saldoIni;
+  for (const item of itensFiltrados) {
+    if (dentroDoPeriodo(item.chaveAgregacao)) break;
+    saldo += item.valor;
+  }
+
+  // Linha de saldo inicial
+  const rowInicial = tbody.insertRow();
+  rowInicial.insertCell(); // data vazia
+  const cellDesc = rowInicial.insertCell();
+  cellDesc.textContent = 'Saldo Inicial do Período';
+  cellDesc.style.fontWeight = 'bold';
+  rowInicial.insertCell();
+  const cellSaldoIni = rowInicial.insertCell();
+  cellSaldoIni.textContent = formatarValor(saldo);
+  cellSaldoIni.style.fontWeight = 'bold';
+
+  // Linhas dos itens
+  for (const item of visiveis) {
+    const row = tbody.insertRow();
+    row.insertCell().textContent = item.data;
+    row.insertCell().textContent = item.fornecedor ?? '';
+    const cellValor = row.insertCell();
+    cellValor.textContent = formatarValor(item.valor);
+    saldo += item.valor;
+    const cellSaldo = row.insertCell();
+    cellSaldo.textContent = formatarValor(saldo);
+  }
+}
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
