@@ -1019,7 +1019,7 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     }
   });
 
-  const periodosOrdenados = Array.from(periodos).sort();
+  const periodosOrdenados = Array.from(periodos).sort(compararChaves);
   const tbody = tabela.createTBody();
 
   // Cabeçalho e filtro
