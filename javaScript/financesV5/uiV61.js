@@ -708,28 +708,36 @@ function renderizarGraficos(dadosProcessados, colunas) {
         console.log("[DEBUG] RETORNOU CEDO: dadosProcessados ou window.Chart está faltando.", dadosProcessados, window.Chart);
         return;
     }
+
     const { matrizDRE, entradasESaidas } = dadosProcessados;
-    const labels = colunas;
     if (!matrizDRE || !entradasESaidas) {
         console.log("[DEBUG] RETORNOU CEDO: matrizDRE ou entradasESaidas está faltando.", matrizDRE, entradasESaidas);
         return;
     }
 
-    // --- 1. Dados para Gráfico Saldo de Caixa Acumulado ---
-    const dadosSaldo = labels.map(col => matrizDRE['Caixa Final']?.[col] ?? 0);
-    renderizarGraficoSaldoCaixa(labels, dadosSaldo);
+    // --- 1. Monta os vetores originais ---
+    let dadosSaldo = colunas.map(col => matrizDRE['Caixa Final']?.[col] ?? 0);
+    let dadosRecebimentos = colunas.map(col => entradasESaidas['(+) Entradas']?.[col] ?? 0);
+    let dadosPagamentos = colunas.map(col => Math.abs(entradasESaidas['(-) Saídas']?.[col] ?? 0));
 
-    // --- 2. Dados para Gráficos Mensal e Acumulado de E/S ---
-    const dadosRecebimentos = labels.map(col => entradasESaidas['(+) Entradas']?.[col] ?? 0);
-    const dadosPagamentos = labels.map(col => Math.abs(entradasESaidas['(-) Saídas']?.[col] ?? 0));
-    // 2a. Renderiza o gráfico Mensal
-    renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos);
+    // --- 2. Filtra períodos sem dados ---
+    const indicesComDados = colunas.reduce((acc, col, i) => {
+        const soma = Math.abs(dadosSaldo[i]) + Math.abs(dadosRecebimentos[i]) + Math.abs(dadosPagamentos[i]);
+        if (soma > 0) acc.push(i);
+        return acc;
+    }, []);
 
-    // 2b. Calcula e renderiza o gráfico Acumulado
+    const labels = indicesComDados.map(i => colunas[i]);
+    dadosSaldo = indicesComDados.map(i => dadosSaldo[i]);
+    dadosRecebimentos = indicesComDados.map(i => dadosRecebimentos[i]);
+    dadosPagamentos = indicesComDados.map(i => dadosPagamentos[i]);
+
+    // --- 3. Calcula dados acumulados ---
     const dadosRecebimentosAcumulados = [];
     const dadosPagamentosAcumulados = [];
     let accRec = 0;
     let accPag = 0;
+
     for (let i = 0; i < dadosRecebimentos.length; i++) {
         accRec += dadosRecebimentos[i];
         accPag += dadosPagamentos[i];
@@ -737,6 +745,9 @@ function renderizarGraficos(dadosProcessados, colunas) {
         dadosPagamentosAcumulados.push(accPag);
     }
 
+    // --- 4. Renderiza os gráficos ---
+    renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos);
+    renderizarGraficoSaldoCaixa(labels, dadosSaldo);
     renderizarGraficoAcumulado(labels, dadosRecebimentosAcumulados, dadosPagamentosAcumulados);
 }
 /**
@@ -778,7 +789,6 @@ function renderizarGraficoSaldoCaixa(labels, dadosSaldo) {
         }]
     };
     
-    console.log("--- [DEBUG] Renderizando 'graficoSaldoCaixa' com dados:", { labels, dadosSaldo });
     graficosAtuais.saldoCaixa = new window.Chart(ctx.getContext('2d'), {
         type: 'line',
         data: data,
