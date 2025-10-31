@@ -983,7 +983,7 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
   const tabela = document.getElementById('tabelaFluxoDiario');
   tabela.textContent = '';
 
-  // --- Garante que colunas é um array válido ---
+    // --- Garante que colunas é um array válido ---
   if (!Array.isArray(colunas) || colunas.length === 0) {
     console.warn('renderizarFluxoDiario: colunas inválidas');
     return;
@@ -998,6 +998,7 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
   }
 
   // --- Coleta dados válidos e períodos ---
+  const itensFiltrados = [];
   const periodos = new Set();
   fluxoDeCaixa.forEach(item => {
     const [dia, mes, ano] = item.data.split('/');
