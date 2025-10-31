@@ -983,8 +983,19 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
   const tabela = document.getElementById('tabelaFluxoDiario');
   tabela.textContent = '';
 
-  const colunasSet = new Set(colunas);
-  const itensFiltrados = [];
+  // --- Garante que colunas é um array válido ---
+  if (!Array.isArray(colunas) || colunas.length === 0) {
+    console.warn('renderizarFluxoDiario: colunas inválidas');
+    return;
+  }
+
+  // --- Se colunas vierem como anos (AAAA), expande para meses ---
+  let colunasSet;
+  if (colunas[0].length === 4) {
+    colunasSet = new Set(expandirColunasAnoMes(colunas));
+  } else {
+    colunasSet = new Set(colunas);
+  }
 
   // --- Coleta dados válidos e períodos ---
   const periodos = new Set();
@@ -1009,6 +1020,24 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
 
   // Renderização inicial com tudo selecionado
   atualizarTabelaFD(tbody, itensFiltrados, saldoIni, initialStart, initialEnd);
+}
+/**
+ * Recebe um array de anos no formato ["2024", "2025"]
+ * e retorna ["01-2024", ..., "12-2024", "01-2025", ..., "12-2025"]
+ */
+function expandirColunasAnoMes(colunas) {
+  const colunasExpandidas = [];
+
+  colunas.forEach(ano => {
+    if (/^\d{4}$/.test(ano)) { // garante que é um ano válido
+      for (let m = 1; m <= 12; m++) {
+        const mes = String(m).padStart(2, '0');
+        colunasExpandidas.push(`${mes}-${ano}`);
+      }
+    }
+  });
+
+  return colunasExpandidas;
 }
 /**
  * Cria o dropdown visual de seleção de período (estilo calendário).
