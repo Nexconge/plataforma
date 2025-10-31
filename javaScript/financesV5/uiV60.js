@@ -1061,7 +1061,7 @@ function criarDropdownPeriodoVisual(periodosOrdenados, onChange) {
     }, {});
 
     // 2. Gera o HTML para os grupos de ano/mês
-    const anosOrdenados = Object.keys(periodosPorAno).sort((a, b) => b - a); // Mais recente primeiro
+    const anosOrdenados = Object.keys(periodosPorAno).sort((a, b) => a - b); // Mais antigo primeiro
     anosOrdenados.forEach(ano => {
         const anoGrupo = document.createElement('div');
         anoGrupo.className = 'filtro-ano-grupo';
