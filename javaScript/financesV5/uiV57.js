@@ -1258,7 +1258,7 @@ function atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioSel, fimSel) {
   for (const item of visiveis) {
     const row = tbody.insertRow();
     row.insertCell().textContent = item.data;
-    row.insertCell().textContent = item.fornecedor ?? '';
+    row.insertCell().textContent = item.descricao ?? '';
     const cellValor = row.insertCell();
     cellValor.textContent = formatarValor(item.valor);
     saldo += item.valor;

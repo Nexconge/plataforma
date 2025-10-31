@@ -192,17 +192,21 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
         if (lancamento.Natureza === "P") valor = -valor;
         valorTotal += valor;
 
-        const lancamentoFluxoDiario = {
-            valor: valor,
-            fornecedor: lancamento.Cliente,
-            data: lancamento.DataLancamento
-        }
-        fluxoDeCaixa.push(lancamentoFluxoDiario);
-
         // Encontra a classe da DRE correspondente à categoria do lançamento.
         const codCat = lancamento.CODCategoria
         const classeInfo = dadosBase.classesMap.get(lancamento.CODCategoria);
         const classe = classeInfo ? classeInfo.classe : 'Outros';
+
+        let descricaoFluxo = '';
+        if(codCat.startsWith("0.01") ){descricaoFluxo = 'Transferência Entre Contas'} else {
+            descricaoFluxo = `${dadosBase.categoriasMap.get(codCat)} - ${lancamento.Cliente}`
+        }
+        const lancamentoFluxoDiario = {
+            valor: valor,
+            descricao: descricaoFluxo,
+            data: lancamento.DataLancamento
+        }
+        fluxoDeCaixa.push(lancamentoFluxoDiario);
 
         // Adiciona o valor à matriz DRE na classe e período corretos.
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
