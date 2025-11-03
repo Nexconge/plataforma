@@ -1173,72 +1173,90 @@ function atualizarEstiloVisual(gridContainer, start, end) {
  * Cria o cabeçalho da tabela com botão de filtro e dropdown de seleção de períodos.
  */
 function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
-  const thead = tabela.createTHead();
-  const headerRow = thead.insertRow();
-  headerRow.classList.add('cabecalho');
+    const thead = tabela.createTHead();
+    const headerRow = thead.insertRow();
+    headerRow.classList.add('cabecalho');
 
-  // --- Célula de Data + Filtro ---
-  const thData = document.createElement('th');
-  thData.classList.add('data-header'); // adiciona classe pra estilizar via CSS
-  thData.style.position = 'relative';
+    // --- Célula de Data + Filtro ---
+    const thData = document.createElement('th');
+    thData.classList.add('data-header'); // adiciona classe pra estilizar via CSS
+    thData.style.position = 'relative';
 
-  // Container geral do conteúdo
-  const headerContent = document.createElement('div');
-  headerContent.style.display = 'flex';
-  headerContent.style.flexDirection = 'column';
-  headerContent.style.alignItems = 'flex-start';
+    // Container geral do conteúdo
+    const headerContent = document.createElement('div');
+    headerContent.style.display = 'flex';
+    headerContent.style.flexDirection = 'column';
+    headerContent.style.alignItems = 'flex-start';
 
-  // Linha 1: título "Data"
-  const headerTitulo = document.createElement('div');
-  headerTitulo.textContent = 'Data';
-  headerTitulo.classList.add('linha-data-titulo');
+    // Linha 1: título "Data"
+    const headerTitulo = document.createElement('div');
+    headerTitulo.textContent = 'Data';
+    headerTitulo.classList.add('linha-data-titulo');
 
-  // Linha 2: datas + botão ▼
-  const linhaPeriodo = document.createElement('div');
-  linhaPeriodo.classList.add('linha-data-periodo');
-  linhaPeriodo.style.display = 'flex';
-  linhaPeriodo.style.alignItems = 'center';
-  linhaPeriodo.style.gap = '4px';
+    // Linha 2: datas + botão ▼
+    const linhaPeriodo = document.createElement('div');
+    linhaPeriodo.classList.add('linha-data-periodo');
+    linhaPeriodo.style.display = 'flex';
+    linhaPeriodo.style.alignItems = 'center';
+    linhaPeriodo.style.gap = '4px';
 
-  const headerLabel = document.createElement('span');
-  const filterButton = document.createElement('span');
-  filterButton.textContent = '▼';
-  filterButton.className = 'filtro-btn';
+    const headerLabel = document.createElement('span');
+    const filterButton = document.createElement('span');
+    filterButton.textContent = '▼';
+    filterButton.className = 'filtro-btn';
 
-  linhaPeriodo.append(headerLabel, filterButton);
-  headerContent.append(headerTitulo, linhaPeriodo);
-  thData.appendChild(headerContent);
+    linhaPeriodo.append(headerLabel, filterButton);
+    headerContent.append(headerTitulo, linhaPeriodo);
+    thData.appendChild(headerContent);
 
-  // Cria dropdown de período inicial/final
-  const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (inicio, fim) => {
-    headerLabel.textContent = `${inicio} → ${fim}`;
-    atualizarTabelaFD(inicio, fim);
-  });
+    // Cria dropdown de período inicial/final
+    const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (inicio, fim) => {
+        headerLabel.textContent = `${inicio} → ${fim}`;
+        atualizarTabelaFD(inicio, fim);
+    });
 
-  // Define texto inicial do período
-  if (initialStart && initialEnd) {
-    headerLabel.textContent = `${initialStart} → ${initialEnd}`;
-  }
+    // Define texto inicial do período
+    if (initialStart && initialEnd) {
+        headerLabel.textContent = `${initialStart} → ${initialEnd}`;
+    }
 
-  thData.appendChild(dropdown);
-  headerRow.appendChild(thData);
+    thData.appendChild(dropdown);
+    headerRow.appendChild(thData);
 
-  // --- Outras colunas ---
-  headerRow.appendChild(criarTh('Descrição'));
-  headerRow.appendChild(criarTh('Valor (R$)'));
-  headerRow.appendChild(criarTh('Saldo (R$)'));
+    //Move dropdown para o body
+    document.body.appendChild(dropdown);
+    dropdown.style.position = 'absolute';
+    dropdown.style.display = 'none';
+    dropdown.style.zIndex = '9999';
+    // --- Exibir/posicionar dropdown ---
+    filterButton.addEventListener('click', e => {
+        e.stopPropagation();
+        // Alterna visibilidade
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+        if (isVisible) return;
 
-  // --- Lógica de abertura/fechamento do dropdown ---
-  filterButton.addEventListener('click', e => {
-    e.stopPropagation();
-    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-  });
+        // Calcula posição do botão na tela
+        const rect = filterButton.getBoundingClientRect();
+        dropdown.style.left = `${rect.left + window.scrollX}px`;
+        dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+    });
 
-  document.addEventListener('click', e => {
-    if (!thData.contains(e.target)) dropdown.style.display = 'none';
-  });
+    // --- Fecha ao clicar fora ---
+    document.addEventListener('click', e => {
+        if (!dropdown.contains(e.target) && !filterButton.contains(e.target)) {
+        dropdown.style.display = 'none';
+        }
+    });
 
-  return { initialStart, initialEnd };
+    headerRow.appendChild(thData);
+
+    // --- Outras colunas ---
+    headerRow.appendChild(criarTh('Descrição'));
+    headerRow.appendChild(criarTh('Valor (R$)'));
+    headerRow.appendChild(criarTh('Saldo (R$)'));
+
+    return { initialStart, initialEnd };
 }
 /**
  * Renderiza o corpo da tabela com base nos períodos selecionados.
