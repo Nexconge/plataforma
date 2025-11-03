@@ -305,6 +305,24 @@ table tbody tr:last-child td:last-child {
   user-select: none;
 }
 
+#tabelaFluxoDiario thead th.data-header {
+  text-align: left;
+  vertical-align: middle;
+}
+
+#tabelaFluxoDiario thead .linha-data-titulo {
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+#tabelaFluxoDiario thead .linha-data-periodo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-weight: normal;
+  font-size: 0.9em;
+}
 /* ---------------- LINHAS E CÉLULAS ---------------- */
 #tabelaFluxoDiario tbody td {
   padding: 8px 16px;

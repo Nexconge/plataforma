@@ -1179,33 +1179,45 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
 
   // --- Célula de Data + Filtro ---
   const thData = document.createElement('th');
+  thData.classList.add('data-header'); // adiciona classe pra estilizar via CSS
   thData.style.position = 'relative';
 
+  // Container geral do conteúdo
   const headerContent = document.createElement('div');
   headerContent.style.display = 'flex';
-  headerContent.style.justifyContent = 'space-between';
-  headerContent.style.alignItems = 'center';
+  headerContent.style.flexDirection = 'column';
+  headerContent.style.alignItems = 'flex-start';
+
+  // Linha 1: título "Data"
+  const headerTitulo = document.createElement('div');
+  headerTitulo.textContent = 'Data';
+  headerTitulo.classList.add('linha-data-titulo');
+
+  // Linha 2: datas + botão ▼
+  const linhaPeriodo = document.createElement('div');
+  linhaPeriodo.classList.add('linha-data-periodo');
+  linhaPeriodo.style.display = 'flex';
+  linhaPeriodo.style.alignItems = 'center';
+  linhaPeriodo.style.gap = '4px';
 
   const headerLabel = document.createElement('span');
-  headerLabel.textContent = 'Data';
-  headerLabel.style.flexGrow = '1';
-
   const filterButton = document.createElement('span');
-  filterButton.textContent = ' ▼';
+  filterButton.textContent = '▼';
   filterButton.className = 'filtro-btn';
 
-  headerContent.append(headerLabel, filterButton);
+  linhaPeriodo.append(headerLabel, filterButton);
+  headerContent.append(headerTitulo, linhaPeriodo);
   thData.appendChild(headerContent);
 
   // Cria dropdown de período inicial/final
   const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (inicio, fim) => {
-    headerLabel.innerHTML = `Data<br>${inicio} → ${fim}`;
+    headerLabel.textContent = `${inicio} → ${fim}`;
     atualizarTabelaFD(inicio, fim);
   });
-  
-  // Define o texto inicial do cabeçalho
+
+  // Define texto inicial do período
   if (initialStart && initialEnd) {
-      headerLabel.innerHTML = `Data<br>(${initialStart} → ${initialEnd})`;
+    headerLabel.textContent = `${initialStart} → ${initialEnd}`;
   }
 
   thData.appendChild(dropdown);
@@ -1216,7 +1228,7 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
   headerRow.appendChild(criarTh('Valor (R$)'));
   headerRow.appendChild(criarTh('Saldo (R$)'));
 
-  // --- Lógica de abertura/fechamento ---
+  // --- Lógica de abertura/fechamento do dropdown ---
   filterButton.addEventListener('click', e => {
     e.stopPropagation();
     dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
