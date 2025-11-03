@@ -1199,7 +1199,7 @@ function criarCabecalho(tabela, periodosOrdenados, atualizarTabelaFD) {
 
   // Cria dropdown de período inicial/final
   const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (inicio, fim) => {
-    headerLabel.textContent = `Data (${inicio} → ${fim})`;
+    headerLabel.textContent = `Data<br>${inicio} → ${fim}`;
     atualizarTabelaFD(inicio, fim);
   });
   
