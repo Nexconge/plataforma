@@ -281,6 +281,9 @@ table tbody tr:last-child td:last-child {
   padding: 10px 16px;
   border-bottom: 2px solid #0052a3;
   vertical-align: middle;
+  overflow: visible; /* permite que dropdown "saia" do limite */
+  position: relative; /* base para posicionamento absoluto interno */
+  z-index: 10;
 }
 
 /* Arredondamento dos cantos */
