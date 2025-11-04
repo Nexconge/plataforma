@@ -818,14 +818,12 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
     });
     
+    console.log('Colunas para calcular:', colunasParaCalcular);
     // 6. Executa o cálculo das linhas de total sobre os dados consolidados.
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
 
     // 7. Calcula a coluna "TOTAL" final.
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
-    
-    // 8. Prepara o objeto final para retorno.
-    dadosParaExibir.colunas = colunasParaCalcular;
 
     // Retorna o objeto final, pronto para a renderização.
     return { ...dadosParaExibir };
