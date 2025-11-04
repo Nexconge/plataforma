@@ -116,11 +116,9 @@ async function handleFiltroChange() {
     // Consolida os dados de todas as contas selecionadas em uma única matriz para exibição.
     // Retorna um objeto final com a estrutura: { matrizDRE, matrizDetalhamento, ... }
     const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    console.log('Dados consolidados para exibição:', dadosParaExibir);
+
     // 5. Renderiza as tabelas na UI com os dados finais.
-    const colunasParaExibir = dadosParaExibir.colunas;
-    console.log('Colunas para exibição:', colunasParaExibir);
-    atualizarVisualizacoes(dadosParaExibir, colunasParaExibir, appCache);
+    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
 }
 
