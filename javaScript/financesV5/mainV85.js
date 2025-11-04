@@ -118,7 +118,7 @@ async function handleFiltroChange() {
     const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
     
     // 5. Renderiza as tabelas na UI com os dados finais.
-    atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
+    atualizarVisualizacoes(dadosParaExibir, dadosParaExibir.colunas, appCache);
     document.body.classList.remove('loading');
 }
 

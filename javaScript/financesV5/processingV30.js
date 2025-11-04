@@ -824,6 +824,9 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     // 7. Calcula a coluna "TOTAL" final.
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
     
+    // 8. Prepara o objeto final para retorno.
+    dadosParaExibir.colunas = colunasParaCalcular;
+
     // Retorna o objeto final, pronto para a renderização.
     return { ...dadosParaExibir };
 }
