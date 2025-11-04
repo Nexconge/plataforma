@@ -447,6 +447,15 @@ function processarDadosDaConta(AppCache, dadosApi, contaId) {
  * @returns {void} A função não retorna um valor, pois modifica o objeto `matrizDRE` por referência.
  */
 function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) {
+    // Garante que todas as colunas de colunasParaCalcular existam
+    Object.keys(matrizDRE).forEach(classe => {
+        colunasParaCalcular.forEach(coluna => {
+            if (matrizDRE[classe][coluna] == null) {
+                matrizDRE[classe][coluna] = 0;
+            }
+        });
+    });
+
     // Inicia o saldo acumulado com o saldo inicial fornecido. Este valor será atualizado a cada coluna (período).
     let saldoAcumulado = saldoInicial;
 
