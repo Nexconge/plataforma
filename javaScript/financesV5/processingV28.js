@@ -519,8 +519,11 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao) {
     listaDeDadosProcessados.forEach(dados => {
         dados.chavesComDados.forEach(chave => todasChaves.add(chave));
 
+        //Merge tabela de DRE
         mergeGenericoMensal(dados.matrizDRE, monthlyMerged.matrizDRE);
+        //Merge linhas de EntradasESaidas
         mergeGenericoMensal(dados.entradasESaidas, monthlyMerged.entradasESaidas);
+        //Merge matrizCapitalGiro apenas para realizado
         if(projecao.toLowerCase() == "realizado") mergeGenericoMensal(dados.matrizCapitalGiro, monthlyMerged.matrizCapitalGiro) 
         
         monthlyMerged.fluxoDeCaixa.push(...dados.fluxoDeCaixa);
@@ -800,10 +803,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     const matrizDRE = dadosParaExibir.matrizDRE;
     
     // Determina se as colunas para o cálculo de balanço são MESES ou ANOS.
-    const colunasParaCalcular = (modo.toLowerCase() === 'anual')
-        ? Array.from(new Set(Array.from(todasChaves).map(chave => chave.split('-')[1]))).sort()
-        : Array.from(todasChaves).sort(compararChaves);
-
+    const colunasParaCalcular = gerarPeriodosEntre(PeUChave.primeiraChave, PeUChave.ultimaChave, modo.toLowerCase());
     // Garante que as linhas de total existam na matriz.
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
@@ -843,6 +843,34 @@ function getChavesDeControle(chavesSet, modo) {
     }
 
     return { ultimaChave, primeiraChave };
+}
+function gerarPeriodosEntre(primeiraChave, ultimaChave, modo = "mensal") {
+    const resultado = [];
+
+    if (modo === "anual") {
+        const anoInicio = parseInt(primeiraChave.split('-')[1], 10);
+        const anoFim = parseInt(ultimaChave.split('-')[1], 10);
+        for (let ano = anoInicio; ano <= anoFim; ano++) {
+            resultado.push(ano.toString());
+        }
+        return resultado;
+    }
+
+    if (modo === "mensal") {
+        let atual = primeiraChave;
+        resultado.push(atual);
+
+        // Gera meses até chegar na última chave
+        while (atual !== ultimaChave) {
+            atual = incrementarMes(atual);
+            if (!atual) break; // segurança
+            resultado.push(atual);
+        }
+
+        return resultado;
+    }
+
+    throw new Error('Modo inválido. Use "anual" ou "mensal".');
 }
 /**
  * Compara duas chaves de período no formato "MM-AAAA" ou "AAAA" para ordenação cronológica.
