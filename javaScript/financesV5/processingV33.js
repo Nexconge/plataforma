@@ -856,11 +856,9 @@ function getChavesDeControle(chavesSet, modo) {
 }
 function gerarPeriodosEntre(primeiraChave, ultimaChave, modo = "mensal") {
     const resultado = [];
-    console.log('Gerando períodos entre:', primeiraChave, 'e', ultimaChave, 'modo:', modo);
+
     if (modo === "anual") {
-        const anoInicio = parseInt(primeiraChave.split('-')[1], 10);
-        const anoFim = parseInt(ultimaChave.split('-')[1], 10);
-        for (let ano = anoInicio; ano <= anoFim; ano++) {
+        for (let ano = primeiraChave; ano <= ultimaChave; ano++) {
             resultado.push(ano.toString());
         }
         return resultado;
