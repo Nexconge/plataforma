@@ -652,10 +652,6 @@ function renderizarTabelaCapitalGiro(matriz, colunas, dadosEstoque) {
     renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
     renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
     criarLinhaBranca();
-    if (dadosEstoque && dadosEstoque['(+) Estoque']) {
-        renderLinhaCG(tbody, dadosEstoque, colunas, '(+) Estoque', '(+) Estoque', false, 'linhatotal');
-        criarLinhaBranca();
-    }
     renderLinhaCG(tbody, matriz, colunas, '(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
     renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
     renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
@@ -664,10 +660,13 @@ function renderizarTabelaCapitalGiro(matriz, colunas, dadosEstoque) {
     criarLinhaBranca();
     renderLinhaCG(tbody, matriz, colunas, '(=) Curto Prazo (30 dias)', 'Curto Prazo TT', false, 'linhatotal');
     renderLinhaCG(tbody, matriz, colunas, '(=) Longo Prazo (maior que 30 dias)', 'Longo Prazo TT', false, 'linhatotal');
+    if (dadosEstoque && dadosEstoque['(+) Estoque']) {
+        criarLinhaBranca();
+        renderLinhaCG(tbody, dadosEstoque, colunas, '(+) Estoque', '(+) Estoque', false, 'linhatotal');
+    }
     criarLinhaBranca();
     renderLinhaCG(tbody, matriz, colunas, '(=) Capital Líquido Circulante', 'Capital Liquido', false, 'linhaSaldo');
-
-
+    
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
@@ -676,11 +675,13 @@ function renderLinhaCG(tbody, matriz, colunas, label, chave, isPercent = false, 
     if (cssClass) row.classList.add(cssClass);
     row.insertCell().textContent = label;
     colunas.forEach(col => {
-        const valor = matriz[chave]?.[col] ?? 0;
+        let valor = matriz[chave]?.[col] ?? 0;
+        if(chave === '(=) Capital Líquido Circulante'){valor += matriz['(+) Estoque']?.[col] ?? 0;};
         row.insertCell().textContent = isPercent && valor !== 0 ? formatarPercentual(valor) : formatarValor(valor);
     });
     row.insertCell().textContent = '';
 };
+
 function calcularPercentuaisCG(matriz, colunas) {
     ['AR', 'AP'].forEach(tipo => {
         const curto = `Curto Prazo ${tipo}`;
