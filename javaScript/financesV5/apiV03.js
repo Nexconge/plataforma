@@ -80,7 +80,8 @@ async function buscarValoresEstoque(filtros) {
             throw new Error(`Falha ao buscar estoques: ${response.status} ${response.statusText} - ${errorText}`);
         }
         console.log("Resposta da API de estoques recebida com sucesso.");
-        console.log(response);
+        console.log(response.clone().json());
+        console.log(response.clone().text);
         return await response.json();
     } catch (error) {
         console.error("Erro crítico ao buscar estoques:", error);
