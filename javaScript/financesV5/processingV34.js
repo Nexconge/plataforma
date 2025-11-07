@@ -520,9 +520,9 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
  * //   todasChaves: Set("01-2025", "02-2025", ...) // Um Set com todos os períodos únicos.
  * // }
  */
-function mergeDadosMensais(listaDeDadosProcessados, projecao) {
+function mergeDadosMensais(listaDeDadosProcessados, projecao, dadosEstoque) {
     const monthlyMerged = { matrizDRE: {}, matrizDetalhamento: {},
-    entradasESaidas: {}, matrizCapitalGiro: {}, fluxoDeCaixa: [] };
+    entradasESaidas: {}, matrizCapitalGiro: {}, fluxoDeCaixa: [], dadosEstoque: {} };
     const todasChaves = new Set();
 
     listaDeDadosProcessados.forEach(dados => {
@@ -579,7 +579,9 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao) {
         }
     });
     monthlyMerged.fluxoDeCaixa.sort((a, b) => parseDate(a.data) - parseDate(b.data));
-    
+    dadosEstoque.forEach(matrizEstoque => {
+        mergeGenericoMensal(matrizEstoque, monthlyMerged.dadosEstoque);
+    });
     return { monthlyMerged, todasChaves };
 }
 /**
@@ -602,7 +604,7 @@ function mergeGenericoMensal(origem, destino) {
  */
 function agregarDadosParaAnual(monthlyData, projecao) {
     const annualData = { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {},
-    matrizCapitalGiro: {}, fluxoDeCaixa: {} };
+    matrizCapitalGiro: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
     const saldosAnuais = {};
 
     // --- Fluxo de Caixa ---
@@ -686,6 +688,20 @@ function agregarDadosParaAnual(monthlyData, projecao) {
         }
     }
     
+    // --- Dados de Estoque ---
+    for (const linhaEstoque in monthlyData.dadosEstoque) { // ex: '(+) Estoque'
+        annualData.dadosEstoque[linhaEstoque] = {};
+        
+        for (const periodoMensal in monthlyData.dadosEstoque[linhaEstoque]) { // ex: '01-2025'
+            const ano = periodoMensal.split('-')[1];
+            
+            if (ano) { // Garante que o ano foi extraído corretamente
+                const valor = monthlyData.dadosEstoque[linhaEstoque][periodoMensal];
+                somaValor(annualData.dadosEstoque[linhaEstoque], ano, valor);
+            }
+        }
+    }
+
     return annualData;
 }
 /**
@@ -772,7 +788,7 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
  * //   matrizCapitalGiro: { "(+) Caixa": { "01-2025": 5000, ... }, ... }
  * // }
  */
-function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
+function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque) {
     // Seleciona os dados da projeção correta E anexa a matriz de capital de giro ao objeto 'realizado'.
     const dadosSelecionados = dadosProcessados.map(dadosConta => {
         const projData = dadosConta[projecao.toLowerCase()];
@@ -788,12 +804,12 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao) {
     // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
         return { matrizDRE: {}, matrizDetalhamento: {},
-        matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {} };
+        matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
     }
 
     // 1. Mescla os dados mensais de todas as contas.
-    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados, projecao);
-    
+    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados, projecao, dadosEstoque);
+
     // 2. Agrega os dados para o formato ANUAL, se necessário.
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged, projecao)

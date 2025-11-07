@@ -366,10 +366,10 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     if (tabelaCustos) tabelaCustos.innerHTML = ''
     if (tabelaCapitalGiro) tabelaCapitalGiro.innerHTML = ''
 
-    const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro } = dadosProcessados;
+    const { matrizDRE, matrizDetalhamento, entradasESaidas, matrizCapitalGiro, dadosEstoque } = dadosProcessados;
     renderizarTabelaDRE(matrizDRE, colunas, appCache.userType);
     renderizarTabelaDetalhamento(appCache.categoriasMap, matrizDetalhamento, colunas, entradasESaidas, appCache.userType);
-    renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas);
+    renderizarTabelaCapitalGiro(matrizCapitalGiro, colunas, dadosEstoque);
     renderizarGraficos(dadosProcessados, colunas);
     const saldoIni = matrizDRE['Caixa Inicial'].TOTAL || 0;
     renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni);
@@ -613,7 +613,7 @@ function renderLinhaDepartamento(classe, dadosDaClasse, tbody, categoriasMap, co
  * @param {object} matriz - A matriz de dados gerada por `gerarMatrizCapitalGiro`.
  * @param {Array<string>} colunas - O array de colunas (períodos) a serem exibidos.
  */
-function renderizarTabelaCapitalGiro(matriz, colunas) {
+function renderizarTabelaCapitalGiro(matriz, colunas, dadosEstoque) {
     const tabela = document.getElementById('tabelaCapitalGiro');
     if (!tabela) {
         console.error("ERRO: elemento 'tabelaCapitalGiro' não encontrado.");
@@ -652,6 +652,10 @@ function renderizarTabelaCapitalGiro(matriz, colunas) {
     renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (%)', 'Curto Prazo AR %', true, 'idented');
     renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (%)', 'Longo Prazo AR %', true, 'idented');
     criarLinhaBranca();
+    if (dadosEstoque && dadosEstoque['(+) Estoque']) {
+        renderLinhaCG(tbody, dadosEstoque, colunas, '(+) Estoque', '(+) Estoque', false, 'linhatotal');
+        criarLinhaBranca();
+    }
     renderLinhaCG(tbody, matriz, colunas, '(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'linhatotal');
     renderLinhaCG(tbody, matriz, colunas, 'Curto Prazo (30 dias)', 'Curto Prazo AP', false, 'idented');
     renderLinhaCG(tbody, matriz, colunas, 'Longo Prazo (maior que 30 dias)', 'Longo Prazo AP', false, 'idented');
