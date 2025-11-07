@@ -665,7 +665,7 @@ function renderizarTabelaCapitalGiro(matriz, colunas, dadosEstoque) {
     renderLinhaCG(tbody, matriz, colunas, '(=) Curto Prazo (30 dias)', 'Curto Prazo TT', false, 'linhatotal');
     renderLinhaCG(tbody, matriz, colunas, '(=) Longo Prazo (maior que 30 dias)', 'Longo Prazo TT', false, 'linhatotal');
     criarLinhaBranca();
-    renderLinhaFinalCG(tbody, matriz, colunas, '(=) Capital Líquido Circulante', 'Capital Liquido', false, 'linhaSaldo', dadosEstoque);
+    renderLinhaFinalCG(tbody, matriz, colunas, '(=) Capital Líquido Circulante', 'Capital Liquido', 'linhaSaldo', dadosEstoque);
     
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
@@ -681,14 +681,14 @@ function renderLinhaCG(tbody, matriz, colunas, label, chave, isPercent = false, 
     });
     row.insertCell().textContent = '';
 };
-function renderLinhaFinalCG(tbody, matriz, colunas, label, chave, isPercent = false, cssClass = '', dadosEstoque) {
+//Soma o capital liquido pre processado com o estoque para renderizar a linha final
+function renderLinhaFinalCG(tbody, matriz, colunas, label, chave, cssClass = '', dadosEstoque) {
     const row = tbody.insertRow();
     if (cssClass) row.classList.add(cssClass);
     row.insertCell().textContent = label;
     colunas.forEach(col => {
-        let valor = matriz[chave]?.[col] ?? 0;
-        if(chave === '(=) Capital Líquido Circulante'){valor += dadosEstoque['(+) Estoque']?.[col] ?? 0;};
-        row.insertCell().textContent = isPercent && valor !== 0 ? formatarPercentual(valor) : formatarValor(valor);
+        let valor = matriz[chave]?.[col] + dadosEstoque['(+) Estoque']?.[col] ?? 0;
+        row.insertCell().textContent = formatarValor(valor);
     });
     row.insertCell().textContent = '';
 };
