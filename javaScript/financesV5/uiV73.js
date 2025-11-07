@@ -687,7 +687,10 @@ function renderLinhaFinalCG(tbody, matriz, colunas, label, chave, cssClass = '',
     if (cssClass) row.classList.add(cssClass);
     row.insertCell().textContent = label;
     colunas.forEach(col => {
-        let valor = matriz[chave]?.[col] + dadosEstoque['(+) Estoque']?.[col] ?? 0;
+        let valorMatriz = matriz[chave]?.[col] ?? 0;
+        let valorEstoque = dadosEstoque['(+) Estoque']?.[col] ?? 0;
+        const valor = valorMatriz + valorEstoque;
+
         row.insertCell().textContent = formatarValor(valor);
     });
     row.insertCell().textContent = '';
