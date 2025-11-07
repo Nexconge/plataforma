@@ -59,6 +59,7 @@ async function buscarTitulos(filtros) {
 }
 
 async function buscarValoresEstoque(filtros) {
+    console.log("Iniciando busca de estoques com filtros:", filtros);
     let baseURL = "https://plataforma-geourb.bubbleapps.io/";
     if (window.location.href.includes("version-test")) {
         baseURL += "version-test";

@@ -1,6 +1,6 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos, buscarValoresEstoque } from './apiV03.js';
+import { buscarTitulos, buscarValoresEstoque } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV35.js';
 import { configurarFiltros, atualizarVisualizacoes, 
     obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV69.js';
@@ -62,7 +62,7 @@ async function handleFiltroChange() {
         // Dispara as requisições para a API em paralelo para cada nova conta.
         const promises = contasParaProcessar.map(conta => buscarTitulos({ contas: [conta] }));
         promises.push(...projetosParaProcessar.map(proj => buscarValoresEstoque({
-            periodos: filtrosAtuais.anos,
+            periodos: filtrosAtuais.colunas,
             projeto: [proj]
         })));
         
