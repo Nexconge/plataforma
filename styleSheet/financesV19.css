@@ -467,3 +467,62 @@ table tbody tr:last-child td:last-child {
   border-color: #0052a3;
   font-weight: bold;
 }
+
+/* --- ESTILOS PARA AS ABAS DOS GRÁFICOS --- */
+.container-graficos-abas {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden; /* Garante que o conteúdo não vaze */
+}
+
+/* Container dos botões */
+.grafico-tabs {
+    display: flex;
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Estilo de cada botão (aba) */
+.tab-link {
+    padding: 10px 15px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    border-right: 1px solid #ddd;
+}
+
+.tab-link:last-child {
+    border-right: none;
+}
+
+.tab-link:hover {
+    background-color: #eee;
+}
+
+/* Estilo da aba que está ATIVA */
+.tab-link.active {
+    background-color: #fff;
+    color: #000;
+    font-weight: bold;
+    /* Move a aba 1px para baixo para "conectar" com o conteúdo */
+    transform: translateY(1px); 
+    border-bottom: 1px solid #fff;
+}
+
+/* Container do conteúdo (onde os canvases vivem) */
+#graficos-content {
+    padding: 10px;
+    background-color: #fff;
+    /* Define uma altura fixa para o container do gráfico */
+    /* Ajuste este valor conforme necessário */
+    height: 400px; 
+}
+
+/* Garante que o canvas ocupe o espaço do container */
+#graficos-content canvas {
+    width: 100% !important;
+    height: 100% !important;
+}

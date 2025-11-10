@@ -162,6 +162,7 @@ function configurarFiltros(appCache, anosDisponiveis, atualizarCallback) {
 
     // Configuração inicial dos filtros e primeira chamada para carregar os dados.
     carregarChartJs();
+    configurarAbasGraficos();
     atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modoSelect.value, appCache.projecao);
     const projetosSelecionadosInicial = getSelectItems(projSelect);
     atualizarFiltroContas(contaSelect, appCache.projetosMap, appCache.contasMap, projetosSelecionadosInicial);
@@ -1003,6 +1004,59 @@ function renderizarGraficoMensal(labels, dadosRecebimentos, dadosPagamentos) {
             }
         }
     });
+}
+/**
+ * Alterna a visibilidade dos gráficos na interface de abas.
+ * @param {string} idCanvasParaMostrar - O ID do canvas que deve ser exibido.
+ * @param {HTMLElement} abaAtiva - O elemento do botão (aba) que foi clicado.
+ */
+function mostrarAbaGrafico(idCanvasParaMostrar, abaAtiva) {
+    // 1. Esconde todos os canvases dentro do container
+    const container = document.getElementById('graficos-content');
+    if (container) {
+        const canvases = container.querySelectorAll('canvas');
+        canvases.forEach(canvas => canvas.style.display = 'none');
+    }
+    
+    // 2. Remove a classe 'active' de todas as abas
+    const abas = document.querySelectorAll('.grafico-tabs .tab-link');
+    abas.forEach(aba => aba.classList.remove('active'));
+
+    // 3. Mostra o canvas selecionado
+    const canvasParaMostrar = document.getElementById(idCanvasParaMostrar);
+    if (canvasParaMostrar) {
+        canvasParaMostrar.style.display = 'block';
+    }
+
+    // 4. Adiciona a classe 'active' à aba clicada
+    if (abaAtiva) {
+        abaAtiva.classList.add('active');
+    }
+}
+/**
+ * Configura os event listeners para os botões das abas dos gráficos.
+ * Deve ser chamada uma vez durante a inicialização.
+ */
+function configurarAbasGraficos() {
+    const btnSaldo = document.getElementById('tab-btn-saldo');
+    const btnAcumulado = document.getElementById('tab-btn-acumulado');
+    const btnMensal = document.getElementById('tab-btn-mensal');
+
+    if (btnSaldo) {
+        btnSaldo.addEventListener('click', (e) => {
+            mostrarAbaGrafico('graficoSaldoCaixa', e.currentTarget);
+        });
+    }
+    if (btnAcumulado) {
+        btnAcumulado.addEventListener('click', (e) => {
+            mostrarAbaGrafico('graficoRecebientoPagamentoAcumulado', e.currentTarget);
+        });
+    }
+    if (btnMensal) {
+        btnMensal.addEventListener('click', (e) => {
+            mostrarAbaGrafico('graficoEntradasSaidasMensal', e.currentTarget);
+        });
+    }
 }
 
 //5 - Fluxo de caixa diário

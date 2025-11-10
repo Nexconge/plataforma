@@ -3,7 +3,7 @@
 import { buscarTitulos, buscarValoresEstoque } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV37.js';
 import { configurarFiltros, atualizarVisualizacoes, 
-    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV73.js';
+    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV74.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
