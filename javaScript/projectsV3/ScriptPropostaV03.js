@@ -300,11 +300,9 @@ async function gerarProposta(username) {
         );
     });
     if (faltando.length > 0) {
-        alert("⚠️ Preencha todos os campos obrigatórios antes de gerar a proposta!");
+        alert("Preencha todos os campos obrigatórios antes de gerar a proposta!");
         return; // interrompe a função
     }
-
-    console.log("Dados coletados e campos validados, iniciando construção do pdf.");
 
     // ----------------------------
     // Geração do PDF
@@ -314,12 +312,19 @@ async function gerarProposta(username) {
     let endX;
     const hoje = new Date();
 
-    console.log("criado objeto jsPDF.");
-
     try {
         console.log("Adicionando imagem do timbrado via Base64...");
         const timbradoBase64 = await carregarTimbrado64();
-        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+        try {
+            if (timbradoBase64) {
+                doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+                console.log("Imagem do timbrado adicionada.");
+            } else {
+                console.log("Sem timbrado, continuando geração do PDF.");
+            }
+        } catch (e) {
+        console.warn("Erro ao adicionar timbrado:", e);
+        }
         console.log("Imagem do timbrado adicionada com sucesso.");
 
         // Título
@@ -415,7 +420,16 @@ async function gerarProposta(username) {
         // ----------------------------
         // Segunda Página - Termo de Intenção de Compra
         doc.addPage();
-        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+        try {
+            if (timbradoBase64) {
+                doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+                console.log("Imagem do timbrado adicionada.");
+            } else {
+                console.log("Sem timbrado, continuando geração do PDF.");
+            }
+        } catch (e) {
+        console.warn("Erro ao adicionar timbrado:", e);
+        }
 
         // Adicionar título
         doc.setFontSize(18);
@@ -481,17 +495,24 @@ async function gerarProposta(username) {
 }
 
 async function carregarTimbrado64() {
-    const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/TimbradoWF.txt";
-    let base64;
-
-    try {
-        const response = await fetch(url);
-        base64 = await response.text(); // pega o conteúdo como texto
-    } catch (err) {
-        console.error("Erro ao carregar arquivo:", err);
+  const fimUrl = document.getElementById("empreendimento2").value;
+  const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/" + fimUrl + ".txt";
+  
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      const base64 = await response.text();
+      return base64.trim(); // remove possíveis quebras de linha
+    } else {
+      console.warn("Timbrado não encontrado:", url);
+      return null;
     }
-    return base64;
+  } catch (err) {
+    console.error("Erro ao carregar timbrado:", err);
+    return null;
+  }
 }
+
 
 // Expõe a função principal para o Bubble, tornando-a "global"
 // O nome que o Bubble vai chamar é "abrirModalProposta"

@@ -15,22 +15,7 @@ class MapaLotesManager {
         this._handleZoneToggle = this._handleZoneToggle.bind(this);
     }
 
-    // --- Inicialização ---
-    // MUDANÇA: A função agora espera um JSON com a lista de empreendimentos (id e nome)
     async init(empreendimentosJSON) {
-        /*if (!document.getElementById(this.mapId) || !empreendimentosJSON) {
-            console.error("Div do mapa ou JSON de empreendimentos não encontrados.");
-            return;
-        }
-
-        try {
-            // Tenta parsear o JSON recebido do Bubble
-            this.allowedEmpreendimentos = JSON.parse(empreendimentosJSON);
-        } catch (e) {
-            console.error("Erro ao parsear JSON de empreendimentos:", e);
-            return;
-        }*/
-
         this._initMap();
         this._setupEventListeners();
         this._installQuadraZoomHandler(this.map);
@@ -44,7 +29,7 @@ class MapaLotesManager {
         }
 
         this._renderLotes(this.allLotes);
-        //this._populateEmpreendimentoFilter();
+        //this._populateEmpreendimentoFilter(); //O bubble agora faz essa parte
         this._centralizeView();
     }
 
@@ -53,10 +38,7 @@ class MapaLotesManager {
         const urlBase = this.urlAPI;
         let todosOsLotes = [];
         let cursor = 0;
-        const limit = 100; // O Bubble permite até 100 por página
-
-        console.log("Iniciando busca paginada de lotes...");
-
+        const limit = 100; 
         while (true) {
             // Monta a URL com os parâmetros de paginação
             const params = new URLSearchParams({
@@ -64,7 +46,7 @@ class MapaLotesManager {
                 limit: limit.toString()
             });
             const urlComParams = `${urlBase}?${params.toString()}`;
-
+            console.log("Iniciando busca dos lotes");
             try {
                 // ATENÇÃO: A API de Dados usa GET, não POST.
                 // O Bubble aplicará as Regras de Privacidade automaticamente no servidor.
@@ -84,7 +66,6 @@ class MapaLotesManager {
 
                 // O Bubble nos informa quantos registros ainda faltam
                 const remaining = data.response.remaining;
-                console.log(`Recebidos ${novosLotes.length} lotes. Faltam: ${remaining}`);
 
                 if (remaining === 0) {
                     break; // Sai do loop se não houver mais lotes
@@ -323,9 +304,12 @@ class MapaLotesManager {
             "lateral2": String(lote.Lateral),
             "valor_metro2": String(lote.ValorM2),
             "valor_total2": String(lote.Valor),
-            "indice2": String(lote.IndiceConstrutivo)
+            "indice2": String(lote.IndiceConstrutivo),
+            "empreendimento2": lote.Empreendimento
         };
-
+        
+        console.log(lote.Empreendimento)
+        console.log(lote.Empreendimento.Nome || null)
         for (const id in campos) {
             const el = document.getElementById(id);
             if (el) {
@@ -341,7 +325,7 @@ class MapaLotesManager {
             const cor = this._getLoteColor(polygon.loteData);
             polygon.setStyle({ weight: 0.6, fillColor: cor, color: "black" });
         }
-        const formIds = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2"];
+        const formIds = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         formIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = "";
