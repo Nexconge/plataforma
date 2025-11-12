@@ -300,11 +300,9 @@ async function gerarProposta(username) {
         );
     });
     if (faltando.length > 0) {
-        alert("⚠️ Preencha todos os campos obrigatórios antes de gerar a proposta!");
+        alert("Preencha todos os campos obrigatórios antes de gerar a proposta!");
         return; // interrompe a função
     }
-
-    console.log("Dados coletados e campos validados, iniciando construção do pdf.");
 
     // ----------------------------
     // Geração do PDF
@@ -314,12 +312,10 @@ async function gerarProposta(username) {
     let endX;
     const hoje = new Date();
 
-    console.log("criado objeto jsPDF.");
-
     try {
         console.log("Adicionando imagem do timbrado via Base64...");
         const timbradoBase64 = await carregarTimbrado64();
-        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+        if (timbradoBase64){doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297)};
         console.log("Imagem do timbrado adicionada com sucesso.");
 
         // Título
@@ -415,7 +411,7 @@ async function gerarProposta(username) {
         // ----------------------------
         // Segunda Página - Termo de Intenção de Compra
         doc.addPage();
-        doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+        if (timbradoBase64){doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297)};
 
         // Adicionar título
         doc.setFontSize(18);
@@ -481,7 +477,8 @@ async function gerarProposta(username) {
 }
 
 async function carregarTimbrado64() {
-    const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/TimbradoWF.txt";
+    const fimUrl = document.getElementById("empreendimento2").value;
+    const url = "https://raw.githubusercontent.com/Nexconge/plataforma/refs/heads/main/pngs/" + fimUrl + ".txt";
     let base64;
 
     try {
