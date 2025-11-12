@@ -307,7 +307,9 @@ class MapaLotesManager {
             "indice2": String(lote.IndiceConstrutivo),
             "empreendimento2": lote.Empreendimento
         };
-
+        
+        console.log(lote.Empreendimento)
+        console.log(lote.Empreendimento.Nome || null)
         for (const id in campos) {
             const el = document.getElementById(id);
             if (el) {
