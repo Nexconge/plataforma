@@ -1,7 +1,7 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos, buscarValoresEstoque } from './apiV05.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV38.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV39.js';
 import { configurarFiltros, atualizarVisualizacoes, 
     obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV75.js';
 
@@ -213,9 +213,9 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
         appCache.categoriasMap.set(c.codigo, c.Categoria);
     });
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []) }));
+    projetos.forEach(p => appCache.projetosMap.set(String(p.codProj), { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
     contas.forEach(c => appCache.contasMap.set((c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
-    departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
+    departamentos.forEach(d => appCache.departamentosMap.set(String(d.codigo), d.descricao));
 
     const anoAtual = [String(new Date().getFullYear())];
     appCache.userId = id;
