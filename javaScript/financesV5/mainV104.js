@@ -40,8 +40,8 @@ async function handleFiltroChange() {
     
     // 1. Obtém o estado atual de todos os filtros da UI.
     let filtrosAtuais = obterFiltrosAtuais();
-    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map() : [];
-    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos.map() : [];
+    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(String) : [];
+    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos.map(String) : [];
 
     // Se nenhuma conta estiver selecionada, limpa as tabelas.
     if (contasSelecionadas.length === 0) {
