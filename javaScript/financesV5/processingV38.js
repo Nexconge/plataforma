@@ -25,14 +25,14 @@ function gerarDepartamentosObj(departamentos, valorLancamento) {
         return departamentos.map(depto => {
             const valorRateio = valorLancamento * ((depto.PercDepto ?? 100) / 100);
             return {
-                CodDpto: depto.CODDepto || 0,
+                CodDpto: depto.CODDepto || "0",
                 ValorDepto: valorRateio
             };
         });
     }
     // Caso contrário, atribui 100% do valor a um departamento padrão "Outros".
     return [{
-        CodDpto: 0, // 0 representa "Outros Departamentos"
+        CodDpto: "0", // 0 representa "Outros Departamentos"
         ValorDepto: valorLancamento
     }];
 }
@@ -207,7 +207,7 @@ function extrairDadosDosTitulos(titulos, contaId) {
             
             // Monta o objeto de lançamento e adiciona ao array de lançamentos processados
             // Filtra lançamentos que não foram pagos por está conta  
-            if (Number(lancamento.CODContaC) === contaId) {
+            if (lancamento.CODContaC === contaId) {
                 lancamentosProcessados.push({
                     Natureza: titulo.Natureza,
                     DataLancamento: lancamento.DataLancamento,
@@ -306,7 +306,7 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     lancamentos.forEach(lancamento => {
         
         // Ignora lançamentos que não pertencem à conta que está sendo processada.
-        if (contaId != Number(lancamento.CODContaC)) return;
+        if (contaId != lancamento.CODContaC) return;
         if (!lancamento || !lancamento.DataLancamento || !lancamento.CODContaC) return;
         
         // Cria a chave de agregação no formato 'MM-AAAA'.
@@ -431,7 +431,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
         if (!valor) continue;
 
         // --- (1) Fluxo de caixa (pagamentos efetivos) ---
-        if (item.DataPagamento && item.CODContaPagamento == contaId) {
+        if (item.DataPagamento && item.CODContaPagamento === contaId) {
             const [dia, mes, ano] = item.DataPagamento.split('/');
             const chavePeriodo = `${mes.padStart(2, '0')}-${ano}`;
 
@@ -441,7 +441,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
         }
 
         // --- (2) Projeções de A Pagar / A Receber ---
-        if (item.DataEmissao && item.DataVencimento && item.CODContaEmissao == contaId) {
+        if (item.DataEmissao && item.DataVencimento && item.CODContaEmissao === contaId) {
             const [, mesE, anoE] = item.DataEmissao.split('/');
             const [, mesV, anoV] = item.DataVencimento.split('/');
             const chaveEmissao = `${mesE.padStart(2, '0')}-${anoE}`;

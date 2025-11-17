@@ -215,8 +215,8 @@ function obterFiltrosAtuais() {
         ? [...anosParaProcessar].sort()
         : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${valorSelecionado}`);
 
-    const projetos = getSelectItems(projSelect).map(Number);
-    const contas = getSelectItems(contaSelect).map(Number);
+    const projetos = getSelectItems(projSelect);
+    const contas = getSelectItems(contaSelect);
 
     return { modo, anos: anosParaProcessar, projetos, contas, colunas };
 }

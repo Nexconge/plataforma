@@ -1,9 +1,9 @@
 // main.js - Finances
 // Importa funções dos outros modulos
 import { buscarTitulos, buscarValoresEstoque } from './apiV05.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV37.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV38.js';
 import { configurarFiltros, atualizarVisualizacoes, 
-    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV74.js';
+    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV75.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -40,8 +40,8 @@ async function handleFiltroChange() {
     
     // 1. Obtém o estado atual de todos os filtros da UI.
     let filtrosAtuais = obterFiltrosAtuais();
-    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(String) : [];
-    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos.map(String) : [];
+    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas : [];
+    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos : [];
 
     // Se nenhuma conta estiver selecionada, limpa as tabelas.
     if (contasSelecionadas.length === 0) {
@@ -213,8 +213,8 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
         appCache.categoriasMap.set(c.codigo, c.Categoria);
     });
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
-    contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
+    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []) }));
+    contas.forEach(c => appCache.contasMap.set((c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
     departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
 
     const anoAtual = [String(new Date().getFullYear())];
