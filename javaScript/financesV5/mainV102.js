@@ -1,6 +1,6 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos, buscarValoresEstoque } from './apiV04.js';
+import { buscarTitulos, buscarValoresEstoque } from './apiV05.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV37.js';
 import { configurarFiltros, atualizarVisualizacoes, 
     obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV74.js';
@@ -40,8 +40,8 @@ async function handleFiltroChange() {
     
     // 1. Obtém o estado atual de todos os filtros da UI.
     let filtrosAtuais = obterFiltrosAtuais();
-    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
-    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos.map(Number) : [];
+    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map() : [];
+    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos.map() : [];
 
     // Se nenhuma conta estiver selecionada, limpa as tabelas.
     if (contasSelecionadas.length === 0) {
