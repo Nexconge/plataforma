@@ -58,5 +58,36 @@ async function buscarTitulos(filtros) {
     }
 }
 
+async function buscarValoresEstoque(filtros) {
+    let baseURL = "https://plataforma-geourb.bubbleapps.io/";
+    if (window.location.href.includes("version-test")) {
+        baseURL += "version-test";
+    } else {
+        baseURL += "version-live";
+    }
+    const API_URL = `${baseURL}/api/1.1/wf/buscarsaldosestoque`;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(filtros),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Falha ao buscar estoques: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Erro crítico ao buscar estoques:", error);
+        // Notificação para o usuário na UI
+        alert("Ocorreu um erro ao buscar os dados. Verifique o console para mais detalhes.");
+        // Retorna um array vazio em caso de erro para não quebrar a aplicação
+        return []; 
+    }
+}
 // Exporta a função para ser utilizada em outros módulos.
-export { buscarTitulos };
+export { buscarTitulos, buscarValoresEstoque};

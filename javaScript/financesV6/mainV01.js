@@ -1,8 +1,9 @@
 // main.js - Finances
 // Importa funções dos outros modulos
-import { buscarTitulos } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV13.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV05.js';
+import { buscarTitulos, buscarValoresEstoque } from './apiV01.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV01.js';
+import { configurarFiltros, atualizarVisualizacoes, 
+    obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV01.js';
 
 /**
  * Cache central da aplicação. Armazena dados para evitar requisições repetidas e
@@ -14,6 +15,7 @@ let appCache = {
     userType: null,
     // Armazena os dados já processados para cada conta bancária. A chave é o ID da conta.
     matrizesPorConta: new Map(),
+    matrizesPorProjeto: new Map(),
     // Mapas de apoio para traduzir códigos em descrições.
     categoriasMap: new Map(), 
     classesMap: new Map(),
@@ -38,35 +40,45 @@ async function handleFiltroChange() {
     
     // 1. Obtém o estado atual de todos os filtros da UI.
     let filtrosAtuais = obterFiltrosAtuais();
-    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas.map(Number) : [];
+    const contasSelecionadas = filtrosAtuais ? filtrosAtuais.contas : [];
+    const projetosSelecionados = filtrosAtuais ? filtrosAtuais.projetos : [];
 
     // Se nenhuma conta estiver selecionada, limpa as tabelas.
     if (contasSelecionadas.length === 0) {
         exibirTabelasVazias();
+        return;
     }
 
     // 2. Identifica quais das contas selecionadas ainda não tiveram seus dados buscados e processados.
     const contasParaProcessar = contasSelecionadas.filter(c => !appCache.matrizesPorConta.has(c));
+    const projetosParaProcessar = projetosSelecionados.filter(p => !appCache.matrizesPorProjeto.has(p));
 
     // 3. Se houver contas novas, busca os dados via API apenas para elas.
-    if (contasParaProcessar.length > 0) {
+    if (contasParaProcessar.length > 0 || projetosParaProcessar.length > 0) {
         // Coloca um placeholder no cache para evitar múltiplas buscas simultâneas da mesma conta.
         contasParaProcessar.forEach(c => appCache.matrizesPorConta.set(c, null));
+        projetosParaProcessar.forEach(p => appCache.matrizesPorProjeto.set(p, null));
 
         // Dispara as requisições para a API em paralelo para cada nova conta.
         const promises = contasParaProcessar.map(conta => buscarTitulos({ contas: [conta] }));
+        promises.push(...projetosParaProcessar.map(proj => buscarValoresEstoque({
+            periodos: filtrosAtuais.colunas,
+            projeto: [proj]
+        })));
+        
         const responses = await Promise.all(promises);
 
         // Processa a resposta de cada conta individualmente.
         for (let i = 0; i < contasParaProcessar.length; i++) {
             const contaId = contasParaProcessar[i];
             const apiResponse = responses[i];
-
+            console.log(apiResponse.response.movimentos)
             // Extrai os dados da resposta da API.
             let dadosExtraidos = { lancamentos: [], titulos: [], capitalDeGiro: [] };
             if (apiResponse && apiResponse.response && typeof apiResponse.response.movimentos === 'string' && apiResponse.response.movimentos.length > 2) {
                 try {
                     const titulos = JSON.parse(`[${apiResponse.response.movimentos}]`);
+                    console.log(titulos)
                     const { lancamentosProcessados, titulosEmAberto, capitalDeGiro } = extrairDadosDosTitulos(titulos, contaId);
                     
                     dadosExtraidos.lancamentos = lancamentosProcessados;
@@ -76,7 +88,6 @@ async function handleFiltroChange() {
                     console.error(`Erro ao processar JSON para a conta ${contaId}:`, e);
                 }
             }
-
             // Gera as matrizes (realizado, a realizar, capital de giro) para esta conta.
             // A função retorna um objeto com a estrutura: { realizado: {...}, arealizar: {...}, capitalDeGiro: {...} }
             const dadosProcessadosConta = processarDadosDaConta(appCache, dadosExtraidos, contaId);
@@ -84,12 +95,38 @@ async function handleFiltroChange() {
             // Armazena os dados processados da conta no cache.
             appCache.matrizesPorConta.set(contaId, dadosProcessadosConta);
         }
+
+        // Processa as para estoque de cada projeto individualmente.
+        for (let i = 0; i < projetosParaProcessar.length; i++) {
+            const projId = projetosParaProcessar[i];
+            // Os responses de estoque começam *após* os responses de contas
+            const apiResponse = responses[contasParaProcessar.length + i]; 
+
+            const matrizEstoque = { '(+) Estoque': {} };
+            const chavesComDados = new Set();
+
+            if (apiResponse && apiResponse.response && Array.isArray(apiResponse.response.Saldos)) {
+                apiResponse.response.Saldos.forEach(saldo => {
+                    const periodo = saldo.Periodo;
+                    if (periodo) {
+                        // Formato que o mergeGenericoMensal entende
+                        matrizEstoque['(+) Estoque'][periodo] = (matrizEstoque['(+) Estoque'][periodo] || 0) + saldo.Valor;
+                        chavesComDados.add(periodo);
+                    }
+                });
+            }
+            appCache.matrizesPorProjeto.set(projId, matrizEstoque);
+        }
     }
 
     // 4. Junta os dados de todas as contas selecionadas que estão no cache.
     const dadosParaJuntar = contasSelecionadas
         .map(id => appCache.matrizesPorConta.get(id))
         .filter(Boolean); // Filtra nulos/placeholders
+    
+    const dadosEstoque = projetosSelecionados
+        .map(id => appCache.matrizesPorProjeto.get(id))
+        .filter(Boolean);
 
     // Atualiza as opções do filtro de ano com base nos dados disponíveis das contas selecionadas.
     const anoSelect = document.getElementById('anoSelect');
@@ -114,8 +151,8 @@ async function handleFiltroChange() {
     
     // Consolida os dados de todas as contas selecionadas em uma única matriz para exibição.
     // Retorna um objeto final com a estrutura: { matrizDRE, matrizDetalhamento, ... }
-    const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao);
-    
+    const dadosParaExibir = mergeMatrizes(dadosParaJuntar, filtrosAtuais.modo, filtrosAtuais.colunas, appCache.projecao, dadosEstoque);
+
     // 5. Renderiza as tabelas na UI com os dados finais.
     atualizarVisualizacoes(dadosParaExibir, filtrosAtuais.colunas, appCache);
     document.body.classList.remove('loading');
@@ -160,6 +197,7 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
     appCache = {
         userId: null, userType: null,
         matrizesPorConta: new Map(),
+        matrizesPorProjeto: new Map(),
         categoriasMap: new Map(), classesMap: new Map(),
         projetosMap: new Map(), contasMap: new Map(), departamentosMap: new Map(),
         projecao: "realizado",
@@ -177,9 +215,9 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
         appCache.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
         appCache.categoriasMap.set(c.codigo, c.Categoria);
     });
-    projetos.forEach(p => appCache.projetosMap.set(p.codProj, { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
-    contas.forEach(c => appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
-    departamentos.forEach(d => appCache.departamentosMap.set(d.codigo, d.descricao));
+    projetos.forEach(p => appCache.projetosMap.set(String(p.codProj), { nome: p.nomeProj, contas: (p.contas || []).map(String) }));
+    contas.forEach(c => appCache.contasMap.set((c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni }));
+    departamentos.forEach(d => appCache.departamentosMap.set(String(d.codigo), d.descricao));
 
     const anoAtual = [String(new Date().getFullYear())];
     appCache.userId = id;
