@@ -291,6 +291,38 @@ function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) 
         }
     }
 }
+/**
+ * Atualiza o <select> de contas, mostrando apenas as contas associadas aos projetos selecionados.
+ * @param {HTMLSelectElement} contaSelect - O elemento select de contas.
+ * @param {Map} projetosMap - O mapa de projetos do cache.
+ * @param {Map} contasMap - O mapa de contas do cache.
+ * @param {Array<string>} projetosSelecionados - IDs dos projetos selecionados.
+ */
+function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
+    const contasProjetos = new Set();
+    projetosSelecionados.forEach(codProj => {
+        const projeto = projetosMap.get(String(codProj)); // Garantir que a chave seja string
+        if (projeto) {
+            projeto.contas.forEach(conta => contasProjetos.add(conta));
+        }
+    });
+
+    contaSelect.innerHTML = '';
+    Array.from(contasMap.entries())
+        .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
+        .forEach(([codigo, { descricao }]) => {
+            if (contasProjetos.has(codigo)) {
+                const option = document.createElement('option');
+                option.value = codigo; option.textContent = descricao;
+                contaSelect.appendChild(option);
+            }
+        });
+    
+    if (contaSelect.options.length > 0) {
+        contaSelect.options[0].selected = true;
+    }
+}
+
 
 // --- Funções de Renderização de Tabelas ---
 /**
