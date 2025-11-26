@@ -1,6 +1,6 @@
 // mainV01.js
-import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV01.js';
+import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV05.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV03.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV02.js';
 
 let appCache = {
