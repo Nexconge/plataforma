@@ -143,26 +143,32 @@ function compararChaves(a, b) {
  * //   capitalDeGiro: { saldoInicial, fluxoDeCaixaMensal, contasAReceber, contasAPagar }
  * // }
  */
-function processarDadosDaConta(AppCache, dadosApi, contaId) {
+function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno = 0) {
     const { lancamentos, titulos , capitalDeGiro } = dadosApi;
 
-    //Obtém o saldo inicial da conta para passá-lo para a função de processamento.
-    const contaInfo = AppCache.contasMap.get(String(contaId));
-    const saldoIniCC = contaInfo ? Number(contaInfo.saldoIni) : 0;
+    // MUDANÇA: O saldo inicial agora é passado explicitamente pela API para este recorte de tempo
+    const saldoIniCC = Number(saldoInicialExterno);
     
     // Processa os dados para o modo REALIZADO (transações passadas).
     const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
-    // O saldo inicial do "A Realizar" é o saldo da conta + o resultado total do "Realizado".
+    
+    // Lógica para A REALIZAR:
+    // Se estivermos processando um ano específico, o saldo inicial do "A Realizar" 
+    // deve seguir a lógica do realizado ou do saldo final do realizado.
+    // Assumindo que a API retorna o saldo inicial do ano, usamos ele + resultado realizado.
     const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
-    // Processa os dados para o modo A REALIZAR (previsões futuras).
+    
     const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
+    
     // Processa os dados para o relatório de Capital de Giro.
-    const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId);
+    // MUDANÇA: Passamos o saldoInicialExterno também para o capital de giro para alinhar o fluxo
+    const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId, saldoIniCC);
 
     return {
         realizado: dadosRealizado,
         arealizar: dadosARealizar,
-        capitalDeGiro: dadosCapitalDeGiro
+        capitalDeGiro: dadosCapitalDeGiro,
+        saldoInicialBase: saldoIniCC // Guardamos para referência futura no merge
     };
 }
 /**
@@ -394,26 +400,15 @@ function processarRealizadoRealizar(dadosBase, lancamentos, contaId, saldoIni) {
     
     return { matrizDRE, matrizDetalhamento, chavesComDados, valorTotal, entradasESaidas, saldoIni, fluxoDeCaixa };
 }
+
 /**
  * Pré-processa os dados de capital de giro para uma única conta.
- * A função organiza os itens em listas de "contas a receber" e "contas a pagar" e calcula o fluxo de caixa mensal já realizado.
- * @param {object} dadosBase - O cache da aplicação (`appCache`).
- * @param {Array} capitalDeGiro - A lista de itens de capital de giro vinda de `extrairDadosDosTitulos`.
- * @param {number} contaId - O ID da conta sendo processada.
- * @returns {object} Um objeto com os dados pré-processados para a análise de capital de giro.
- * // Estrutura do objeto de retorno:
- * // {
- * //   saldoInicial: 5000,
- * //   fluxoDeCaixaMensal: { "03-2025": 10000, "04-2025": -5000 },
- * //   contasAReceber: [ { ...itemProcessado } ],
- * //   contasAPagar: [ { ...itemProcessado } ]
- * // }
  */
-function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
-    const contaInfo = dadosBase.contasMap.get(String(contaId));
-    const saldoInicial = contaInfo ? Number(contaInfo.saldoIni) : 0;
+function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialParam) {
+    // Usa o parâmetro recebido ao invés de buscar no contasMap estático
+    const saldoInicial = Number(saldoInicialParam) || 0;
+    
     const todasAsChaves = new Set();
-
     const fluxoDeCaixaMensal = {};
     const matrizCapitalGiro = {};
     const linhasMatriz = [
@@ -425,7 +420,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
     linhasMatriz.forEach(linha => matrizCapitalGiro[linha] = {});
 
     const anoAtual = new Date().getFullYear();
-    const mesAtual = new Date().getMonth() + 1; // +1 porque getMonth() é 0-indexed
+    const mesAtual = new Date().getMonth() + 1; 
     const chaveMesAtual = `${String(mesAtual).padStart(2, '0')}-${anoAtual}`;
 
     if (!Array.isArray(capitalDeGiro)) return { saldoInicial, fluxoDeCaixaMensal, matrizCapitalGiro };
@@ -434,75 +429,59 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
         const valor = item.Natureza === 'P' ? -item.ValorTitulo : item.ValorTitulo;
         if (!valor) continue;
 
-        // --- (1) Fluxo de caixa (pagamentos efetivos) ---
+        // (1) Fluxo de caixa (pagamentos efetivos)
         if (item.DataPagamento && String(item.CODContaPagamento) === contaId) {
             const [dia, mes, ano] = item.DataPagamento.split('/');
             const chavePeriodo = `${mes.padStart(2, '0')}-${ano}`;
-
             if(compararChaves(chavePeriodo, chaveMesAtual) >= 0) continue;
             fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
             todasAsChaves.add(chavePeriodo);
         }
 
-        // --- (2) Projeções de A Pagar / A Receber ---
+        // (2) Projeções de A Pagar / A Receber
         if (item.DataEmissao && item.DataVencimento && String(item.CODContaEmissao) === contaId) {
             const [, mesE, anoE] = item.DataEmissao.split('/');
             const [, mesV, anoV] = item.DataVencimento.split('/');
             const chaveEmissao = `${mesE.padStart(2, '0')}-${anoE}`;
             const chaveVencimento = `${mesV.padStart(2, '0')}-${anoV}`;
 
-            // Caso tenha pagamento registrado, considerar até o mês de pagamento
             let chaveFinal = chaveVencimento;
             if (item.DataPagamento) {
                 const [, mesP, anoP] = item.DataPagamento.split('/');
                 chaveFinal = `${mesP.padStart(2, '0')}-${anoP}`;
             }
 
-            if (!chaveEmissao || !chaveFinal) {
-                console.warn('Chave inválida, pulando item:', item);
-                continue;
-            }
+            if (!chaveEmissao || !chaveFinal) continue;
 
-            // Itera pelos meses entre emissão e pagamento/vencimento
             if (compararChaves(chaveEmissao, chaveFinal) <= 0) {
                 let chave = chaveEmissao;
                 do {
-                    if (!chave) break; // Segurança
-
+                    if (!chave) break;
                     const proximaChave = incrementarMes(chave);
-                    // A projeção existe até o mês do vencimento/pagamento.
-                    // O valor é de "curto prazo" no mês final.
                     if(compararChaves(chave, chaveMesAtual) >= 0) break;
                     const isUltimo = compararChaves(chave, chaveFinal) === 0;
 
                     if (item.Natureza === 'P') {
                         matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] = (matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] || 0) + valor;
-                        if (isUltimo){
-                            matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;     
-                        } else{
-                            matrizCapitalGiro['Longo Prazo AP'][chave] = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + valor;
-                        }
+                        if (isUltimo) matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;     
+                        else matrizCapitalGiro['Longo Prazo AP'][chave] = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + valor;
                     } else if (item.Natureza === 'R') {
                         matrizCapitalGiro['(+) Clientes a Receber'][chave] = (matrizCapitalGiro['(+) Clientes a Receber'][chave] || 0) + valor;
-                        if (isUltimo){
-                            matrizCapitalGiro['Curto Prazo AR'][chave] = (matrizCapitalGiro['Curto Prazo AR'][chave] || 0) + valor;
-                        } else{
-                            matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
-                        }
+                        if (isUltimo) matrizCapitalGiro['Curto Prazo AR'][chave] = (matrizCapitalGiro['Curto Prazo AR'][chave] || 0) + valor;
+                        else matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
                     }
 
                     todasAsChaves.add(chave)
-                    if (isUltimo) break; // Sai do loop após processar o mês final
+                    if (isUltimo) break;
                     chave = proximaChave;
-
                 } while (chave && compararChaves(chave, chaveFinal) <= 0);
             }
         }
     }
 
-    // --- (3) Preenche a linha '(+) Caixa' usando o fluxo de caixa mensal ---
-    const chavesOrdenadas = Array.from(todasAsChaves).sort(compararChaves); // garante ordem temporal
-    let saldoAcumulado = saldoInicial;
+    // (3) Preenche a linha '(+) Caixa'
+    const chavesOrdenadas = Array.from(todasAsChaves).sort(compararChaves);
+    let saldoAcumulado = saldoInicial; // Usa o saldo passado por parâmetro
 
     chavesOrdenadas.forEach(chave => {
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
@@ -536,59 +515,54 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId) {
  * //   matrizCapitalGiro: { "(+) Caixa": { "01-2025": 5000, ... }, ... }
  * // }
  */
-function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque) {
-    // Seleciona os dados da projeção correta E anexa a matriz de capital de giro ao objeto 'realizado'.
+function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque, saldoInicialExterno = null) {
     const dadosSelecionados = dadosProcessados.map(dadosConta => {
         const projData = dadosConta[projecao.toLowerCase()];
         if (!projData) return null;
 
-        // Se a projeção for 'realizado', injeta a matrizCapitalGiro para que ela não seja perdida.
         if (projecao.toLowerCase() === 'realizado' && dadosConta.capitalDeGiro) {
+            projData.matrizCapitalGiro = dadosConta.capitalDeGiro.matrizCapitalGiro;
+        }
+        // Para "A Realizar", anexamos o capital de giro também
+        if (projecao.toLowerCase() === 'arealizar' && dadosConta.capitalDeGiro) {
             projData.matrizCapitalGiro = dadosConta.capitalDeGiro.matrizCapitalGiro;
         }
         return projData;
     }).filter(Boolean);
 
-    // Retorna um resultado vazio se não houver dados de entrada.
     if (!dadosSelecionados || dadosSelecionados.length === 0) {
-        return { matrizDRE: {}, matrizDetalhamento: {},
-        matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
+        return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
     }
 
-    // 1. Mescla os dados mensais de todas as contas.
     const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados, projecao, dadosEstoque);
 
-    // 2. Agrega os dados para o formato ANUAL, se necessário.
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged, projecao)
         : monthlyMerged;
 
-    // 3. Obtém a primeira e a última chave dos períodos disponíveis para controle na UI.
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
-    // 4. Somo o saldo inicial das contas selecionadas
-    let saldoInicialConsolidado = dadosProcessados.reduce((acc, dadosConta) => {
-        const saldoIni = dadosConta[projecao.toLowerCase()]?.saldoIni || 0;
-        return acc + saldoIni;
-    },0);
+    // MUDANÇA: Usa o saldo passado pelo Main.js, se disponível.
+    let saldoInicialConsolidado = 0;
+    if (saldoInicialExterno !== null) {
+        saldoInicialConsolidado = saldoInicialExterno;
+    } else {
+        // Fallback legado
+        saldoInicialConsolidado = dadosProcessados.reduce((acc, dadosConta) => {
+            return acc + (dadosConta.saldoInicialBase || 0);
+        }, 0);
+    }
     
-    // 5. Prepara as colunas e a matriz para o cálculo de totais.
     const matrizDRE = dadosParaExibir.matrizDRE;
-    
-    // Determina se as colunas para o cálculo de balanço são MESES ou ANOS.
     const colunasParaCalcular = gerarPeriodosEntre(PeUChave.primeiraChave, PeUChave.ultimaChave, modo.toLowerCase());
-    // Garante que as linhas de total existam na matriz.
+    
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
     });
     
-    // 6. Executa o cálculo das linhas de total sobre os dados consolidados.
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
-
-    // 7. Calcula a coluna "TOTAL" final.
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
 
-    // Retorna o objeto final, pronto para a renderização.
     return { ...dadosParaExibir };
 }
 /**

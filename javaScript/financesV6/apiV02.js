@@ -27,7 +27,6 @@
  * @returns {Promise<Array>} Uma promessa que resolve para o array de títulos financeiros. Em caso de falha na requisição, retorna um array vazio.
  */
 async function buscarTitulos(filtros) {
-    // Monta a URL da API dependendo do ambiente (teste ou produção)
     let baseURL = "https://plataforma-geourb.bubbleapps.io/";
     if (window.location.href.includes("version-test")) {
         baseURL += "version-test";
@@ -36,25 +35,28 @@ async function buscarTitulos(filtros) {
     }
     const API_URL = `${baseURL}/api/1.1/wf/buscarmovimentos`;
 
+    // O payload aceita:
+    // anos: ["2024"] (Para realizado)
+    // anos: ["AREALIZAR"] (Para a realizar - convenção para a API retornar tudo em aberto + saldo acumulado)
+    const payload = {
+        contas: filtros.contas,
+        anos: filtros.anos 
+    };
+
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(filtros),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         });
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Falha ao buscar titulos: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new Error(`Falha API: ${response.status} - ${errorText}`);
         }
         return await response.json();
     } catch (error) {
-        console.error("Erro crítico ao buscar titulos:", error);
-        // Notificação para o usuário na UI
-        alert("Ocorreu um erro ao buscar os dados. Verifique o console para mais detalhes.");
-        // Retorna um array vazio em caso de erro para não quebrar a aplicação
-        return []; 
+        console.error("Erro buscarTitulos:", error);
+        return { response: { movimentos: [], saldoInicial: 0 } };
     }
 }
 
