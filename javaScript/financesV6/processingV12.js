@@ -376,9 +376,14 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
     
     let saldoAcumulado = saldoInicial;
 
-    console.log("Chaves para Capital de Giro:", todasAsChaves);
-    console.log("Chaves com Caixa:", dadosRealizado.chavesComDados);
-    (dadosRealizado.chavesComDados.union(todasAsChaves)).forEach(chave => {
+    // 1. Cria o Set unificado (como você já fazia)
+    const chavesUnicas = dadosRealizado.chavesComDados.union(todasAsChaves);
+    
+    // 2. Converte para Array e ORDENA cronologicamente usando sua função auxiliar compararChaves
+    const chavesOrdenadas = Array.from(chavesUnicas).sort(compararChaves);
+
+    // 3. Itera sobre a lista ordenada
+    chavesOrdenadas.forEach(chave => {
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
         const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
 
