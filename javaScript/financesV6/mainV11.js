@@ -56,6 +56,7 @@ async function handleFiltroChange() {
                 let fim = anoAtual;
 
                 if (res && res.response) {
+                    console.log("Períodos recebidos da API:", res.response);
                     if (res.response.periodo_ini) inicio = new Date(res.response.periodo_ini).getFullYear();
                     if (res.response.periodo_fim) fim = new Date(res.response.periodo_fim).getFullYear();
                 }
