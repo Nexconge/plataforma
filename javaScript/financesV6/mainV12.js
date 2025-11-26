@@ -56,9 +56,23 @@ async function handleFiltroChange() {
                 let fim = anoAtual;
 
                 if (res && res.response) {
-                    console.log("Períodos recebidos da API:", res.response);
-                    if (res.response.periodo_ini) inicio = new Date(res.response.periodo_ini).getFullYear();
-                    if (res.response.periodo_fim) fim = new Date(res.response.periodo_fim).getFullYear();
+                    
+                    const valIni = res.response.periodo_ini;
+                    const valFim = res.response.periodo_fim;
+
+                    // Verifica se é um número/string de 4 dígitos (ex: 2025 ou "2025")
+                    if (valIni && !isNaN(valIni) && Number(valIni) > 1900) {
+                        inicio = Number(valIni);
+                    } else if (valIni) {
+                        // Fallback: Se vier uma data completa "2025-01-01", aí sim usamos Date
+                        inicio = new Date(valIni).getFullYear();
+                    }
+
+                    if (valFim && !isNaN(valFim) && Number(valFim) > 1900) {
+                        fim = Number(valFim);
+                    } else if (valFim) {
+                        fim = new Date(valFim).getFullYear();
+                    }
                 }
                 
                 const chaveCache = `${id}|${projecaoAtual}`;
