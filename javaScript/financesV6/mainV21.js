@@ -203,8 +203,6 @@ async function handleFiltroChange() {
 
                     // 2. Dados Capital de Giro (Específico)
                     const rawCapitalG = response.dadosCapitalG;
-                    console.log("Raw CapitalG:", rawCapitalG);
-                    console.log("Tipo CapitalG:", JSON.parse(`[${rawCapitalG}]`));
                     if (rawCapitalG && rawCapitalG.length > 2) {
                         try {
                             const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${rawCapitalG}]`), contaId);
