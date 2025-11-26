@@ -384,6 +384,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
 
     // 3. Itera sobre a lista ordenada
     chavesOrdenadas.forEach(chave => {
+        if(compararChaves(chave, chaveMesAtual) >= 0) return;
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
         const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
 
