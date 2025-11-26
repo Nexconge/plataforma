@@ -220,104 +220,74 @@ function obterFiltrosAtuais() {
     return { modo, anos: anosParaProcessar, projetos, contas, colunas };
 }
 /**
- * Atualiza as opções do <select> de ano/período com base nos dados disponíveis e no modo de visualização.
+ * Atualiza as opções do <select> de ano/período com base em um intervalo de anos (range).
  * @param {HTMLSelectElement} anoSelect - O elemento select a ser atualizado.
- * @param {Array<string>} anosDisponiveis - Anos com dados para as contas selecionadas.
+ * @param {number} anoInicio - O ano inicial do intervalo (ex: 2020).
+ * @param {number} anoFim - O ano final do intervalo (ex: 2025).
  * @param {string} modo - 'mensal' ou 'anual'.
  * @param {string} projecao - 'realizado' ou 'arealizar'.
  */
-function atualizarOpcoesAnoSelect(anoSelect, anosDisponiveis, modo, projecao) {
-    //salve o valor atual para tentar preservar a seleção mais tarde
+function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) {
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
-    //Se modo de visualização for mensal, popula com anos disponíveis  
+    const atual = new Date().getFullYear();
+    let start = anoInicio || atual;
+    let end = anoFim || atual;
+
+    if (start > end) { const temp = start; start = end; end = temp; }
+
+    // Regra A REALIZAR: Garante ao menos 5 anos futuros
+    if (projecao === 'arealizar') {
+        if (end < atual + 5) end = atual + 5;
+        if (start < atual) start = atual; 
+    }
+
     if (modo.toLowerCase() === 'mensal') {
-        anosDisponiveis.forEach(ano => {
+        for (let ano = start; ano <= end; ano++) {
             const option = document.createElement('option');
-            option.value = ano;
-            option.textContent = ano;
+            option.value = String(ano);
+            option.textContent = String(ano);
             anoSelect.appendChild(option);
-        });
-        // Preserva a seleção atual se ainda estiver disponível
-        if (anosDisponiveis.includes(valorAtual)) {
+        }
+        
+        // Mantém seleção ou define padrão
+        const valorExiste = Array.from(anoSelect.options).some(op => op.value === valorAtual);
+        if (valorAtual && valorExiste) {
             anoSelect.value = valorAtual;
-        // Se não estiver disponível, seleciona o mais recente para realizado e o mais antigo para a realizar
-        } else if (projecao == "realizado") {
-            anoSelect.value = anosDisponiveis[anosDisponiveis.length - 1] || '';
+        } else if (projecao === "realizado") {
+            anoSelect.value = String(end);
         } else {
-            anoSelect.value = anosDisponiveis[0] || '';
+            anoSelect.value = String(start);
         }
-    // modo de visualização por periodo anual
+
     } else { 
-        const duracaoP = 6; // cada período tem 6 anos
+        // Lógica Anual (blocos de 6 anos)
+        const duracaoP = 6;
         const periodos = [];
-        const anosNums = anosDisponiveis.map(a => Number(a));
-        const anoAtual = new Date().getFullYear();
+        let cursor = start;
+        while (cursor <= end) {
+            periodos.push(cursor);
+            cursor += duracaoP;
+        }
+        periodos.sort((a, b) => b - a);
 
-        // Primeiro período
-        let primeiroInicio;
-        //Se a projeção for a realizar, o primeiro período começa no ano atual + 5 anos
-        if (projecao.toLowerCase() === 'arealizar') {
-            primeiroInicio = anoAtual; // AnoAtual-(AnoAtual+5)
-        } else {
-        // Se a projeção for realizado, o primeiro período começa 5 anos atrás até o ano atual
-            primeiroInicio = anoAtual - duracaoP + 1; // (AnoAtual-5)-AnoAtual
-        }
-
-        const anosDisponiveisSet = new Set(anosNums);
-        // Função que verifica se ao menos um ano do período está disponível
-        const periodoValido = (inicio) => {
-            for (let i = 0; i < duracaoP; i++) {
-                if (anosDisponiveisSet.has(inicio + i)) return true;
-            }
-            return false;
-        };
-        //Adiciona primeiro ano do período inicial e anteriores
-        let inicio = primeiroInicio;
-        while(true){
-            if(periodoValido(inicio)){
-                periodos.push(inicio);
-                inicio = inicio - duracaoP;
-            } else {
-                break;
-            }
-        }
-        //Adiciona primeiro ano dos posteriores ao inicial
-        inicio = primeiroInicio + duracaoP;
-        while(true){
-            if(periodoValido(inicio)){
-                periodos.push(inicio);
-                inicio = inicio + duracaoP;
-            } else {
-                break;
-            }
-        }
-        // Remove duplicados e ordena do mais recente para o mais antigo
-        const periodosUnicos = Array.from(new Set(periodos)).sort((a, b) => b - a);
-        // Transforma os anos inicials em periodos aaaI-aaaF
-        periodosUnicos.forEach(inicio => {
+        periodos.forEach(inicio => {
             const fim = inicio + duracaoP - 1;
             const option = document.createElement('option');
-            option.value = inicio;
+            option.value = inicio; 
             option.textContent = `${inicio}-${fim}`;
             anoSelect.appendChild(option);
         });
-        
-        // Preserva a seleção atual do período se ainda estiver disponível
-        const valorAtualNum = Number(valorAtual);
-        const periodoAtual = periodosUnicos.find(p => valorAtualNum >= p && valorAtualNum <= p + duracaoP - 1);
-        if (periodoAtual !== undefined) {
-            anoSelect.value = periodoAtual;
-        } else if (projecao.toLowerCase() === "realizado") {
-            // pega o último período
-            anoSelect.value = periodosUnicos[0] || '';
+
+        if (valorAtual && Array.from(anoSelect.options).some(op => op.value === valorAtual)) {
+            anoSelect.value = valorAtual;
         } else {
-            // pega o primeiro período
-            anoSelect.value = periodosUnicos[periodosUnicos.length - 1] || '';
+             if (anoSelect.options.length > 0) anoSelect.options[0].selected = true;
         }
     }
 }
+
 /**
  * Atualiza o <select> de contas, mostrando apenas as contas associadas aos projetos selecionados.
  * @param {HTMLSelectElement} contaSelect - O elemento select de contas.

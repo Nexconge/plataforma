@@ -91,5 +91,47 @@ async function buscarValoresEstoque(filtros) {
         return []; 
     }
 }
+
+/**
+ * Busca o período com dados (data inicial e final) para uma conta e projeção específica.
+ * @param {string} contaId - O ID da conta.
+ * @param {string} projecao - "realizado" ou "arealizar".
+ * @returns {Promise<object>} Objeto com { periodo_ini, periodo_fim }.
+ */
+async function buscarPeriodosComDados(contaId, projecao) {
+    let baseURL = "https://plataforma-geourb.bubbleapps.io/";
+    if (window.location.href.includes("version-test")) {
+        baseURL += "version-test";
+    } else {
+        baseURL += "version-live";
+    }
+    const API_URL = `${baseURL}/api/1.1/wf/buscarperiodoscomdados`;
+
+    // Agora enviamos conta E projecao no corpo
+    const payload = {
+        conta: contaId,
+        projecao: projecao // "realizado" ou "arealizar"
+    };
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            console.warn(`Falha ao buscar períodos para conta ${contaId} (${projecao})`);
+            return { response: { periodo_ini: null, periodo_fim: null } };
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Erro ao buscar períodos com dados:", error);
+        return { response: { periodo_ini: null, periodo_fim: null } };
+    }
+}
+
 // Exporta a função para ser utilizada em outros módulos.
-export { buscarTitulos, buscarValoresEstoque};
+export { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados };
