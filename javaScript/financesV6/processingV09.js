@@ -376,7 +376,7 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
     
     let saldoAcumulado = saldoInicial;
 
-    dadosRealizado.chavesComDados.forEach(chave => {
+    dadosRealizado.chavesComDados.union(todasAsChaves).forEach(chave => {
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
         const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
 
