@@ -373,17 +373,16 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
     }
 
     // (3) Preenche a linha '(+) Caixa'
-    const chavesOrdenadas = Array.from(todasAsChaves).sort(compararChaves);
+    
     let saldoAcumulado = saldoInicial;
 
-    chavesOrdenadas.forEach(chave => {
+    dadosRealizado.chavesComDados.forEach(chave => {
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
         const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
 
         // CORREÇÃO APLICADA:
         // Em vez de buscar 'Caixa Final' (que não existe ainda), calculamos o saldo
         // usando os mesmos fluxos (Entradas/Saídas) que geraram a DRE.
-        let saldoDRE = null;
         if (dadosRealizado && dadosRealizado.entradasESaidas) {
             const es = dadosRealizado.entradasESaidas;
             const entradas = es['(+) Entradas']?.[chave] || 0;
@@ -451,25 +450,6 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
-
-    const matrizCG = dadosParaExibir.matrizCapitalGiro;
-    if (matrizDRE['Caixa Final']) {
-        if (!matrizCG['(+) Caixa']) matrizCG['(+) Caixa'] = {};
-        if (!matrizCG['Capital Liquido']) matrizCG['Capital Liquido'] = {};
-
-        // Percorre as colunas calculadas na DRE (mesmo as que não tinham dados de Cap. Giro)
-        colunasParaCalcular.forEach(col => {
-            const valorCaixaDRE = matrizDRE['Caixa Final'][col] || 0;
-            
-            // Força o valor na linha de Caixa do CG
-            matrizCG['(+) Caixa'][col] = valorCaixaDRE;
-
-            // Recalcula o totalizador 'Capital Liquido' para garantir consistência
-            const curto = matrizCG['Curto Prazo TT']?.[col] || 0;
-            const longo = matrizCG['Longo Prazo TT']?.[col] || 0;
-            matrizCG['Capital Liquido'][col] = curto + longo + valorCaixaDRE;
-        });
-    }
 
     return { ...dadosParaExibir };
 }
