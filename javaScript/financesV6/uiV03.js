@@ -194,22 +194,25 @@ function obterFiltrosAtuais() {
     const projSelect = document.getElementById('projSelect');
     const contaSelect = document.getElementById('contaSelect');
 
+    // Se algum elemento não existir no DOM, retorna null imediatamente
     if (!modoSelect || !anoSelect || !projSelect || !contaSelect) return null;
 
     const modo = modoSelect.value;
     const valorSelecionado = anoSelect.value;
+    
+    // Se o select de ano estiver vazio (sem options) ou sem valor, retorna null.
+    // Isso evita o erro lá no main.js
     if (!valorSelecionado) return null;
 
     let anosParaProcessar = [];
     if (modo.toLowerCase() === 'mensal') {
         anosParaProcessar = [valorSelecionado];
-    } else { // Modo anual/período
+    } else { 
         const anoInicio = Number(valorSelecionado);
         const anoFim = anoInicio + 5;
         for (let ano = anoInicio; ano <= anoFim; ano++) anosParaProcessar.push(String(ano));
     }
     
-    // Gera as colunas para a tabela com base no modo (anual ou mensal).
     const colunas = (modo.toLowerCase() === 'anual')
         ? [...anosParaProcessar].sort()
         : Array.from({ length: 12 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${valorSelecionado}`);
@@ -228,21 +231,24 @@ function obterFiltrosAtuais() {
  * @param {string} projecao - 'realizado' ou 'arealizar'.
  */
 function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) {
+    if (!anoSelect) return; // Proteção extra
+
     const valorAtual = anoSelect.value;
     anoSelect.innerHTML = '';
 
     const atual = new Date().getFullYear();
-    let start = anoInicio || atual;
-    let end = anoFim || atual;
+    // Garante que start e end sejam números válidos
+    let start = Number(anoInicio) || atual;
+    let end = Number(anoFim) || atual;
 
     if (start > end) { const temp = start; start = end; end = temp; }
 
-    // Regra A REALIZAR: Garante ao menos 5 anos futuros
     if (projecao === 'arealizar') {
         if (end < atual + 5) end = atual + 5;
         if (start < atual) start = atual; 
     }
 
+    // ... (o restante da função permanece igual ao que você enviou) ...
     if (modo.toLowerCase() === 'mensal') {
         for (let ano = start; ano <= end; ano++) {
             const option = document.createElement('option');
@@ -251,7 +257,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) 
             anoSelect.appendChild(option);
         }
         
-        // Mantém seleção ou define padrão
         const valorExiste = Array.from(anoSelect.options).some(op => op.value === valorAtual);
         if (valorAtual && valorExiste) {
             anoSelect.value = valorAtual;
@@ -262,7 +267,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) 
         }
 
     } else { 
-        // Lógica Anual (blocos de 6 anos)
         const duracaoP = 6;
         const periodos = [];
         let cursor = start;
@@ -287,39 +291,6 @@ function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) 
         }
     }
 }
-
-/**
- * Atualiza o <select> de contas, mostrando apenas as contas associadas aos projetos selecionados.
- * @param {HTMLSelectElement} contaSelect - O elemento select de contas.
- * @param {Map} projetosMap - O mapa de projetos do cache.
- * @param {Map} contasMap - O mapa de contas do cache.
- * @param {Array<string>} projetosSelecionados - IDs dos projetos selecionados.
- */
-function atualizarFiltroContas(contaSelect, projetosMap, contasMap, projetosSelecionados) {
-    const contasProjetos = new Set();
-    projetosSelecionados.forEach(codProj => {
-        const projeto = projetosMap.get(String(codProj)); // Garantir que a chave seja string
-        if (projeto) {
-            projeto.contas.forEach(conta => contasProjetos.add(conta));
-        }
-    });
-
-    contaSelect.innerHTML = '';
-    Array.from(contasMap.entries())
-        .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
-        .forEach(([codigo, { descricao }]) => {
-            if (contasProjetos.has(codigo)) {
-                const option = document.createElement('option');
-                option.value = codigo; option.textContent = descricao;
-                contaSelect.appendChild(option);
-            }
-        });
-    
-    if (contaSelect.options.length > 0) {
-        contaSelect.options[0].selected = true;
-    }
-}
-
 
 // --- Funções de Renderização de Tabelas ---
 /**
