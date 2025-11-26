@@ -144,19 +144,17 @@ function compararChaves(a, b) {
  * // }
  */
 function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno = 0) {
-    // Mapeia as chaves retornadas por extrairDadosDosTitulos para as variáveis locais esperadas.
-    // Usa '|| []' para garantir que nunca seja undefined, evitando o erro do forEach.
+    // Mapeia as chaves. Se vierem nomes antigos (lancamentosProcessados) ou novos/manuais (lancamentos), aceita ambos.
     const lancamentos = dadosApi.lancamentosProcessados || dadosApi.lancamentos || [];
     const titulos = dadosApi.titulosEmAberto || dadosApi.titulos || [];
     const capitalDeGiro = dadosApi.capitalDeGiro || [];
 
-    // O saldo inicial agora vem da API específico para o recorte de tempo solicitado
     const saldoIniCC = Number(saldoInicialExterno);
     
-    // Processa os dados para o modo REALIZADO (usa a lista de lancamentos)
+    // Processa os dados para o modo REALIZADO
     const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
     
-    // Processa os dados para o modo A REALIZAR (usa a lista de titulos em aberto)
+    // Processa os dados para o modo A REALIZAR
     const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniCC);
     
     // Processa Capital de Giro
