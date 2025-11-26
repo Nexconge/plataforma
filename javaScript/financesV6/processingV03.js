@@ -144,31 +144,29 @@ function compararChaves(a, b) {
  * // }
  */
 function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno = 0) {
-    const { lancamentos, titulos , capitalDeGiro } = dadosApi;
+    // Mapeia as chaves retornadas por extrairDadosDosTitulos para as variáveis locais esperadas.
+    // Usa '|| []' para garantir que nunca seja undefined, evitando o erro do forEach.
+    const lancamentos = dadosApi.lancamentosProcessados || dadosApi.lancamentos || [];
+    const titulos = dadosApi.titulosEmAberto || dadosApi.titulos || [];
+    const capitalDeGiro = dadosApi.capitalDeGiro || [];
 
-    // MUDANÇA: O saldo inicial agora é passado explicitamente pela API para este recorte de tempo
+    // O saldo inicial agora vem da API específico para o recorte de tempo solicitado
     const saldoIniCC = Number(saldoInicialExterno);
     
-    // Processa os dados para o modo REALIZADO (transações passadas).
+    // Processa os dados para o modo REALIZADO (usa a lista de lancamentos)
     const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
     
-    // Lógica para A REALIZAR:
-    // Se estivermos processando um ano específico, o saldo inicial do "A Realizar" 
-    // deve seguir a lógica do realizado ou do saldo final do realizado.
-    // Assumindo que a API retorna o saldo inicial do ano, usamos ele + resultado realizado.
-    const saldoIniARealizar = saldoIniCC + (dadosRealizado ? dadosRealizado.valorTotal : 0);
+    // Processa os dados para o modo A REALIZAR (usa a lista de titulos em aberto)
+    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniCC);
     
-    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniARealizar);
-    
-    // Processa os dados para o relatório de Capital de Giro.
-    // MUDANÇA: Passamos o saldoInicialExterno também para o capital de giro para alinhar o fluxo
+    // Processa Capital de Giro
     const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId, saldoIniCC);
 
     return {
         realizado: dadosRealizado,
         arealizar: dadosARealizar,
         capitalDeGiro: dadosCapitalDeGiro,
-        saldoInicialBase: saldoIniCC // Guardamos para referência futura no merge
+        saldoInicialBase: saldoIniCC
     };
 }
 /**
