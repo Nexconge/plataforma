@@ -376,6 +376,8 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
     
     let saldoAcumulado = saldoInicial;
 
+    console.log("Chaves para Capital de Giro:", todasAsChaves);
+    console.log("Chaves com Caixa:", dadosRealizado.chavesComDados);
     (dadosRealizado.chavesComDados.union(todasAsChaves)).forEach(chave => {
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
         const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
@@ -396,7 +398,8 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
             // Fallback original para acumulação local se não houver dados de DRE
             saldoAcumulado += fluxoDeCaixaMensal[chave] || 0;
         }
-
+        
+        console.log(chave, "Saldo Acumulado de Caixa:", saldoAcumulado);
         matrizCapitalGiro['(+) Caixa'][chave] = saldoAcumulado;
         matrizCapitalGiro['Curto Prazo TT'][chave] = curtoPrazo
         matrizCapitalGiro['Longo Prazo TT'][chave] = longoPrazo
