@@ -380,17 +380,21 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
         const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
         const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
 
-        // CORREÇÃO: Prioriza o saldo calculado pela DRE ("Caixa Final")
-        // Isso garante que a linha de caixa da Capital de Giro bata com o Fluxo de Caixa Realizado
+        // CORREÇÃO APLICADA:
+        // Em vez de buscar 'Caixa Final' (que não existe ainda), calculamos o saldo
+        // usando os mesmos fluxos (Entradas/Saídas) que geraram a DRE.
         let saldoDRE = null;
-        if (dadosRealizado && dadosRealizado.matrizDRE && dadosRealizado.matrizDRE['Caixa Final']) {
-            saldoDRE = dadosRealizado.matrizDRE['Caixa Final'][chave];
-        }
-
-        if (saldoDRE !== undefined && saldoDRE !== null) {
-            saldoAcumulado = saldoDRE;
+        if (dadosRealizado && dadosRealizado.entradasESaidas) {
+            const es = dadosRealizado.entradasESaidas;
+            const entradas = es['(+) Entradas']?.[chave] || 0;
+            const saidas = es['(-) Saídas']?.[chave] || 0; // Já vem negativo
+            const entTransf = es['(+) Entradas de Transferência']?.[chave] || 0;
+            const saiTransf = es['(-) Saídas de Transferência']?.[chave] || 0; // Já vem negativo
+            
+            // Soma o fluxo líquido do DRE ao acumulado
+            saldoAcumulado += (entradas + saidas + entTransf + saiTransf);
         } else {
-            // Fallback para acumulação local se não houver DRE para este mês
+            // Fallback original para acumulação local se não houver dados de DRE
             saldoAcumulado += fluxoDeCaixaMensal[chave] || 0;
         }
 
