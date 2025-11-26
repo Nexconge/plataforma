@@ -452,6 +452,25 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
 
+    const matrizCG = dadosParaExibir.matrizCapitalGiro;
+    if (matrizDRE['Caixa Final']) {
+        if (!matrizCG['(+) Caixa']) matrizCG['(+) Caixa'] = {};
+        if (!matrizCG['Capital Liquido']) matrizCG['Capital Liquido'] = {};
+
+        // Percorre as colunas calculadas na DRE (mesmo as que não tinham dados de Cap. Giro)
+        colunasParaCalcular.forEach(col => {
+            const valorCaixaDRE = matrizDRE['Caixa Final'][col] || 0;
+            
+            // Força o valor na linha de Caixa do CG
+            matrizCG['(+) Caixa'][col] = valorCaixaDRE;
+
+            // Recalcula o totalizador 'Capital Liquido' para garantir consistência
+            const curto = matrizCG['Curto Prazo TT']?.[col] || 0;
+            const longo = matrizCG['Longo Prazo TT']?.[col] || 0;
+            matrizCG['Capital Liquido'][col] = curto + longo + valorCaixaDRE;
+        });
+    }
+
     return { ...dadosParaExibir };
 }
 
