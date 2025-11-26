@@ -1,5 +1,5 @@
 // mainV01.js
-import { buscarTitulos, buscarValoresEstoque } from './apiV03.js';
+import { buscarTitulos, buscarValoresEstoque } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV02.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV01.js';
 

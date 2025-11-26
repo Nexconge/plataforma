@@ -33,7 +33,7 @@ async function buscarTitulos(filtros) {
     } else {
         baseURL += "version-live";
     }
-    const API_URL = `${baseURL}/api/1.1/wf/buscarmovimentos/initialize`;
+    const API_URL = `${baseURL}/api/1.1/wf/buscarmovimentos`;
 
     // O payload aceita:
     // anos: ["2024"] (Para realizado)
