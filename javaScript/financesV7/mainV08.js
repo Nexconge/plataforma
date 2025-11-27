@@ -199,7 +199,10 @@ function processarRespostaTitulos(apiResponse) {
     const saldoInicialApi = response && response.saldoInicial ? Number(response.saldoInicial) : 0;
     const anoAtual = new Date().getFullYear();
 
-    console.log("Dados retornados da API:", response)
+    if (response.dadosRealizado) console.log("response.dadosRealizado:", response.dadosRealizado.length);
+    if (response.dadosArealizar) console.log("response.dadosRealizado:", response.dadosArealizar.length);
+    if (response.dadosCapitalG) console.log("response.dadosRealizado:", response.dadosCapitalG.length);
+
     if (appCache.projecao === "arealizar") {
         // Lógica Específica A REALIZAR (depende do realizado do ano corrente)
         processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
