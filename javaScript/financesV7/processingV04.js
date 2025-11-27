@@ -196,18 +196,16 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 }
 
                 // Adiciona ao Capital de Giro (Histórico de Pagamento)
-                // Também filtramos aqui para não "sujar" o cache com pagamentos de outros anos
-                if (pertenceAoPeriodo) {
-                    capitalDeGiro.push({
-                        Natureza: titulo.Natureza,
-                        DataPagamento: lancamento.DataLancamento,
-                        DataVencimento: titulo.DataVencimento || null,
-                        DataEmissao: titulo.DataEmissao || null,
-                        ValorTitulo: lancamento.ValorLancamento,
-                        CODContaEmissao: titulo.CODContaC || null,
-                        CODContaPagamento: lancamento.CODContaC || null
-                    });
-                }
+                capitalDeGiro.push({
+                    Natureza: titulo.Natureza,
+                    DataPagamento: lancamento.DataLancamento,
+                    DataVencimento: titulo.DataVencimento || null,
+                    DataEmissao: titulo.DataEmissao || null,
+                    ValorTitulo: lancamento.ValorLancamento,
+                    CODContaEmissao: titulo.CODContaC || null,
+                    CODContaPagamento: lancamento.CODContaC || null
+                });
+                
             });
         }
 
