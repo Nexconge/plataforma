@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV02.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV03.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV04.js';
 
 // --- Cache da Aplicação ---
@@ -216,26 +216,24 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     let lancamentosManuais = [];
 
     // 1. Processar Títulos (Fonte: dadosCapitalG)
-    // Extrai tanto os lançamentos realizados (baixas) quanto a previsão futura (Capital de Giro)
+    // Passamos 'anoOuTag' para filtrar as baixas apenas deste ano
     if (response.dadosCapitalG?.length > 2) {
         try {
-            const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId);
-            console.log('extracted Cg', extractedCG);
+            const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId, anoOuTag);
             lancamentosDeTitulos = extractedCG.lancamentosProcessados;
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
     }
 
     // 2. Processar Lançamentos Manuais (Fonte: dadosLancamentos)
-    // Estes não geram previsão de capital de giro, apenas compõem o DRE Realizado
+    // Também filtramos pelo ano para garantir consistência
     if (response.dadosLancamentos?.length > 2) {
         try {
-            lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId);
-            console.log('extracted lancamentos manuais', lancamentosManuais);
+            lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId, anoOuTag);
         } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
     }
 
-    // 3. Merge: DRE Realizado = Baixas de Títulos + Lançamentos Manuais
+    // 3. Merge: DRE Realizado = Baixas de Títulos (deste ano) + Lançamentos Manuais (deste ano)
     dadosInput.lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
 
     // Processamento final
