@@ -200,7 +200,13 @@ function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) 
         if (valorAtual && Array.from(anoSelect.options).some(op => op.value === valorAtual)) {
             anoSelect.value = valorAtual;
         } else if (anoSelect.options.length > 0) {
-            anoSelect.options[0].selected = true;
+            // Se for realizado → pega a primeira opção
+            if (projecao === "realizado") {
+                anoSelect.value = anoSelect.options[0].value;
+            // Caso contrário → pega a última opção
+            } else {
+                anoSelect.value = anoSelect.options[anoSelect.options.length - 1].value;
+            }
         }
     }
 }
