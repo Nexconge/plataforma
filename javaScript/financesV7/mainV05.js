@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV03.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV04.js';
 
 // --- Cache da Aplicação ---
 let appCache = {

@@ -283,16 +283,23 @@ function renderizarTabelaDRE(matrizDRE, colunas, userType) {
     tabela.appendChild(fragment);
 }
 
-function criarLinhaTabela(classe, colunas, dadosLinha) {
+function criarLinhaTabela(classe, colunas, dadosLinha, DRE = true) {
     const row = document.createElement('tr');
     row.insertCell().textContent = classe;
 
     // Estilização
-    if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe) || classe.includes('Transferência')) {
+    if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe)) {
         row.classList.add('linhatotal');
     } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe)) {
         row.classList.add('linhaSaldo');
     }
+    // Estilização linha de transferência
+    if (classe.includes('Transferência')) {
+        if (DRE){
+            row.classList.add('linhatotal');
+        }else{
+            row.classList.add('linhaSaldo');
+    }}
 
     // Colunas de Período
     colunas.forEach(col => {
@@ -353,7 +360,7 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     classesES.push('(+) Entradas', '(-) Saídas');
 
     classesES.forEach(classe => {
-        if(entradasESaidas[classe]) tbody.appendChild(criarLinhaTabela(classe, colunas, entradasESaidas[classe]));
+        if(entradasESaidas[classe]) tbody.appendChild(criarLinhaTabela(classe, colunas, entradasESaidas[classe]), false);
     });
     
     fragment.appendChild(tbody);
