@@ -199,10 +199,6 @@ function processarRespostaTitulos(apiResponse) {
     const saldoInicialApi = response && response.saldoInicial ? Number(response.saldoInicial) : 0;
     const anoAtual = new Date().getFullYear();
 
-    if (response.dadosRealizado) console.log("response.dadosRealizado:", response.dadosRealizado.length);
-    if (response.dadosArealizar) console.log("response.dadosRealizado:", response.dadosArealizar.length);
-    if (response.dadosCapitalG) console.log("response.dadosRealizado:", response.dadosCapitalG.length);
-
     if (appCache.projecao === "arealizar") {
         // Lógica Específica A REALIZAR (depende do realizado do ano corrente)
         processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
@@ -219,6 +215,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosRealizado?.length > 2) {
         try {
             const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId);
+            console.log('extracted realizado', extracted.length);
             dadosInput.lancamentos = extracted.lancamentosProcessados;
         } catch (e) { console.error(`Erro JSON Realizado conta ${contaId}`, e); }
     }
@@ -227,6 +224,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosCapitalG?.length > 2) {
         try {
             const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId);
+            console.log('extracted capital de giro', extractedCG).length;
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
     }
@@ -241,6 +239,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     if (response.dadosRealizado?.length > 2) {
         try {
             const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId);
+            console.log('extracted realizado', extractedCY.length);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
             
@@ -259,6 +258,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     if (response.dadosArealizar?.length > 2) {
         try {
             const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
+            console.log('extracted arealizar', extracted.length);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
