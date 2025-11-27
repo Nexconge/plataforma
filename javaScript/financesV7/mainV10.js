@@ -224,7 +224,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosCapitalG?.length > 2) {
         try {
             const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId);
-            console.log('extracted capital de giro', extractedCG).length;
+            console.log('extracted capital de giro', extractedCG.length);
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
     }
