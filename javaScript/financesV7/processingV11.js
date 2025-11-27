@@ -192,7 +192,6 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 }
 
                 // B. Adiciona ao Capital de Giro (SEMPRE, para manter histórico de liquidação)
-                // Removemos o filtro 'pertenceAoPeriodoDRE' aqui para corrigir a discrepância
                 capitalDeGiro.push({
                     Natureza: titulo.Natureza,
                     DataPagamento: lancamento.DataLancamento,
