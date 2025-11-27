@@ -367,7 +367,7 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     classesES.push('(+) Entradas', '(-) Saídas');
 
     classesES.forEach(classe => {
-        if(entradasESaidas[classe]) tbody.appendChild(criarLinhaTabela(classe, colunas, entradasESaidas[classe]), false);
+        if(entradasESaidas[classe]) tbody.appendChild(criarLinhaTabela(classe, colunas, entradasESaidas[classe], false));
     });
     
     fragment.appendChild(tbody);
