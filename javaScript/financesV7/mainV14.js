@@ -204,6 +204,7 @@ function processarRespostaTitulos(apiResponse) {
         processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
     } else {
         // Lógica Padrão REALIZADO
+        console.log('processar realizado', contaId, anoOuTag, response);
         processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
     }
 }
