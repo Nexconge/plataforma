@@ -159,60 +159,57 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
 
         let valorTotalPago = 0;
 
-        // Processa lançamentos (Baixas/Pagamentos já realizados)
+        // --- PARTE 1: Processamento de Baixas (Realizado / DRE) ---
         if (Array.isArray(titulo.Lancamentos)) {
             titulo.Lancamentos.forEach(lancamento => {
                 if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
 
-                // 1. Acumula o valor pago INDEPENDENTE do ano (para cálculo correto do saldo devedor)
+                // 1.1 Acumula o valor pago TOTAL (independente do ano) para saber o saldo real do título
                 valorTotalPago += (lancamento.ValorBaixado || 0);
 
-                // 2. Verifica se o lançamento pertence ao período consultado (para DRE)
-                let pertenceAoPeriodo = true;
+                // 1.2 Verifica se essa BAIXA ESPECÍFICA pertence ao ano consultado
+                let pertenceAoPeriodoDRE = true;
                 if (anoFiltro) {
                     const parts = lancamento.DataLancamento.split('/'); // dd/mm/yyyy
-                    // Se o ano do lançamento for diferente do ano filtro, ignoramos na DRE
                     if (parts.length === 3 && parts[2] !== String(anoFiltro)) {
-                        pertenceAoPeriodo = false;
+                        pertenceAoPeriodoDRE = false;
                     }
                 }
 
-                // Se o lançamento pertence a esta conta
-                if (String(lancamento.CODContaC) === contaId) {
-                    // SÓ ADICIONA NA DRE SE FOR DO PERÍODO
-                    if (pertenceAoPeriodo) {
-                        const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
-                        
-                        lancamentosProcessados.push({
-                            Natureza: titulo.Natureza,
-                            DataLancamento: lancamento.DataLancamento,
-                            CODContaC: lancamento.CODContaC,
-                            ValorLancamento: lancamento.ValorLancamento,
-                            CODCategoria: titulo.Categoria,
-                            Cliente: titulo.Cliente,
-                            Departamentos: deptosRateio
-                        });
-                    }
-                }
+                // 1.3 Se for da conta atual E do ano consultado, adiciona ao DRE
+                if (String(lancamento.CODContaC) === contaId && pertenceAoPeriodoDRE) {
+                    const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
+                    
+                    lancamentosProcessados.push({
+                        Natureza: titulo.Natureza,
+                        DataLancamento: lancamento.DataLancamento,
+                        CODContaC: lancamento.CODContaC,
+                        ValorLancamento: lancamento.ValorLancamento,
+                        CODCategoria: titulo.Categoria,
+                        Cliente: titulo.Cliente,
+                        Departamentos: deptosRateio
+                    });
 
-                // Adiciona ao Capital de Giro (Histórico de Pagamento)
-                capitalDeGiro.push({
-                    Natureza: titulo.Natureza,
-                    DataPagamento: lancamento.DataLancamento,
-                    DataVencimento: titulo.DataVencimento || null,
-                    DataEmissao: titulo.DataEmissao || null,
-                    ValorTitulo: lancamento.ValorLancamento,
-                    CODContaEmissao: titulo.CODContaC || null,
-                    CODContaPagamento: lancamento.CODContaC || null
-                });
-                
+                    // Adiciona o pagamento ao Capital de Giro (apenas para registro do fluxo de caixa realizado)
+                    capitalDeGiro.push({
+                        Natureza: titulo.Natureza,
+                        DataPagamento: lancamento.DataLancamento,
+                        DataVencimento: titulo.DataVencimento || null,
+                        DataEmissao: titulo.DataEmissao || null,
+                        ValorTitulo: lancamento.ValorLancamento,
+                        CODContaEmissao: titulo.CODContaC || null,
+                        CODContaPagamento: lancamento.CODContaC || null
+                    });
+                }
             });
         }
 
-        // Calcula saldo em aberto (A Realizar) - Usa o valorTotalPago global do título
+        // --- PARTE 2: Processamento de Saldos (A Realizar / Capital de Giro Futuro) ---
+        // Calcula saldo em aberto usando o total pago acumulado
         const valorFaltante = (titulo.ValorTitulo - valorTotalPago);
         
-        // Se houver saldo e o título for válido
+        // Se houver saldo, adiciona ao Capital de Giro SEM FILTRO DE ANO
+        // Isso garante que dívidas de anos futuros apareçam na projeção
         if (valorFaltante >= 0.01 && titulo.ValorTitulo !== 0) {
             const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, valorFaltante);
             
@@ -226,7 +223,6 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 Departamentos: deptosRateio
             });
             
-            // Adiciona previsão ao Capital de Giro
             capitalDeGiro.push({
                 Natureza: titulo.Natureza,
                 DataPagamento: null,
@@ -244,7 +240,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
 
 /**
  * Converte a estrutura de LANÇAMENTOS AVULSOS (manuais).
- * Também aceita filtro de ano para segurança.
+ * Estes são puramente DRE, então aplicamos o filtro de ano rigorosamente.
  */
 function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
     const lancamentosProcessados = [];
@@ -259,7 +255,7 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
         item.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
 
-            // Filtro de Ano
+            // Filtro de Ano (Obrigatório para DRE)
             if (anoFiltro) {
                 const parts = lancamento.DataLancamento.split('/');
                 if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
