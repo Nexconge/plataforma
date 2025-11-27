@@ -348,13 +348,14 @@ function renderizarTabelaDetalhamento(categoriasMap, dadosAgrupados, colunas, en
     tbody.insertRow().innerHTML = `<td colspan="${colunas.length + 2}" class="linhaBranco"></td>`;
     
     // Entradas e Saídas Extras
-    const classesES = ['(+) Entradas', '(-) Saídas'];
+    const classesES = [];
     if(userType?.toLowerCase() === 'developer') classesES.push('(+) Entradas de Transferência', '(-) Saídas de Transferência');
-    
+    classesES.push('(+) Entradas', '(-) Saídas');
+
     classesES.forEach(classe => {
         if(entradasESaidas[classe]) tbody.appendChild(criarLinhaTabela(classe, colunas, entradasESaidas[classe]));
     });
-
+    
     fragment.appendChild(tbody);
     tabela.appendChild(fragment);
 }
