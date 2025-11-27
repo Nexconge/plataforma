@@ -189,18 +189,17 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         Cliente: titulo.Cliente,
                         Departamentos: deptosRateio
                     });
-
-                    // Adiciona o pagamento ao Capital de Giro (apenas para registro do fluxo de caixa realizado)
-                    capitalDeGiro.push({
-                        Natureza: titulo.Natureza,
-                        DataPagamento: lancamento.DataLancamento,
-                        DataVencimento: titulo.DataVencimento || null,
-                        DataEmissao: titulo.DataEmissao || null,
-                        ValorTitulo: lancamento.ValorLancamento,
-                        CODContaEmissao: titulo.CODContaC || null,
-                        CODContaPagamento: lancamento.CODContaC || null
-                    });
                 }
+                // Adiciona o pagamento ao Capital de Giro (apenas para registro do fluxo de caixa realizado)
+                capitalDeGiro.push({
+                    Natureza: titulo.Natureza,
+                    DataPagamento: lancamento.DataLancamento,
+                    DataVencimento: titulo.DataVencimento || null,
+                    DataEmissao: titulo.DataEmissao || null,
+                    ValorTitulo: lancamento.ValorLancamento,
+                    CODContaEmissao: titulo.CODContaC || null,
+                    CODContaPagamento: lancamento.CODContaC || null
+                });
             });
         }
 
