@@ -215,7 +215,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosRealizado?.length > 2) {
         try {
             const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId);
-            console.log('extracted realizado', extracted.length);
+            console.log('extracted realizado', extracted);
             dadosInput.lancamentos = extracted.lancamentosProcessados;
         } catch (e) { console.error(`Erro JSON Realizado conta ${contaId}`, e); }
     }
@@ -224,7 +224,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosCapitalG?.length > 2) {
         try {
             const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId);
-            console.log('extracted capital de giro', extractedCG.length);
+            console.log('extracted capital de giro', extractedCG);
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
     }
@@ -239,7 +239,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     if (response.dadosRealizado?.length > 2) {
         try {
             const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId);
-            console.log('extracted realizado', extractedCY.length);
+            console.log('extracted realizado', extractedCY);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
             
@@ -258,7 +258,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     if (response.dadosArealizar?.length > 2) {
         try {
             const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
-            console.log('extracted arealizar', extracted.length);
+            console.log('extracted arealizar', extracted);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
