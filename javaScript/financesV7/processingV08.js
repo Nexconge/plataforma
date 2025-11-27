@@ -10,12 +10,6 @@ const ORDEM_DRE = [
 
 const CLASSES_PARA_DETALHAR = new Set(ORDEM_DRE);
 
-const LINHAS_CAPITAL_GIRO = [
-    '(+) Caixa', '(+) Clientes a Receber', 'Curto Prazo AR', 'Longo Prazo AR',
-    '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP',
-    'Curto Prazo TT', 'Longo Prazo TT', 'Capital Liquido'
-];
-
 // --- Funções Utilitárias de Data e Chave ---
 
 function parseDate(dateString) {
@@ -374,11 +368,15 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
 function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialParam, dadosRealizado = null) {
     const saldoInicial = Number(saldoInicialParam) || 0;
     const todasAsChaves = new Set();
-    const fluxoDeCaixaMensal = {}; // Backup local se não houver DRE
+    const fluxoDeCaixaMensal = {};
     const matrizCapitalGiro = {};
-
-    // Inicializa linhas da matriz
-    LINHAS_CAPITAL_GIRO.forEach(linha => matrizCapitalGiro[linha] = {});
+    const linhasMatriz = [
+        '(+) Caixa',
+        '(+) Clientes a Receber', 'Curto Prazo AR', 'Longo Prazo AR',
+        '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP',
+        'Curto Prazo TT', 'Longo Prazo TT', 'Capital Liquido'
+    ];
+    linhasMatriz.forEach(linha => matrizCapitalGiro[linha] = {});
 
     const anoAtual = new Date().getFullYear();
     const mesAtual = new Date().getMonth() + 1; 
@@ -390,93 +388,93 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
         const valor = item.Natureza === 'P' ? -item.ValorTitulo : item.ValorTitulo;
         if (!valor) continue;
 
-        // (1) Fluxo Efetivo (Backup)
+        // (1) Fluxo de caixa (pagamentos efetivos) - APENAS para uso local se DRE não existir
         if (item.DataPagamento && String(item.CODContaPagamento) === contaId) {
             const [dia, mes, ano] = item.DataPagamento.split('/');
             const chavePeriodo = `${mes.padStart(2, '0')}-${ano}`;
-            
-            // Considera apenas passado em relação ao mês atual
-            if(compararChaves(chavePeriodo, chaveMesAtual) < 0) {
-                fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
-                todasAsChaves.add(chavePeriodo);
-            }
+            if(compararChaves(chavePeriodo, chaveMesAtual) >= 0) continue;
+            fluxoDeCaixaMensal[chavePeriodo] = (fluxoDeCaixaMensal[chavePeriodo] || 0) + valor;
+            todasAsChaves.add(chavePeriodo);
         }
 
-        // (2) Projeções (A Pagar / A Receber)
+        // (2) Projeções de A Pagar / A Receber
         if (item.DataEmissao && item.DataVencimento && String(item.CODContaEmissao) === contaId) {
             const [, mesE, anoE] = item.DataEmissao.split('/');
             const [, mesV, anoV] = item.DataVencimento.split('/');
             const chaveEmissao = `${mesE.padStart(2, '0')}-${anoE}`;
-            let chaveFinal = `${mesV.padStart(2, '0')}-${anoV}`; // Vencimento padrão
+            const chaveVencimento = `${mesV.padStart(2, '0')}-${anoV}`;
 
-            // Se houve pagamento, o ciclo encerra na data do pagamento
+            let chaveFinal = chaveVencimento;
             if (item.DataPagamento) {
                 const [, mesP, anoP] = item.DataPagamento.split('/');
                 chaveFinal = `${mesP.padStart(2, '0')}-${anoP}`;
             }
 
-            // Loop para preencher o período entre Emissão e Final
+            if (!chaveEmissao || !chaveFinal) continue;
+
             if (compararChaves(chaveEmissao, chaveFinal) <= 0) {
                 let chave = chaveEmissao;
                 do {
                     if (!chave) break;
-                    // Interrompe se atingir o futuro (Mês Atual em diante)
+                    const proximaChave = incrementarMes(chave);
                     if(compararChaves(chave, chaveMesAtual) >= 0) break;
-
                     const isUltimo = compararChaves(chave, chaveFinal) === 0;
 
-                    // Alocação nas linhas corretas
                     if (item.Natureza === 'P') {
-                        somaValor(matrizCapitalGiro['(-) Fornecedores a Pagar'], chave, valor);
-                        const linhaPrazo = isUltimo ? 'Curto Prazo AP' : 'Longo Prazo AP';
-                        somaValor(matrizCapitalGiro[linhaPrazo], chave, valor);
+                        matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] = (matrizCapitalGiro['(-) Fornecedores a Pagar'][chave] || 0) + valor;
+                        if (isUltimo) matrizCapitalGiro['Curto Prazo AP'][chave] = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + valor;     
+                        else matrizCapitalGiro['Longo Prazo AP'][chave] = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + valor;
                     } else if (item.Natureza === 'R') {
-                        somaValor(matrizCapitalGiro['(+) Clientes a Receber'], chave, valor);
-                        const linhaPrazo = isUltimo ? 'Curto Prazo AR' : 'Longo Prazo AR';
-                        somaValor(matrizCapitalGiro[linhaPrazo], chave, valor);
+                        matrizCapitalGiro['(+) Clientes a Receber'][chave] = (matrizCapitalGiro['(+) Clientes a Receber'][chave] || 0) + valor;
+                        if (isUltimo) matrizCapitalGiro['Curto Prazo AR'][chave] = (matrizCapitalGiro['Curto Prazo AR'][chave] || 0) + valor;
+                        else matrizCapitalGiro['Longo Prazo AR'][chave] = (matrizCapitalGiro['Longo Prazo AR'][chave] || 0) + valor;
                     }
 
-                    todasAsChaves.add(chave);
+                    todasAsChaves.add(chave)
                     if (isUltimo) break;
-                    
-                    chave = incrementarMes(chave);
+                    chave = proximaChave;
                 } while (chave && compararChaves(chave, chaveFinal) <= 0);
             }
         }
     }
 
-    // (3) Cálculo do Saldo Acumulado (Caixa)
-    let saldoAcumulado = saldoInicial;
+    // (3) Preenche a linha '(+) Caixa'
     
-    // Unifica chaves do DRE (se existir) com as do Capital de Giro
-    const chavesDRE = dadosRealizado ? dadosRealizado.chavesComDados : new Set();
-    const chavesUnicas = new Set([...chavesDRE, ...todasAsChaves]);
+    let saldoAcumulado = saldoInicial;
+
+    // 1. Cria o Set unificado (como você já fazia)
+    const chavesUnicas = dadosRealizado.chavesComDados.union(todasAsChaves);
+    
+    // 2. Converte para Array e ORDENA cronologicamente usando sua função auxiliar compararChaves
     const chavesOrdenadas = Array.from(chavesUnicas).sort(compararChaves);
 
+    // 3. Itera sobre a lista ordenada
     chavesOrdenadas.forEach(chave => {
         if(compararChaves(chave, chaveMesAtual) >= 0) return;
+        const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0)
+        const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0)
 
-        const curtoPrazo = (matrizCapitalGiro['Curto Prazo AP'][chave] || 0) + (matrizCapitalGiro['Curto Prazo AR'][chave] || 0);
-        const longoPrazo = (matrizCapitalGiro['Longo Prazo AP'][chave] || 0) + (matrizCapitalGiro['Longo Prazo AR'][chave] || 0);
-
-        // Se temos DRE processado, usamos o fluxo completo dele para o saldo de caixa
+        // CORREÇÃO APLICADA:
+        // Em vez de buscar 'Caixa Final' (que não existe ainda), calculamos o saldo
+        // usando os mesmos fluxos (Entradas/Saídas) que geraram a DRE.
         if (dadosRealizado && dadosRealizado.entradasESaidas) {
             const es = dadosRealizado.entradasESaidas;
-            const fluxoLiquido = (es['(+) Entradas']?.[chave] || 0) +
-                                 (es['(-) Saídas']?.[chave] || 0) +
-                                 (es['(+) Entradas de Transferência']?.[chave] || 0) +
-                                 (es['(-) Saídas de Transferência']?.[chave] || 0);
+            const entradas = es['(+) Entradas']?.[chave] || 0;
+            const saidas = es['(-) Saídas']?.[chave] || 0; // Já vem negativo
+            const entTransf = es['(+) Entradas de Transferência']?.[chave] || 0;
+            const saiTransf = es['(-) Saídas de Transferência']?.[chave] || 0; // Já vem negativo
             
-            saldoAcumulado += fluxoLiquido;
+            // Soma o fluxo líquido do DRE ao acumulado
+            saldoAcumulado += (entradas + saidas + entTransf + saiTransf);
         } else {
-            // Caso contrário, usa o fluxo local (menos preciso)
-            saldoAcumulado += (fluxoDeCaixaMensal[chave] || 0);
+            // Fallback original para acumulação local se não houver dados de DRE
+            saldoAcumulado += fluxoDeCaixaMensal[chave] || 0;
         }
         
-        // Preenche totais
+        console.log(chave, "Saldo Acumulado de Caixa:", saldoAcumulado);
         matrizCapitalGiro['(+) Caixa'][chave] = saldoAcumulado;
-        matrizCapitalGiro['Curto Prazo TT'][chave] = curtoPrazo;
-        matrizCapitalGiro['Longo Prazo TT'][chave] = longoPrazo;
+        matrizCapitalGiro['Curto Prazo TT'][chave] = curtoPrazo
+        matrizCapitalGiro['Longo Prazo TT'][chave] = longoPrazo
         matrizCapitalGiro['Capital Liquido'][chave] = curtoPrazo + longoPrazo + saldoAcumulado;
     });
     
