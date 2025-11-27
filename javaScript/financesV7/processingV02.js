@@ -227,6 +227,45 @@ function extrairDadosDosTitulos(titulosRaw, contaId) {
 }
 
 /**
+ * NOVA FUNÇÃO: Processa itens que possuem estrutura de título JSON, 
+ * mas são apenas lançamentos manuais (sem controle de saldo/vencimento).
+ */
+function extrairLancamentosSimples(itensRaw, contaId) {
+    const lancamentosProcessados = [];
+
+    if (!Array.isArray(itensRaw)) {
+        return lancamentosProcessados;
+    }
+
+    itensRaw.forEach(item => {
+        // Ignora item se não tiver lista de lançamentos (baixas)
+        if (!item || !Array.isArray(item.Lancamentos)) return;
+
+        item.Lancamentos.forEach(lancamento => {
+            if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
+
+            // Filtra apenas para a conta atual
+            if (String(lancamento.CODContaC) === contaId) {
+                // Calcula rateio (reutilizando a função auxiliar existente)
+                const deptosRateio = gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento);
+                
+                lancamentosProcessados.push({
+                    Natureza: item.Natureza,
+                    DataLancamento: lancamento.DataLancamento,
+                    CODContaC: lancamento.CODContaC,
+                    ValorLancamento: lancamento.ValorLancamento,
+                    CODCategoria: item.Categoria,
+                    Cliente: item.Cliente,
+                    Departamentos: deptosRateio
+                });
+            }
+        });
+    });
+
+    return lancamentosProcessados;
+}
+
+/**
  * Processa uma lista de lançamentos para gerar Matriz DRE e Detalhamento.
  * Usado tanto para Realizado quanto A Realizar.
  */
@@ -747,4 +786,4 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     });
 }
 
-export { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes };
+export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes };

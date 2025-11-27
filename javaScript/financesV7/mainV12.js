@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, mergeMatrizes } from './processingV01.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV02.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV04.js';
 
 // --- Cache da Aplicação ---
@@ -210,25 +210,35 @@ function processarRespostaTitulos(apiResponse) {
 
 function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
+    
+    // Listas temporárias para merge
+    let lancamentosDeTitulos = [];
+    let lancamentosManuais = [];
 
-    // Extrai Realizado (DRE)
-    if (response.dadosRealizado?.length > 2) {
-        try {
-            const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId);
-            console.log('extracted realizado', extracted);
-            dadosInput.lancamentos = extracted.lancamentosProcessados;
-        } catch (e) { console.error(`Erro JSON Realizado conta ${contaId}`, e); }
-    }
-
-    // Extrai Capital de Giro
+    // 1. Processar Títulos (Fonte: dadosCapitalG)
+    // Extrai tanto os lançamentos realizados (baixas) quanto a previsão futura (Capital de Giro)
     if (response.dadosCapitalG?.length > 2) {
         try {
             const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId);
-            console.log('extracted capital de giro', extractedCG);
+            console.log('extracted Cg', extractedCG);
+            lancamentosDeTitulos = extractedCG.lancamentosProcessados;
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
     }
 
+    // 2. Processar Lançamentos Manuais (Fonte: dadosLancamentos)
+    // Estes não geram previsão de capital de giro, apenas compõem o DRE Realizado
+    if (response.dadosLancamentos?.length > 2) {
+        try {
+            lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId);
+            console.log('extracted lancamentos manuais', lancamentosManuais);
+        } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
+    }
+
+    // 3. Merge: DRE Realizado = Baixas de Títulos + Lançamentos Manuais
+    dadosInput.lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
+
+    // Processamento final
     const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
     appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
 }
