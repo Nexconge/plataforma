@@ -299,7 +299,8 @@ function criarLinhaTabela(classe, colunas, dadosLinha, DRE = true) {
             row.classList.add('linhatotal');
         }else{
             row.classList.add('linhaSaldo');
-    }}
+        }
+    }
 
     // Colunas de Período
     colunas.forEach(col => {
