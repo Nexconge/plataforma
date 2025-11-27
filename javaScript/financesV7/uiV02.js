@@ -288,9 +288,9 @@ function criarLinhaTabela(classe, colunas, dadosLinha) {
     row.insertCell().textContent = classe;
 
     // Estilização
-    if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
+    if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe) || classe.includes('Transferência')) {
         row.classList.add('linhatotal');
-    } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe) || classe.includes('Transferência')) {
+    } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe)) {
         row.classList.add('linhaSaldo');
     }
 
