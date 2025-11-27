@@ -471,7 +471,6 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
             saldoAcumulado += fluxoDeCaixaMensal[chave] || 0;
         }
         
-        console.log(chave, "Saldo Acumulado de Caixa:", saldoAcumulado);
         matrizCapitalGiro['(+) Caixa'][chave] = saldoAcumulado;
         matrizCapitalGiro['Curto Prazo TT'][chave] = curtoPrazo
         matrizCapitalGiro['Longo Prazo TT'][chave] = longoPrazo
