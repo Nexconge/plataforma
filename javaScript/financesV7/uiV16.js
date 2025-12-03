@@ -706,46 +706,62 @@ function configurarAbasGraficos() {
 }
 
 // ------ Fluxo Diário ------
-const MAX_MESES_FLUXO = 4; // Defina aqui o seu limite (ex: 12 ou 24 meses)
+const MAX_MESES_FLUXO = 6; // Define o limite máximo de meses a serem exibidos no fluxo diário
 
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     const tabela = document.getElementById('tabelaFluxoDiario');
     tabela.textContent = '';
+    
     if (!Array.isArray(colunas) || colunas.length === 0) return;
 
-    // Expansão de colunas anuais se necessário
-    let colunasExpandidas = new Set(colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas);
-    
-    // --- PROTEÇÃO CONTRA CARGA GIGANTE ---
-    // Se houver mais colunas que o limite, pegamos apenas as últimas X colunas (ou as primeiras)
+    // 1. Expansão e CORTE inicial dos dados
+    let colunasExpandidas = colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas;
+
+    // Se houver mais colunas que o limite, cortamos para pegar apenas os ÚLTIMOS meses (ex: último ano)
     if (colunasExpandidas.length > MAX_MESES_FLUXO) {
-        // Exemplo: Pega apenas os últimos 12 meses da lista para exibir inicialmente
-        // Se preferir os primeiros, use: colunasExpandidas.slice(0, MAX_MESES_FLUXO);
-        colunasExpandidas = colunasExpandidas.slice(-MAX_MESES_FLUXO); 
+        colunasExpandidas = colunasExpandidas.slice(-MAX_MESES_FLUXO);
     }
+    
+    // Definimos o range inicial com base no array JÁ CORTADO
+    const inicioVisualizacao = colunasExpandidas[0];
+    const fimVisualizacao = colunasExpandidas[colunasExpandidas.length - 1];
     const colunasSet = new Set(colunasExpandidas);
 
-    // Filtragem inicial
+    // 2. Filtragem dos dados (apenas o que sobrou no set)
     const itensFiltrados = [];
-    const periodos = new Set();
+    const periodosDisponiveis = new Set(); // Para o dropdown saber o que existe de dados reais
+
     fluxoDeCaixa.forEach(item => {
         const parts = item.data.split('/');
         const chave = `${parts[1]}-${parts[2]}`;
+        
+        // Guarda todos os períodos que têm dados para montar o calendário completo depois
+        periodosDisponiveis.add(chave);
+
         if (colunasSet.has(chave)) {
-            periodos.add(chave);
             itensFiltrados.push({ ...item, chaveAgregacao: chave });
         }
     });
+    
+    // Ordena todos os períodos disponíveis no banco para o dropdown
+    // Mesmo que a visualização inicial seja cortada, o dropdown precisa saber de tudo para permitir navegação
+    const periodosOrdenados = Array.from(periodosDisponiveis).sort(compararChavesUI);
 
-    const periodosOrdenados = Array.from(periodos).sort(compararChavesUI);
     const tbody = tabela.createTBody();
 
-    const { initialStart, initialEnd } = criarCabecalhoFluxo(
-        tabela, periodosOrdenados, 
-        (ini, fim) => atualizarTabelaFD(tbody, itensFiltrados, saldoIni, ini, fim)
+    // 3. Criação do Cabeçalho passando os limites iniciais corretos
+    criarCabecalhoFluxo(
+        tabela, 
+        periodosOrdenados, 
+        // Callback de atualização
+        (ini, fim) => atualizarTabelaFD(tbody, itensFiltrados, saldoIni, ini, fim),
+        // Passamos explicitamente onde deve começar a seleção visual
+        inicioVisualizacao,
+        fimVisualizacao
     );
 
-    atualizarTabelaFD(tbody, itensFiltrados, saldoIni, initialStart, initialEnd);
+    // 4. Renderização Inicial
+    atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioVisualizacao, fimVisualizacao);
 }
 
 function atualizarTabelaFD(tbody, itens, saldoBase, inicioSel, fimSel) {
@@ -845,32 +861,30 @@ function expandirColunasAnoMes(colunasAnuais) {
     return expandido;
 }
 
-function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate) {
+function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate, startPadrao, endPadrao) {
     const thead = tabela.createTHead();
     const row = thead.insertRow();
     row.className = 'cabecalho';
 
-    // Coluna Data com Filtro
     const thData = document.createElement('th');
     thData.className = 'data-header';
-    // Importante: Position relative para o dropdown se alinhar a este container
     thData.style.position = 'relative'; 
     
     const container = document.createElement('div');
     container.style.display = 'flex';
     container.style.alignItems = 'center';
     container.style.gap = '5px';
-    container.innerHTML = `<div>Data</div><div style="font-size:0.8em; cursor:pointer" id="fd-periodo-label">Periodo ▼</div>`;
+    // Inicializa o texto já com o range cortado
+    container.innerHTML = `<div>Data</div><div style="font-size:0.8em; cursor:pointer" id="fd-periodo-label">${startPadrao} → ${endPadrao} ▼</div>`;
     
-    // CRIA O DROPDOWN
-    const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (ini, fim) => {
+    // Passamos os padrões para o dropdown saber o que marcar inicialmente
+    const { dropdown } = criarDropdownPeriodoVisual(periodosOrdenados, (ini, fim) => {
         container.querySelector('#fd-periodo-label').textContent = `${ini} → ${fim} ▼`;
         callbackUpdate(ini, fim);
-    });
+    }, startPadrao, endPadrao); // <--- Passando para o dropdown
 
-    // Anexa o dropdown AO CONTAINER (e não ao body), para respeitar o CSS top:100%
     thData.appendChild(container);
-    thData.appendChild(dropdown); 
+    thData.appendChild(dropdown);
 
     // Eventos do Dropdown
     const btn = container.querySelector('#fd-periodo-label');
@@ -896,105 +910,103 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate) {
     return { initialStart, initialEnd };
 }
 
-function criarDropdownPeriodoVisual(periodos, onChange) {
+function criarDropdownPeriodoVisual(periodos, onChange, startInicial, endInicial) {
     const dropdown = document.createElement('div');
-    // As classes CSS definem o visual (incluindo o scrollbar que adicionamos antes)
     dropdown.className = 'filtro-dropdown filtro-calendario';
 
-    let selStart = periodos[0] || null;
-    let selEnd = periodos[periodos.length - 1] || null;
+    // Usa os valores passados ou fallback
+    let selStart = startInicial || periodos[0] || null;
+    let selEnd = endInicial || periodos[periodos.length - 1] || null;
 
-    // Agrupa períodos por ano para montar o grid
-    const grupos = {};
-    periodos.forEach(p => {
-        const [m, a] = p.split('-');
-        if (!grupos[a]) grupos[a] = [];
-        grupos[a].push(m);
-    });
-
-    // Gera o HTML do calendário
-    Object.keys(grupos).sort().forEach(ano => {
-        const divAno = document.createElement('div');
-        divAno.className = 'filtro-ano-grupo';
-        divAno.innerHTML = `<div class="filtro-ano-header">${ano}</div><div class="filtro-meses-grid"></div>`;
-        const grid = divAno.querySelector('.filtro-meses-grid');
-        
-        for (let i = 1; i <= 12; i++) {
-            const mes = String(i).padStart(2,'0');
-            const divMes = document.createElement('div');
-            divMes.textContent = MESES_ABREV[i-1];
+    // Função principal de renderização (agora encapsulada para poder ser chamada recursivamente ao clicar)
+    const renderizarCalendario = () => {
+        dropdown.innerHTML = ''; // Limpa tudo para redesenhar
+        const grupos = {};
+        periodos.forEach(p => {
+            const [m, a] = p.split('-');
+            if (!grupos[a]) grupos[a] = [];
+            grupos[a].push(m);
+        });
+        Object.keys(grupos).sort().forEach(ano => {
+            const divAno = document.createElement('div');
+            divAno.className = 'filtro-ano-grupo';
+            divAno.innerHTML = `<div class="filtro-ano-header">${ano}</div><div class="filtro-meses-grid"></div>`;
+            const grid = divAno.querySelector('.filtro-meses-grid');
             
-            if (grupos[ano].includes(mes)) {
-                divMes.className = 'filtro-mes-btn';
-                divMes.dataset.periodo = `${mes}-${ano}`;
+            for (let i = 1; i <= 12; i++) {
+                const mes = String(i).padStart(2,'0');
+                const periodoAtual = `${mes}-${ano}`;
+                const divMes = document.createElement('div');
+                divMes.textContent = MESES_ABREV[i-1];
                 
-                // --- LÓGICA DE CLIQUE COM VALIDAÇÃO DE LIMITE ---
-                divMes.onclick = () => {
-                    const p = divMes.dataset.periodo;
-                    
-                    // Caso 1: Começando uma nova seleção (primeiro clique ou reset)
-                    if (!selStart || (selStart && selEnd)) {
-                        selStart = p; 
-                        selEnd = null; 
-                    } 
-                    // Caso 2: Tentando fechar o intervalo (segundo clique)
-                    else {
-                        let inicio = selStart;
-                        let fim = p;
+                // Variáveis de Estado
+                const possuiDados = grupos[ano].includes(mes);
+                // Verifica se estamos no meio de uma seleção (clicou no primeiro, falta o segundo)
+                const selecionando = selStart && !selEnd;
+                
+                let foraDoLimite = false;
+                if (selecionando && possuiDados) {
+                    const dist = calcularDiferencaMeses(selStart, periodoAtual);
+                    if (dist > MAX_MESES_FLUXO) {
+                        foraDoLimite = true;
+                    }
+                }
+                // LÓGICA DE RENDERIZAÇÃO
+                // Só é clicável se: tiver dados E não estiver bloqueado pelo limite
+                if (possuiDados && !foraDoLimite) {
+                    divMes.className = 'filtro-mes-btn';
+                    divMes.dataset.periodo = periodoAtual;
 
-                        // Garante que inicio venha antes do fim cronologicamente
-                        if (compararChavesUI(p, selStart) < 0) {
-                            inicio = p;
-                            fim = selStart;
-                        }
+                    // Aplica classes visuais de seleção
+                    if (periodoAtual === selStart) divMes.classList.add('selected-start');
+                    if (periodoAtual === selEnd) divMes.classList.add('selected-end');
+                    if (selStart && selEnd && compararChavesUI(periodoAtual, selStart) > 0 && compararChavesUI(periodoAtual, selEnd) < 0) {
+                        divMes.classList.add('in-range');
+                    }
+                    // Evento de Clique
+                    divMes.onclick = (e) => {
+                        e.stopPropagation(); // Evita fechar o menu
 
-                        // VERIFICA SE O INTERVALO É MUITO GRANDE
-                        const qtdMeses = calcularDiferencaMeses(inicio, fim);
-                        
-                        if (qtdMeses > MAX_MESES_FLUXO) {
-                            alert(`O período selecionado é muito longo (${qtdMeses} meses).\nPara evitar lentidão, o limite é de ${MAX_MESES_FLUXO} meses.`);
-                            // Reinicia a seleção a partir do mês clicado agora
-                            selStart = p; 
+                        if (!selStart || (selStart && selEnd)) {
+                            // 1º Clique: Inicia nova seleção
+                            selStart = periodoAtual;
                             selEnd = null;
+                            // Redesenha para aplicar o "fade" nos meses distantes
+                            renderizarCalendario();
                         } else {
-                            // Intervalo válido: confirma a seleção
-                            selStart = inicio;
-                            selEnd = fim;
+                            // 2º Clique: Finaliza seleção
+                            let inicio = selStart;
+                            let fim = periodoAtual;
+                            
+                            if (compararChavesUI(fim, inicio) < 0) {
+                                [inicio, fim] = [fim, inicio];
+                            }
+                            // Dupla checagem de segurança (embora visualmente já esteja bloqueado)
+                            if (calcularDiferencaMeses(inicio, fim) <= MAX_MESES_FLUXO) {
+                                selStart = inicio;
+                                selEnd = fim;
+                                onChange(selStart, selEnd);
+                                // Redesenha para limpar o "fade" e mostrar o range final
+                                renderizarCalendario();
+                            }
                         }
+                    };
+                } else {
+                    // Renderiza como slot desativado (cinza claro)
+                    // Aplica-se a meses sem dados OU meses bloqueados pelo limite
+                    divMes.className = 'filtro-mes-slot';
+                    if (foraDoLimite) {
+                        divMes.style.opacity = '0.3'; 
+                        divMes.style.cursor = 'not-allowed';
                     }
-                    
-                    // Se tivermos um intervalo completo, chama a função de atualização
-                    if (selStart && selEnd) {
-                        onChange(selStart, selEnd);
-                    }
-                    
-                    atualizarEstilos();
-                };
-            } else {
-                divMes.className = 'filtro-mes-slot'; // Mês desabilitado (sem dados)
+                }
+                grid.appendChild(divMes);
             }
-            grid.appendChild(divMes);
-        }
-        dropdown.appendChild(divAno);
-    });
-
-    // Função interna para pintar os botões (azul escuro, azul claro, etc)
-    const atualizarEstilos = () => {
-        dropdown.querySelectorAll('.filtro-mes-btn').forEach(btn => {
-            const p = btn.dataset.periodo;
-            btn.classList.remove('selected-start', 'selected-end', 'in-range');
-            
-            if (p === selStart) btn.classList.add('selected-start');
-            if (p === selEnd) btn.classList.add('selected-end');
-            
-            if (selStart && selEnd && compararChavesUI(p, selStart) > 0 && compararChavesUI(p, selEnd) < 0) {
-                btn.classList.add('in-range');
-            }
+            dropdown.appendChild(divAno);
         });
     };
-    
-    // Inicializa estilos
-    setTimeout(atualizarEstilos, 0); 
+    // Inicialização
+    renderizarCalendario();
     return { dropdown, initialStart: selStart, initialEnd: selEnd };
 }
 
