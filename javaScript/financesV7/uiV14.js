@@ -802,6 +802,12 @@ function atualizarTabelaFD(tbody, itens, saldoBase, inicioSel, fimSel) {
         saldo += item.valor;
         r.insertCell().textContent = formatarValor(saldo);
     });
+    if (visiveis.length < 10) {
+        for (let i = visiveis.length; i <= 10; i++) {
+            const r = tbody.insertRow();
+            r.className = 'linha-vazia';
+        }
+    }
 }
 
 // ------ Auxiliares Fluxo Diário ------
