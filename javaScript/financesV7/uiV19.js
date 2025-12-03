@@ -874,14 +874,15 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate, startPad
     container.style.display = 'flex';
     container.style.alignItems = 'center';
     container.style.gap = '5px';
-    // Inicializa o texto já com o range cortado
+    
+    // Inicializa o texto
     container.innerHTML = `<div>Data</div><div style="font-size:0.8em; cursor:pointer" id="fd-periodo-label">${startPadrao} → ${endPadrao} ▼</div>`;
     
-    // Passamos os padrões para o dropdown saber o que marcar inicialmente
-    const { dropdown } = criarDropdownPeriodoVisual(periodosOrdenados, (ini, fim) => {
+    // Precisamos capturar initialStart e initialEnd que voltam da função criarDropdownPeriodoVisual
+    const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (ini, fim) => {
         container.querySelector('#fd-periodo-label').textContent = `${ini} → ${fim} ▼`;
         callbackUpdate(ini, fim);
-    }, startPadrao, endPadrao); // <--- Passando para o dropdown
+    }, startPadrao, endPadrao); 
 
     thData.appendChild(container);
     thData.appendChild(dropdown);
@@ -890,12 +891,10 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate, startPad
     const btn = container.querySelector('#fd-periodo-label');
     btn.onclick = (e) => {
         e.stopPropagation();
-        // Apenas alterna display, a posição é controlada pelo CSS (.filtro-dropdown)
         const isVisible = dropdown.style.display === 'block';
         dropdown.style.display = isVisible ? 'none' : 'block';
     };
 
-    // Fecha ao clicar fora
     document.addEventListener('click', (e) => {
         if (!thData.contains(e.target)) {
             dropdown.style.display = 'none';
@@ -905,6 +904,7 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate, startPad
     row.appendChild(thData);
     ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => row.insertCell().textContent = t);
 
+    // Agora initialStart e initialEnd existem porque foram declarados na const acima
     if (initialStart) container.querySelector('#fd-periodo-label').textContent = `${initialStart} → ${initialEnd} ▼`;
     
     return { initialStart, initialEnd };
