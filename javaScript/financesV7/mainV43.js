@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV13.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV14.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV21.js';
 
 // --- Cache da Aplicação ---
@@ -249,7 +249,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     let valorAcumuladoRealizado = 0;
     if (response.dadosRealizado?.length > 2) {
         try {
-            const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId);
+            const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
             console.log('extracted realizado', extractedCY);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
