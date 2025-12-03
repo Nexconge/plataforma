@@ -249,6 +249,8 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     let valorAcumuladoRealizado = 0;
     if (response.dadosRealizado?.length > 2) {
         try {
+            //Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
+            //PORTANDO È NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA INPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
             const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
             console.log('extracted realizado', extractedCY);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
