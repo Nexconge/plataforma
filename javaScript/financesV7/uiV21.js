@@ -247,7 +247,7 @@ function atualizarVisualizacoes(dadosProcessados, colunas, appCache) {
     // Gráficos e Fluxo Diário
     renderizarGraficos(dadosProcessados, colunas);
     const saldoIni = matrizDRE['Caixa Inicial']?.TOTAL || 0;
-    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni);
+    renderizarFluxoDiario(dadosProcessados.fluxoDeCaixa, colunas, saldoIni, appCache.projecao);
 }
 
 // 1. Tabela DRE
@@ -708,65 +708,111 @@ function configurarAbasGraficos() {
 // ------ Fluxo Diário ------
 const MAX_MESES_FLUXO = 6; // Define o limite máximo de meses a serem exibidos no fluxo diário
 
-function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
+// Em uiV18.js -> renderizarFluxoDiario
+
+// Adicione o parâmetro 'projecao' na assinatura da função
+function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni, projecao) {
     const tabela = document.getElementById('tabelaFluxoDiario');
     tabela.textContent = '';
     
     if (!Array.isArray(colunas) || colunas.length === 0) return;
 
-    // 1. Prepara TODAS as colunas possíveis (Expansão total)
-    // Isso garante que tenhamos o range completo (ex: 2025, 2026, 2027)
+    // 1. Prepara TODAS as colunas possíveis
     const colunasTotais = colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas;
-
-    // 2. Define o Range VISUAL Inicial (Apenas o recorte)
-    // Se houver mais meses que o limite, pegamos os últimos para definir onde o calendário abre visualmente
-    let inicioVisualizacao = colunasTotais[0];
-    let fimVisualizacao = colunasTotais[colunasTotais.length - 1];
-
-    if (colunasTotais.length > MAX_MESES_FLUXO) {
-        const corteVisual = colunasTotais.slice(-MAX_MESES_FLUXO);
-        inicioVisualizacao = corteVisual[0];
-        fimVisualizacao = corteVisual[corteVisual.length - 1];
-    }
-    
-    // 3. Filtragem dos DADOS (Usamos colunasTotais, NÃO o corte)
-    // O Set deve conter TODOS os períodos selecionados no filtro principal,
-    // para que 'itensFiltrados' tenha os dados de todos os anos na memória.
     const colunasSet = new Set(colunasTotais); 
 
+    // 2. Processamento dos DADOS
     const itensFiltrados = [];
     const periodosDisponiveis = new Set(); 
 
     fluxoDeCaixa.forEach(item => {
         const parts = item.data.split('/');
-        const chave = `${parts[1]}-${parts[2]}`; // MM-YYYY
+        const chave = `${parts[1]}-${parts[2]}`;
         
-        // Guarda disponibilidade (para o dropdown saber quais meses pintar)
         periodosDisponiveis.add(chave);
 
-        // Se a data do item está dentro do range TOTAL selecionado (ex: 5 anos), guardamos na memória.
-        // A tabela que vai decidir depois o que mostrar ou esconder baseada no range visual.
         if (colunasSet.has(chave)) {
             itensFiltrados.push({ ...item, chaveAgregacao: chave });
         }
     });
+
+    const periodosComDadosOrdenados = Array.from(periodosDisponiveis)
+        .filter(p => colunasSet.has(p))
+        .sort(compararChavesUI);
+
+    // 3. Define o Range VISUAL Inicial
+    let inicioVisualizacao, fimVisualizacao;
+
+    if (periodosComDadosOrdenados.length > 0) {
+        // --- CENÁRIO COM DADOS ---
+        
+        if (projecao === 'arealizar') {
+            // LÓGICA "A REALIZAR": Prioriza o INÍCIO dos dados
+            // Pega o PRIMEIRO mês que tem dados
+            const primeiroComDados = periodosComDadosOrdenados[0];
+            const indexInicio = colunasTotais.indexOf(primeiroComDados);
+
+            if (indexInicio !== -1) {
+                inicioVisualizacao = colunasTotais[indexInicio];
+                
+                // Calcula o FIM somando o limite para frente
+                const indexFim = Math.min(colunasTotais.length - 1, indexInicio + MAX_MESES_FLUXO - 1);
+                fimVisualizacao = colunasTotais[indexFim];
+            } else {
+                // Fallback
+                inicioVisualizacao = primeiroComDados;
+                fimVisualizacao = firstWithData;
+            }
+
+        } else {
+            // LÓGICA PADRÃO ("REALIZADO"): Prioriza o FIM dos dados
+            // Pega o ÚLTIMO mês que tem dados
+            const ultimoComDados = periodosComDadosOrdenados[periodosComDadosOrdenados.length - 1];
+            const indexFim = colunasTotais.indexOf(ultimoComDados);
+            
+            if (indexFim !== -1) {
+                fimVisualizacao = colunasTotais[indexFim];
+                // Calcula o INÍCIO subtraindo o limite para trás
+                const indexInicio = Math.max(0, indexFim - MAX_MESES_FLUXO + 1);
+                inicioVisualizacao = colunasTotais[indexInicio];
+            } else {
+                // Fallback
+                fimVisualizacao = ultimoComDados;
+                inicioVisualizacao = ultimoComDados; 
+            }
+        }
+
+    } else {
+        // --- CENÁRIO SEM DADOS (Tabela Vazia) ---
+        
+        if (projecao === 'arealizar') {
+            // Se for A Realizar e vazio, mostra os PRIMEIROS meses do filtro (futuro imediato)
+            const corte = colunasTotais.slice(0, MAX_MESES_FLUXO);
+            inicioVisualizacao = corte[0];
+            fimVisualizacao = corte[corte.length - 1];
+        } else {
+            // Se for Realizado e vazio, mostra os ÚLTIMOS meses do filtro (passado recente)
+            const corte = colunasTotais.slice(-MAX_MESES_FLUXO);
+            inicioVisualizacao = corte[0];
+            fimVisualizacao = corte[corte.length - 1];
+        }
+    }
     
-    const periodosOrdenados = Array.from(periodosDisponiveis).sort(compararChavesUI);
+    // Lista para dropdown
+    const periodosParaDropdown = Array.from(periodosDisponiveis).sort(compararChavesUI);
+    
     const tbody = tabela.createTBody();
 
     // 4. Criação do Cabeçalho
-    // Passamos 'inicioVisualizacao' e 'fimVisualizacao' apenas para definir o TEXTO inicial e o SELETOR inicial
     criarCabecalhoFluxo(
         tabela, 
-        periodosOrdenados, 
-        // Callback: quando o usuário mudar a data, 'itensFiltrados' agora tem todos os dados para buscar
+        periodosParaDropdown, 
         (ini, fim) => atualizarTabelaFD(tbody, itensFiltrados, saldoIni, ini, fim),
         inicioVisualizacao,
         fimVisualizacao
     );
 
-    // 5. Renderização Inicial
-    // Renderiza apenas o range cortado para não travar a tela na abertura
+    // 5. Renderização
     atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioVisualizacao, fimVisualizacao);
 }
 
