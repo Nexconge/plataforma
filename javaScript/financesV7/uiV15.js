@@ -706,6 +706,7 @@ function configurarAbasGraficos() {
 }
 
 // ------ Fluxo Diário ------
+const MAX_MESES_FLUXO = 4; // Defina aqui o seu limite (ex: 12 ou 24 meses)
 
 function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     const tabela = document.getElementById('tabelaFluxoDiario');
@@ -713,8 +714,17 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     if (!Array.isArray(colunas) || colunas.length === 0) return;
 
     // Expansão de colunas anuais se necessário
-    const colunasSet = new Set(colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas);
+    let colunasExpandidas = new Set(colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas);
     
+    // --- PROTEÇÃO CONTRA CARGA GIGANTE ---
+    // Se houver mais colunas que o limite, pegamos apenas as últimas X colunas (ou as primeiras)
+    if (colunasExpandidas.length > MAX_MESES_FLUXO) {
+        // Exemplo: Pega apenas os últimos 12 meses da lista para exibir inicialmente
+        // Se preferir os primeiros, use: colunasExpandidas.slice(0, MAX_MESES_FLUXO);
+        colunasExpandidas = colunasExpandidas.slice(-MAX_MESES_FLUXO); 
+    }
+    const colunasSet = new Set(colunasExpandidas);
+
     // Filtragem inicial
     const itensFiltrados = [];
     const periodos = new Set();
@@ -812,6 +822,14 @@ function atualizarTabelaFD(tbody, itens, saldoBase, inicioSel, fimSel) {
 
 // ------ Auxiliares Fluxo Diário ------
 
+function calcularDiferencaMeses(p1, p2) {
+    const [m1, a1] = p1.split('-').map(Number);
+    const [m2, a2] = p2.split('-').map(Number);
+ 
+    // Retorna a quantidade absoluta de meses (inclusivo)
+    return Math.abs((a2 - a1) * 12 + (m2 - m1)) + 1;
+}
+
 function compararChavesUI(a, b) {
     if (!a || !b) return 0;
     const [mA, aA] = a.split('-').map(Number);
@@ -880,15 +898,13 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate) {
 
 function criarDropdownPeriodoVisual(periodos, onChange) {
     const dropdown = document.createElement('div');
+    // As classes CSS definem o visual (incluindo o scrollbar que adicionamos antes)
     dropdown.className = 'filtro-dropdown filtro-calendario';
-    
-    // REMOVIDO: dropdown.style.cssText = ... (Isso sobrescrevia seu CSS)
-    // O CSS financesV19.css já cuida da posição absolute, background e sombra.
 
     let selStart = periodos[0] || null;
     let selEnd = periodos[periodos.length - 1] || null;
 
-    // Agrupamento por ano
+    // Agrupa períodos por ano para montar o grid
     const grupos = {};
     periodos.forEach(p => {
         const [m, a] = p.split('-');
@@ -896,9 +912,10 @@ function criarDropdownPeriodoVisual(periodos, onChange) {
         grupos[a].push(m);
     });
 
+    // Gera o HTML do calendário
     Object.keys(grupos).sort().forEach(ano => {
         const divAno = document.createElement('div');
-        divAno.className = 'filtro-ano-grupo'; // Usa classe do CSS
+        divAno.className = 'filtro-ano-grupo';
         divAno.innerHTML = `<div class="filtro-ano-header">${ano}</div><div class="filtro-meses-grid"></div>`;
         const grid = divAno.querySelector('.filtro-meses-grid');
         
@@ -908,26 +925,60 @@ function criarDropdownPeriodoVisual(periodos, onChange) {
             divMes.textContent = MESES_ABREV[i-1];
             
             if (grupos[ano].includes(mes)) {
-                divMes.className = 'filtro-mes-btn'; // Classe CSS
+                divMes.className = 'filtro-mes-btn';
                 divMes.dataset.periodo = `${mes}-${ano}`;
+                
+                // --- LÓGICA DE CLIQUE COM VALIDAÇÃO DE LIMITE ---
                 divMes.onclick = () => {
                     const p = divMes.dataset.periodo;
-                    if (!selStart || (selStart && selEnd)) { selStart = p; selEnd = null; }
+                    
+                    // Caso 1: Começando uma nova seleção (primeiro clique ou reset)
+                    if (!selStart || (selStart && selEnd)) {
+                        selStart = p; 
+                        selEnd = null; 
+                    } 
+                    // Caso 2: Tentando fechar o intervalo (segundo clique)
                     else {
-                        if (compararChavesUI(p, selStart) < 0) selStart = p;
-                        else selEnd = p;
+                        let inicio = selStart;
+                        let fim = p;
+
+                        // Garante que inicio venha antes do fim cronologicamente
+                        if (compararChavesUI(p, selStart) < 0) {
+                            inicio = p;
+                            fim = selStart;
+                        }
+
+                        // VERIFICA SE O INTERVALO É MUITO GRANDE
+                        const qtdMeses = calcularDiferencaMeses(inicio, fim);
+                        
+                        if (qtdMeses > MAX_MESES_FLUXO) {
+                            alert(`O período selecionado é muito longo (${qtdMeses} meses).\nPara evitar lentidão, o limite é de ${MAX_MESES_FLUXO} meses.`);
+                            // Reinicia a seleção a partir do mês clicado agora
+                            selStart = p; 
+                            selEnd = null;
+                        } else {
+                            // Intervalo válido: confirma a seleção
+                            selStart = inicio;
+                            selEnd = fim;
+                        }
                     }
-                    onChange(selStart, selEnd);
+                    
+                    // Se tivermos um intervalo completo, chama a função de atualização
+                    if (selStart && selEnd) {
+                        onChange(selStart, selEnd);
+                    }
+                    
                     atualizarEstilos();
                 };
             } else {
-                divMes.className = 'filtro-mes-slot'; // Classe CSS para desabilitado
+                divMes.className = 'filtro-mes-slot'; // Mês desabilitado (sem dados)
             }
             grid.appendChild(divMes);
         }
         dropdown.appendChild(divAno);
     });
 
+    // Função interna para pintar os botões (azul escuro, azul claro, etc)
     const atualizarEstilos = () => {
         dropdown.querySelectorAll('.filtro-mes-btn').forEach(btn => {
             const p = btn.dataset.periodo;
@@ -942,7 +993,7 @@ function criarDropdownPeriodoVisual(periodos, onChange) {
         });
     };
     
-    // Pequeno delay para garantir renderização antes de aplicar estilos visuais
+    // Inicializa estilos
     setTimeout(atualizarEstilos, 0); 
     return { dropdown, initialStart: selStart, initialEnd: selEnd };
 }
