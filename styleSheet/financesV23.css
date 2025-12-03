@@ -384,13 +384,35 @@ table tbody tr:last-child td:last-child {
   left: 0;
   background-color: #fff;
   border: 1px solid #ccc;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* Sombra um pouco mais forte para destaque */
   padding: 10px;
-  z-index: 100;
+  z-index: 1000; /* Z-index alto para ficar acima de tudo */
   font-size: 0.9em;
   font-weight: normal;
   border-radius: 6px;
-  width: 320px; /* Ajuste a largura conforme necessário */
+  width: 320px;
+  
+  max-height: 320px; /* Limita a altura máxima*/
+  overflow-y: auto;  /* Cria a barra de rolagem vertical automaticamente */
+}
+
+/* (Opcional) Estilização da barra de rolagem para ficar mais moderna */
+.filtro-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filtro-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.filtro-dropdown::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.filtro-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
 }
 
 /* Remove estilos antigos que não são mais necessários */
