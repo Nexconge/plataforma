@@ -298,7 +298,7 @@ function criarLinhaTabela(classe, colunas, dadosLinha, DRE = true) {
         row.classList.add('linhatotal');
     } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe)) {
         row.classList.add('linhaSaldo');
-    } else if (itensRecuados.includes(classe)) {
+    } else{
         row.classList.add('idented'); 
     }
     // Estilização linha de transferência
