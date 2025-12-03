@@ -714,53 +714,59 @@ function renderizarFluxoDiario(fluxoDeCaixa, colunas, saldoIni) {
     
     if (!Array.isArray(colunas) || colunas.length === 0) return;
 
-    // 1. Expansão e CORTE inicial dos dados
-    let colunasExpandidas = colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas;
+    // 1. Prepara TODAS as colunas possíveis (Expansão total)
+    // Isso garante que tenhamos o range completo (ex: 2025, 2026, 2027)
+    const colunasTotais = colunas[0].length === 4 ? expandirColunasAnoMes(colunas) : colunas;
 
-    // Se houver mais colunas que o limite, cortamos para pegar apenas os ÚLTIMOS meses (ex: último ano)
-    if (colunasExpandidas.length > MAX_MESES_FLUXO) {
-        colunasExpandidas = colunasExpandidas.slice(-MAX_MESES_FLUXO);
+    // 2. Define o Range VISUAL Inicial (Apenas o recorte)
+    // Se houver mais meses que o limite, pegamos os últimos para definir onde o calendário abre visualmente
+    let inicioVisualizacao = colunasTotais[0];
+    let fimVisualizacao = colunasTotais[colunasTotais.length - 1];
+
+    if (colunasTotais.length > MAX_MESES_FLUXO) {
+        const corteVisual = colunasTotais.slice(-MAX_MESES_FLUXO);
+        inicioVisualizacao = corteVisual[0];
+        fimVisualizacao = corteVisual[corteVisual.length - 1];
     }
     
-    // Definimos o range inicial com base no array JÁ CORTADO
-    const inicioVisualizacao = colunasExpandidas[0];
-    const fimVisualizacao = colunasExpandidas[colunasExpandidas.length - 1];
-    const colunasSet = new Set(colunasExpandidas);
+    // 3. Filtragem dos DADOS (Usamos colunasTotais, NÃO o corte)
+    // O Set deve conter TODOS os períodos selecionados no filtro principal,
+    // para que 'itensFiltrados' tenha os dados de todos os anos na memória.
+    const colunasSet = new Set(colunasTotais); 
 
-    // 2. Filtragem dos dados (apenas o que sobrou no set)
     const itensFiltrados = [];
-    const periodosDisponiveis = new Set(); // Para o dropdown saber o que existe de dados reais
+    const periodosDisponiveis = new Set(); 
 
     fluxoDeCaixa.forEach(item => {
         const parts = item.data.split('/');
-        const chave = `${parts[1]}-${parts[2]}`;
+        const chave = `${parts[1]}-${parts[2]}`; // MM-YYYY
         
-        // Guarda todos os períodos que têm dados para montar o calendário completo depois
+        // Guarda disponibilidade (para o dropdown saber quais meses pintar)
         periodosDisponiveis.add(chave);
 
+        // Se a data do item está dentro do range TOTAL selecionado (ex: 5 anos), guardamos na memória.
+        // A tabela que vai decidir depois o que mostrar ou esconder baseada no range visual.
         if (colunasSet.has(chave)) {
             itensFiltrados.push({ ...item, chaveAgregacao: chave });
         }
     });
     
-    // Ordena todos os períodos disponíveis no banco para o dropdown
-    // Mesmo que a visualização inicial seja cortada, o dropdown precisa saber de tudo para permitir navegação
     const periodosOrdenados = Array.from(periodosDisponiveis).sort(compararChavesUI);
-
     const tbody = tabela.createTBody();
 
-    // 3. Criação do Cabeçalho passando os limites iniciais corretos
+    // 4. Criação do Cabeçalho
+    // Passamos 'inicioVisualizacao' e 'fimVisualizacao' apenas para definir o TEXTO inicial e o SELETOR inicial
     criarCabecalhoFluxo(
         tabela, 
         periodosOrdenados, 
-        // Callback de atualização
+        // Callback: quando o usuário mudar a data, 'itensFiltrados' agora tem todos os dados para buscar
         (ini, fim) => atualizarTabelaFD(tbody, itensFiltrados, saldoIni, ini, fim),
-        // Passamos explicitamente onde deve começar a seleção visual
         inicioVisualizacao,
         fimVisualizacao
     );
 
-    // 4. Renderização Inicial
+    // 5. Renderização Inicial
+    // Renderiza apenas o range cortado para não travar a tela na abertura
     atualizarTabelaFD(tbody, itensFiltrados, saldoIni, inicioVisualizacao, fimVisualizacao);
 }
 
