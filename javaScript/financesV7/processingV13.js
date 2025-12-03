@@ -179,6 +179,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
 
                 // A. Adiciona à DRE (Apenas se for do ano selecionado)
                 if (String(lancamento.CODContaC) === contaId && pertenceAoPeriodoDRE) {
+                    if (titulo.Cliente == "FULL TECH INSTALACOES INDUSTRIAIS EIRELI") console.log("Lancamento do FULL TECH adicionado ao calculo de saldo", lancamento);
                     const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
                     
                     lancamentosProcessados.push({
@@ -190,6 +191,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         Cliente: titulo.Cliente,
                         Departamentos: deptosRateio
                     });
+                }else{
+                    if (titulo.Cliente == "FULL TECH INSTALACOES INDUSTRIAIS EIRELI") console.log("Lancamento do FULL TECH IGNORADO no calculo de saldo", lancamento);
                 }
 
                 // B. Adiciona ao Capital de Giro (SEMPRE, para manter histórico de liquidação)
