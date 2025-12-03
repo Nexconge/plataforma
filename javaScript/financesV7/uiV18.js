@@ -941,11 +941,13 @@ function criarDropdownPeriodoVisual(periodos, onChange, startInicial, endInicial
                 
                 // Variáveis de Estado
                 // Verifica se há um período selecionado
-                const selecionado = selStart && selEnd;
+                const perSelecionado = selStart && selEnd;
                 // Verifica se há dados para o mês atual
                 const possuiDados = grupos[ano].includes(mes);
                 // Verifica se estamos no meio de uma seleção (clicou no primeiro, falta o segundo)
                 const selecionando = selStart && !selEnd;
+                // Verificar se é o periodo inicial selecionado
+                const isStartSelected = selStart === periodoAtual;  
                 // Verifica se o mês atual está fora do limite permitido
                 let foraDoLimite = false;
                 if (selecionando && possuiDados) {
@@ -955,7 +957,7 @@ function criarDropdownPeriodoVisual(periodos, onChange, startInicial, endInicial
                     }
                 }
                 //Verifica se o mês atual está fora da seleção já finalizada
-                const foraDaSelecao = selecionado && (compararChavesUI(periodoAtual, selStart) < 0 || compararChavesUI(periodoAtual, selEnd) > 0);
+                const foraDaSelecao = perSelecionado && (compararChavesUI(periodoAtual, selStart) < 0 || compararChavesUI(periodoAtual, selEnd) > 0);
 
                 // LÓGICA DE RENDERIZAÇÃO
                 // Só é clicável se: tiver dados E não estiver bloqueado pelo limite
@@ -964,7 +966,7 @@ function criarDropdownPeriodoVisual(periodos, onChange, startInicial, endInicial
                     divMes.dataset.periodo = periodoAtual;
 
                     // Aplica classes visuais de seleção
-                    if (!foraDaSelecao) divMes.classList.add('selected-start');
+                    if ((!foraDaSelecao && !selecionando) || isStartSelected) divMes.classList.add('selected-start');
                 
                     // Evento de Clique
                     divMes.onclick = (e) => {
