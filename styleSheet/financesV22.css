@@ -526,3 +526,14 @@ table tbody tr:last-child td:last-child {
     width: 100% !important;
     height: 100% !important;
 }
+
+/* =========================================================
+   ESTADOS DE TABELA VAZIA (Correção Layout Calendário)
+========================================================= */
+
+.linha-sem-dados td {
+  height: 350px;        /* Altura suficiente para o calendário abrir sem ser cortado */
+  vertical-align: top;  /* Mantém o texto da mensagem no topo */
+  padding-top: 40px;    /* Espaçamento visual para o texto */
+  color: #666;          /* Cor suave para a mensagem */
+}

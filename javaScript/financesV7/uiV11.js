@@ -298,6 +298,8 @@ function criarLinhaTabela(classe, colunas, dadosLinha, DRE = true) {
         row.classList.add('linhatotal');
     } else if (['Caixa Inicial', 'Caixa Final','(+) Entradas','(-) Saídas'].includes(classe)) {
         row.classList.add('linhaSaldo');
+    } else if (itensRecuados.includes(classe)) {
+        row.classList.add('idented'); 
     }
     // Estilização linha de transferência
     if (classe.includes('Transferência')) {
@@ -758,6 +760,8 @@ function atualizarTabelaFD(tbody, itens, saldoBase, inicioSel, fimSel) {
 
     if (visiveis.length === 0) {
         const r = tbody.insertRow();
+        r.className = 'linha-sem-dados'; // <--- ADICIONE ESTA LINHA (Classe CSS)
+        
         const c = r.insertCell();
         c.colSpan = 4;
         c.textContent = 'Nenhum lançamento no período.';
