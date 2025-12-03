@@ -819,34 +819,44 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate) {
     // Coluna Data com Filtro
     const thData = document.createElement('th');
     thData.className = 'data-header';
+    // Importante: Position relative para o dropdown se alinhar a este container
+    thData.style.position = 'relative'; 
     
     const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.gap = '5px';
     container.innerHTML = `<div>Data</div><div style="font-size:0.8em; cursor:pointer" id="fd-periodo-label">Periodo ▼</div>`;
-    thData.appendChild(container);
     
+    // CRIA O DROPDOWN
     const { dropdown, initialStart, initialEnd } = criarDropdownPeriodoVisual(periodosOrdenados, (ini, fim) => {
         container.querySelector('#fd-periodo-label').textContent = `${ini} → ${fim} ▼`;
         callbackUpdate(ini, fim);
     });
 
+    // Anexa o dropdown AO CONTAINER (e não ao body), para respeitar o CSS top:100%
+    thData.appendChild(container);
+    thData.appendChild(dropdown); 
+
     // Eventos do Dropdown
     const btn = container.querySelector('#fd-periodo-label');
     btn.onclick = (e) => {
         e.stopPropagation();
-        const rect = btn.getBoundingClientRect();
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        dropdown.style.left = `${rect.left}px`;
-        dropdown.style.top = `${rect.bottom + 5}px`;
+        // Apenas alterna display, a posição é controlada pelo CSS (.filtro-dropdown)
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
     };
+
+    // Fecha ao clicar fora
     document.addEventListener('click', (e) => {
-        if (!container.contains(e.target) && !dropdown.contains(e.target)) dropdown.style.display = 'none';
+        if (!thData.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
     });
 
-    document.body.appendChild(dropdown);
     row.appendChild(thData);
     ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => row.insertCell().textContent = t);
 
-    // Texto inicial
     if (initialStart) container.querySelector('#fd-periodo-label').textContent = `${initialStart} → ${initialEnd} ▼`;
     
     return { initialStart, initialEnd };
@@ -855,7 +865,9 @@ function criarCabecalhoFluxo(tabela, periodosOrdenados, callbackUpdate) {
 function criarDropdownPeriodoVisual(periodos, onChange) {
     const dropdown = document.createElement('div');
     dropdown.className = 'filtro-dropdown filtro-calendario';
-    dropdown.style.cssText = 'position:absolute; display:none; z-index:9999; background:white; border:1px solid #ccc; padding:10px; box-shadow:0 4px 8px rgba(0,0,0,0.1)';
+    
+    // REMOVIDO: dropdown.style.cssText = ... (Isso sobrescrevia seu CSS)
+    // O CSS financesV19.css já cuida da posição absolute, background e sombra.
 
     let selStart = periodos[0] || null;
     let selEnd = periodos[periodos.length - 1] || null;
@@ -870,19 +882,20 @@ function criarDropdownPeriodoVisual(periodos, onChange) {
 
     Object.keys(grupos).sort().forEach(ano => {
         const divAno = document.createElement('div');
-        divAno.innerHTML = `<strong>${ano}</strong><div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px"></div>`;
-        const grid = divAno.querySelector('div');
+        divAno.className = 'filtro-ano-grupo'; // Usa classe do CSS
+        divAno.innerHTML = `<div class="filtro-ano-header">${ano}</div><div class="filtro-meses-grid"></div>`;
+        const grid = divAno.querySelector('.filtro-meses-grid');
         
         for (let i = 1; i <= 12; i++) {
             const mes = String(i).padStart(2,'0');
-            const btn = document.createElement('button');
-            btn.textContent = MESES_ABREV[i-1];
-            btn.style.cssText = 'border:1px solid #ddd; background:white; cursor:pointer; font-size:0.8em';
+            const divMes = document.createElement('div');
+            divMes.textContent = MESES_ABREV[i-1];
             
             if (grupos[ano].includes(mes)) {
-                btn.dataset.periodo = `${mes}-${ano}`;
-                btn.onclick = () => {
-                    const p = btn.dataset.periodo;
+                divMes.className = 'filtro-mes-btn'; // Classe CSS
+                divMes.dataset.periodo = `${mes}-${ano}`;
+                divMes.onclick = () => {
+                    const p = divMes.dataset.periodo;
                     if (!selStart || (selStart && selEnd)) { selStart = p; selEnd = null; }
                     else {
                         if (compararChavesUI(p, selStart) < 0) selStart = p;
@@ -892,27 +905,29 @@ function criarDropdownPeriodoVisual(periodos, onChange) {
                     atualizarEstilos();
                 };
             } else {
-                btn.disabled = true;
-                btn.style.opacity = 0.3;
+                divMes.className = 'filtro-mes-slot'; // Classe CSS para desabilitado
             }
-            grid.appendChild(btn);
+            grid.appendChild(divMes);
         }
         dropdown.appendChild(divAno);
     });
 
     const atualizarEstilos = () => {
-        dropdown.querySelectorAll('button[data-periodo]').forEach(btn => {
+        dropdown.querySelectorAll('.filtro-mes-btn').forEach(btn => {
             const p = btn.dataset.periodo;
-            btn.style.background = 'white';
-            btn.style.color = 'black';
-            if (p === selStart || p === selEnd) { btn.style.background = '#007bff'; btn.style.color = 'white'; }
-            else if (selStart && selEnd && compararChavesUI(p, selStart) > 0 && compararChavesUI(p, selEnd) < 0) {
-                btn.style.background = '#e6f2ff';
+            btn.classList.remove('selected-start', 'selected-end', 'in-range');
+            
+            if (p === selStart) btn.classList.add('selected-start');
+            if (p === selEnd) btn.classList.add('selected-end');
+            
+            if (selStart && selEnd && compararChavesUI(p, selStart) > 0 && compararChavesUI(p, selEnd) < 0) {
+                btn.classList.add('in-range');
             }
         });
     };
     
-    setTimeout(atualizarEstilos, 0); // Init visual
+    // Pequeno delay para garantir renderização antes de aplicar estilos visuais
+    setTimeout(atualizarEstilos, 0); 
     return { dropdown, initialStart: selStart, initialEnd: selEnd };
 }
 

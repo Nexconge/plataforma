@@ -121,12 +121,12 @@ table tbody tr:last-child td:last-child {
    CLASSES DE FORMATAÇÃO
 ========================================================= */
 
-.idented {
-  padding-left: 20px !important;
+.idented td:first-child {
+  padding-left: 30px !important;
 }
 
-.idented2 {
-  padding-left: 50px !important;
+.idented2 td:first-child {
+  padding-left: 60px !important;
 }
 
 .linhaclasse {
