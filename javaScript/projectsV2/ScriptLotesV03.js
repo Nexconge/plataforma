@@ -160,7 +160,7 @@ class MapaLotesManager {
         function updateQuadraScale() {
             const z = map.getZoom();
             const baseZoom = 15;   // zoom de referência
-            const minZoomShow = 17;
+            const minZoomShow = 19; // mostrar a marcação apenas no maior zoom
             const minScale = 0.45;
 
             const rawScale = z / baseZoom;
@@ -305,6 +305,7 @@ class MapaLotesManager {
             "valor_metro2": String(lote.ValorM2),
             "valor_total2": String(lote.Valor),
             "indice2": String(lote.IndiceConstrutivo),
+            "cliente2": String(lote.Cliente),
             "empreendimento2": lote.Empreendimento
         };
         
@@ -325,7 +326,7 @@ class MapaLotesManager {
             const cor = this._getLoteColor(polygon.loteData);
             polygon.setStyle({ weight: 0.6, fillColor: cor, color: "black" });
         }
-        const formIds = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
+        const formIds = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "cliente2", "empreendimento2"];
         formIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = "";
@@ -381,6 +382,7 @@ class MapaLotesManager {
             Lateral: unmaskNumber(getVal("lateral2")),
             ValorM2: unmaskNumber(getVal("valor_metro2")),
             Valor: unmaskNumber(getVal("valor_total2")),
+            Cliente: getVal("cliente2"),
             //IndiceConstrutivo: Number(getTxt("indice2"))
         });
 
