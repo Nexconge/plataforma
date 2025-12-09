@@ -160,7 +160,7 @@ class MapaLotesManager {
         function updateQuadraScale() {
             const z = map.getZoom();
             const baseZoom = 15;   // zoom de referência
-            const minZoomShow = 19; // mostrar a marcação apenas no maior zoom
+            const minZoomShow = 18; // mostrar a marcação apenas no maior zoom
             const minScale = 0.45;
 
             const rawScale = z / baseZoom;
@@ -305,7 +305,7 @@ class MapaLotesManager {
             "valor_metro2": String(lote.ValorM2),
             "valor_total2": String(lote.Valor),
             "indice2": String(lote.IndiceConstrutivo),
-            "cliente2": String(lote.Cliente),
+            "cliente2": `"${lote.Zoneamento || ""}"`,
             "empreendimento2": lote.Empreendimento
         };
         
