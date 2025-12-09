@@ -305,7 +305,7 @@ class MapaLotesManager {
             "valor_metro2": String(lote.ValorM2),
             "valor_total2": String(lote.Valor),
             "indice2": String(lote.IndiceConstrutivo),
-            "cliente2": `"${lote.Cliente || ""}"`,
+            "cliente2": `${lote.Cliente || ""}`,
             "empreendimento2": lote.Empreendimento
         };
         
