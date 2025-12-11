@@ -1,9 +1,11 @@
 import { buscarTitulos } from './apiV01.js';
 import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV14.js';
 
+window.TesteRelatorio = { stepCarregarProcessarDados };
+
 async function stepCarregarProcessarDados() {
-    const contas = ["77688464"] //LIsta de texto, CODContaC;
-    const anos = ["2022"]; //Lista de texto;
+    const contas = ["2084066950"] //LIsta de texto, CODContaC 1912668759 - AYL sicredi ;
+    const anos = ["2023"]; //Lista de texto;
     
     // Prepara Promises de Títulos
     const promises = buscarTitulos({ contas: contas, anos: anos }).then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
@@ -46,4 +48,5 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
     // 3. Merge: DRE Realizado = Baixas de Títulos (deste ano) + Lançamentos Manuais (deste ano)
     lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
+    console.log('lancamentos final', lancamentos);
 }
