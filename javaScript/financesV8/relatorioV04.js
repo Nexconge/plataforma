@@ -1,9 +1,7 @@
 import { buscarTitulos } from './apiV01.js';
 import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
 
-window.TesteRelatorio = { stepCarregarProcessarDados };
-
-async function stepCarregarProcessarDados() {
+window.TesteRelatorio = async function() {
     const contas = ["2084066950"] //LIsta de texto, CODContaC 1912668759 - AYL sicredi ;
     const anos = ["2023"]; //Lista de texto;
     
