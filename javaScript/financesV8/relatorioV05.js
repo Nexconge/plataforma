@@ -1,13 +1,13 @@
 import { buscarTitulos } from './apiV01.js';
 import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
 
-self.TesteRelatorio = async function() {
+window.TesteRelatorio = async function() {
     const contas = ["2084066950"] //LIsta de texto, CODContaC 1912668759 - AYL sicredi ;
     const anos = ["2023"]; //Lista de texto;
     
     // Prepara Promises de Títulos
     const promises = buscarTitulos({ contas: contas, anos: anos }).then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
-    const response = await Promise.all(promises);
+    const response = await promises;
     processarRespostaTitulos(response.apiResponse);
 }
 
