@@ -1,10 +1,7 @@
 import { buscarTitulos } from './apiV01.js';
 import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
 
-window.TesteRelatorio = async function() {
-    const contas = ["2084066950"]; 
-    const anos = ["2023"]; 
-    
+window.TesteRelatorio = async function(contas, anos) {
     try {
         // 1. Aguarda a resposta da API
         const responseGeral = await buscarTitulos({ contas: contas, anos: anos });
