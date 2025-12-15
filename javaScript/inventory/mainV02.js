@@ -27,7 +27,7 @@ async function realizarPost(endpoint, payload, nomeFuncao) {
 }
 
 async function buscarDadosEstoque(filtros) {
-    const payload = { CODprojeto: filtros };
+    const payload = { IDCadastro: filtros };
     try {
         return await realizarPost('buscarRelatorioEstoque', payload, 'buscarRelatorioEstoque');
     } catch (error) {
@@ -155,7 +155,7 @@ function gerarTabela(idTabela, titulo, colunas, dados) {
 
 // --- 3. EXECUÇÃO ---
 
-buscarDadosEstoque("1894620120")
+buscarDadosEstoque("1765300374970x436967584924167400")
     .then(resultado => {
         console.log("Dados recebidos da API.");
         processarEExibirDados(resultado);
