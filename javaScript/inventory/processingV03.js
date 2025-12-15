@@ -121,6 +121,7 @@ export function processarDados(dadosApi) {
     return {
         maisVendidos,
         maioresSaldos,
-        recomendacaoCompra: recomendacaoCompra.slice(0, 15)
+        recomendacaoCompra: recomendacaoCompra
+        //recomendacaoCompra: recomendacaoCompra.slice(0, 15)
     };
 }
