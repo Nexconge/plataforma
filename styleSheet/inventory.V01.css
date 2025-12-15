@@ -1,0 +1,80 @@
+.inventory-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .inv-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+    }
+
+    .inv-card h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        color: #2c3e50;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+    }
+
+    .inv-card.alert-card h3 {
+        color: #d35400;
+        border-bottom-color: #fadbd8;
+    }
+
+    .subtitle {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-top: -5px;
+        margin-bottom: 15px;
+    }
+
+    .inv-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .inv-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f5f5f5;
+        font-size: 0.9rem;
+    }
+
+    .inv-item:last-child {
+        border-bottom: none;
+    }
+
+    .inv-item .prod-name {
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 70%;
+    }
+
+    .inv-item .prod-metric {
+        font-weight: bold;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+
+    .alert-card .prod-metric {
+        background: #fdebd0;
+        color: #d35400;
+    }
+
+    .loading-text {
+        color: #aaa;
+        font-style: italic;
+    }
