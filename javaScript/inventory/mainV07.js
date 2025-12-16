@@ -1,7 +1,7 @@
 // main.js
 import { buscarDadosEstoque } from './apiV01.js';
-import { processarDados } from './processingV04.js';
-import { gerarTabelaPadrao, gerarTabelaRecomendacao } from './uiV02.js';
+import { processarDados } from './processingV05.js';
+import { gerarTabelaPadrao, gerarTabelaRecomendacao } from './uiV03.js';
 
 const IDCadastro = "1765300374970x436967584924167400";
 
@@ -25,7 +25,7 @@ async function iniciarAplicacao() {
 
         gerarTabelaPadrao(
             "tabelaMaioresSaldos", 
-            "Maiores Saldos (Consolidado)", 
+            "Maiores Saldos", 
             ["Produto", "Saldo Total"], 
             dadosProcessados.maioresSaldos
         );

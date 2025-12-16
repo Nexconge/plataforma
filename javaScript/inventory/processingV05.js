@@ -48,6 +48,7 @@ export function processarDados(dadosApi) {
         const id = String(item.idProduto);
         const saldo = parseInt(item.SaldoAtual) || 0;
         estoqueAtualMap[id] = (estoqueAtualMap[id] || 0) + saldo;
+        if (estoqueAtualMap[id] < 0) { estoqueAtualMap[id] = 0;}
     });
 
     // --- LISTAS SIMPLES (Mantidas para visualização geral) ---

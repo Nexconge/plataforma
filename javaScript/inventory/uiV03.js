@@ -43,7 +43,7 @@ export function gerarTabelaRecomendacao(idTabela, dados) {
     let html = `
         <thead>
             <tr>
-                <th colspan="5">Recomendação de Compra (Risco de Ruptura)</th>
+                <th colspan="5">Recomendação de Compra</th>
             </tr>
             <tr>
                 <th>Produto</th>
