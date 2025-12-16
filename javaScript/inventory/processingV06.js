@@ -48,7 +48,6 @@ export function processarDados(dadosApi) {
         const id = String(item.idProduto);
         const saldo = parseInt(item.SaldoAtual) || 0;
         estoqueAtualMap[id] = (estoqueAtualMap[id] || 0) + saldo;
-        if (estoqueAtualMap[id] < 0) { estoqueAtualMap[id] = 0;}
     });
 
     // --- LISTAS SIMPLES (Mantidas para visualização geral) ---
@@ -67,14 +66,14 @@ export function processarDados(dadosApi) {
     const recomendacaoCompra = [];
 
     todosIds.forEach(id => {
-        const totalVendas90Dias = vendasTotais[id] || 0;
+        const totalVendas = vendasTotais[id] || 0;
         const estoqueReal = estoqueAtualMap[id] || 0;
         
         // REGRA DE NEGÓCIO: Se estoque < 0, considerar 0 para o cálculo de necessidade
         const estoqueCalculo = estoqueReal < 0 ? 0 : estoqueReal;
 
         // 1. Venda Média Diária (VMD)
-        const vendaMediaDiaria = totalVendas90Dias / JANELA_ANALISE_DIAS;
+        const vendaMediaDiaria = totalVendas / JANELA_ANALISE_DIAS;
 
         // 2. Estoque Mínimo (Ponto de Pedido)
         // Fórmula: VMD * LeadTime * (1 + Segurança)
@@ -94,7 +93,7 @@ export function processarDados(dadosApi) {
             if (sugestaoCompra > 0) {
                 recomendacaoCompra.push({
                     nome: getNome(id),
-                    estoqueAtual: estoqueReal, // Mostra o real (pode ser negativo)
+                    estoqueAtual: estoqueCalculo, // Impede saldo negativos
                     vendaMedia: vendaMediaDiaria.toFixed(2),
                     estoqueMinimo: Math.ceil(estoqueMinimo), // Arredonda visualmente
                     sugestao: sugestaoCompra,
@@ -105,7 +104,7 @@ export function processarDados(dadosApi) {
     });
 
     // Ordenar: Menor cobertura (mais urgente) primeiro
-    recomendacaoCompra.sort((a, b) => a.urgencia - b.urgencia);
+    recomendacaoCompra.sort((a, b) => a.sugestao - b.sugestao);
 
     return {
         maisVendidos,
