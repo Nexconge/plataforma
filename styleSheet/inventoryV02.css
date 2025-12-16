@@ -1,0 +1,123 @@
+/* style.css */
+
+/* --- CONFIGURAÇÃO GERAL DAS TABELAS --- */
+table {
+    width: 100%;
+    border-collapse: separate; /* Necessário para border-radius funcionar no thead */
+    border-spacing: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 14px;
+    color: #000;
+    background-color: #fff;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sutil sombra para destacar */
+}
+
+/* --- CABEÇALHO (THEAD) --- */
+thead th {
+    background-color: #0066cc; /* Azul padrão */
+    color: #fff;
+    font-weight: bold;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 3px solid #0052a3; /* Borda inferior mais escura */
+    position: relative;
+}
+
+/* Arredondamento dos cantos superiores */
+thead tr:first-child th:first-child {
+    border-top-left-radius: 8px;
+}
+thead tr:first-child th:last-child {
+    border-top-right-radius: 8px;
+}
+
+/* Sub-cabeçalhos (segunda linha do thead, se houver) */
+thead tr:nth-child(2) th {
+    background-color: #f4f4f4;
+    color: #333;
+    border-bottom: 1px solid #ccc;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- ESTILO ESPECÍFICO: Tabela de Recomendação (Vermelha) --- */
+#tabelaRecomendacaoCompra thead tr:first-child th {
+    background-color: #d9534f; /* Vermelho alerta */
+    border-bottom: 3px solid #b52b27;
+}
+
+/* --- CORPO (TBODY) --- */
+tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: middle;
+}
+
+/* Zebra Striping (Listrado) */
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+tbody tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+/* Efeito Hover */
+tbody tr:hover {
+    background-color: #e6f0ff;
+    transition: background-color 0.2s ease;
+}
+
+/* --- UTILITÁRIOS DE CÉLULA --- */
+.text-right {
+    text-align: right;
+    font-family: monospace; /* Para alinhar números */
+    font-size: 1.1em;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+/* Badges de Estoque (Pílulas coloridas) */
+.badge-estoque {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+    min-width: 25px;
+    text-align: center;
+}
+
+.badge-vermelho {
+    background-color: #ffe6e6;
+    color: #cc0000;
+    border: 1px solid #ffcccc;
+}
+
+.badge-amarelo {
+    background-color: #fff8e1;
+    color: #e6a800;
+    border: 1px solid #ffe082;
+}
+
+/* Destaque na coluna de Sugestão */
+.sugestao-compra {
+    color: #d9534f;
+    font-weight: bold;
+}
+
+/* Mensagem de "Vazio" */
+.empty-message {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
