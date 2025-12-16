@@ -104,7 +104,7 @@ export function processarDados(dadosApi) {
     });
 
     // Ordenar: Menor cobertura (mais urgente) primeiro
-    recomendacaoCompra.sort((a, b) => a.sugestao - b.sugestao);
+    recomendacaoCompra.sort((a, b) => b.sugestao - a.sugestao);
 
     return {
         maisVendidos,
