@@ -75,8 +75,10 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
     console.log('lancamentos final', lancamentosFiltrados);
 
+    const lancamentosOrdenados = [...lancamentosFiltrados].sort((a, b) => parseDataBR(b.DataLancamento) - parseDataBR(a.DataLancamento));
+
     // 5. Gerar Excel
-    const linhasExcel = lancamentosFiltrados.map(l => ({
+    const linhasExcel = lancamentosOrdenados.map(l => ({
         Data: l.DataLancamento,
         Descrição: l.Cliente || '',
         Débito: l.Natureza === 'R' ? l.ValorLancamento : '',
@@ -92,16 +94,16 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
     // Ajuste simples de largura das colunas
     worksheet['!cols'] = [
-        { wch: 12 }, // Data
-        { wch: 35 }, // Descrição
-        { wch: 15 }, // Débito
-        { wch: 15 }  // Crédito
+        { wch: 20 }, // Data
+        { wch: 150 }, // Descrição
+        { wch: 20 }, // Débito
+        { wch: 20 }  // Crédito
     ];
 
     // Exporta o arquivo Excel
     XLSX.writeFile(workbook, `Relatorio_${contaId}_${anoOuTag}.xlsx`);
 
-    return lancamentosFiltrados;
+    return lancamentosOrdenados;
 }
 
 function parseDataBR(dataStr) {
