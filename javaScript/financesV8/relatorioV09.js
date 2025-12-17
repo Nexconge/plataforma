@@ -58,3 +58,38 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     
     return lancamentos;
 }
+
+function gerarExcelLancamentos(lancamentos, nomeArquivo = 'lancamentos.xlsx') {
+
+    const linhasExcel = lancamentos.map(l => ({
+        Data: l.DataLancamento,
+        Descrição: l.Cliente || '',
+        Débito: l.Natureza === 'R' ? l.ValorLancamento : '',
+        Crédito: l.Natureza === 'P' ? -l.ValorLancamento : ''
+    }));
+
+    // Cria a planilha
+    const worksheet = XLSX.utils.json_to_sheet(linhasExcel);
+
+    // Cria o workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Lançamentos');
+
+    // Ajuste simples de largura das colunas
+    worksheet['!cols'] = [
+        { wch: 12 }, // Data
+        { wch: 35 }, // Descrição
+        { wch: 15 }, // Débito
+        { wch: 15 }  // Crédito
+    ];
+
+    // Exporta o arquivo
+    XLSX.writeFile(workbook, nomeArquivo);
+}
+
+const lancamentos = processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
+
+gerarExcelLancamentos(
+    lancamentos,
+    `lancamentos_conta_${contaId}.xlsx`
+);
