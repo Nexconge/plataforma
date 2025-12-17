@@ -49,7 +49,7 @@ export function gerarTabelaRecomendacao(idTabela, dados) {
                 <th>Produto</th>
                 <th class="text-center">Estoque</th>
                 <th class="text-center" title="Média últimos 90 dias">Venda/Dia</th>
-                <th class="text-center" title="Ponto de Reposição">Est. Mínimo</th>
+                <th class="text-center" title="Ponto de Reposição considerando margem de segurança de 50%">Est. Mínimo</th>
                 <th class="text-right">Sugestão</th>
             </tr>
         </thead>

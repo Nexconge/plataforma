@@ -1,7 +1,7 @@
 // main.js
 import { buscarDadosEstoque } from './apiV01.js';
-import { processarDados } from './processingV07.js';
-import { gerarTabelaPadrao, gerarTabelaRecomendacao } from './uiV03.js';
+import { processarDados } from './processingV08.js';
+import { gerarTabelaPadrao, gerarTabelaRecomendacao } from './uiV04.js';
 
 const IDCadastro = "1765300374970x436967584924167400";
 

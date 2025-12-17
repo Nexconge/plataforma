@@ -30,14 +30,13 @@ export function processarDados(dadosApi) {
     // 1. Calcular Vendas Totais (Demanda)
     const vendasTotais = {};
     rawNotas.forEach(nota => {
-        // Filtra apenas saídas
-        if (nota.tipo && nota.tipo.toLowerCase() !== 'saida') return;
-
         if (nota.produtos && Array.isArray(nota.produtos)) {
             nota.produtos.forEach(prod => {
                 const id = String(prod.idProduto);
-                const qtd = parseInt(prod.quantidade) || 0;
-                vendasTotais[id] = (vendasTotais[id] || 0) + qtd;
+                let qtd = parseInt(prod.quantidade) || 0;
+
+                if (nota.tipo && nota.tipo.toLowerCase() == 'entrada') qtd = -qtd; // Entradas são devoluções, subtraem da venda
+                vendasTotais[id] = (vendasTotais[id] || 0) - qtd;
             });
         }
     });
