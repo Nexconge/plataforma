@@ -35,8 +35,8 @@ export function processarDados(dadosApi) {
                 const id = String(prod.idProduto);
                 let qtd = parseInt(prod.quantidade) || 0;
 
-                if (nota.tipo && nota.tipo.toLowerCase() == 'entrada') qtd = -qtd; // Entradas são devoluções, subtraem da venda
-                vendasTotais[id] = (vendasTotais[id] || 0) - qtd;
+                if (nota.tipo && nota.tipo.toLowerCase() !== 'saida') qtd = -qtd; // Entradas são devoluções, subtraem da venda
+                vendasTotais[id] = (vendasTotais[id] || 0) + qtd;
             });
         }
     });
