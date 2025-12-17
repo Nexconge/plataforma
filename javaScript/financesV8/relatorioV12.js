@@ -79,9 +79,8 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
         { wch: 15 }  // Crédito
     ];
 
-    // Exporta o arquivo
-    nomeArquivo = `Relatorio_${contaId}_${anoOuTag}.xlsx`;
-    XLSX.writeFile(workbook, nomeArquivo);
+    // Exporta o arquivo Excel
+    XLSX.writeFile(workbook, `Relatorio_${contaId}_${anoOuTag}.xlsx`);
 
     return lancamentos;
 }
