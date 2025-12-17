@@ -54,10 +54,25 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
     // 3. Merge
     lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
-    console.log('lancamentos final', lancamentos);
 
-    // 4. Gerar Excel
-    const linhasExcel = lancamentos.map(l => ({
+    // 4. Filtros adicionais (Data Inicial e Final)
+    const dataInicial = new Date(document.getElementById('inputDataInicial').value);
+    const dataFinal   = new Date(document.getElementById('inputDataFinal').value);
+    
+    lancamentosFiltratos = lancamentos.filter(l => {
+        const dataLancamento = parseDataBR(l.DataLancamento);
+        if (!dataLancamento) return false;
+
+        if (dataInicial && dataLancamento < dataInicial) return false;
+        if (dataFinal && dataLancamento > dataFinal) return false;
+
+        return true;
+    });
+
+    console.log('lancamentos final', lancamentosFiltrados);
+
+    // 5. Gerar Excel
+    const linhasExcel = lancamentosFiltrados.map(l => ({
         Data: l.DataLancamento,
         Descrição: l.Cliente || '',
         Débito: l.Natureza === 'R' ? l.ValorLancamento : '',
@@ -82,5 +97,12 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     // Exporta o arquivo Excel
     XLSX.writeFile(workbook, `Relatorio_${contaId}_${anoOuTag}.xlsx`);
 
-    return lancamentos;
+    return lancamentosFiltrados;
+}
+
+function parseDataBR(dataStr) {
+    if (!dataStr) return null;
+
+    const [dia, mes, ano] = dataStr.split('/').map(Number);
+    return new Date(ano, mes - 1, dia); // mês começa em 0
 }
