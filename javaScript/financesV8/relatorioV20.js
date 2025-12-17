@@ -97,7 +97,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     ];
 
     // Exporta o arquivo Excel
-    XLSX.writeFile(workbook, `relatorio_movimento_${document.getElementById('dropContaCorrente').value}_${dataFinal}.xlsx`);
+    XLSX.writeFile(workbook, `relatorio_movimento_${document.getElementById('dropContaCorrente').value}_${document.getElementById('inputDataFinal').value.replace("/","-")}.xlsx`);
 
     console.log(`Relatório gerado com sucesso, total de ${linhasExcel.length} lançamentos exportados.`);
 }
