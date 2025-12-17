@@ -80,6 +80,7 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     ];
 
     // Exporta o arquivo
+    nomeArquivo = `Relatorio_${contaId}_${anoOuTag}.xlsx`;
     XLSX.writeFile(workbook, nomeArquivo);
 
     return lancamentos;
