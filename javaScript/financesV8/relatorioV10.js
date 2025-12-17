@@ -55,12 +55,8 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     // 3. Merge
     lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
     console.log('lancamentos final', lancamentos);
-    
-    return lancamentos;
-}
 
-function gerarExcelLancamentos(lancamentos, nomeArquivo = 'lancamentos.xlsx') {
-
+    // 4. Gerar Excel
     const linhasExcel = lancamentos.map(l => ({
         Data: l.DataLancamento,
         Descrição: l.Cliente || '',
@@ -85,11 +81,6 @@ function gerarExcelLancamentos(lancamentos, nomeArquivo = 'lancamentos.xlsx') {
 
     // Exporta o arquivo
     XLSX.writeFile(workbook, nomeArquivo);
+
+    return lancamentos;
 }
-
-const lancamentos = processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
-
-gerarExcelLancamentos(
-    lancamentos,
-    `lancamentos_conta_${contaId}.xlsx`
-);
