@@ -75,14 +75,14 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
     console.log('lancamentos final', lancamentosFiltrados);
 
-    const lancamentosOrdenados = [...lancamentosFiltrados].sort((a, b) => parseDataBR(b.DataLancamento) - parseDataBR(a.DataLancamento));
+    const lancamentosOrdenados = [...lancamentosFiltrados].sort((a, b) => parseDataBR(a.DataLancamento) - parseDataBR(b.DataLancamento));
 
     // 5. Gerar Excel
     const linhasExcel = lancamentosOrdenados.map(l => ({
         Data: l.DataLancamento,
         Descrição: l.Cliente || '',
-        Débito: l.Natureza === 'R' ? l.ValorLancamento : '',
-        Crédito: l.Natureza === 'P' ? -l.ValorLancamento : ''
+        Débito: l.Natureza === 'R' ? formatarContabil(l.ValorLancamento) : '-',
+        Crédito: l.Natureza === 'P' ? formatarContabil(-l.ValorLancamento) : '-'
     }));
 
     // Cria a planilha
@@ -94,10 +94,10 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
     // Ajuste simples de largura das colunas
     worksheet['!cols'] = [
-        { wch: 20 }, // Data
-        { wch: 150 }, // Descrição
-        { wch: 20 }, // Débito
-        { wch: 20 }  // Crédito
+        { wch: 15 }, // Data
+        { wch: 50 }, // Descrição
+        { wch: 15 }, // Débito
+        { wch: 15 }  // Crédito
     ];
 
     // Exporta o arquivo Excel
@@ -106,9 +106,28 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     return lancamentosOrdenados;
 }
 
+//----------------------------------------------------------------------------------------------------//
+//                                         FUNÇÕES AUXILIARES
+//----------------------------------------------------------------------------------------------------//
+
 function parseDataBR(dataStr) {
     if (!dataStr) return null;
 
     const [dia, mes, ano] = dataStr.split('/').map(Number);
     return new Date(ano, mes - 1, dia); // mês começa em 0
+}
+
+function formatarContabil(valor) {
+    if (valor === 0 || valor === null || valor === undefined) {
+        return '-';
+    }
+
+    const valorAbs = Math.abs(valor);
+
+    const formatado = valorAbs.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    return valor < 0 ? `(${formatado})` : formatado;
 }
