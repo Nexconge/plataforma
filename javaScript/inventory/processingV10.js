@@ -37,6 +37,7 @@ export function processarDados(dadosApi) {
 
                 if (nota.tipo && nota.tipo.toLowerCase() !== 'saida') qtd = -qtd; // Entradas são devoluções, subtraem da venda
                 vendasTotais[id] = (vendasTotais[id] || 0) + qtd;
+                if(id === "1649") console.log("Produto 1649 qtd:", qtd, " total até agora:", vendasTotais[id]);
             });
         }
     });
