@@ -58,8 +58,6 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     // 4. Filtros adicionais (Data Inicial e Final)
     const dataInicial = new Date(parseDataBR(document.getElementById('inputDataInicial').value));
     const dataFinal   = new Date(parseDataBR(document.getElementById('inputDataFinal').value));
-    console.log('dataInicial:', dataInicial);
-    console.log('dataFinal:', dataFinal);
 
     let lancamentosFiltrados = [];
     
@@ -72,8 +70,6 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 
         return true;
     });
-
-    console.log('lancamentos final', lancamentosFiltrados);
 
     const lancamentosOrdenados = [...lancamentosFiltrados].sort((a, b) => parseDataBR(a.DataLancamento) - parseDataBR(b.DataLancamento));
 
@@ -101,9 +97,9 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     ];
 
     // Exporta o arquivo Excel
-    XLSX.writeFile(workbook, `Relatorio_${contaId}_${anoOuTag}.xlsx`);
+    XLSX.writeFile(workbook, `relatorio_movimento_${document.getElementById('dropContaCorrente').value}_${dataFinal}.xlsx`);
 
-    return lancamentosOrdenados;
+    console.log(`Relatório gerado com sucesso, total de ${linhasExcel.length} lançamentos exportados.`);
 }
 
 //----------------------------------------------------------------------------------------------------//
