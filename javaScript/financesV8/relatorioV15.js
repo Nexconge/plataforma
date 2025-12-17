@@ -58,6 +58,8 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     // 4. Filtros adicionais (Data Inicial e Final)
     const dataInicial = new Date(document.getElementById('inputDataInicial').value);
     const dataFinal   = new Date(document.getElementById('inputDataFinal').value);
+    console.log('dataInicial:', dataInicial);
+    console.log('dataFinal:', dataFinal);
 
     let lancamentosFiltrados = [];
     
