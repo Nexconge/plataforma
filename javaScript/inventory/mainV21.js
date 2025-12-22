@@ -142,10 +142,10 @@ async function carregarRelatorioFinal(idCadastro, data) {
     console.log(`Buscando relatório para ${idCadastro} na data ${data}...`);
     try {
         const dadosBrutos = await buscarDadosEstoque(idCadastro, data);
-        
+        console.log("Dados brutos recebidos:", dadosBrutos);
         // 3. Processamento
         const dadosProcessados = processarDados(dadosBrutos);
-        
+        console.log("Dados processados:", dadosProcessados);
         // Salva Cache
         EstadoApp.cacheRelatorios[chaveCache] = dadosProcessados;
 
