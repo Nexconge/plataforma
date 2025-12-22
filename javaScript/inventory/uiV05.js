@@ -1,4 +1,27 @@
-// ui.js
+// uiV04.js
+
+// Função para preencher Selects (Dropdowns)
+export function preencherSelect(idElemento, dados, placeholder = "Selecione...") {
+    const select = document.getElementById(idElemento);
+    if (!select) return;
+
+    select.innerHTML = ""; // Limpa anterior
+    
+    // Opção padrão
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = placeholder;
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+
+    dados.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.text = item.nome;
+        select.appendChild(option);
+    });
+}
 
 // Função genérica para criar tabelas (Mais Vendidos / Maiores Saldos)
 export function gerarTabelaPadrao(idTabela, titulo, colunas, dados) {
@@ -57,19 +80,16 @@ export function gerarTabelaRecomendacao(idTabela, dados) {
     `;
 
     dados.forEach(dado => {
-        // Define classes CSS baseadas na lógica
         const classeBadge = dado.estoqueAtual <= 0 ? 'badge-vermelho' : 'badge-amarelo';
 
         html += `
             <tr>
                 <td>${dado.nome}</td>
-                
                 <td class="text-center">
                     <span class="badge-estoque ${classeBadge}">
                         ${dado.estoqueAtual}
                     </span>
                 </td>
-                
                 <td class="text-center">${dado.vendaMedia}</td>
                 <td class="text-center font-bold">${dado.estoqueMinimo}</td>
                 <td class="text-right sugestao-compra">+${dado.sugestao}</td>

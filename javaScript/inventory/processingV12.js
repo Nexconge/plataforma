@@ -1,15 +1,17 @@
-// processing.js
+// processingV11.js
 
 // --- CONSTANTES DE NEGOCIO ---
 const LEAD_TIME_DIAS = 15;
 const MARGEM_SEGURANCA = 0.50; // 50%
-const JANELA_ANALISE_DIAS = 90; // Para cálculo da venda média
+const JANELA_ANALISE_DIAS = 90;
 
 function corrigirEParsearJSON(stringDados) {
     if (!stringDados) return [];
     try {
         if (typeof stringDados === 'object') return stringDados;
+        // Tenta parsear JSON padrão
         try { return JSON.parse(stringDados); } 
+        // Fallback para arrays mal formados se necessário
         catch (e) { return JSON.parse(`[${stringDados}]`); }
     } catch (erro) {
         console.error("Erro JSON:", erro);
@@ -18,9 +20,26 @@ function corrigirEParsearJSON(stringDados) {
 }
 
 export function processarDados(dadosApi) {
-    const rawNotas = corrigirEParsearJSON(dadosApi.response.entradasESaidas);
-    const rawSaldos = corrigirEParsearJSON(dadosApi.response.saldoProdutos);
-    const rawNomes = corrigirEParsearJSON(dadosApi.response.produtosEstoque);
+    // Adaptação: O novo endpoint retorna 'relatorio' que contém tudo
+    let rawRelatorio = {};
+    
+    // Verifica se veio do formato antigo ou novo
+    if (dadosApi.response && dadosApi.response.relatorio) {
+        // Se 'relatorio' for uma string JSON, parseamos
+        rawRelatorio = typeof dadosApi.response.relatorio === 'string' 
+            ? corrigirEParsearJSON(dadosApi.response.relatorio)
+            : dadosApi.response.relatorio;
+    } else if (dadosApi.response) {
+        // Fallback para formato antigo (caso a API retorne os campos separados)
+        rawRelatorio = dadosApi.response;
+    }
+
+    // Extração segura das listas (assume que o objeto relatorio tem essas chaves)
+    // Se o 'relatorio' for uma lista única misturada, a lógica teria que mudar drasticamente.
+    // Assumimos aqui que o objeto 'relatorio' agrupa as 3 listas anteriores.
+    const rawNotas = rawRelatorio.entradasESaidas ? corrigirEParsearJSON(rawRelatorio.entradasESaidas) : [];
+    const rawSaldos = rawRelatorio.saldoProdutos ? corrigirEParsearJSON(rawRelatorio.saldoProdutos) : [];
+    const rawNomes = rawRelatorio.produtosEstoque ? corrigirEParsearJSON(rawRelatorio.produtosEstoque) : [];
 
     // Mapeamento de Nomes
     const mapaNomes = {};
@@ -34,10 +53,8 @@ export function processarDados(dadosApi) {
             nota.produtos.forEach(prod => {
                 const id = String(prod.idProduto);
                 let qtd = parseInt(prod.quantidade) || 0;
-
-                if (nota.tipo && nota.tipo.toLowerCase() !== 'saida') qtd = -qtd; // Entradas são devoluções, subtraem da venda
+                if (nota.tipo && nota.tipo.toLowerCase() !== 'saida') qtd = -qtd;
                 vendasTotais[id] = (vendasTotais[id] || 0) + qtd;
-                if(id === "1649") console.log("data", nota.data, "Produto 1649 qtd:", qtd, " total até agora:", vendasTotais[id]);
             });
         }
     });
@@ -50,7 +67,7 @@ export function processarDados(dadosApi) {
         estoqueAtualMap[id] = (estoqueAtualMap[id] || 0) + saldo;
     });
 
-    // --- LISTAS SIMPLES (Mantidas para visualização geral) ---
+    // --- LISTAS SIMPLES ---
     const maisVendidos = Object.keys(vendasTotais)
         .map(id => ({ nome: getNome(id), quantidade: vendasTotais[id] }))
         .sort((a, b) => b.quantidade - a.quantidade)
@@ -61,41 +78,28 @@ export function processarDados(dadosApi) {
         .sort((a, b) => b.quantidade - a.quantidade)
         .slice(0, 10);
 
-    // --- LISTA 3: MRP / RECOMENDAÇÃO DE COMPRA ---
+    // --- MRP / RECOMENDAÇÃO ---
     const todosIds = new Set([...Object.keys(vendasTotais), ...Object.keys(estoqueAtualMap)]);
     const recomendacaoCompra = [];
 
     todosIds.forEach(id => {
         const totalVendas = vendasTotais[id] || 0;
         const estoqueReal = estoqueAtualMap[id] || 0;
-        
-        // REGRA DE NEGÓCIO: Se estoque < 0, considerar 0 para o cálculo de necessidade
         const estoqueCalculo = estoqueReal < 0 ? 0 : estoqueReal;
 
-        // 1. Venda Média Diária (VMD)
         const vendaMediaDiaria = totalVendas / JANELA_ANALISE_DIAS;
-
-        // 2. Estoque Mínimo (Ponto de Pedido)
-        // Fórmula: VMD * LeadTime * (1 + Segurança)
         const estoqueMinimo = vendaMediaDiaria * LEAD_TIME_DIAS * (1 + MARGEM_SEGURANCA);
 
-        // 3. Verificação de Compra
-        // Se Estoque Atual < Estoque Mínimo
         if (estoqueCalculo < estoqueMinimo) {
-            // Sugestão: O quanto falta para atingir o estoque mínimo (ou um alvo maior)
-            // Aqui sugerimos comprar o suficiente para voltar ao nível do estoque mínimo + arredondamento
             const sugestaoCompra = Math.ceil(estoqueMinimo - estoqueCalculo);
-            
-            // Calculamos urgência (quanto % do estoque mínimo eu tenho?)
-            // Se estoqueMinimo for 0 (sem vendas), urgencia é baixa
             const urgencia = estoqueMinimo === 0 ? 1 : (estoqueCalculo / estoqueMinimo);
 
             if (sugestaoCompra > 0) {
                 recomendacaoCompra.push({
                     nome: getNome(id),
-                    estoqueAtual: estoqueCalculo, // Impede saldo negativos
+                    estoqueAtual: estoqueCalculo,
                     vendaMedia: vendaMediaDiaria.toFixed(2),
-                    estoqueMinimo: Math.ceil(estoqueMinimo), // Arredonda visualmente
+                    estoqueMinimo: Math.ceil(estoqueMinimo),
                     sugestao: sugestaoCompra,
                     urgencia: urgencia
                 });
@@ -103,12 +107,7 @@ export function processarDados(dadosApi) {
         }
     });
 
-    // Ordenar: Menor cobertura (mais urgente) primeiro
     recomendacaoCompra.sort((a, b) => b.sugestao - a.sugestao);
 
-    return {
-        maisVendidos,
-        maioresSaldos,
-        recomendacaoCompra // Retorna lista completa, UI decide quantos mostra
-    };
+    return { maisVendidos, maioresSaldos, recomendacaoCompra };
 }

@@ -1,3 +1,5 @@
+// apiV01.js
+
 function obterBaseURL() {
     const dominio = "https://plataforma-geourb.bubbleapps.io/";
     const ambiente = window.location.href.includes("version-test") ? "version-test" : "version-live";
@@ -24,12 +26,29 @@ async function realizarPost(endpoint, payload, nomeFuncao) {
     }
 }
 
-export async function buscarDadosEstoque(filtros) {
-    const payload = { IDCadastro: filtros };
+// Busca as datas disponíveis para um ID de Cadastro
+export async function buscarRelatoriosDisponiveis(idCadastro) {
+    const payload = { IDCadastro: idCadastro };
+    try {
+        return await realizarPost('buscarRelatoriosDisponiveis', payload, 'buscarRelatoriosDisponiveis');
+    } catch (error) {
+        console.warn("Falha ao buscar datas, retornando vazio.");
+        return { response: { relatoriosDisponivies: "" } };
+    }
+}
+
+// Busca o relatório final (agora enviando ID e DATA)
+export async function buscarDadosEstoque(idCadastro, dataSelecionada) {
+    // O payload inclui a data selecionada se fornecida
+    const payload = { 
+        IDCadastro: idCadastro,
+        DataRelatorio: dataSelecionada // Assumindo que o Bubble espera este parâmetro para filtrar
+    };
+    
     try {
         return await realizarPost('buscarRelatorioEstoque', payload, 'buscarRelatorioEstoque');
     } catch (error) {
         // Retorna estrutura vazia segura em caso de falha
-        return { response: { entradasESaidas: "", saldoProdutos: "", produtosEstoque: "" } };
+        return { response: { relatorio: "" } };
     }
 }
