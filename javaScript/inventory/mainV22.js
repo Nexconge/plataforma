@@ -1,6 +1,6 @@
 // mainV13.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV02.js';
-import { processarDados } from './processingV12.js';
+import { extrairDadosRelatorio } from './processingV13.js';
 import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV05.js';
 
 // --- ESTADO & CACHE ---
@@ -144,8 +144,8 @@ async function carregarRelatorioFinal(idCadastro, data) {
         const dadosBrutos = await buscarDadosEstoque(idCadastro, data);
         console.log("Dados brutos recebidos:", dadosBrutos);
         // 3. Processamento
-        const dadosProcessados = processarDados(dadosBrutos);
-        console.log("Dados processados:", dadosProcessados);
+        const dadosProcessados = extrairDadosRelatorio(dadosBrutos);
+        console.log("Dados extraidos:", dadosProcessados);
         // Salva Cache
         EstadoApp.cacheRelatorios[chaveCache] = dadosProcessados;
 

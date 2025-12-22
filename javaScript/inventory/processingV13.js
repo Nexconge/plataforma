@@ -19,7 +19,31 @@ function corrigirEParsearJSON(stringDados) {
     }
 }
 
-export function processarDados(dadosApi) {
+export function extrairDadosRelatorio(dadosApi) {
+    // Normalização do objeto de resposta
+    let rawRelatorio = {};
+    
+    if (dadosApi.response && dadosApi.response.relatorio) {
+        rawRelatorio = typeof dadosApi.response.relatorio === 'string' 
+            ? corrigirEParsearJSON(dadosApi.response.relatorio)
+            : dadosApi.response.relatorio;
+    } else if (dadosApi.response) {
+        rawRelatorio = dadosApi.response;
+    }
+
+    console.log("Objeto Relatório Normalizado:", rawRelatorio);
+
+    if (rawRelatorio.maisVendidos || rawRelatorio.recomendacaoCompra) {
+        console.log("Usando dados pré-processados da API");
+        return {
+            maisVendidos: corrigirEParsearJSON(rawRelatorio.maisVendidos),
+            maioresSaldos: corrigirEParsearJSON(rawRelatorio.maioresSaldos),
+            recomendacaoCompra: corrigirEParsearJSON(rawRelatorio.recomendacaoCompra)
+        };
+    }
+}
+
+function processarDados(dadosApi) {
     // Adaptação: O novo endpoint retorna 'relatorio' que contém tudo
     let rawRelatorio = {};
     
