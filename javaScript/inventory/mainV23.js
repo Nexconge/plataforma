@@ -1,6 +1,6 @@
 // mainV13.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV02.js';
-import { extrairDadosRelatorio } from './processingV13.js';
+import { extrairDadosRelatorio } from './processingV14.js';
 import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV05.js';
 
 // --- ESTADO & CACHE ---
@@ -90,7 +90,6 @@ function configurarListeners() {
 }
 
 // --- LÓGICA DE DADOS E CACHE ---
-
 async function carregarDatasRelatorios(idCadastro) {
     const elData = document.getElementById("dataSelect");
     

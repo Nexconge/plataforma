@@ -43,7 +43,8 @@ export function extrairDadosRelatorio(dadosApi) {
     }
 }
 
-function processarDados(dadosApi) {
+//Função utilizada dentro do workflo do bubble para gerar os relatórios e salvar no banco de dados
+/*function processarDados(dadosApi) {
     // Adaptação: O novo endpoint retorna 'relatorio' que contém tudo
     let rawRelatorio = {};
     
@@ -134,4 +135,4 @@ function processarDados(dadosApi) {
     recomendacaoCompra.sort((a, b) => b.sugestao - a.sugestao);
 
     return { maisVendidos, maioresSaldos, recomendacaoCompra };
-}
+}*/
