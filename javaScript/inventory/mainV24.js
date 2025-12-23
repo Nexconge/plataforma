@@ -1,5 +1,5 @@
 // mainV13.js
-import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV02.js';
+import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV03.js';
 import { extrairDadosRelatorio } from './processingV14.js';
 import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV05.js';
 
@@ -84,7 +84,7 @@ function configurarListeners() {
     elData.addEventListener("change", async (e) => {
         const dataSelecionada = e.target.value;
         if (dataSelecionada && EstadoApp.empresaSelecionada) {
-            await carregarRelatorioFinal(EstadoApp.empresaSelecionada, dataSelecionada);
+            await carregarRelatorioFinal(EstadoApp.empresaSelecionada, EstadoApp.filialSelecionada, dataSelecionada);
         }
     });
 }
@@ -127,7 +127,7 @@ function popularSelectDatas(lista) {
     preencherSelect("dataSelect", lista, "Selecione a Data");
 }
 
-async function carregarRelatorioFinal(idCadastro, data) {
+async function carregarRelatorioFinal(idCadastro, idEntidade, data) {
     const chaveCache = `${idCadastro}_${data}`;
     
     // 1. Checar Cache
@@ -138,9 +138,9 @@ async function carregarRelatorioFinal(idCadastro, data) {
     }
 
     // 2. Chamada API
-    console.log(`Buscando relatório para ${idCadastro} na data ${data}...`);
+    console.log(`Buscando relatório para ${idCadastro}, entidade ${idEntidade} na data ${data}...`);
     try {
-        const dadosBrutos = await buscarDadosEstoque(idCadastro, data);
+        const dadosBrutos = await buscarDadosEstoque(idCadastro, idEntidade, data);
         console.log("Dados brutos recebidos:", dadosBrutos);
         // 3. Processamento
         const dadosProcessados = extrairDadosRelatorio(dadosBrutos);
