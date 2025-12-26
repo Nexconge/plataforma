@@ -613,3 +613,34 @@ table tbody tr:last-child td:last-child {
     box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
     pointer-events: none;  /* Evita que o mouse "pisque" ao passar por cima */
 }
+
+/* --- Efeito de Loading e Bloqueio --- */
+
+/* Enquanto carrega, bloqueia cliques em tudo e muda o cursor */
+body.app-loading {
+    cursor: wait;
+}
+
+/* Deixa as tabelas "apagadas" para indicar processamento */
+body.app-loading table, 
+body.app-loading .chart-container {
+    opacity: 0.5;
+    pointer-events: none; /* Impede passar mouse/clique nas tabelas */
+    transition: opacity 0.3s ease;
+}
+
+/* Opcional: Centralizar um Spinner sobre a tela */
+body.app-loading::after {
+    content: "Carregando dados..."; /* Ou use um ícone de spinner */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    z-index: 10000;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}

@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV03.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV04.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV05.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -22,39 +22,47 @@ let appCache = {
     flagAnos: false
 };
 
-// --- Função Principal de Controle (Orquestrador) ---
-
+// --- Função Principal de Controle (Orquestrador) ---]
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
     
+    //Bloqueia os filtros e poem a pagina em estado de carregamento
+    alternarEstadoCarregamento(true);
+    
     try {
         let filtrosAtuais = obterFiltrosAtuais();
-        if (!validarFiltros(filtrosAtuais)) return;
+        
+        // Se validação falhar, precisamos libera a UI antes de sair
+        if (!validarFiltros(filtrosAtuais)) {
+            alternarEstadoCarregamento(false);
+            return;
+        }
 
-        // ETAPA 1: Garantir que temos os ranges de datas (anos disponíveis) para as contas
+        // ETAPA 1: Gerenciar Períodos
         await stepGerenciarPeriodos(filtrosAtuais.contas);
         
-        // Recarrega filtros pois o gerenciador de períodos pode ter alterado o DOM (select de anos)
         filtrosAtuais = obterFiltrosAtuais();
-        if (!validarFiltros(filtrosAtuais)) return;
+        if (!validarFiltros(filtrosAtuais)) {
+             alternarEstadoCarregamento(false);
+             return;
+        }
 
-        // ETAPA 2: Busca dados na API (se não estiver em cache) e processa
-        document.body.classList.add('loading');
+        // ETAPA 2: Busca e Processamento
         await stepCarregarProcessarDados(filtrosAtuais);
 
-        // ETAPA 3: Consolidar dados e renderizar
+        // ETAPA 3: Renderização
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
         console.error("Erro fatal em handleFiltroChange:", erroFatal);
         alert("Ocorreu um erro ao processar os dados.");
     } finally {
-        document.body.classList.remove('loading');
+        // --- FIM DO BLOQUEIO (Sempre executa) ---
+        alternarEstadoCarregamento(false);
     }
 }
 
 // --- Funções Auxiliares do Workflow (Steps) ---
-
 function validarFiltros(filtros) {
     if (!filtros || filtros.contas.length === 0) {
         exibirTabelasVazias();

@@ -50,6 +50,41 @@ function esconderDescendentes(id) {
     });
 }
 
+/**
+ * Bloqueia ou libera a interface durante processamento.
+ * @param {boolean} carregando - true para bloquear, false para liberar.
+ */
+function alternarEstadoCarregamento(carregando) {
+    // 1. Alterna a classe visual no Body
+    if (carregando) {
+        document.body.classList.add('app-loading');
+    } else {
+        document.body.classList.remove('app-loading');
+    }
+
+    // 2. Lista de IDs dos filtros que devem ser travados
+    const idsParaBloquear = [
+        'anoSelect', 
+        'projSelect', 
+        'contaSelect', 
+        'modoSelect', 
+        'btnARealizar', 
+        'btnRealizado',
+        'inputDataInicial', // Se houver inputs de data
+        'inputDataFinal'
+    ];
+
+    // 3. Aplica ou remove o atributo 'disabled'
+    idsParaBloquear.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = carregando;
+            // Opcional: Visual extra para inputs desabilitados
+            el.style.opacity = carregando ? '0.6' : '1'; 
+        }
+    });
+}
+
 // ------ Gerenciamento de Dependências (Chart.js) ------
 
 function carregarChartJs() {
@@ -1082,4 +1117,4 @@ function criarDropdownPeriodoVisual(periodos, onChange, startInicial, endInicial
     return { dropdown, initialStart: selStart, initialEnd: selEnd };
 }
 
-export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect };
+export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento };
