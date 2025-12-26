@@ -660,11 +660,17 @@ function renderizarGraficoSaldoCaixa(labels, dados) {
     if (graficosAtuais.saldoCaixa) graficosAtuais.saldoCaixa.destroy();
     if (!ctx) return;
 
+    // 1. Obtemos as opções padrão numa variável
+    const opcoesDoGrafico = getChartCommonOptions('Saldo de Caixa Acumulado (R$)');
+    // 2. Força a remoção da legenda (Mantendo o Título e Tooltip que já vêm configurados)
+    opcoesDoGrafico.plugins.legend = { display: false };
+
     graficosAtuais.saldoCaixa = new window.Chart(ctx, {
         type: 'line',
         data: {
             labels,
             datasets: [{
+                label: 'Saldo', // O rótulo interno continua existindo
                 data: dados,
                 fill: false,
                 tension: 0.3,
@@ -673,7 +679,7 @@ function renderizarGraficoSaldoCaixa(labels, dados) {
                 pointHitRadius: 20
             }]
         },
-        options: getChartCommonOptions('Saldo de Caixa Acumulado (R$)')
+        options: opcoesDoGrafico // 3. Usamos a variável modificada aqui
     });
 }
 
