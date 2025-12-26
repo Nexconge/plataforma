@@ -881,13 +881,18 @@ function atualizarTabelaFD(tbody, itens, saldoBase, inicioSel, fimSel) {
 
         // Se houver observação, adiciona o tooltip e um indicador visual
         if (item.obs) {
-            cellDesc.title = item.obs; // Define o texto do tooltip
-            cellDesc.style.cursor = "help"; // Muda o cursor para indicar ajuda
-            // Adiciona um ícone (i) para indicar que tem info
+            // 1. Em vez de .title, usamos dataset e uma classe
+            cellDesc.dataset.tooltip = item.obs; 
+            cellDesc.classList.add('custom-tooltip'); // Classe para o CSS pegar
+
+            // 2. Estilo visual
+            cellDesc.style.cursor = "help";
+            cellDesc.style.position = "relative"; // Importante para posicionar o tooltip
+
+            // 3. Ícone
             const icon = document.createElement('span');
-            icon.textContent = " ℹ️"; 
+            icon.textContent = " ℹ️";
             icon.style.fontSize = "0.8em";
-            icon.style.opacity = "0.7";
             cellDesc.appendChild(icon);
         }
         

@@ -559,3 +559,24 @@ table tbody tr:last-child td:last-child {
   padding-top: 40px;    /* Espaçamento visual para o texto */
   color: #666;          /* Cor suave para a mensagem */
 }
+
+/* Estilo para o tooltip instantâneo */
+.custom-tooltip:hover::after {
+    content: attr(data-tooltip); /* Pega o texto do JS */
+    position: absolute;
+    bottom: 100%; /* Aparece acima da célula */
+    left: 50%;
+    transform: translateX(-50%); /* Centraliza */
+    
+    background-color: #333;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: pre-wrap; /* Quebra linha se for longo */
+    max-width: 250px;
+    width: max-content;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    pointer-events: none; /* O mouse não atrapalha o texto */
+}
