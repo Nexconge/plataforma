@@ -1,5 +1,5 @@
 // mainV13.js
-import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV02.js';
+import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV03.js';
 import { extrairDadosRelatorio } from './processingV15.js';
 import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV05.js';
 
