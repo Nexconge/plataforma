@@ -629,18 +629,51 @@ body.app-loading .chart-container {
     transition: opacity 0.3s ease;
 }
 
-/* Opcional: Centralizar um Spinner sobre a tela */
+/* 1. Definimos a animação de rotação */
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* 2. O Spinner (usando ::before) */
+body.app-loading::before {
+    content: "";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* Tamanho da rodinha */
+    width: 24px;
+    height: 24px;
+    /* Borda transparente + Borda branca no topo para fazer o efeito */
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    /* Ordem de empilhamento: acima da caixa azul */
+    z-index: 10001; 
+    /* Animação */
+    animation: spin 1s linear infinite;
+    /* Ajuste fino de posição para ficar à esquerda do texto */
+    margin-left: -85px; 
+}
+
+/* 3. A Caixa de Texto (seu código original ::after ajustado) */
 body.app-loading::after {
-    content: "Carregando dados..."; /* Ou use um ícone de spinner */
+    content: "Carregando dados...";
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8);
+    background: #0052a3;
     color: white;
-    padding: 15px 25px;
+    /* Aumentamos o padding da esquerda para dar espaço ao spinner */
+    padding: 15px 25px 15px 55px; 
     border-radius: 8px;
     z-index: 10000;
     font-weight: bold;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    
+    /* Garante que o texto fique alinhado verticalmente */
+    display: flex;
+    align-items: center;
+    font-family: sans-serif; /* Opcional, para garantir fonte limpa */
 }
