@@ -580,3 +580,36 @@ table tbody tr:last-child td:last-child {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     pointer-events: none; /* O mouse não atrapalha o texto */
 }
+/* 1. O Alvo (O ícone "i") */
+.tooltip-target {
+    position: relative; /* Cria o ponto de referência (0,0) para o tooltip */
+    cursor: help;
+    margin-left: 8px;   /* Um espacinho entre o texto e o ícone */
+    font-size: 0.9em;
+}
+
+/* 2. O Tooltip (A caixa preta) */
+.tooltip-target:hover::after {
+    content: attr(data-tooltip); /* Pega o texto do atributo HTML */
+    
+    /* POSICIONAMENTO: Canto Superior Direito */
+    position: absolute;
+    bottom: 80%;  /* Começa um pouco acima do ícone */
+    left: 80%;    /* Começa um pouco à direita do centro do ícone */
+    
+    /* Estilo Visual */
+    background-color: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap; /* Respeita as quebras de linha */
+    
+    /* Tamanho e Camada */
+    width: max-content;    /* A largura se adapta ao texto */
+    max-width: 250px;      /* Mas não deixa ficar gigante */
+    z-index: 9999;         /* Garante que fique por cima de tudo */
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+    pointer-events: none;  /* Evita que o mouse "pisque" ao passar por cima */
+}
