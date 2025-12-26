@@ -674,10 +674,7 @@ function renderizarGraficoSaldoCaixa(labels, dados) {
                 pointHitRadius: 20
             }]
         },
-        options: {
-            ...getChartCommonOptions('Saldo de Caixa Acumulado (R$)'),
-            plugins: { ...getChartCommonOptions().plugins, legend: { display: false } }
-        }
+        options: getChartCommonOptions('Saldo de Caixa Acumulado (R$)')
     });
 }
 
@@ -691,11 +688,11 @@ function renderizarGraficoAcumulado(labels, rec, pag) {
         data: {
             labels,
             datasets: [
-                { label: 'Recebimentos Acumulados', data: rec, borderColor: 'rgb(40, 167, 69)', backgroundColor: 'rgba(40, 167, 69, 0.2)', fill: true, tension: 0.3, pointRadius: 0 },
+                { label: 'Entradas Acumuladas', data: rec, borderColor: 'rgb(40, 167, 69)', backgroundColor: 'rgba(40, 167, 69, 0.2)', fill: true, tension: 0.3, pointRadius: 0 },
                 { label: 'Pagamentos Acumulados', data: pag, borderColor: 'rgb(220, 53, 69)', backgroundColor: 'rgba(220, 53, 69, 0.2)', fill: true, tension: 0.3, pointRadius: 0 }
             ]
         },
-        options: getChartCommonOptions('Evolução Desembolso (R$)')
+        options: getChartCommonOptions('Evolução de Desembolso (R$)')
     });
 }
 
@@ -709,11 +706,11 @@ function renderizarGraficoMensal(labels, rec, pag) {
         data: {
             labels,
             datasets: [
-                { label: 'Recebimentos', data: rec, borderColor: 'rgb(40, 167, 69)', backgroundColor: 'rgba(40, 167, 69, 0.2)', tension: 0.3, pointRadius: 0 },
+                { label: 'Entradas', data: rec, borderColor: 'rgb(40, 167, 69)', backgroundColor: 'rgba(40, 167, 69, 0.2)', tension: 0.3, pointRadius: 0 },
                 { label: 'Pagamentos', data: pag, borderColor: 'rgb(220, 53, 69)', backgroundColor: 'rgba(220, 53, 69, 0.2)', tension: 0.3, pointRadius: 0 }
             ]
         },
-        options: getChartCommonOptions('Recebimentos e Pagamentos Mensais (R$)')
+        options: getChartCommonOptions('Entradas X Pagamentos (R$)')
     });
 }
 
