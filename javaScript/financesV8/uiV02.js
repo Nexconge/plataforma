@@ -875,7 +875,22 @@ function atualizarTabelaFD(tbody, itens, saldoBase, inicioSel, fimSel) {
     visiveis.forEach(item => {
         const r = tbody.insertRow();
         r.insertCell().textContent = item.data;
-        r.insertCell().textContent = item.descricao;
+        
+        const cellDesc = r.insertCell();
+        cellDesc.textContent = item.descricao;
+
+        // Se houver observação, adiciona o tooltip e um indicador visual
+        if (item.obs) {
+            cellDesc.title = item.obs; // Define o texto do tooltip
+            cellDesc.style.cursor = "help"; // Muda o cursor para indicar ajuda
+            // Adiciona um ícone (i) para indicar que tem info
+            const icon = document.createElement('span');
+            icon.textContent = " ℹ️"; 
+            icon.style.fontSize = "0.8em";
+            icon.style.opacity = "0.7";
+            cellDesc.appendChild(icon);
+        }
+        
         r.insertCell().textContent = formatarValor(item.valor);
         saldo += item.valor;
         r.insertCell().textContent = formatarValor(saldo);

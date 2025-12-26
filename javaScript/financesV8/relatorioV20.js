@@ -1,5 +1,5 @@
 import { buscarTitulos } from './apiV01.js';
-import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
+import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV02.js';
 
 window.TesteRelatorio = async function(contas, anos) {
     try {

@@ -189,7 +189,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         ValorLancamento: lancamento.ValorLancamento,
                         CODCategoria: titulo.Categoria,
                         Cliente: titulo.Cliente,
-                        Departamentos: deptosRateio
+                        Departamentos: deptosRateio,
+                        obs: lancamento.obs || null
                     });
                 }
 
@@ -326,7 +327,8 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
         fluxoDeCaixa.push({
             valor: valor,
             descricao: descricaoFluxo,
-            data: lancamento.DataLancamento
+            data: lancamento.DataLancamento,
+            obs: lancamento.obs || null
         });
 
         // Popula Matriz DRE
