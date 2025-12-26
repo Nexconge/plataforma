@@ -665,7 +665,6 @@ function renderizarGraficoSaldoCaixa(labels, dados) {
         data: {
             labels,
             datasets: [{
-                label: 'Saldo de Caixa',
                 data: dados,
                 fill: false,
                 tension: 0.3,
