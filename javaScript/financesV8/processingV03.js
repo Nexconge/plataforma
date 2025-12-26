@@ -272,7 +272,8 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
                     ValorLancamento: lancamento.ValorLancamento,
                     CODCategoria: item.Categoria,
                     Cliente: item.Cliente,
-                    Departamentos: deptosRateio
+                    Departamentos: deptosRateio,
+                    obs: lancamento.obs || null
                 });
             }
         });
