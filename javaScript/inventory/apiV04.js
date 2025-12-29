@@ -42,7 +42,6 @@ export async function buscarDadosEstoque(idCadastro, idEntidade, dataSelecionada
     // O payload inclui a data selecionada se fornecida
     const payload = { 
         IDCadastro: idCadastro,
-        IDEntidade: idEntidade,
         DataRelatorio: dataSelecionada // Assumindo que o Bubble espera este parâmetro para filtrar
     };
     
