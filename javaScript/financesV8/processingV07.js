@@ -566,7 +566,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
-
+    calcularColunaTotalDRE(dadosParaExibir.entradasESaidas, colunasVisiveis, PeUChave)
     return { ...dadosParaExibir };
 }
 
