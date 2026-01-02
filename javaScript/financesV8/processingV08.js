@@ -320,7 +320,7 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
     
         // Definição de Valor (Positivo/Negativo)
         let valor = lancamento.ValorLancamento;
-        if (lancamento.Natureza === "P" || lancamento.Natureza === "D") valor = -valor;
+        if (lancamento.Natureza === 'P') valor = -valor;
         valorTotal += valor;
 
         // Categorização
@@ -367,7 +367,7 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
             lancamento.Departamentos.forEach(depto => {
                 // Rateio do valor
                 let valorRateio = depto.ValorDepto;
-                if (lancamento.Natureza === "P" || lancamento.Natureza === "D") valorRateio = -valorRateio;
+                if (lancamento.Natureza === 'P') valorRateio = -valorRateio;
                 
                 // Nível 1: Classe Total
                 nodeClasse.total += valorRateio; 
