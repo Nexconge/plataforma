@@ -160,7 +160,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
         if (!titulo || !titulo.Categoria) return;
 
         const natureza = converteNatureza(titulo.Natureza)
-
+        let valorTotalPago = 0;
+        
         // --- PARTE 1: Processamento de Baixas ---
         if (Array.isArray(titulo.Lancamentos)) {
             titulo.Lancamentos.forEach(lancamento => {
