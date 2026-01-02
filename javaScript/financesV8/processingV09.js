@@ -259,11 +259,10 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
 
     lancamentosRaw.forEach(item => {
         if (!item || !Array.isArray(item.Lancamentos)) return;
+        const natureza = converteNatureza(item.Natureza) //Natureza pertence ao item não ao lançamento
 
         item.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
-            
-            const natureza = converteNatureza(lancamento.Natureza)
            
             // Filtro de Ano (Obrigatório para DRE)
             if (anoFiltro) {
