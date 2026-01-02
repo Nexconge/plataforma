@@ -159,7 +159,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
     titulosRaw.forEach(titulo => {
         if (!titulo || !titulo.Categoria) return;
 
-        let valorTotalPago = 0;
+        const natureza = converteNatureza(titulo.Natureza)
 
         // --- PARTE 1: Processamento de Baixas ---
         if (Array.isArray(titulo.Lancamentos)) {
@@ -177,13 +177,13 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         pertenceAoPeriodoDRE = false;
                     }
                 }
-
+                
                 // A. Adiciona à DRE (Apenas se for do ano selecionado)
                 if (String(lancamento.CODContaC) === contaId && pertenceAoPeriodoDRE) {
                     const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
                     
                     lancamentosProcessados.push({
-                        Natureza: titulo.Natureza,
+                        Natureza: natureza,
                         DataLancamento: lancamento.DataLancamento,
                         CODContaC: lancamento.CODContaC,
                         ValorLancamento: lancamento.ValorLancamento,
@@ -196,7 +196,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
 
                 // B. Adiciona ao Capital de Giro (SEMPRE, para manter histórico de liquidação)
                 capitalDeGiro.push({
-                    Natureza: titulo.Natureza,
+                    Natureza: natureza,
                     DataPagamento: lancamento.DataLancamento,
                     DataVencimento: titulo.DataVencimento || null,
                     DataEmissao: titulo.DataEmissao || null,
@@ -215,7 +215,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
             const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, valorFaltante);
             
             titulosEmAberto.push({
-                Natureza: titulo.Natureza,
+                Natureza: natureza,
                 DataLancamento: titulo.DataVencimento,
                 CODContaC: titulo.CODContaC,
                 ValorLancamento: valorFaltante,
@@ -225,7 +225,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
             });
             
             capitalDeGiro.push({
-                Natureza: titulo.Natureza,
+                Natureza: natureza,
                 DataPagamento: null,
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
@@ -239,6 +239,12 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
     return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
 }
 
+function converteNatureza(naturezaOG){
+    let natureza = 'R'
+    if(naturezaOG === 'D' || naturezaOG === 'P') natureza = 'P'
+
+    return natureza;
+}
 /**
  * Converte a estrutura de LANÇAMENTOS AVULSOS (manuais).
  * Estes são puramente DRE, então aplicamos o filtro de ano rigorosamente.
@@ -255,7 +261,9 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
 
         item.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
-
+            
+            const natureza = converteNatureza(lancamento.Natureza)
+           
             // Filtro de Ano (Obrigatório para DRE)
             if (anoFiltro) {
                 const parts = lancamento.DataLancamento.split('/');
@@ -266,7 +274,7 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
                 const deptosRateio = gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento);
                 
                 lancamentosProcessados.push({
-                    Natureza: item.Natureza,
+                    Natureza: natureza,
                     DataLancamento: lancamento.DataLancamento,
                     CODContaC: lancamento.CODContaC,
                     ValorLancamento: lancamento.ValorLancamento,
