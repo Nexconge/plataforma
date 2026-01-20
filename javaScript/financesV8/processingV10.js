@@ -179,6 +179,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                     }
                 }
                 
+                const obs = titulo.obsTitulo ?? lancamento.obs ?? null;
+
                 // A. Adiciona à DRE (Apenas se for do ano selecionado)
                 if (String(lancamento.CODContaC) === contaId && pertenceAoPeriodoDRE) {
                     const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
@@ -191,7 +193,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         CODCategoria: titulo.Categoria,
                         Cliente: titulo.Cliente,
                         Departamentos: deptosRateio,
-                        obs: lancamento.obs || null
+                        obs: obs || null
                     });
                 }
 
@@ -222,7 +224,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 ValorLancamento: valorFaltante,
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente || "Cliente",
-                Departamentos: deptosRateio
+                Departamentos: deptosRateio,
+                obs: titulo.obsTitulo || null
             });
             
             capitalDeGiro.push({
