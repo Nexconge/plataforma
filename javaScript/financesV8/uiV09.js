@@ -211,7 +211,7 @@ function atualizarOpcoesAnoSelect(anoSelect, anoInicio, anoFim, modo, projecao) 
 
     if (projecao === 'arealizar') {
         end = Math.max(end, atual + 5);
-        start = Math.max(start, atual);
+        start = Math.min(start, atual);
     }
 
     if (modo.toLowerCase() === 'mensal') {

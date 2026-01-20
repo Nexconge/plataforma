@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV09.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV08.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV09.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -22,8 +22,7 @@ let appCache = {
     flagAnos: false
 };
 
-// --- Função Principal de Controle (Orquestrador) ---]
-// --- Função Principal de Controle (Orquestrador) ---
+// --- Função Principal de Controle ---
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
     
