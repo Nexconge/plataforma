@@ -263,7 +263,7 @@ table tbody tr:last-child td:last-child {
 #tabelaFluxoDiario {
   width: 100%;
   border-collapse: collapse;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-family: 'Nunito', sans-serif;
   font-size: 14px;
   color: #000;
   background-color: #fff;
@@ -423,7 +423,7 @@ table tbody tr:last-child td:last-child {
 
 /* Estilos específicos para o novo seletor de calendário */
 .filtro-calendario {
-  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-family: 'Nunito', sans-serif;
 }
 
 .filtro-ano-grupo {
@@ -675,5 +675,5 @@ body.app-loading::after {
     /* Garante que o texto fique alinhado verticalmente */
     display: flex;
     align-items: center;
-    font-family: sans-serif; /* Opcional, para garantir fonte limpa */
+    font-family: 'Nunito', sans-serif; /* Opcional, para garantir fonte limpa */
 }
