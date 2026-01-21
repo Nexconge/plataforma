@@ -78,8 +78,8 @@ table:not(#tabelaFluxoDiario) thead tr th {
   background-color: var(--primary); 
   color: white; 
   font-weight: bold;
-  height: 40px; /* Aumentei um pouco a altura para dar respiro */
-  vertical-align: middle !important; /* Força o texto a ficar no meio verticalmente */
+  height: 30px; /* Aumentei um pouco a altura para dar respiro */
+  vertical-align: right !important; /* Força o texto a ficar no meio verticalmente */
   padding-top: 0; 
   padding-bottom: 0;
   border: none; 
@@ -144,7 +144,7 @@ tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
 
 /* Cabeçalho */
 #tabelaFluxoDiario thead th {
-  background-color: #0066cc; color: white; font-weight: bold; text-align: left;
+  background-color: #0066cc; color: white; font-weight: bold; text-align: right;
   padding: 10px 16px; border-bottom: 2px solid var(--primary-dark);
 }
 #tabelaFluxoDiario thead th:first-child { border-top-left-radius: 8px; width: 100px; }
