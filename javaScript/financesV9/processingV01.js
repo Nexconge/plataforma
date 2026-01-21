@@ -159,8 +159,9 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
     titulosRaw.forEach(titulo => {
         if (!titulo || !titulo.Categoria) return;
 
+        const natureza = converteNatureza(titulo.Natureza)
         let valorTotalPago = 0;
-
+        
         // --- PARTE 1: Processamento de Baixas ---
         if (Array.isArray(titulo.Lancamentos)) {
             titulo.Lancamentos.forEach(lancamento => {
@@ -177,25 +178,28 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         pertenceAoPeriodoDRE = false;
                     }
                 }
+                
+                const obs = titulo.obsTitulo ?? lancamento.obs ?? null;
 
                 // A. Adiciona à DRE (Apenas se for do ano selecionado)
                 if (String(lancamento.CODContaC) === contaId && pertenceAoPeriodoDRE) {
                     const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
                     
                     lancamentosProcessados.push({
-                        Natureza: titulo.Natureza,
+                        Natureza: natureza,
                         DataLancamento: lancamento.DataLancamento,
                         CODContaC: lancamento.CODContaC,
                         ValorLancamento: lancamento.ValorLancamento,
                         CODCategoria: titulo.Categoria,
                         Cliente: titulo.Cliente,
-                        Departamentos: deptosRateio
+                        Departamentos: deptosRateio,
+                        obs: obs || null
                     });
                 }
 
                 // B. Adiciona ao Capital de Giro (SEMPRE, para manter histórico de liquidação)
                 capitalDeGiro.push({
-                    Natureza: titulo.Natureza,
+                    Natureza: natureza,
                     DataPagamento: lancamento.DataLancamento,
                     DataVencimento: titulo.DataVencimento || null,
                     DataEmissao: titulo.DataEmissao || null,
@@ -214,17 +218,18 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
             const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, valorFaltante);
             
             titulosEmAberto.push({
-                Natureza: titulo.Natureza,
+                Natureza: natureza,
                 DataLancamento: titulo.DataVencimento,
                 CODContaC: titulo.CODContaC,
                 ValorLancamento: valorFaltante,
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente || "Cliente",
-                Departamentos: deptosRateio
+                Departamentos: deptosRateio,
+                obs: titulo.obsTitulo || null
             });
             
             capitalDeGiro.push({
-                Natureza: titulo.Natureza,
+                Natureza: natureza,
                 DataPagamento: null,
                 DataVencimento: titulo.DataVencimento || null,
                 DataEmissao: titulo.DataEmissao || null,
@@ -238,6 +243,12 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
     return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
 }
 
+function converteNatureza(naturezaOG){
+    let natureza = 'R'
+    if(naturezaOG === 'D' || naturezaOG === 'P') natureza = 'P'
+
+    return natureza;
+}
 /**
  * Converte a estrutura de LANÇAMENTOS AVULSOS (manuais).
  * Estes são puramente DRE, então aplicamos o filtro de ano rigorosamente.
@@ -251,10 +262,11 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
 
     lancamentosRaw.forEach(item => {
         if (!item || !Array.isArray(item.Lancamentos)) return;
+        const natureza = converteNatureza(item.Natureza) //Natureza pertence ao item não ao lançamento
 
         item.Lancamentos.forEach(lancamento => {
             if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
-
+           
             // Filtro de Ano (Obrigatório para DRE)
             if (anoFiltro) {
                 const parts = lancamento.DataLancamento.split('/');
@@ -265,13 +277,14 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
                 const deptosRateio = gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento);
                 
                 lancamentosProcessados.push({
-                    Natureza: item.Natureza,
+                    Natureza: natureza,
                     DataLancamento: lancamento.DataLancamento,
                     CODContaC: lancamento.CODContaC,
                     ValorLancamento: lancamento.ValorLancamento,
                     CODCategoria: item.Categoria,
                     Cliente: item.Cliente,
-                    Departamentos: deptosRateio
+                    Departamentos: deptosRateio,
+                    obs: lancamento.obs || null
                 });
             }
         });
@@ -309,7 +322,7 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
     
         // Definição de Valor (Positivo/Negativo)
         let valor = lancamento.ValorLancamento;
-        if (lancamento.Natureza === "P") valor = -valor;
+        if (lancamento.Natureza === 'P') valor = -valor;
         valorTotal += valor;
 
         // Categorização
@@ -326,7 +339,8 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
         fluxoDeCaixa.push({
             valor: valor,
             descricao: descricaoFluxo,
-            data: lancamento.DataLancamento
+            data: lancamento.DataLancamento,
+            obs: lancamento.obs || null
         });
 
         // Popula Matriz DRE
@@ -355,7 +369,7 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
             lancamento.Departamentos.forEach(depto => {
                 // Rateio do valor
                 let valorRateio = depto.ValorDepto;
-                if (lancamento.Natureza === "P") valorRateio = -valorRateio;
+                if (lancamento.Natureza === 'P') valorRateio = -valorRateio;
                 
                 // Nível 1: Classe Total
                 nodeClasse.total += valorRateio; 
@@ -554,7 +568,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
-
+    calcularColunaTotalDRE(dadosParaExibir.entradasESaidas, colunasVisiveis, PeUChave)
     return { ...dadosParaExibir };
 }
 

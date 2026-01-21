@@ -1,0 +1,156 @@
+:root {
+  --primary-color: #1772CB;
+  --primary-hover: #0052a3;
+  --secondary-bg: #F7F7F7;
+  --highlight-bg: #A6CCEB;
+  --border-color: #ddd;
+  --text-main: #333;
+  --font-main: 'Nunito', sans-serif;
+}
+
+/* ================= BASE ================= */
+html { overflow-y: scroll; }
+body { font-family: var(--font-main); color: var(--text-main); margin: 8px; }
+div, label, select, table { box-sizing: border-box; }
+
+/* ================= UTILITÁRIOS ================= */
+.hidden { display: none !important; }
+.expand-btn { cursor: pointer; color: var(--primary-color); margin-right: 5px; }
+.loader {
+  border: 4px solid var(--secondary-bg);
+  border-top: 4px solid #C7C7C7;
+  border-radius: 50%; width: 100%; height: 100%;
+  animation: spin 2s linear infinite; margin: auto;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* ================= CONTROLES E FILTROS ================= */
+label { display: inline-block; margin-right: 5px; }
+label[for="modoSelect"], label[for="anoSelect"] { width: 100px; }
+
+.custom-select {
+  width: 300px; height: 30px;
+  border: 1px solid #C7C7C7; border-radius: 4px;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none; -webkit-appearance: none;
+  font-family: var(--font-main); text-align: center;
+}
+
+/* ================= TABELAS FINANCEIRAS (Matriz, Custos, Capital Giro) ================= */
+/* Aplica-se às tabelas principais exceto o fluxo diário */
+table:not(#tabelaFluxoDiario) {
+  width: 1400px; border-collapse: collapse; font-size: 14px; vertical-align: middle;
+}
+
+/* Colunas Padrão */
+table:not(#tabelaFluxoDiario) td, table:not(#tabelaFluxoDiario) th { text-align: right; vertical-align: middle; padding-right: 10px; }
+table:not(#tabelaFluxoDiario) td:first-child, table:not(#tabelaFluxoDiario) th:first-child { width: 290px; text-align: left; padding-left: 10px; }
+/* Colunas de meses/anos */
+table:not(#tabelaFluxoDiario) td:nth-child(n+2):nth-child(-n+13),
+table:not(#tabelaFluxoDiario) th:nth-child(n+2):nth-child(-n+13) { width: 85px; }
+/* Coluna Total */
+table:not(#tabelaFluxoDiario) td:nth-child(14), table:not(#tabelaFluxoDiario) th:nth-child(14) { width: 100px; }
+
+/* Cabeçalho */
+table:not(#tabelaFluxoDiario) thead tr {
+  height: 30px; background-color: var(--primary-color); color: white; font-weight: bold;
+}
+table:not(#tabelaFluxoDiario) thead tr th:first-child { border-top-left-radius: 10px; }
+table:not(#tabelaFluxoDiario) thead tr th:last-child { border-top-right-radius: 10px; }
+
+/* Linhas do Corpo */
+table:not(#tabelaFluxoDiario) tbody tr { height: 30px; border-bottom: 1px solid var(--secondary-bg); background-color: white; }
+table:not(#tabelaFluxoDiario) tbody tr:hover { background-color: var(--secondary-bg); }
+
+/* --- Estilização via Data Attributes (Substitui classes do JS) --- */
+
+/* Tipos de Linha */
+tr[data-type="total"] { font-weight: bold; border-top: 2px solid #F2F2F2; background-color: white; }
+tr[data-type="saldo"] { font-weight: bold; color: white; background-color: var(--primary-color); border: none; }
+tr[data-type="saldo"]:hover { background-color: var(--primary-color); } /* Remove hover cinza */
+tr[data-type="header-group"] { background-color: var(--highlight-bg); font-weight: bold; }
+tr[data-type="spacer"] td { height: 30px; background: transparent; border: none; }
+
+/* Indentação Hierárquica */
+tr[data-indent="1"] td:first-child { padding-left: 30px !important; }
+tr[data-indent="2"] td:first-child { padding-left: 60px !important; }
+tr[data-indent="lancamento"] { font-size: 12px; }
+tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
+
+/* Arredondamento da última linha */
+table:not(#tabelaFluxoDiario) tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+table:not(#tabelaFluxoDiario) tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+
+
+/* ================= TABELA FLUXO DIÁRIO (Estilos Isolados) ================= */
+#tabelaFluxoDiario {
+  width: 100%; border-collapse: collapse; font-size: 14px; background-color: #fff; margin-top: 20px;
+}
+#tabelaFluxoDiario thead th {
+  background-color: #0066cc; color: #fff; font-weight: bold; text-align: left;
+  padding: 10px 16px; border-bottom: 2px solid var(--primary-hover); position: relative;
+}
+#tabelaFluxoDiario thead th:first-child { border-top-left-radius: 8px; width: 100px; }
+#tabelaFluxoDiario thead th:last-child { border-top-right-radius: 8px; }
+#tabelaFluxoDiario thead th:nth-child(2) { text-align: center; width: 60%; }
+#tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid var(--border-color); }
+#tabelaFluxoDiario tbody tr:nth-child(even) { background-color: #f5f5f5; }
+#tabelaFluxoDiario tbody tr:hover { background-color: #e6f0ff; }
+#tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: monospace; }
+
+/* Estado Vazio */
+.linha-sem-dados td {
+  height: 350px; vertical-align: top; padding-top: 40px; color: #666; text-align: center;
+}
+
+/* ================= DROPDOWN CALENDÁRIO ================= */
+.filtro-dropdown {
+  display: none; position: absolute; top: 100%; left: 0;
+  background-color: #fff; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  padding: 10px; z-index: 1000; border-radius: 6px; width: 320px; max-height: 320px; overflow-y: auto;
+  font-weight: normal; color: #333;
+}
+.filtro-ano-header { font-weight: bold; text-align: center; padding: 5px 0; border-bottom: 1px solid #eee; margin-bottom: 8px; }
+.filtro-meses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.filtro-mes-btn {
+  padding: 8px 5px; text-align: center; border-radius: 4px; font-size: 13px;
+  background-color: #f0f8ff; border: 1px solid #d6eaff; color: var(--primary-hover); cursor: pointer;
+}
+.filtro-mes-btn:hover { background-color: #d6eaff; }
+.filtro-mes-btn.in-range { background-color: #e6f0ff; }
+.filtro-mes-btn.selected-start, .filtro-mes-btn.selected-end {
+  background-color: #0066cc; color: #fff; border-color: var(--primary-hover); font-weight: bold;
+}
+.filtro-mes-slot { padding: 8px 5px; text-align: center; font-size: 13px; color: #ccc; background: #f9f9f9; cursor: not-allowed; }
+
+/* ================= GRÁFICOS E ABAS ================= */
+.container-graficos-abas { width: 100%; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 20px; }
+.grafico-tabs { display: flex; background-color: #f8f8f8; border-bottom: 1px solid var(--border-color); }
+.tab-link {
+  padding: 10px 15px; border: none; background: transparent; cursor: pointer; color: #555;
+  border-right: 1px solid var(--border-color);
+}
+.tab-link:hover { background-color: #eee; }
+.tab-link.active { background-color: #fff; color: #000; font-weight: bold; border-bottom: 1px solid #fff; margin-bottom: -1px; }
+#graficos-content { padding: 10px; background-color: #fff; height: 400px; }
+
+/* ================= TOOLTIPS E LOADING ================= */
+.tooltip-target { cursor: help; margin-left: 8px; position: relative; }
+.tooltip-target:hover::after {
+  content: attr(data-tooltip); position: absolute; bottom: 80%; left: 80%;
+  background: #333; color: #fff; padding: 8px 12px; border-radius: 4px;
+  font-size: 12px; white-space: pre-wrap; width: max-content; max-width: 250px;
+  z-index: 9999; pointer-events: none;
+}
+body.app-loading { cursor: wait; }
+body.app-loading table, body.app-loading .chart-container { opacity: 0.5; pointer-events: none; }
+body.app-loading::before {
+  content: ""; position: fixed; top: 50%; left: 50%; width: 24px; height: 24px;
+  border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%;
+  z-index: 10001; animation: spin 1s linear infinite; margin-left: -85px;
+}
+body.app-loading::after {
+  content: "Carregando dados..."; position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); background: var(--primary-hover); color: white;
+  padding: 15px 25px 15px 55px; border-radius: 8px; z-index: 10000; font-weight: bold;
+}

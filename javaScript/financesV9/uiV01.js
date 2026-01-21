@@ -1,0 +1,589 @@
+// uiV09.js Refatorado
+
+// ------ Estado Global ------
+let graficosAtuais = { saldoCaixa: null, acumulado: null, mensal: null };
+let chartJsPromise = null;
+const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MAX_MESES_FLUXO = 6;
+
+// ------ Formatação ------
+function formatarValor(valor) {
+    if (Math.abs(valor) < 0.01) return '-';
+    const num = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return valor < 0 ? `(${num})` : num;
+}
+
+function formatarPercentual(valor) {
+    return (!valor || valor === 0) ? '0,0%' : `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}%`;
+}
+
+function sanitizeId(str) {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+// ------ Utilitários DOM ------
+function getSelectItems(select) {
+    return Array.from(select.selectedOptions || []).map(o => o.value);
+}
+
+function toggleLinha(id) {
+    const filhos = document.querySelectorAll(`.parent-${id}`);
+    if (filhos.length === 0) return;
+    const algumVisivel = [...filhos].some(l => !l.classList.contains('hidden'));
+    
+    filhos.forEach(filho => {
+        if (algumVisivel) {
+            filho.classList.add('hidden');
+            if (filho.id) esconderDescendentes(filho.id);
+        } else {
+            filho.classList.remove('hidden');
+        }
+    });
+}
+
+function esconderDescendentes(id) {
+    document.querySelectorAll(`.parent-${id}`).forEach(filho => {
+        filho.classList.add('hidden');
+        if (filho.id) esconderDescendentes(filho.id);
+    });
+}
+
+function alternarEstadoCarregamento(carregando) {
+    document.body.classList.toggle('app-loading', carregando);
+    const ids = ['anoSelect', 'projSelect', 'contaSelect', 'modoSelect', 'btnARealizar', 'btnRealizado', 'inputDataInicial', 'inputDataFinal'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = carregando;
+            el.style.opacity = carregando ? '0.6' : '1';
+        }
+    });
+}
+
+// ------ Chart.js ------
+function carregarChartJs() {
+    if (window.Chart) return Promise.resolve();
+    if (chartJsPromise) return chartJsPromise;
+    return chartJsPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => { chartJsPromise = null; reject(new Error('Erro Chart.js')); };
+        document.body.appendChild(script);
+    });
+}
+
+// ------ Filtros ------
+function configurarFiltros(appCache, anosDisp, callback) {
+    const el = {
+        ano: document.getElementById('anoSelect'),
+        proj: document.getElementById('projSelect'),
+        conta: document.getElementById('contaSelect'),
+        modo: document.getElementById('modoSelect'),
+        btnARealizar: document.getElementById('btnARealizar'),
+        btnRealizado: document.getElementById('btnRealizado')
+    };
+
+    el.proj.innerHTML = '';
+    Array.from(appCache.projetosMap.entries())
+        .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
+        .forEach(([cod, { nome }]) => el.proj.appendChild(new Option(nome, cod)));
+    if (el.proj.options.length) el.proj.options[0].selected = true;
+
+    const setProj = (t) => {
+        appCache.projecao = t;
+        const divCG = document.getElementById('groupCapitalGiro');
+        if(divCG) divCG.style.display = (t === "arealizar") ? "none" : "";
+        callback();
+    };
+
+    el.btnARealizar.onclick = () => setProj("arealizar");
+    el.btnRealizado.onclick = () => setProj("realizado");
+    el.ano.onchange = callback;
+    el.conta.onchange = callback;
+    el.proj.onchange = () => {
+        atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
+        callback();
+    };
+    el.modo.onchange = () => {
+        atualizarOpcoesAnoSelect(el.ano, anosDisp, el.modo.value, appCache.projecao);
+        callback();
+    };
+
+    carregarChartJs();
+    configurarAbasGraficos();
+    atualizarOpcoesAnoSelect(el.ano, anosDisp, el.modo.value, appCache.projecao);
+    atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
+    callback();
+}
+
+function obterFiltrosAtuais() {
+    const el = { modo: document.getElementById('modoSelect'), ano: document.getElementById('anoSelect'), proj: document.getElementById('projSelect'), conta: document.getElementById('contaSelect') };
+    if (!el.modo || !el.ano || !el.ano.value) return null;
+
+    const modo = el.modo.value;
+    const valorAno = el.ano.value;
+    let anos = modo.toLowerCase() === 'mensal' ? [valorAno] : Array.from({length: 6}, (_, i) => String(Number(valorAno) + i));
+    
+    const colunas = modo.toLowerCase() === 'anual' ? [...anos].sort() : Array.from({length: 12}, (_, i) => `${String(i + 1).padStart(2,'0')}-${valorAno}`);
+
+    return { modo, anos, projetos: getSelectItems(el.proj), contas: getSelectItems(el.conta), colunas };
+}
+
+function atualizarOpcoesAnoSelect(select, inicio, fim, modo, projecao) {
+    if (!select) return;
+    const atualVal = select.value;
+    select.innerHTML = '';
+    
+    const hoje = new Date().getFullYear();
+    let s = Number(inicio) || hoje, e = Number(fim) || hoje;
+    if (s > e) [s, e] = [e, s];
+    if (projecao === 'arealizar') { e = Math.max(e, hoje + 5); s = Math.min(s, hoje); }
+
+    if (modo.toLowerCase() === 'mensal') {
+        for (let y = s; y <= e; y++) select.appendChild(new Option(String(y), String(y)));
+        select.value = Array.from(select.options).some(o => o.value === atualVal) ? atualVal : String(projecao === "realizado" ? e : s);
+    } else {
+        for (let cursor = s; cursor <= e; cursor += 6) select.prepend(new Option(`${cursor}-${cursor + 5}`, cursor));
+        if (atualVal && Array.from(select.options).some(o => o.value === atualVal)) select.value = atualVal;
+        else select.value = select.options[projecao === "realizado" ? 0 : select.options.length - 1].value;
+    }
+}
+
+function atualizarFiltroContas(select, pMap, cMap, pSel) {
+    const permitidas = new Set();
+    pSel.forEach(id => pMap.get(String(id))?.contas.forEach(c => permitidas.add(c)));
+    select.innerHTML = '';
+    Array.from(cMap.entries()).sort((a,b) => a[1].descricao.localeCompare(b[1].descricao)).forEach(([k, v]) => {
+        if (permitidas.has(k)) select.appendChild(new Option(v.descricao, k));
+    });
+    if (select.options.length) select.options[0].selected = true;
+}
+
+// ------ Tabelas (Renderização) ------
+
+function atualizarVisualizacoes(dados, colunas, cache) {
+    const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
+    ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro'].forEach(limpar);
+
+    renderizarDRE(dados.matrizDRE, colunas, cache.userType);
+    renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
+    renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
+    
+    renderizarGraficos(dados, colunas);
+    renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
+}
+
+// 1. DRE
+function renderizarDRE(matriz, colunas, userType) {
+    const tabela = document.getElementById('tabelaMatriz');
+    const thead = tabela.createTHead();
+    const trH = thead.insertRow();
+    trH.insertCell().textContent = 'Fluxo de Caixa';
+    colunas.forEach(c => trH.insertCell().textContent = c);
+    trH.insertCell().textContent = 'TOTAL';
+
+    const tbody = tabela.createTBody();
+    criarLinhaEspacadora(tbody, colunas);
+
+    const ordem = [
+        '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida', '(-) Custos', '(-) Despesas',
+        '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
+        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
+    ];
+    if (userType?.toLowerCase() === 'developer') ordem.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
+    ordem.push('Caixa Inicial', 'Caixa Final');
+
+    ordem.forEach(classe => {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = classe;
+        colunas.forEach(c => row.insertCell().textContent = formatarValor(matriz[classe]?.[c] || 0));
+        row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
+
+        // Lógica de Estilo via Data Attributes
+        if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe) || classe.includes('Transferência')) {
+            row.dataset.type = 'total';
+        } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
+            row.dataset.type = 'saldo';
+        } else {
+            row.dataset.indent = '1';
+        }
+        
+        if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe)) {
+            criarLinhaEspacadora(tbody, colunas);
+        }
+    });
+}
+
+// 2. Detalhamento
+function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
+    const tabela = document.getElementById('tabelaCustos');
+    const thead = tabela.createTHead();
+    const trH = thead.insertRow();
+    trH.insertCell().textContent = 'Detalhamento';
+    colunas.forEach(c => trH.insertCell().textContent = c);
+    trH.insertCell().textContent = 'TOTAL';
+    criarLinhaEspacadora(thead, colunas);
+
+    const tbody = tabela.createTBody();
+    
+    // Organiza Hierarquia
+    const dadosOrg = {};
+    Object.entries(dados).forEach(([k, v]) => {
+        const [classe, per] = k.split('|');
+        if (!dadosOrg[classe]) dadosOrg[classe] = {};
+        dadosOrg[classe][per] = v;
+    });
+
+    const prioridade = ['(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios'];
+    const render = (c) => renderDrillDown(c, dadosOrg[c], tbody, catMap, colunas);
+    
+    prioridade.forEach(c => { if(dadosOrg[c]) render(c); });
+    Object.keys(dadosOrg).filter(c => !prioridade.includes(c)).forEach(render);
+
+    criarLinhaEspacadora(tbody, colunas);
+
+    const extras = userType?.toLowerCase() === 'developer' ? ['(+) Entradas de Transferência', '(-) Saídas de Transferência'] : [];
+    [...extras, '(+) Entradas', '(-) Saídas'].forEach(c => {
+        if (es[c]) {
+            const r = tbody.insertRow();
+            r.dataset.type = 'saldo';
+            r.insertCell().textContent = c;
+            colunas.forEach(col => r.insertCell().textContent = formatarValor(es[c][col] || 0));
+            r.insertCell().textContent = formatarValor(es[c].TOTAL || 0);
+        }
+    });
+}
+
+function renderDrillDown(classe, dados, tbody, catMap, colunas) {
+    const idBase = `classe_${sanitizeId(classe)}`;
+    
+    // Nível 0: Classe
+    const rC = tbody.insertRow();
+    rC.dataset.type = 'header-group';
+    rC.id = idBase;
+    rC.onclick = () => toggleLinha(idBase);
+    rC.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+    
+    let totC = 0;
+    colunas.forEach(col => { const v = dados[col]?.total || 0; totC += v; rC.insertCell().textContent = formatarValor(v); });
+    rC.insertCell().textContent = formatarValor(totC);
+
+    // Constrói árvore
+    const arvore = {};
+    Object.keys(dados).forEach(per => {
+        const dpts = dados[per].departamentos;
+        for (const dep in dpts) {
+            if (!arvore[dep]) arvore[dep] = {};
+            for (const cat in dpts[dep].categorias) {
+                if (!arvore[dep][cat]) arvore[dep][cat] = new Set();
+                Object.keys(dpts[dep].categorias[cat].fornecedores).forEach(f => arvore[dep][cat].add(f));
+            }
+        }
+    });
+
+    // Renderiza Níveis
+    Object.keys(arvore).sort().forEach(dep => {
+        const idDep = `${idBase}_dp_${sanitizeId(dep)}`;
+        const rD = tbody.insertRow();
+        rD.className = `parent-${idBase} hidden`;
+        rD.dataset.indent = '1';
+        rD.id = idDep;
+        rD.onclick = () => toggleLinha(idDep);
+        rD.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${dep}`;
+
+        let totD = 0;
+        colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.total || 0; totD += v; rD.insertCell().textContent = formatarValor(v); });
+        rD.insertCell().textContent = formatarValor(totD);
+
+        Object.keys(arvore[dep]).sort().forEach(cat => {
+            const idCat = `${idDep}_cat_${sanitizeId(cat)}`;
+            const rCat = tbody.insertRow();
+            rCat.className = `parent-${idDep} hidden`;
+            rCat.dataset.indent = '2';
+            rCat.id = idCat;
+            rCat.onclick = (e) => { e.stopPropagation(); toggleLinha(idCat); };
+            rCat.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${catMap.get(cat) || 'Desconhecida'}`;
+
+            let totCat = 0;
+            colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.total || 0; totCat += v; rCat.insertCell().textContent = formatarValor(v); });
+            rCat.insertCell().textContent = formatarValor(totCat);
+
+            Array.from(arvore[dep][cat]).sort().forEach(forn => {
+                const rF = tbody.insertRow();
+                rF.className = `parent-${idCat} hidden`;
+                rF.dataset.indent = 'lancamento';
+                rF.insertCell().textContent = forn;
+                
+                let totF = 0;
+                colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.fornecedores[forn]?.total || 0; totF += v; rF.insertCell().textContent = formatarValor(v); });
+                rF.insertCell().textContent = formatarValor(totF);
+            });
+        });
+    });
+}
+
+// 3. Capital de Giro
+function renderizarCapitalGiro(matriz, colunas, estoque) {
+    const t = document.getElementById('tabelaCapitalGiro');
+    if (!t || !colunas.length || !matriz) return;
+
+    t.createTHead().insertRow().innerHTML = `<td>Capital de Giro</td>${colunas.map(c=>`<td>${c}</td>`).join('')}<td></td>`;
+    const tb = t.createTBody();
+
+    const calcPct = (tipo) => colunas.forEach(c => {
+        const tot = (matriz[`Curto Prazo ${tipo}`][c]||0) + (matriz[`Longo Prazo ${tipo}`][c]||0);
+        matriz[`Curto Prazo ${tipo} %`][c] = tot ? (matriz[`Curto Prazo ${tipo}`][c]/tot)*100 : 0;
+        matriz[`Longo Prazo ${tipo} %`][c] = tot ? (matriz[`Longo Prazo ${tipo}`][c]/tot)*100 : 0;
+    });
+    calcPct('AR'); calcPct('AP');
+
+    const add = (lbl, key, isPct, type, indent) => {
+        const r = tb.insertRow();
+        if(type) r.dataset.type = type;
+        if(indent) r.dataset.indent = '1';
+        r.insertCell().textContent = lbl;
+        colunas.forEach(c => {
+            const v = (key === 'Estoque' ? estoque?.['(+) Estoque']?.[c] : matriz[key]?.[c]) ?? 0;
+            r.insertCell().textContent = isPct && v!==0 ? formatarPercentual(v) : formatarValor(v);
+        });
+        r.insertCell();
+    };
+    const spc = () => criarLinhaEspacadora(tb, colunas);
+
+    add('(+) Caixa', '(+) Caixa', false, 'total');
+    spc();
+    add('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'total');
+    add('Curto Prazo (30 dias)', 'Curto Prazo AR', false, null, true);
+    add('Longo Prazo (> 30 dias)', 'Longo Prazo AR', false, null, true);
+    add('Curto Prazo (%)', 'Curto Prazo AR %', true, null, true);
+    add('Longo Prazo (%)', 'Longo Prazo AR %', true, null, true);
+    
+    if (estoque && estoque['(+) Estoque']) { spc(); add('(+) Estoque', 'Estoque', false, 'total'); }
+
+    spc();
+    add('(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'total');
+    add('Curto Prazo (30 dias)', 'Curto Prazo AP', false, null, true);
+    add('Longo Prazo (> 30 dias)', 'Longo Prazo AP', false, null, true);
+    add('Curto Prazo (%)', 'Curto Prazo AP %', true, null, true);
+    add('Longo Prazo (%)', 'Longo Prazo AP %', true, null, true);
+
+    spc();
+    add('(=) Curto Prazo (30 dias)', 'Curto Prazo TT', false, 'total');
+    add('(=) Longo Prazo (> 30 dias)', 'Longo Prazo TT', false, 'total');
+    
+    spc();
+    const rF = tb.insertRow();
+    rF.dataset.type = 'saldo';
+    rF.insertCell().textContent = '(=) Capital Líquido Circulante';
+    colunas.forEach(c => rF.insertCell().textContent = formatarValor((matriz['Capital Liquido']?.[c]??0) + (estoque['(+) Estoque']?.[c]??0)));
+    rF.insertCell();
+}
+
+function criarLinhaEspacadora(target, colunas) {
+    const r = target.insertRow();
+    r.dataset.type = 'spacer';
+    r.innerHTML = `<td colspan="${colunas.length + 2}"></td>`;
+}
+
+// ------ Gráficos ------
+function renderizarGraficos(dados, colunas) {
+    if (!dados?.matrizDRE || !window.Chart) return;
+    let l=[], s=[], r=[], p=[], accR=0, accP=0, rAc=[], pAc=[];
+
+    colunas.forEach(c => {
+        const sv = dados.matrizDRE['Caixa Final']?.[c]??0;
+        const rv = dados.entradasESaidas['(+) Entradas']?.[c]??0;
+        const pv = Math.abs(dados.entradasESaidas['(-) Saídas']?.[c]??0);
+        if (Math.abs(sv)+Math.abs(rv)+Math.abs(pv) > 0) {
+            l.push(c); s.push(sv); r.push(rv); p.push(pv);
+            accR += rv; accP += pv; rAc.push(accR); pAc.push(accP);
+        }
+    });
+
+    const common = (tit) => ({
+        responsive: true, maintainAspectRatio: false,
+        plugins: { title: {display:true, text:tit, font:{size:16}}, legend:{position:'bottom'} },
+        scales: { x: {grid:{display:false}}, y: {ticks:{callback:v=>`R$ ${v.toLocaleString('pt-BR')}`}} }
+    });
+
+    const createChart = (id, key, cfg) => {
+        const ctx = document.getElementById(id);
+        if (graficosAtuais[key]) graficosAtuais[key].destroy();
+        if (ctx) graficosAtuais[key] = new window.Chart(ctx, cfg);
+    };
+
+    let optSaldo = common('Saldo de Caixa (R$)');
+    optSaldo.plugins.legend = {display:false};
+    createChart('graficoSaldoCaixa', 'saldoCaixa', {
+        type: 'line', data: { labels:l, datasets: [{ data:s, tension:0.3, segment:{borderColor:c=>c.p1.parsed.y<0?'#dc3545':'#28a745'}, pointRadius:0 }] }, options: optSaldo
+    });
+
+    createChart('graficoRecebientoPagamentoAcumulado', 'acumulado', {
+        type: 'line', data: { labels:l, datasets:[
+            {label:'Entradas', data:rAc, borderColor:'#28a745', backgroundColor:'#28a74533', fill:true, tension:0.3, pointRadius:0},
+            {label:'Saídas', data:pAc, borderColor:'#dc3545', backgroundColor:'#dc354533', fill:true, tension:0.3, pointRadius:0}
+        ]}, options: common('Evolução (R$)')
+    });
+
+    createChart('graficoEntradasSaidasMensal', 'mensal', {
+        type: 'line', data: { labels:l, datasets:[
+            {label:'Entradas', data:r, borderColor:'#28a745', backgroundColor:'#28a74533', tension:0.3, pointRadius:0},
+            {label:'Pagamentos', data:p, borderColor:'#dc3545', backgroundColor:'#dc354533', tension:0.3, pointRadius:0}
+        ]}, options: common('Mensal (R$)')
+    });
+}
+
+function configurarAbasGraficos() {
+    const mapa = {'tab-btn-saldo':'graficoSaldoCaixa', 'tab-btn-acumulado':'graficoRecebientoPagamentoAcumulado', 'tab-btn-mensal':'graficoEntradasSaidasMensal'};
+    Object.entries(mapa).forEach(([btn, cnv]) => {
+        const b = document.getElementById(btn);
+        if(b) b.onclick = (e) => {
+            document.querySelectorAll('#graficos-content canvas').forEach(c => c.style.display='none');
+            document.querySelectorAll('.tab-link').forEach(a => a.classList.remove('active'));
+            const c = document.getElementById(cnv); if(c) c.style.display='block';
+            e.currentTarget.classList.add('active');
+        };
+    });
+}
+
+// ------ Fluxo Diário ------
+function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
+    const tb = document.getElementById('tabelaFluxoDiario');
+    tb.textContent = '';
+    if (!colunas.length) return;
+
+    const colsAll = colunas[0].length === 4 ? colunas.flatMap(a => Array.from({length:12},(_,i)=>`${String(i+1).padStart(2,'0')}-${a}`)) : colunas;
+    const colSet = new Set(colsAll);
+    const dados = [], periodos = new Set();
+
+    fluxo.forEach(x => {
+        const k = `${x.data.split('/')[1]}-${x.data.split('/')[2]}`;
+        periodos.add(k);
+        if (colSet.has(k)) dados.push({...x, k});
+    });
+
+    const perOrd = Array.from(periodos).filter(p=>colSet.has(p)).sort(compKeys);
+    let iniVis, fimVis;
+    
+    if (perOrd.length) {
+        if (projecao === 'arealizar') {
+            iniVis = colsAll[colsAll.indexOf(perOrd[0])] || perOrd[0];
+            fimVis = colsAll[Math.min(colsAll.length-1, colsAll.indexOf(iniVis) + MAX_MESES_FLUXO - 1)];
+        } else {
+            fimVis = colsAll[colsAll.indexOf(perOrd[perOrd.length-1])] || perOrd[perOrd.length-1];
+            iniVis = colsAll[Math.max(0, colsAll.indexOf(fimVis) - MAX_MESES_FLUXO + 1)];
+        }
+    } else {
+        const c = projecao === 'arealizar' ? colsAll.slice(0, MAX_MESES_FLUXO) : colsAll.slice(-MAX_MESES_FLUXO);
+        iniVis = c[0]; fimVis = c[c.length-1];
+    }
+
+    const tbody = tb.createTBody();
+    criarHeaderFluxo(tb, Array.from(periodos).sort(compKeys), (i, f) => renderFD(tbody, dados, saldoIni, i, f), iniVis, fimVis);
+    renderFD(tbody, dados, saldoIni, iniVis, fimVis);
+}
+
+function renderFD(tbody, itens, baseSaldo, ini, fim) {
+    tbody.innerHTML = '';
+    if (!ini || !fim || !itens.length) return tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento.</td>`;
+
+    const val = k => { const [m,a]=k.split('-'); return a*100+Number(m); };
+    const vI=val(ini), vF=val(fim);
+    const visiveis = itens.filter(x => { const v=val(x.k); return v>=vI && v<=vF; });
+
+    if (!visiveis.length) return tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Sem dados no período.</td>`;
+
+    let s = baseSaldo;
+    itens.forEach(x => { if(compKeys(x.k, ini) < 0) s += x.valor; });
+
+    const rS = tbody.insertRow();
+    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(s)}</b></td>`;
+
+    visiveis.forEach(i => {
+        s += i.valor;
+        const r = tbody.insertRow();
+        const obs = i.obs ? ` <span class="tooltip-target" data-tooltip="${i.obs}">ℹ️</span>` : '';
+        r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor)}</td><td style="text-align:right">${formatarValor(s)}</td>`;
+    });
+}
+
+function criarHeaderFluxo(tab, pers, cb, iniDef, fimDef) {
+    const th = tab.createTHead().insertRow();
+    const cell = document.createElement('th');
+    cell.className = 'data-header';
+    
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:5px';
+    wrap.innerHTML = `<div>Data</div><div style="font-size:0.8em;cursor:pointer" id="fd-lbl">${iniDef} → ${fimDef} ▼</div>`;
+    
+    const { drop, ini, fim } = criarDropCal(pers, (i, f) => { wrap.querySelector('#fd-lbl').textContent = `${i} → ${f} ▼`; cb(i, f); }, iniDef, fimDef);
+    if(ini) wrap.querySelector('#fd-lbl').textContent = `${ini} → ${fim} ▼`;
+
+    const lbl = wrap.querySelector('#fd-lbl');
+    lbl.onclick = (e) => { e.stopPropagation(); drop.style.display = drop.style.display==='block'?'none':'block'; };
+    document.onclick = (e) => { if(!cell.contains(e.target)) drop.style.display='none'; };
+
+    cell.append(wrap, drop);
+    th.appendChild(cell);
+    ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => th.insertCell().textContent = t);
+}
+
+function criarDropCal(pers, cb, sIni, sFim) {
+    const d = document.createElement('div'); d.className = 'filtro-dropdown';
+    let selI = sIni || pers[0], selF = sFim || pers[pers.length-1];
+
+    const render = () => {
+        d.innerHTML = '';
+        const grp = {}; pers.forEach(p=>{ const[m,a]=p.split('-'); (grp[a]=grp[a]||[]).push(m); });
+        
+        Object.keys(grp).sort().forEach(a => {
+            const row = document.createElement('div');
+            row.innerHTML = `<div class="filtro-ano-header">${a}</div><div class="filtro-meses-grid"></div>`;
+            const grid = row.querySelector('.grid') || row.lastChild;
+            
+            for(let i=1; i<=12; i++){
+                const m = String(i).padStart(2,'0'), k = `${m}-${a}`;
+                const btn = document.createElement('div');
+                btn.textContent = MESES_ABREV[i-1];
+                
+                const hasData = grp[a].includes(m);
+                const isSel = selI && !selF; // Selecionando...
+                const diff = isSel ? Math.abs(((Number(a)-Number(selI.split('-')[1]))*12) + (i - Number(selI.split('-')[0]))) : 0;
+                
+                if (hasData && (!isSel || diff <= MAX_MESES_FLUXO)) {
+                    btn.className = 'filtro-mes-btn';
+                    if (selI === k || (selI && selF && compKeys(k, selI)>=0 && compKeys(k, selF)<=0)) btn.classList.add('in-range');
+                    if (k === selI || k === selF) btn.classList.add('selected-start');
+                    
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (!selI || (selI && selF)) { selI = k; selF = null; } 
+                        else { 
+                            let [i, f] = [selI, k]; if(compKeys(f, i)<0) [i,f]=[f,i];
+                            if (Math.abs(((Number(f.split('-')[1])-Number(i.split('-')[1]))*12)+(Number(f.split('-')[0])-Number(i.split('-')[0]))) <= MAX_MESES_FLUXO) {
+                                selI = i; selF = f; cb(i, f);
+                            }
+                        }
+                        render();
+                    };
+                } else {
+                    btn.className = 'filtro-mes-slot';
+                }
+                grid.appendChild(btn);
+            }
+            d.appendChild(row);
+        });
+    };
+    render();
+    return { drop: d, ini: selI, fim: selF };
+}
+
+function compKeys(a, b) {
+    if(!a||!b) return 0;
+    const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
+    return aa !== ab ? aa - ab : ma - mb;
+}
+
+export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento };

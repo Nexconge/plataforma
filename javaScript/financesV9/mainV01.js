@@ -1,8 +1,8 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV14.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect } from './uiV21.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV01.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV01.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -22,39 +22,58 @@ let appCache = {
     flagAnos: false
 };
 
-// --- Função Principal de Controle (Orquestrador) ---
-
+// --- Função Principal de Controle ---
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
     
+    alternarEstadoCarregamento(true);
+    
     try {
         let filtrosAtuais = obterFiltrosAtuais();
-        if (!validarFiltros(filtrosAtuais)) return;
-
-        // ETAPA 1: Garantir que temos os ranges de datas (anos disponíveis) para as contas
-        await stepGerenciarPeriodos(filtrosAtuais.contas);
         
-        // Recarrega filtros pois o gerenciador de períodos pode ter alterado o DOM (select de anos)
-        filtrosAtuais = obterFiltrosAtuais();
-        if (!validarFiltros(filtrosAtuais)) return;
+        if (!validarFiltros(filtrosAtuais)) {
+            alternarEstadoCarregamento(false);
+            return;
+        }
 
-        // ETAPA 2: Busca dados na API (se não estiver em cache) e processa
-        document.body.classList.add('loading');
-        await stepCarregarProcessarDados(filtrosAtuais);
+        // --- ALTERAÇÃO AQUI: Lógica bifurcada para Realizado vs A Realizar ---
 
-        // ETAPA 3: Consolidar dados e renderizar
+        if (appCache.projecao === 'arealizar') {
+            // MODO A REALIZAR:
+            // 1. Carrega os dados PRIMEIRO (pois a API já traz tudo futuro)
+            await stepCarregarProcessarDados(filtrosAtuais);
+
+            // 2. Analisa os dados carregados para descobrir o range de anos (Min/Max)
+            stepAtualizarAnosPeloCache(filtrosAtuais.contas);
+
+            // 3. Atualiza objeto de filtros (pois o 'anoSelect' pode ter mudado visualmente)
+            filtrosAtuais = obterFiltrosAtuais();
+
+        } else {
+            // MODO REALIZADO (Comportamento original):
+            // 1. Pergunta à API quais anos existem (metadados)
+            await stepGerenciarPeriodos(filtrosAtuais.contas);
+            
+            // 2. Atualiza filtros e Carrega os dados do ano específico
+            filtrosAtuais = obterFiltrosAtuais();
+            await stepCarregarProcessarDados(filtrosAtuais);
+        }
+
+        // --- FIM DA ALTERAÇÃO ---
+
+        // ETAPA FINAL: Renderização
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
         console.error("Erro fatal em handleFiltroChange:", erroFatal);
         alert("Ocorreu um erro ao processar os dados.");
     } finally {
-        document.body.classList.remove('loading');
+        alternarEstadoCarregamento(false);
     }
 }
 
-// --- Funções Auxiliares do Workflow (Steps) ---
 
+// --- Funções Auxiliares do Workflow (Steps) ---
 function validarFiltros(filtros) {
     if (!filtros || filtros.contas.length === 0) {
         exibirTabelasVazias();
@@ -221,7 +240,6 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosCapitalG?.length > 2) {
         try {
             const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId, anoOuTag);
-            console.log('extracted capitalg', extractedCG);
             lancamentosDeTitulos = extractedCG.lancamentosProcessados;
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
@@ -232,7 +250,6 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     if (response.dadosLancamentos?.length > 2) {
         try {
             lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId, anoOuTag);
-            console.log('extracted lancamentos manuais', lancamentosManuais);
         } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
     }
 
@@ -278,6 +295,49 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
 
     const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioArealizar);
     appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, processedArealizar);
+}
+/**
+ * Passo Especial (A Realizar): Varre o cache de dados já carregados
+ * para determinar dinamicamente quais anos devem aparecer no filtro.
+ */
+function stepAtualizarAnosPeloCache(contasSelecionadas) {
+    const anoAtual = new Date().getFullYear();
+    let minAno = anoAtual;
+    let maxAno = anoAtual;
+
+    contasSelecionadas.forEach(contaId => {
+        // Busca o pacote de dados "AREALIZAR" desta conta
+        const dados = appCache.dadosPorContaAno.get(`${contaId}|AREALIZAR`);
+        
+        if (dados && dados.arealizar) {
+            // Varre as chaves com dados (ex: "01-2025", "12-2028")
+            if (dados.arealizar.chavesComDados) {
+                dados.arealizar.chavesComDados.forEach(chave => {
+                    const partes = chave.split('-');
+                    if (partes.length === 2) {
+                        const ano = parseInt(partes[1], 10);
+                        if (!isNaN(ano)) {
+                            if (ano < minAno) minAno = ano;
+                            if (ano > maxAno) maxAno = ano;
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    // Atualiza a UI (Select de Anos)
+    appCache.flagAnos = true;
+    const elmAno = document.getElementById('anoSelect');
+    const elmModo = document.getElementById('modoSelect');
+    
+    if(elmAno && elmModo) {
+        // Chama a função de UI existente passando o range descoberto nos dados
+        // Nota: A função atualizarOpcoesAnoSelect já adiciona +5 anos de margem no modo arealizar,
+        // mas agora ela respeitará se seus dados forem ALÉM desses 5 anos (ex: financiamento longo).
+        atualizarOpcoesAnoSelect(elmAno, minAno, maxAno, elmModo.value, appCache.projecao);
+    }
+    appCache.flagAnos = false;
 }
 
 /**
