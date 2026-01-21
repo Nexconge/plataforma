@@ -42,55 +42,81 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 ========================================================= */
 table:not(#tabelaFluxoDiario) {
   width: 1400px; 
-  border-collapse: separate; /* Obrigatório para border-radius funcionar */
+  border-collapse: separate; 
   border-spacing: 0; 
   font-size: 14px;
 }
 
-/* Células do Corpo */
+/* --- CONFIGURAÇÃO DAS CÉLULAS (Geral) --- */
 table:not(#tabelaFluxoDiario) tbody td { 
-  vertical-align: middle; text-align: right; padding-right: 10px; 
+  vertical-align: middle; 
+  text-align: right; 
+  padding-right: 10px; 
   border-bottom: 1px solid var(--bg-light);
+  height: 30px; /* Garante altura mínima para alinhamento */
 }
 
-/* Largura das Colunas */
+/* --- LARGURA E ESTILO DAS COLUNAS --- */
+
+/* Coluna 1: Rótulos (Esquerda) */
 table:not(#tabelaFluxoDiario) td:first-child, 
 table:not(#tabelaFluxoDiario) th:first-child { 
-  width: 290px; text-align: left; padding-left: 10px; 
+  width: 290px; 
+  text-align: left; 
+  padding-left: 10px; 
 }
+
+/* Coluna 14: TOTAL (Destaque) */
 table:not(#tabelaFluxoDiario) td:nth-child(14), 
 table:not(#tabelaFluxoDiario) th:nth-child(14) { 
-  width: 100px; 
+  width: 100px;
+  /* Cria uma divisão visual clara à esquerda da coluna Total */
+  border-left: 2px solid rgba(0,0,0,0.1) !important; 
+  font-weight: bold; /* Destaca os valores do total */
+  background-color: #fafafa; /* Fundo levemente diferente para destacar do resto */
+}
+/* Remove o fundo cinza do Total quando a linha for azul (Saldo) para não ficar estranho */
+table:not(#tabelaFluxoDiario) tr[data-type="saldo"] td:nth-child(14) {
+  background-color: transparent;
 }
 
-/* --- ESTILO DO CABEÇALHO (COR E ARREDONDAMENTO) --- */
-
-/* 1. Aplica a cor azul em QUALQUER célula (td ou th) dentro do thead */
+/* --- CABEÇALHO (Correção de Alinhamento) --- */
 table:not(#tabelaFluxoDiario) thead tr td,
 table:not(#tabelaFluxoDiario) thead tr th {
   background-color: var(--primary); 
   color: white; 
   font-weight: bold;
-  height: 30px;
-  border: none; /* Remove bordas internas do cabeçalho */
+  height: 40px; /* Aumentei um pouco a altura para dar respiro */
+  vertical-align: middle !important; /* Força o texto a ficar no meio verticalmente */
+  padding-top: 0; 
+  padding-bottom: 0;
+  border: none; 
 }
 
-/* 2. Arredondamento do Canto Superior Esquerdo */
+/* Mantém o Total do cabeçalho com a mesma cor de fundo azul, mas com a borda divisória */
+table:not(#tabelaFluxoDiario) thead tr th:nth-child(14),
+table:not(#tabelaFluxoDiario) thead tr td:nth-child(14) {
+  background-color: var(--primary); /* Mantém azul */
+  border-left: 1px solid rgba(255,255,255,0.3) !important; /* Divisão sutil no cabeçalho */
+}
+
+/* Arredondamento Canto Superior Esquerdo */
 table:not(#tabelaFluxoDiario) thead tr:first-child td:first-child,
 table:not(#tabelaFluxoDiario) thead tr:first-child th:first-child { 
   border-top-left-radius: 10px; 
 }
 
-/* 3. Arredondamento do Canto Superior Direito */
+/* Arredondamento Canto Superior Direito */
 table:not(#tabelaFluxoDiario) thead tr:first-child td:last-child,
 table:not(#tabelaFluxoDiario) thead tr:first-child th:last-child { 
   border-top-right-radius: 10px; 
 }
 
-/* 4. Correção para linhas espaçadoras (evita barra azul no meio da tabela se houver thead extra) */
+/* Correção para linhas espaçadoras no thead */
 table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] td,
 table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] th {
   background-color: transparent !important;
+  height: 10px; /* Reduzi a altura do espaçador */
 }
 
 /* --- ARREDONDAMENTO DO RODAPÉ --- */
