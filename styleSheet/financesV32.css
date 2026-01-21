@@ -38,48 +38,62 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 .multiSelectCustom option { padding: 5px; font-family: var(--font); }
 
 /* =========================================================
-   TABELAS PRINCIPAIS
+   TABELAS PRINCIPAIS (Matriz, Detalhamento, Capital Giro)
 ========================================================= */
 table:not(#tabelaFluxoDiario) {
   width: 1400px; 
-  border-collapse: separate; /* Necessário para border-radius */
+  border-collapse: separate; /* Obrigatório para border-radius funcionar */
   border-spacing: 0; 
   font-size: 14px;
 }
 
-/* Células */
-table:not(#tabelaFluxoDiario) td, table:not(#tabelaFluxoDiario) th { 
+/* Células do Corpo */
+table:not(#tabelaFluxoDiario) tbody td { 
   vertical-align: middle; text-align: right; padding-right: 10px; 
   border-bottom: 1px solid var(--bg-light);
 }
-table:not(#tabelaFluxoDiario) td:first-child, table:not(#tabelaFluxoDiario) th:first-child { 
+
+/* Largura das Colunas */
+table:not(#tabelaFluxoDiario) td:first-child, 
+table:not(#tabelaFluxoDiario) th:first-child { 
   width: 290px; text-align: left; padding-left: 10px; 
 }
-table:not(#tabelaFluxoDiario) td:nth-child(14), table:not(#tabelaFluxoDiario) th:nth-child(14) { 
+table:not(#tabelaFluxoDiario) td:nth-child(14), 
+table:not(#tabelaFluxoDiario) th:nth-child(14) { 
   width: 100px; 
 }
 
-/* Cabeçalho */
-table:not(#tabelaFluxoDiario) thead tr { height: 30px; }
+/* --- ESTILO DO CABEÇALHO (COR E ARREDONDAMENTO) --- */
 
-/* Aplica cor nas THs para permitir arredondamento */
-table:not(#tabelaFluxoDiario) thead th {
-  background-color: var(--primary); color: white; font-weight: bold;
-}
-
-/* Correção: Linha de espaçamento no thead deve ser transparente */
-table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] th,
-table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] td {
-  background-color: transparent !important;
-  border: none !important;
+/* 1. Aplica a cor azul em QUALQUER célula (td ou th) dentro do thead */
+table:not(#tabelaFluxoDiario) thead tr td,
+table:not(#tabelaFluxoDiario) thead tr th {
+  background-color: var(--primary); 
+  color: white; 
+  font-weight: bold;
   height: 30px;
+  border: none; /* Remove bordas internas do cabeçalho */
 }
 
-/* Arredondamento Topo */
-table:not(#tabelaFluxoDiario) thead tr:first-child th:first-child { border-top-left-radius: 10px; }
-table:not(#tabelaFluxoDiario) thead tr:first-child th:last-child { border-top-right-radius: 10px; }
+/* 2. Arredondamento do Canto Superior Esquerdo */
+table:not(#tabelaFluxoDiario) thead tr:first-child td:first-child,
+table:not(#tabelaFluxoDiario) thead tr:first-child th:first-child { 
+  border-top-left-radius: 10px; 
+}
 
-/* Arredondamento Rodapé */
+/* 3. Arredondamento do Canto Superior Direito */
+table:not(#tabelaFluxoDiario) thead tr:first-child td:last-child,
+table:not(#tabelaFluxoDiario) thead tr:first-child th:last-child { 
+  border-top-right-radius: 10px; 
+}
+
+/* 4. Correção para linhas espaçadoras (evita barra azul no meio da tabela se houver thead extra) */
+table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] td,
+table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] th {
+  background-color: transparent !important;
+}
+
+/* --- ARREDONDAMENTO DO RODAPÉ --- */
 table:not(#tabelaFluxoDiario) tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
 table:not(#tabelaFluxoDiario) tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
 
