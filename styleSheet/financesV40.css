@@ -80,6 +80,8 @@ table:not(#tabelaFluxoDiario) thead tr th {
   font-weight: bold;
   height: 30px;
   vertical-align: middle !important; /* Força o texto a ficar no meio verticalmente */
+  text-align: right; 
+  padding-right: 10px; /* Mesmo padding das células de dados */
   padding-top: 0; 
   padding-bottom: 0;
   border: none; 
@@ -95,6 +97,8 @@ table:not(#tabelaFluxoDiario) thead tr td:nth-child(14) {
 table:not(#tabelaFluxoDiario) thead tr:first-child td:first-child,
 table:not(#tabelaFluxoDiario) thead tr:first-child th:first-child { 
   border-top-left-radius: 10px; 
+  text-align: left; /* Força esquerda na primeira coluna */
+  padding-left: 10px;
 }
 
 /* Arredondamento Canto Superior Direito */
@@ -133,6 +137,10 @@ tr[data-indent="1"] td:first-child { padding-left: 30px !important; }
 tr[data-indent="2"] td:first-child { padding-left: 60px !important; }
 tr[data-indent="lancamento"] { font-size: 12px; }
 tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
+
+/* Garante que linhas de espaçamento e saldos não mudem de cor errada */
+tr[data-type="spacer"]:hover { background-color: transparent; cursor: default; }
+tr[data-type="saldo"]:hover { background-color: var(--primary); cursor: default; }
 
 /* =========================================================
    TABELA FLUXO DIÁRIO
