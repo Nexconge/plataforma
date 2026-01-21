@@ -222,40 +222,39 @@ tr[data-type="saldo"]:hover { background-color: var(--primary); cursor: default;
 body.app-loading { cursor: wait; }
 body.app-loading table, body.app-loading .container-graficos-abas { opacity: 0.5; pointer-events: none; }
 body.app-loading::before {
-  content: "";
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255,255,255,0.3);
-  border-top-color: white;
+  content: ""; 
+  position: fixed; 
+  top: 50%; 
+  left: 50%; 
+  width: 24px; 
+  height: 24px; 
+  margin-top: -12px;  
+  margin-left: -95px; 
+
+  border: 3px solid rgba(255,255,255,0.3); 
+  border-top-color: white; 
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  transform: translate(-50%, -50%);
+  animation: spin 1s linear infinite; 
   z-index: 10001;
 }
 
-/* 3. A Caixa de Texto */
+/* CAIXA DE TEXTO */
 body.app-loading::after {
-    content: "Carregando dados...";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #0052a3;
-    color: white;
-    /* Aumentamos o padding da esquerda para dar espaço ao spinner */
-    padding: 15px 25px 15px 55px; 
-    border-radius: 8px;
-    z-index: 10000;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    
-    /* Garante que o texto fique alinhado verticalmente */
-    display: flex;
-    align-items: center;
-    font-family: 'Nunito', sans-serif; /* Opcional, para garantir fonte limpa */
+  content: "Carregando dados..."; 
+  position: fixed; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  
+  background: var(--primary-dark); 
+  color: white; 
+  
+  padding: 15px 25px 15px 55px; 
+  
+  border-radius: 8px; 
+  z-index: 10000; 
+  font-weight: bold; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
