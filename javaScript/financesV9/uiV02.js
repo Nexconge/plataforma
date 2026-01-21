@@ -327,31 +327,61 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
 // 3. Capital de Giro
 function renderizarCapitalGiro(matriz, colunas, estoque) {
     const t = document.getElementById('tabelaCapitalGiro');
+    // Verifica se os elementos necessários existem antes de continuar
     if (!t || !colunas.length || !matriz) return;
 
-    t.createTHead().insertRow().innerHTML = `<td>Capital de Giro</td>${colunas.map(c=>`<td>${c}</td>`).join('')}<td></td>`;
+    // Limpa e cria cabeçalho
+    t.innerHTML = ''; 
+    const thead = t.createTHead();
+    const trH = thead.insertRow();
+    trH.innerHTML = `<td>Capital de Giro</td>${colunas.map(c=>`<td>${c}</td>`).join('')}<td></td>`;
+    
     const tb = t.createTBody();
 
-    const calcPct = (tipo) => colunas.forEach(c => {
-        const tot = (matriz[`Curto Prazo ${tipo}`][c]||0) + (matriz[`Longo Prazo ${tipo}`][c]||0);
-        matriz[`Curto Prazo ${tipo} %`][c] = tot ? (matriz[`Curto Prazo ${tipo}`][c]/tot)*100 : 0;
-        matriz[`Longo Prazo ${tipo} %`][c] = tot ? (matriz[`Longo Prazo ${tipo}`][c]/tot)*100 : 0;
-    });
-    calcPct('AR'); calcPct('AP');
+    // --- CORREÇÃO AQUI ---
+    const calcPct = (tipo) => {
+        // Inicializa os objetos vazios se não existirem
+        matriz[`Curto Prazo ${tipo} %`] = {};
+        matriz[`Longo Prazo ${tipo} %`] = {};
 
+        colunas.forEach(c => {
+            const tot = (matriz[`Curto Prazo ${tipo}`]?.[c] || 0) + (matriz[`Longo Prazo ${tipo}`]?.[c] || 0);
+            
+            // Cálculo seguro
+            matriz[`Curto Prazo ${tipo} %`][c] = tot ? (matriz[`Curto Prazo ${tipo}`][c] / tot) * 100 : 0;
+            matriz[`Longo Prazo ${tipo} %`][c] = tot ? (matriz[`Longo Prazo ${tipo}`][c] / tot) * 100 : 0;
+        });
+    };
+    
+    // Executa os cálculos
+    calcPct('AR'); 
+    calcPct('AP');
+
+    // Função auxiliar para adicionar linhas
     const add = (lbl, key, isPct, type, indent) => {
         const r = tb.insertRow();
         if(type) r.dataset.type = type;
         if(indent) r.dataset.indent = '1';
+        
         r.insertCell().textContent = lbl;
+        
         colunas.forEach(c => {
-            const v = (key === 'Estoque' ? estoque?.['(+) Estoque']?.[c] : matriz[key]?.[c]) ?? 0;
-            r.insertCell().textContent = isPct && v!==0 ? formatarPercentual(v) : formatarValor(v);
+            // Lógica para pegar do estoque ou da matriz principal
+            let v = 0;
+            if (key === 'Estoque') {
+                v = estoque?.['(+) Estoque']?.[c] ?? 0;
+            } else {
+                v = matriz[key]?.[c] ?? 0;
+            }
+            
+            r.insertCell().textContent = isPct && v !== 0 ? formatarPercentual(v) : formatarValor(v);
         });
-        r.insertCell();
+        r.insertCell(); // Coluna final vazia
     };
+    
     const spc = () => criarLinhaEspacadora(tb, colunas);
 
+    // Renderização das linhas
     add('(+) Caixa', '(+) Caixa', false, 'total');
     spc();
     add('(+) Clientes a Receber', '(+) Clientes a Receber', false, 'total');
@@ -360,7 +390,10 @@ function renderizarCapitalGiro(matriz, colunas, estoque) {
     add('Curto Prazo (%)', 'Curto Prazo AR %', true, null, true);
     add('Longo Prazo (%)', 'Longo Prazo AR %', true, null, true);
     
-    if (estoque && estoque['(+) Estoque']) { spc(); add('(+) Estoque', 'Estoque', false, 'total'); }
+    if (estoque && estoque['(+) Estoque']) { 
+        spc(); 
+        add('(+) Estoque', 'Estoque', false, 'total'); 
+    }
 
     spc();
     add('(-) Fornecedores a Pagar', '(-) Fornecedores a Pagar', false, 'total');
@@ -377,7 +410,10 @@ function renderizarCapitalGiro(matriz, colunas, estoque) {
     const rF = tb.insertRow();
     rF.dataset.type = 'saldo';
     rF.insertCell().textContent = '(=) Capital Líquido Circulante';
-    colunas.forEach(c => rF.insertCell().textContent = formatarValor((matriz['Capital Liquido']?.[c]??0) + (estoque['(+) Estoque']?.[c]??0)));
+    colunas.forEach(c => {
+        const valLiq = (matriz['Capital Liquido']?.[c] ?? 0) + (estoque?.['(+) Estoque']?.[c] ?? 0);
+        rF.insertCell().textContent = formatarValor(valLiq);
+    });
     rF.insertCell();
 }
 
