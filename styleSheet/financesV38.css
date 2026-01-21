@@ -78,8 +78,8 @@ table:not(#tabelaFluxoDiario) thead tr th {
   background-color: var(--primary); 
   color: white; 
   font-weight: bold;
-  height: 35px;
-  vertical-align: right !important; /* Força o texto a ficar no meio verticalmente */
+  height: 30px;
+  vertical-align: middle !important; /* Força o texto a ficar no meio verticalmente */
   padding-top: 0; 
   padding-bottom: 0;
   border: none; 
