@@ -15,12 +15,11 @@ div, label, select, table { box-sizing: border-box; }
 .hidden { display: none !important; }
 
 /* =========================================================
-   CONTROLES (Selects e Botões)
+   CONTROLES
 ========================================================= */
 label { margin-right: 5px; }
 label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-block; }
 
-/* Estilo original restaurado */
 .custom-select {
   width: 300px; height: 30px;
   border: 1px solid #C7C7C7; border-radius: 4px;
@@ -39,16 +38,19 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 .multiSelectCustom option { padding: 5px; font-family: var(--font); }
 
 /* =========================================================
-   TABELAS PRINCIPAIS (Matriz, Detalhamento, Capital Giro)
+   TABELAS PRINCIPAIS
 ========================================================= */
 table:not(#tabelaFluxoDiario) {
-  width: 1400px; border-collapse: separate; /* Necessário para border-radius */
-  border-spacing: 0; font-size: 14px;
+  width: 1400px; 
+  border-collapse: separate; /* Necessário para border-radius */
+  border-spacing: 0; 
+  font-size: 14px;
 }
 
-/* Colunas */
+/* Células */
 table:not(#tabelaFluxoDiario) td, table:not(#tabelaFluxoDiario) th { 
-  vertical-align: middle; text-align: right; padding-right: 10px; border-bottom: 1px solid var(--bg-light);
+  vertical-align: middle; text-align: right; padding-right: 10px; 
+  border-bottom: 1px solid var(--bg-light);
 }
 table:not(#tabelaFluxoDiario) td:first-child, table:not(#tabelaFluxoDiario) th:first-child { 
   width: 290px; text-align: left; padding-left: 10px; 
@@ -58,19 +60,30 @@ table:not(#tabelaFluxoDiario) td:nth-child(14), table:not(#tabelaFluxoDiario) th
 }
 
 /* Cabeçalho */
-table:not(#tabelaFluxoDiario) thead tr { 
-  height: 30px; background-color: var(--primary); color: white; font-weight: bold; 
+table:not(#tabelaFluxoDiario) thead tr { height: 30px; }
+
+/* Aplica cor nas THs para permitir arredondamento */
+table:not(#tabelaFluxoDiario) thead th {
+  background-color: var(--primary); color: white; font-weight: bold;
 }
 
-/* Bordas Arredondadas (Topo) */
+/* Correção: Linha de espaçamento no thead deve ser transparente */
+table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] th,
+table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] td {
+  background-color: transparent !important;
+  border: none !important;
+  height: 30px;
+}
+
+/* Arredondamento Topo */
 table:not(#tabelaFluxoDiario) thead tr:first-child th:first-child { border-top-left-radius: 10px; }
 table:not(#tabelaFluxoDiario) thead tr:first-child th:last-child { border-top-right-radius: 10px; }
 
-/* Bordas Arredondadas (Rodapé) - Aplica na última linha do tbody */
+/* Arredondamento Rodapé */
 table:not(#tabelaFluxoDiario) tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
 table:not(#tabelaFluxoDiario) tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
 
-/* Estilos de Linha (Data Attributes) */
+/* Estilos de Linha */
 tr { height: 30px; background: white; }
 tr:hover { background-color: var(--bg-light); }
 
@@ -78,14 +91,12 @@ tr[data-type="total"] { font-weight: bold; border-top: 2px solid #F2F2F2; }
 tr[data-type="header-group"] { background-color: #A6CCEB; font-weight: bold; }
 tr[data-type="spacer"] td { height: 30px; background: transparent; border: none; }
 
-/* Linha de Saldo (Fundo Azul) */
-tr[data-type="saldo"] { 
-  background-color: var(--primary); color: white; font-weight: bold; border: none;
-}
+/* Saldo */
+tr[data-type="saldo"] { background-color: var(--primary); color: white; font-weight: bold; border: none; }
 tr[data-type="saldo"]:hover { background-color: var(--primary); }
 tr[data-type="saldo"] td { border-bottom: none; }
 
-/* Indentação e Expand */
+/* Utilitários Tabela */
 .expand-btn { cursor: pointer; color: var(--primary); margin-right: 5px; }
 tr[data-indent="1"] td:first-child { padding-left: 30px !important; }
 tr[data-indent="2"] td:first-child { padding-left: 60px !important; }
@@ -100,10 +111,9 @@ tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
   font-size: 14px; margin-top: 20px; background: #fff;
 }
 
-/* Cabeçalho Específico */
+/* Cabeçalho */
 #tabelaFluxoDiario thead th {
-  background-color: #0066cc; /* Cor específica pedida */
-  color: white; font-weight: bold; text-align: left;
+  background-color: #0066cc; color: white; font-weight: bold; text-align: left;
   padding: 10px 16px; border-bottom: 2px solid var(--primary-dark);
 }
 #tabelaFluxoDiario thead th:first-child { border-top-left-radius: 8px; width: 100px; }
@@ -113,29 +123,20 @@ tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
 #tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid #ddd; }
 #tabelaFluxoDiario tbody tr:nth-child(even) { background-color: #f5f5f5; }
 #tabelaFluxoDiario tbody tr:hover { background-color: #e6f0ff; }
-#tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { 
-  width: 120px; text-align: right; font-family: monospace; 
-}
+#tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: monospace; }
 
-/* Botão de Filtro no Cabeçalho */
-#fd-periodo-container {
-  display: flex; align-items: center; gap: 5px; 
-}
+/* Filtro */
+#fd-periodo-container { display: flex; align-items: center; gap: 5px; }
 #fd-periodo-label {
-  font-size: 0.9em; cursor: pointer;
-  white-space: nowrap; /* IMPEDE QUE O BOTÃO FIQUE ESPREMIDO */
+  font-size: 0.9em; cursor: pointer; white-space: nowrap;
   background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;
 }
 #fd-periodo-label:hover { background: rgba(255,255,255,0.3); }
 
-/* Estado Vazio */
-.linha-sem-dados td {
-  height: 350px; vertical-align: top; padding-top: 40px; 
-  color: #666; text-align: center;
-}
+.linha-sem-dados td { height: 350px; vertical-align: top; padding-top: 40px; color: #666; text-align: center; }
 
 /* =========================================================
-   DROPDOWN CALENDÁRIO
+   DROPDOWN & GRÁFICOS & LOADING (Mantidos)
 ========================================================= */
 .filtro-dropdown {
   display: none; position: absolute; top: 100%; left: 0;
@@ -143,9 +144,7 @@ tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
   padding: 10px; z-index: 1000; border-radius: 6px; width: 320px; max-height: 320px; 
   overflow-y: auto; color: #333; font-weight: normal;
 }
-.filtro-ano-header { 
-  text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid #eee; margin-bottom: 5px; 
-}
+.filtro-ano-header { text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid #eee; margin-bottom: 5px; }
 .filtro-meses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
 .filtro-mes-btn {
   padding: 8px; text-align: center; border-radius: 4px; font-size: 13px; cursor: pointer;
@@ -158,34 +157,14 @@ tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
 }
 .filtro-mes-slot { padding: 8px; text-align: center; font-size: 13px; color: #ccc; background: #f9f9f9; }
 
-/* =========================================================
-   GRÁFICOS E ABAS
-========================================================= */
-.container-graficos-abas { 
-  width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 20px; background: white;
-}
-.grafico-tabs { 
-  display: flex; background: #f8f8f8; border-bottom: 1px solid #ddd; 
-}
-.tab-link {
-  padding: 10px 15px; border: none; background: transparent; cursor: pointer; color: #555;
-  border-right: 1px solid #ddd;
-}
+.container-graficos-abas { width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 20px; background: white; }
+.grafico-tabs { display: flex; background: #f8f8f8; border-bottom: 1px solid #ddd; }
+.tab-link { padding: 10px 15px; border: none; background: transparent; cursor: pointer; color: #555; border-right: 1px solid #ddd; }
 .tab-link:hover { background: #eee; }
-.tab-link.active { 
-  background: white; color: black; font-weight: bold; border-bottom: 1px solid white; margin-bottom: -1px; 
-}
-#graficos-content { 
-  padding: 10px; background: white; height: 400px; position: relative; 
-}
-/* Força o Canvas a aparecer */
-#graficos-content canvas {
-  width: 100% !important; height: 100% !important;
-}
+.tab-link.active { background: white; color: black; font-weight: bold; border-bottom: 1px solid white; margin-bottom: -1px; }
+#graficos-content { padding: 10px; background: white; height: 400px; position: relative; }
+#graficos-content canvas { width: 100% !important; height: 100% !important; }
 
-/* =========================================================
-   UTILITÁRIOS E LOADING
-========================================================= */
 .tooltip-target { cursor: help; margin-left: 8px; position: relative; }
 .tooltip-target:hover::after {
   content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);

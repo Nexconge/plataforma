@@ -608,45 +608,61 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
 }
 
 function criarHeaderFluxo(tab, pers, cb, iniDef, fimDef) {
-    const th = tab.createTHead().insertRow();
+    const thead = tab.createTHead();
+    const thRow = thead.insertRow();
     
-    // Configuração correta do TH
-    const cell = document.createElement('th');
-    cell.className = 'data-header';
-    
-    // Container Flex com ID para CSS e nowrap no label
+    // --- Célula 1: Filtro (TH manual) ---
+    const thData = document.createElement('th');
+    thData.className = 'data-header';
+    thData.style.position = 'relative'; // Importante para o dropdown absoluto
+
+    // Container do Filtro
     const wrap = document.createElement('div');
-    wrap.id = 'fd-periodo-container'; // ID Adicionado para o CSS pegar
+    wrap.id = 'fd-periodo-container';
     
-    // HTML com IDs para estilização
-    wrap.innerHTML = `
-        <div>Data</div>
-        <div id="fd-periodo-label">${iniDef} → ${fimDef} ▼</div>
-    `;
+    // Label clicável
+    const labelDiv = document.createElement('div');
+    labelDiv.id = 'fd-periodo-label';
+    labelDiv.textContent = `${iniDef} → ${fimDef} ▼`;
     
+    // Texto fixo "Data"
+    const textDiv = document.createElement('div');
+    textDiv.textContent = 'Data';
+    
+    wrap.appendChild(textDiv);
+    wrap.appendChild(labelDiv);
+    
+    // Lógica do Dropdown
     const { drop, ini, fim } = criarDropCal(pers, (i, f) => { 
-        wrap.querySelector('#fd-periodo-label').textContent = `${i} → ${f} ▼`; 
+        labelDiv.textContent = `${i} → ${f} ▼`; 
         cb(i, f); 
     }, iniDef, fimDef);
 
-    if(ini) wrap.querySelector('#fd-periodo-label').textContent = `${ini} → ${fim} ▼`;
+    if(ini) labelDiv.textContent = `${ini} → ${fim} ▼`;
 
-    const lbl = wrap.querySelector('#fd-periodo-label');
-    lbl.onclick = (e) => { 
+    // Eventos de Clique (Corrigido)
+    labelDiv.onclick = (e) => { 
         e.stopPropagation(); 
         const isVisible = drop.style.display === 'block';
         drop.style.display = isVisible ? 'none' : 'block'; 
     };
     
-    // Fecha ao clicar fora
     document.addEventListener('click', (e) => { 
-        if(!cell.contains(e.target)) drop.style.display='none'; 
+        // Fecha se clicar fora da TH
+        if (!thData.contains(e.target)) drop.style.display = 'none'; 
     });
 
-    cell.append(wrap, drop);
-    th.appendChild(cell);
-    
-    ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => th.insertCell().textContent = t);
+    thData.appendChild(wrap);
+    thData.appendChild(drop);
+    thRow.appendChild(thData);
+
+    // --- Células 2, 3, 4: Colunas Normais (TH manuais) ---
+    // Usamos createElement('th') para garantir que peguem o estilo do CSS
+    ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        thRow.appendChild(th);
+    });
 }
 
 function criarDropCal(pers, cb, sIni, sFim) {
