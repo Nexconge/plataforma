@@ -233,7 +233,8 @@ body.app-loading::before {
     border-radius: 50%;
     z-index: 10001; 
     animation: spin 1s linear infinite;
-    margin-left: -85px; 
+    margin-left: -90px;
+    margin-bottom: -15px;
 }
 
 /* 3. A Caixa de Texto (seu código original ::after ajustado) */
