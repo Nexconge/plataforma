@@ -425,49 +425,111 @@ function criarLinhaEspacadora(target, colunas) {
 
 // ------ Gráficos ------
 function renderizarGraficos(dados, colunas) {
-    if (!dados?.matrizDRE || !window.Chart) return;
+    // Verificação de segurança mais robusta
+    if (!dados?.matrizDRE || !window.Chart) {
+        console.warn("Chart.js não carregado ou dados insuficientes.");
+        return;
+    }
+    
     let l=[], s=[], r=[], p=[], accR=0, accP=0, rAc=[], pAc=[];
 
     colunas.forEach(c => {
         const sv = dados.matrizDRE['Caixa Final']?.[c]??0;
         const rv = dados.entradasESaidas['(+) Entradas']?.[c]??0;
         const pv = Math.abs(dados.entradasESaidas['(-) Saídas']?.[c]??0);
-        if (Math.abs(sv)+Math.abs(rv)+Math.abs(pv) > 0) {
+        
+        // Regra frouxa para garantir que o gráfico desenhe mesmo com poucos dados
+        if (true) { 
             l.push(c); s.push(sv); r.push(rv); p.push(pv);
             accR += rv; accP += pv; rAc.push(accR); pAc.push(accP);
         }
     });
 
     const common = (tit) => ({
-        responsive: true, maintainAspectRatio: false,
-        plugins: { title: {display:true, text:tit, font:{size:16}}, legend:{position:'bottom'} },
-        scales: { x: {grid:{display:false}}, y: {ticks:{callback:v=>`R$ ${v.toLocaleString('pt-BR')}`}} }
+        responsive: true, 
+        maintainAspectRatio: false, // Importante para ocupar 100% da div
+        plugins: { 
+            title: {display:true, text:tit, font:{size:16}}, 
+            legend:{position:'bottom'},
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) { label += ': '; }
+                        if (context.parsed.y !== null) {
+                            label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: { 
+            x: {grid:{display:false}}, 
+            y: {ticks:{callback:v=>`R$ ${v.toLocaleString('pt-BR')}`}} 
+        }
     });
 
     const createChart = (id, key, cfg) => {
         const ctx = document.getElementById(id);
-        if (graficosAtuais[key]) graficosAtuais[key].destroy();
-        if (ctx) graficosAtuais[key] = new window.Chart(ctx, cfg);
+        if (!ctx) return;
+        
+        // Garante que o canvas esteja visível se for a aba ativa
+        // (Assume-se que a primeira aba é a padrão se nenhuma estiver ativa)
+        const content = document.getElementById('graficos-content');
+        if (content && window.getComputedStyle(ctx).display === 'none' && !graficosAtuais[key]) {
+             // Não força display block aqui para não sobrepor, a função de abas cuida disso
+        }
+
+        if (graficosAtuais[key]) {
+            graficosAtuais[key].destroy();
+        }
+        
+        graficosAtuais[key] = new window.Chart(ctx, cfg);
     };
 
     let optSaldo = common('Saldo de Caixa (R$)');
     optSaldo.plugins.legend = {display:false};
+    
     createChart('graficoSaldoCaixa', 'saldoCaixa', {
-        type: 'line', data: { labels:l, datasets: [{ data:s, tension:0.3, segment:{borderColor:c=>c.p1.parsed.y<0?'#dc3545':'#28a745'}, pointRadius:0 }] }, options: optSaldo
+        type: 'line', 
+        data: { 
+            labels:l, 
+            datasets: [{ 
+                label: 'Saldo',
+                data:s, 
+                tension:0.3, 
+                segment:{
+                    borderColor: ctx => ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? '#dc3545' : '#28a745'
+                }, 
+                pointRadius:2 // Aumentei um pouco para ver os pontos
+            }] 
+        }, 
+        options: optSaldo
     });
 
     createChart('graficoRecebientoPagamentoAcumulado', 'acumulado', {
-        type: 'line', data: { labels:l, datasets:[
-            {label:'Entradas', data:rAc, borderColor:'#28a745', backgroundColor:'#28a74533', fill:true, tension:0.3, pointRadius:0},
-            {label:'Saídas', data:pAc, borderColor:'#dc3545', backgroundColor:'#dc354533', fill:true, tension:0.3, pointRadius:0}
-        ]}, options: common('Evolução (R$)')
+        type: 'line', 
+        data: { 
+            labels:l, 
+            datasets:[
+                {label:'Entradas', data:rAc, borderColor:'#28a745', backgroundColor:'rgba(40, 167, 69, 0.2)', fill:true, tension:0.3, pointRadius:0},
+                {label:'Saídas', data:pAc, borderColor:'#dc3545', backgroundColor:'rgba(220, 53, 69, 0.2)', fill:true, tension:0.3, pointRadius:0}
+            ]
+        }, 
+        options: common('Evolução (R$)')
     });
 
     createChart('graficoEntradasSaidasMensal', 'mensal', {
-        type: 'line', data: { labels:l, datasets:[
-            {label:'Entradas', data:r, borderColor:'#28a745', backgroundColor:'#28a74533', tension:0.3, pointRadius:0},
-            {label:'Pagamentos', data:p, borderColor:'#dc3545', backgroundColor:'#dc354533', tension:0.3, pointRadius:0}
-        ]}, options: common('Mensal (R$)')
+        type: 'bar', // Mudei para BARRA que é melhor para mensal, mas pode voltar para line
+        data: { 
+            labels:l, 
+            datasets:[
+                {label:'Entradas', data:r, backgroundColor:'#28a745'},
+                {label:'Pagamentos', data:p, backgroundColor:'#dc3545'}
+            ]
+        }, 
+        options: common('Mensal (R$)')
     });
 }
 
@@ -547,22 +609,43 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
 
 function criarHeaderFluxo(tab, pers, cb, iniDef, fimDef) {
     const th = tab.createTHead().insertRow();
+    
+    // Configuração correta do TH
     const cell = document.createElement('th');
     cell.className = 'data-header';
     
+    // Container Flex com ID para CSS e nowrap no label
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:center;gap:5px';
-    wrap.innerHTML = `<div>Data</div><div style="font-size:0.8em;cursor:pointer" id="fd-lbl">${iniDef} → ${fimDef} ▼</div>`;
+    wrap.id = 'fd-periodo-container'; // ID Adicionado para o CSS pegar
     
-    const { drop, ini, fim } = criarDropCal(pers, (i, f) => { wrap.querySelector('#fd-lbl').textContent = `${i} → ${f} ▼`; cb(i, f); }, iniDef, fimDef);
-    if(ini) wrap.querySelector('#fd-lbl').textContent = `${ini} → ${fim} ▼`;
+    // HTML com IDs para estilização
+    wrap.innerHTML = `
+        <div>Data</div>
+        <div id="fd-periodo-label">${iniDef} → ${fimDef} ▼</div>
+    `;
+    
+    const { drop, ini, fim } = criarDropCal(pers, (i, f) => { 
+        wrap.querySelector('#fd-periodo-label').textContent = `${i} → ${f} ▼`; 
+        cb(i, f); 
+    }, iniDef, fimDef);
 
-    const lbl = wrap.querySelector('#fd-lbl');
-    lbl.onclick = (e) => { e.stopPropagation(); drop.style.display = drop.style.display==='block'?'none':'block'; };
-    document.onclick = (e) => { if(!cell.contains(e.target)) drop.style.display='none'; };
+    if(ini) wrap.querySelector('#fd-periodo-label').textContent = `${ini} → ${fim} ▼`;
+
+    const lbl = wrap.querySelector('#fd-periodo-label');
+    lbl.onclick = (e) => { 
+        e.stopPropagation(); 
+        const isVisible = drop.style.display === 'block';
+        drop.style.display = isVisible ? 'none' : 'block'; 
+    };
+    
+    // Fecha ao clicar fora
+    document.addEventListener('click', (e) => { 
+        if(!cell.contains(e.target)) drop.style.display='none'; 
+    });
 
     cell.append(wrap, drop);
     th.appendChild(cell);
+    
     ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => th.insertCell().textContent = t);
 }
 

@@ -1,0 +1,207 @@
+/* =========================================================
+   BASE E RESET
+========================================================= */
+:root {
+  --primary: #1772CB;
+  --primary-dark: #0052a3;
+  --bg-light: #F7F7F7;
+  --text: #333;
+  --font: 'Nunito', sans-serif;
+}
+
+html { overflow-y: scroll; }
+body { font-family: var(--font); margin: 8px; color: var(--text); }
+div, label, select, table { box-sizing: border-box; }
+.hidden { display: none !important; }
+
+/* =========================================================
+   CONTROLES (Selects e Botões)
+========================================================= */
+label { margin-right: 5px; }
+label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-block; }
+
+/* Estilo original restaurado */
+.custom-select {
+  width: 300px; height: 30px;
+  border: 1px solid #C7C7C7; border-radius: 4px;
+  background-color: white;
+  text-align: center; font-family: var(--font);
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 25px;
+}
+
+.multiSelectCustom {
+  width: 300px; height: 85px;
+  border: 1px solid #C7C7C7; border-radius: 4px; background: white;
+  overflow-y: auto;
+}
+.multiSelectCustom option { padding: 5px; font-family: var(--font); }
+
+/* =========================================================
+   TABELAS PRINCIPAIS (Matriz, Detalhamento, Capital Giro)
+========================================================= */
+table:not(#tabelaFluxoDiario) {
+  width: 1400px; border-collapse: separate; /* Necessário para border-radius */
+  border-spacing: 0; font-size: 14px;
+}
+
+/* Colunas */
+table:not(#tabelaFluxoDiario) td, table:not(#tabelaFluxoDiario) th { 
+  vertical-align: middle; text-align: right; padding-right: 10px; border-bottom: 1px solid var(--bg-light);
+}
+table:not(#tabelaFluxoDiario) td:first-child, table:not(#tabelaFluxoDiario) th:first-child { 
+  width: 290px; text-align: left; padding-left: 10px; 
+}
+table:not(#tabelaFluxoDiario) td:nth-child(14), table:not(#tabelaFluxoDiario) th:nth-child(14) { 
+  width: 100px; 
+}
+
+/* Cabeçalho */
+table:not(#tabelaFluxoDiario) thead tr { 
+  height: 30px; background-color: var(--primary); color: white; font-weight: bold; 
+}
+
+/* Bordas Arredondadas (Topo) */
+table:not(#tabelaFluxoDiario) thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+table:not(#tabelaFluxoDiario) thead tr:first-child th:last-child { border-top-right-radius: 10px; }
+
+/* Bordas Arredondadas (Rodapé) - Aplica na última linha do tbody */
+table:not(#tabelaFluxoDiario) tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+table:not(#tabelaFluxoDiario) tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+
+/* Estilos de Linha (Data Attributes) */
+tr { height: 30px; background: white; }
+tr:hover { background-color: var(--bg-light); }
+
+tr[data-type="total"] { font-weight: bold; border-top: 2px solid #F2F2F2; }
+tr[data-type="header-group"] { background-color: #A6CCEB; font-weight: bold; }
+tr[data-type="spacer"] td { height: 30px; background: transparent; border: none; }
+
+/* Linha de Saldo (Fundo Azul) */
+tr[data-type="saldo"] { 
+  background-color: var(--primary); color: white; font-weight: bold; border: none;
+}
+tr[data-type="saldo"]:hover { background-color: var(--primary); }
+tr[data-type="saldo"] td { border-bottom: none; }
+
+/* Indentação e Expand */
+.expand-btn { cursor: pointer; color: var(--primary); margin-right: 5px; }
+tr[data-indent="1"] td:first-child { padding-left: 30px !important; }
+tr[data-indent="2"] td:first-child { padding-left: 60px !important; }
+tr[data-indent="lancamento"] { font-size: 12px; }
+tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
+
+/* =========================================================
+   TABELA FLUXO DIÁRIO
+========================================================= */
+#tabelaFluxoDiario {
+  width: 100%; border-collapse: separate; border-spacing: 0; 
+  font-size: 14px; margin-top: 20px; background: #fff;
+}
+
+/* Cabeçalho Específico */
+#tabelaFluxoDiario thead th {
+  background-color: #0066cc; /* Cor específica pedida */
+  color: white; font-weight: bold; text-align: left;
+  padding: 10px 16px; border-bottom: 2px solid var(--primary-dark);
+}
+#tabelaFluxoDiario thead th:first-child { border-top-left-radius: 8px; width: 100px; }
+#tabelaFluxoDiario thead th:last-child { border-top-right-radius: 8px; }
+#tabelaFluxoDiario thead th:nth-child(2) { text-align: center; width: 60%; }
+
+#tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid #ddd; }
+#tabelaFluxoDiario tbody tr:nth-child(even) { background-color: #f5f5f5; }
+#tabelaFluxoDiario tbody tr:hover { background-color: #e6f0ff; }
+#tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { 
+  width: 120px; text-align: right; font-family: monospace; 
+}
+
+/* Botão de Filtro no Cabeçalho */
+#fd-periodo-container {
+  display: flex; align-items: center; gap: 5px; 
+}
+#fd-periodo-label {
+  font-size: 0.9em; cursor: pointer;
+  white-space: nowrap; /* IMPEDE QUE O BOTÃO FIQUE ESPREMIDO */
+  background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;
+}
+#fd-periodo-label:hover { background: rgba(255,255,255,0.3); }
+
+/* Estado Vazio */
+.linha-sem-dados td {
+  height: 350px; vertical-align: top; padding-top: 40px; 
+  color: #666; text-align: center;
+}
+
+/* =========================================================
+   DROPDOWN CALENDÁRIO
+========================================================= */
+.filtro-dropdown {
+  display: none; position: absolute; top: 100%; left: 0;
+  background: white; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 10px; z-index: 1000; border-radius: 6px; width: 320px; max-height: 320px; 
+  overflow-y: auto; color: #333; font-weight: normal;
+}
+.filtro-ano-header { 
+  text-align: center; font-weight: bold; padding: 5px; border-bottom: 1px solid #eee; margin-bottom: 5px; 
+}
+.filtro-meses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.filtro-mes-btn {
+  padding: 8px; text-align: center; border-radius: 4px; font-size: 13px; cursor: pointer;
+  background: #f0f8ff; color: var(--primary-dark); border: 1px solid #d6eaff;
+}
+.filtro-mes-btn:hover { background: #d6eaff; }
+.filtro-mes-btn.in-range { background: #e6f0ff; }
+.filtro-mes-btn.selected-start, .filtro-mes-btn.selected-end {
+  background: #0066cc; color: white; border-color: var(--primary-dark); font-weight: bold;
+}
+.filtro-mes-slot { padding: 8px; text-align: center; font-size: 13px; color: #ccc; background: #f9f9f9; }
+
+/* =========================================================
+   GRÁFICOS E ABAS
+========================================================= */
+.container-graficos-abas { 
+  width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 20px; background: white;
+}
+.grafico-tabs { 
+  display: flex; background: #f8f8f8; border-bottom: 1px solid #ddd; 
+}
+.tab-link {
+  padding: 10px 15px; border: none; background: transparent; cursor: pointer; color: #555;
+  border-right: 1px solid #ddd;
+}
+.tab-link:hover { background: #eee; }
+.tab-link.active { 
+  background: white; color: black; font-weight: bold; border-bottom: 1px solid white; margin-bottom: -1px; 
+}
+#graficos-content { 
+  padding: 10px; background: white; height: 400px; position: relative; 
+}
+/* Força o Canvas a aparecer */
+#graficos-content canvas {
+  width: 100% !important; height: 100% !important;
+}
+
+/* =========================================================
+   UTILITÁRIOS E LOADING
+========================================================= */
+.tooltip-target { cursor: help; margin-left: 8px; position: relative; }
+.tooltip-target:hover::after {
+  content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  background: #333; color: white; padding: 8px; border-radius: 4px; font-size: 12px;
+  width: max-content; max-width: 250px; z-index: 9999; pointer-events: none;
+}
+body.app-loading { cursor: wait; }
+body.app-loading table, body.app-loading .container-graficos-abas { opacity: 0.5; pointer-events: none; }
+body.app-loading::before {
+  content: ""; position: fixed; top: 50%; left: 50%; width: 24px; height: 24px; margin-left: -85px;
+  border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%;
+  animation: spin 1s linear infinite; z-index: 10001;
+}
+body.app-loading::after {
+  content: "Carregando dados..."; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--primary-dark); color: white; padding: 15px 25px 15px 55px;
+  border-radius: 8px; z-index: 10000; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
