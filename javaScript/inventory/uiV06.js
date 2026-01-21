@@ -63,6 +63,10 @@ export function gerarTabelaRecomendacao(idTabela, dados) {
     const tabela = document.getElementById(idTabela);
     if (!tabela) return;
 
+    //Ordena por venda/dia
+    dados.sort((a, b) => b.vendaMedia - a.vendaMedia);
+
+
     let html = `
         <thead>
             <tr>

@@ -43,7 +43,7 @@ export function extrairDadosRelatorio(dadosApi) {
     }
 }
 
-//Função utilizada dentro do workflo do bubble para gerar os relatórios e salvar no banco de dados
+//Função utilizada dentro do workflow do bubble para gerar os relatórios e salvar no banco de dados
 /*function corrigirEParsearJSON(dados) {
     if (!dados) return [];
 
@@ -148,7 +148,7 @@ todosIds.forEach(id => {
             recomendacaoCompra.push({
                 nome: getNome(id),
                 estoqueAtual: estoqueCalculo,
-                vendaMedia: vendaMediaDiaria.toFixed(2),
+                vendaMedia: Number(vendaMediaDiaria.toFixed(2)),
                 estoqueMinimo: Math.ceil(estoqueMinimo),
                 sugestao: sugestaoCompra,
                 urgencia: urgencia
@@ -158,7 +158,7 @@ todosIds.forEach(id => {
 });
 
 // Ordenar pela sugestão (maior necessidade primeiro)
-recomendacaoCompra.sort((a, b) => b.sugestao - a.sugestao).slice(0, 15);
+recomendacaoCompra.sort((a, b) => b.vendaMedia - a.vendaMedia).slice(0, 15);
 
 const separador = "|SPLIT|";
 const relatorioFinal = JSON.stringify(maisVendidos) + separador + JSON.stringify(maioresSaldos) + separador + JSON.stringify(recomendacaoCompra);
