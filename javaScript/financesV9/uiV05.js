@@ -173,6 +173,7 @@ function atualizarVisualizacoes(dados, colunas, cache) {
     
     renderizarGraficos(dados, colunas);
     renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
+    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, dados.entradasESaidas);
 }
 
 // 1. DRE
@@ -719,6 +720,65 @@ function compKeys(a, b) {
     if(!a||!b) return 0;
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
+}
+
+// ------ Fluxo Diário Resumido -----
+function renderizarFluxoDiarioResumido(saldoIni, es) { 
+    const tabela = document.getElementById('resumoFluxoDiario');
+    if (!tabela) return;
+
+    // 1. Cálculos
+    const totalEntradas = (es['(+) Entradas']?.TOTAL || 0) + (es['(+) Entradas de Transferência']?.TOTAL || 0);
+    const totalSaidas = Math.abs((es['(-) Saídas']?.TOTAL || 0) + (es['(-) Saídas de Transferência']?.TOTAL || 0));
+    
+    const balanco = totalEntradas - totalSaidas;
+    const saldoFinal = saldoIni + balanco;
+
+    // 2. Definição de Cores
+    const corBalanco = balanco >= 0 ? 'texto-verde' : 'texto-vermelho';
+    
+    // 3. Renderização HTML
+    tabela.innerHTML = `
+        <thead>
+            <tr>
+                <th colspan="2">
+                    <div class="header-content">
+                        <span class="widget-titulo">Fluxo de caixa</span>
+                        <span class="widget-data">${'Período'}</span>
+                    </div>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Entradas (valor líquido)</td>
+                <td class="texto-verde">${formatarValor(totalEntradas)}</td>
+            </tr>
+            <tr>
+                <td>Saídas</td>
+                <td class="texto-vermelho">- ${formatarValor(totalSaidas).replace('(', '').replace(')', '')}</td>
+            </tr>
+            <tr>
+                <td>Balanço</td>
+                <td class="${corBalanco}">${formatarValor(balanco)}</td>
+            </tr>
+            <tr>
+                <td>Saldo inicial</td>
+                <td>${formatarValor(saldoIni)}</td>
+            </tr>
+            <tr class="linha-total-resumo">
+                <td>Saldo atual</td>
+                <td>${formatarValor(saldoFinal)}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    <span style="opacity:0.7">ℹ️</span> Valores consolidados do período.
+                </td>
+            </tr>
+        </tfoot>
+    `;
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento };

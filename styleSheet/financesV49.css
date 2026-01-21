@@ -267,3 +267,95 @@ body.app-loading::after {
   animation: spin 2s linear infinite;
   margin: auto;
 }
+
+/* =========================================================
+   WIDGET RESUMO FLUXO DIÁRIO
+========================================================= */
+#resumoFluxoDiario {
+  width: 100%;
+  max-width: 400px; /* Tamanho compacto */
+  background-color: white;
+  border-collapse: separate; /* Essencial para border-radius */
+  border-spacing: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra suave */
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-family: var(--font);
+}
+
+/* Cabeçalho do Widget */
+#resumoFluxoDiario thead th {
+  background-color: white;
+  color: #333;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  text-align: left;
+}
+
+#resumoFluxoDiario .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#resumoFluxoDiario .widget-titulo {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+#resumoFluxoDiario .widget-data {
+  background-color: var(--bg-light);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  color: #555;
+  font-weight: normal;
+}
+
+/* Corpo e Valores */
+#resumoFluxoDiario tbody td {
+  padding: 10px 20px;
+  border: none;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+#resumoFluxoDiario tbody td:first-child {
+  text-align: left;
+  color: var(--text);
+}
+
+#resumoFluxoDiario tbody td:last-child {
+  text-align: right;
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+/* Cores de status */
+.texto-verde { color: #28a745; }
+.texto-vermelho { color: #dc3545; }
+.texto-cinza { color: #6c757d; }
+
+/* Linha de Total (Saldo Atual) */
+#resumoFluxoDiario .linha-total-resumo td {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #000;
+}
+
+/* Rodapé */
+#resumoFluxoDiario tfoot td {
+  padding: 10px 20px 20px 20px;
+  font-size: 0.85em;
+  color: #777;
+  text-align: left;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  background-color: white;
+}
