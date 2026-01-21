@@ -173,7 +173,7 @@ function atualizarVisualizacoes(dados, colunas, cache) {
     
     renderizarGraficos(dados, colunas);
     renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
-    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, dados.entradasESaidas);
+    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, dados.entradasESaidas, colunas);
 }
 
 // 1. DRE
@@ -723,62 +723,84 @@ function compKeys(a, b) {
 }
 
 // ------ Fluxo Diário Resumido -----
-function renderizarFluxoDiarioResumido(saldoIni, es) { 
-    const tabela = document.getElementById('resumoFluxoDiario');
+function renderizarFluxoDiarioResumido(saldoIni, es, colunas) { 
+    const tabela = document.getElementById('resumoFluxoCaixa');
     if (!tabela) return;
 
-    // 1. Cálculos
-    const totalEntradas = (es['(+) Entradas']?.TOTAL || 0) + (es['(+) Entradas de Transferência']?.TOTAL || 0);
-    const totalSaidas = Math.abs((es['(-) Saídas']?.TOTAL || 0) + (es['(-) Saídas de Transferência']?.TOTAL || 0));
-    
-    const balanco = totalEntradas - totalSaidas;
-    const saldoFinal = saldoIni + balanco;
-
-    // 2. Definição de Cores
-    const corBalanco = balanco >= 0 ? 'texto-verde' : 'texto-vermelho';
-    
-    // 3. Renderização HTML
-    tabela.innerHTML = `
+    // --- 1. Construção do Cabeçalho ---
+    let htmlHeader = `
         <thead>
             <tr>
-                <th colspan="2">
-                    <div class="header-content">
-                        <span class="widget-titulo">Fluxo de caixa</span>
-                        <span class="widget-data">${'Período'}</span>
-                    </div>
-                </th>
+                <th>Resumo Financeiro</th>
+                ${colunas.map(c => `<th>${c}</th>`).join('')}
             </tr>
-        </thead>
+        </thead>`;
+
+    // --- 2. Preparação dos Dados por Coluna ---
+    // Arrays para guardar o HTML das células de cada linha
+    let cellsEntradas = [];
+    let cellsSaidas = [];
+    let cellsBalanco = [];
+    let cellsSaldoIni = [];
+    let cellsSaldoFim = [];
+
+    // Variável acumuladora para controlar o saldo ao longo das colunas
+    let saldoCorrente = saldoIni;
+
+    colunas.forEach(col => {
+        // Entradas
+        const vEntradas = (es['(+) Entradas']?.[col] || 0) + (es['(+) Entradas de Transferência']?.[col] || 0);
+        
+        // Saídas (Sempre positivas no cálculo para subtrair depois, mas mostramos como negativo)
+        const vSaidas = Math.abs((es['(-) Saídas']?.[col] || 0) + (es['(-) Saídas de Transferência']?.[col] || 0));
+        
+        // Balanço do Período
+        const vBalanco = vEntradas - vSaidas;
+        const classeBalanco = vBalanco >= 0 ? 'texto-verde' : 'texto-vermelho';
+
+        // Saldo Final deste período
+        const vSaldoFinal = saldoCorrente + vBalanco;
+
+        // Monta as células HTML
+        cellsEntradas.push(`<td class="texto-verde">${formatarValor(vEntradas)}</td>`);
+        cellsSaidas.push(`<td class="texto-vermelho">- ${formatarValor(vSaidas).replace(/[()]/g, '')}</td>`);
+        cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
+        cellsSaldoIni.push(`<td>${formatarValor(saldoCorrente)}</td>`);
+        cellsSaldoFim.push(`<td style="font-weight:bold">${formatarValor(vSaldoFinal)}</td>`);
+
+        // O saldo final deste mês vira o inicial do próximo no loop
+        saldoCorrente = vSaldoFinal;
+    });
+
+    // --- 3. Montagem do Corpo da Tabela ---
+    const htmlBody = `
         <tbody>
             <tr>
-                <td>Entradas (valor líquido)</td>
-                <td class="texto-verde">${formatarValor(totalEntradas)}</td>
+                <td>(+) Entradas</td>
+                ${cellsEntradas.join('')}
             </tr>
             <tr>
-                <td>Saídas</td>
-                <td class="texto-vermelho">- ${formatarValor(totalSaidas).replace('(', '').replace(')', '')}</td>
+                <td>(-) Saídas</td>
+                ${cellsSaidas.join('')}
+            </tr>
+            <tr style="background-color: #f9f9f9;">
+                <td>(=) Balanço</td>
+                ${cellsBalanco.join('')}
             </tr>
             <tr>
-                <td>Balanço</td>
-                <td class="${corBalanco}">${formatarValor(balanco)}</td>
-            </tr>
+                <td colspan="${colunas.length + 1}" style="height:10px; padding:0; background:transparent; border:none;"></td> </tr>
             <tr>
-                <td>Saldo inicial</td>
-                <td>${formatarValor(saldoIni)}</td>
+                <td>Saldo Inicial</td>
+                ${cellsSaldoIni.join('')}
             </tr>
             <tr class="linha-total-resumo">
-                <td>Saldo atual</td>
-                <td>${formatarValor(saldoFinal)}</td>
+                <td>(=) Saldo Final</td>
+                ${cellsSaldoFim.join('')}
             </tr>
         </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="2">
-                    <span style="opacity:0.7">ℹ️</span> Valores consolidados do período.
-                </td>
-            </tr>
-        </tfoot>
     `;
+
+    tabela.innerHTML = htmlHeader + htmlBody;
 }
 
 export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento };

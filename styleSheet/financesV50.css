@@ -269,93 +269,76 @@ body.app-loading::after {
 }
 
 /* =========================================================
-   WIDGET RESUMO FLUXO DIÁRIO
+   TABELA RESUMO FLUXO DIÁRIO
 ========================================================= */
 #resumoFluxoDiario {
-  width: 100%;
-  max-width: 400px; /* Tamanho compacto */
+  width: 1400px;
   background-color: white;
-  border-collapse: separate; /* Essencial para border-radius */
+  border-collapse: separate; 
   border-spacing: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra suave */
-  border-radius: 10px;
   margin-bottom: 20px;
   font-family: var(--font);
-}
-
-/* Cabeçalho do Widget */
-#resumoFluxoDiario thead th {
-  background-color: white;
-  color: #333;
-  padding: 15px 20px;
-  border-bottom: 1px solid #eee;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  text-align: left;
-}
-
-#resumoFluxoDiario .header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#resumoFluxoDiario .widget-titulo {
-  font-size: 1.1em;
-  font-weight: bold;
-}
-
-#resumoFluxoDiario .widget-data {
-  background-color: var(--bg-light);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8em;
-  color: #555;
-  font-weight: normal;
-}
-
-/* Corpo e Valores */
-#resumoFluxoDiario tbody td {
-  padding: 10px 20px;
-  border: none;
   font-size: 14px;
-  vertical-align: middle;
 }
 
+/* --- Cabeçalho Azul (Padrão do Sistema) --- */
+#resumoFluxoDiario thead th {
+  background-color: var(--primary); /* Azul #1772CB */
+  color: white;
+  font-weight: bold;
+  height: 40px;
+  vertical-align: middle;
+  text-align: right;
+  padding-right: 10px;
+  border: none;
+}
+
+/* Primeira Coluna do Cabeçalho (Descrição) */
+#resumoFluxoDiario thead th:first-child {
+  text-align: left;
+  padding-left: 10px;
+  border-top-left-radius: 10px;
+  width: 290px; /* Mesma largura das outras tabelas */
+}
+
+/* Última Coluna do Cabeçalho */
+#resumoFluxoDiario thead th:last-child {
+  border-top-right-radius: 10px;
+}
+
+/* --- Corpo e Células --- */
+#resumoFluxoDiario tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--bg-light);
+  text-align: right;
+  vertical-align: middle;
+  height: 35px;
+}
+
+/* Primeira Coluna do Corpo (Rótulos) */
 #resumoFluxoDiario tbody td:first-child {
   text-align: left;
+  padding-left: 10px;
   color: var(--text);
-}
-
-#resumoFluxoDiario tbody td:last-child {
-  text-align: right;
-  font-family: monospace;
   font-weight: 600;
-  font-size: 1.1em;
 }
 
-/* Cores de status */
-.texto-verde { color: #28a745; }
-.texto-vermelho { color: #dc3545; }
-.texto-cinza { color: #6c757d; }
+/* --- Estilos Específicos de Linha --- */
 
-/* Linha de Total (Saldo Atual) */
+/* Linha de Total Final */
 #resumoFluxoDiario .linha-total-resumo td {
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-  padding-bottom: 15px;
+  background-color: var(--primary); /* Fundo Azul */
+  color: white;
   font-weight: bold;
-  font-size: 1.2em;
-  color: #000;
+  border-bottom: none;
+}
+#resumoFluxoDiario .linha-total-resumo td:first-child {
+  border-bottom-left-radius: 10px;
+}
+#resumoFluxoDiario .linha-total-resumo td:last-child {
+  border-bottom-right-radius: 10px;
 }
 
-/* Rodapé */
-#resumoFluxoDiario tfoot td {
-  padding: 10px 20px 20px 20px;
-  font-size: 0.85em;
-  color: #777;
-  text-align: left;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-  background-color: white;
-}
+/* Cores de Texto */
+.texto-verde { color: #28a745; font-weight: 600; }
+.texto-vermelho { color: #dc3545; font-weight: 600; }
