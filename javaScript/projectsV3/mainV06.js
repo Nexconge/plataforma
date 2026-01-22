@@ -1,5 +1,5 @@
 // Importa as funções públicas dos outros módulos
-import { iniciarMapa } from './ScriptLotesV02.js';
+import { iniciarMapa } from './ScriptLotesV03.js';
 import { abrirEPreencherModalProposta } from './ScriptPropostaV03.js';
 
 // Função principal de inicialização do aplicativo
@@ -21,8 +21,6 @@ function inicializarApp(empreendimentosJSON, projectsUrl, username) {
     } else {
         console.error("Botão 'btnAbrirProposta' não foi encontrado pelo main.js");
     }
-
-    document.body.classList.toggle('app-loading', false);
 }
 
 window.inicializarApp = inicializarApp;

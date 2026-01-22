@@ -259,6 +259,7 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
+        document.body.classList.toggle('app-loading', true);
         const dropdownVal = document.getElementById("empreendimentoSelect").value;
         const selectedEmpreendimentoId = (dropdownVal.split('__LOOKUP__')[1]).slice(0, -1);
 
@@ -273,6 +274,7 @@ class MapaLotesManager {
 
         this._clearForm();
         this._centralizeView();
+        document.body.classList.toggle('app-loading', false);
     }
 
     _handleZoneToggle() {
