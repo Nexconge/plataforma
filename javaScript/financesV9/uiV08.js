@@ -750,11 +750,11 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
     let saldoCorrente = saldoIni;
 
     colunas.forEach(col => {
-        // Entradas
-        const vEntradas = (es['(+) Entradas']?.[col] || 0) + (es['(+) Entradas de Transferência']?.[col] || 0);
+        // Entradas desconsiderando transferencias
+        const vEntradas = (es['(+) Entradas']?.[col] || 0) // + (es['(+) Entradas de Transferência']?.[col] || 0);
         
-        // Saídas (Sempre positivas no cálculo para subtrair depois, mas mostramos como negativo)
-        const vSaidas = Math.abs((es['(-) Saídas']?.[col] || 0) + (es['(-) Saídas de Transferência']?.[col] || 0));
+        // Saídas desconsiderando transferencias
+        const vSaidas = Math.abs(es['(-) Saídas']?.[col] || 0) // + (es['(-) Saídas de Transferência']?.[col] || 0);
         
         // Balanço do Período
         const vBalanco = vEntradas - vSaidas;
@@ -778,24 +778,24 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
     const htmlBody = `
         <tbody>
             <tr>
-                <td>(+) Entradas</td>
+                <td class="texto-verde">(+) Entradas</td>
                 ${cellsEntradas.join('')}
             </tr>
             <tr>
-                <td>(-) Saídas</td>
+                <td class="texto-vermelho">(-) Saídas</td>
                 ${cellsSaidas.join('')}
             </tr>
             <tr style="background-color: #f9f9f9;">
-                <td>(=) Balanço</td>
+                <td class="texto-azul">(=) Balanço</td>
                 ${cellsBalanco.join('')}
             </tr>
             <tr>
                 <td colspan="${colunas.length + 1}" style="height:10px; padding:0; background:transparent; border:none;"></td> </tr>
             <tr>
-                <td>Saldo Inicial</td>
+                <td data-type="saldo">Saldo Inicial</td>
                 ${cellsSaldoIni.join('')}
             </tr>
-            <tr class="linha-total-resumo">
+            <tr data-type="saldo">
                 <td>(=) Saldo Final</td>
                 ${cellsSaldoFim.join('')}
             </tr>

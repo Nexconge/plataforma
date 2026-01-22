@@ -342,3 +342,4 @@ body.app-loading::after {
 /* Cores de Texto */
 .texto-verde { color: #28a745; font-weight: 600; }
 .texto-vermelho { color: #dc3545; font-weight: 600; }
+.text-azul { color: #007bff; font-weight: 600; }
