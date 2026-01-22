@@ -785,18 +785,18 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
                 <td class="texto-vermelho">(-) Saídas</td>
                 ${cellsSaidas.join('')}
             </tr>
-            <tr style="background-color: #f9f9f9;">
+            <tr>
                 <td class="texto-azul">(=) Balanço</td>
                 ${cellsBalanco.join('')}
             </tr>
             <tr>
                 <td colspan="${colunas.length + 1}" style="height:10px; padding:0; background:transparent; border:none;"></td> </tr>
-            <tr>
-                <td data-type="saldo">Saldo Inicial</td>
+            <tr data-type="saldo">
+                <td>Caixa Inicial</td>
                 ${cellsSaldoIni.join('')}
             </tr>
             <tr data-type="saldo">
-                <td>(=) Saldo Final</td>
+                <td>Caixa Final</td>
                 ${cellsSaldoFim.join('')}
             </tr>
         </tbody>
