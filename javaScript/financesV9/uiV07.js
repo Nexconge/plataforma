@@ -158,11 +158,13 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
     Array.from(cMap.entries()).sort((a,b) => a[1].descricao.localeCompare(b[1].descricao)).forEach(([k, v]) => {
         if (permitidas.has(k)) select.appendChild(new Option(v.descricao, k));
     });
-    if (select.options.length) select.options[0].selected = true;
+    //Seleciona tudo por padrão
+    if (select.options.length) {
+        Array.from(select.options).forEach(opt => opt.selected = true);
+    }
 }
 
 // ------ Tabelas (Renderização) ------
-
 function atualizarVisualizacoes(dados, colunas, cache) {
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
     ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro'].forEach(limpar);
