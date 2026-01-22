@@ -103,7 +103,7 @@ body.app-loading::after {
   left: 50%; 
   transform: translate(-50%, -50%); 
   
-  background: var(--primary-dark); 
+  background: #0052a3;
   color: white; 
   
   padding: 15px 25px 15px 55px; 

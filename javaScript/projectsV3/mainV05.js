@@ -21,6 +21,8 @@ function inicializarApp(empreendimentosJSON, projectsUrl, username) {
     } else {
         console.error("Botão 'btnAbrirProposta' não foi encontrado pelo main.js");
     }
+
+    document.body.classList.toggle('app-loading', false);
 }
 
 window.inicializarApp = inicializarApp;
