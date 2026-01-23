@@ -373,10 +373,13 @@ class MapaLotesManager {
     }
 
     _clearForm() {
-        // Se chamado via evento de mapa (clique fora), limpa tudo
-        // Mas se chamado internamente, apenas limpa inputs
-        
-        // Para garantir consistência no clique fora:
+        // 1. Limpa o conjunto de IDs selecionados
+        this.selectedIds.clear();
+
+        // 2. Atualiza o mapa para remover o destaque azul (volta ao padrão)
+        this._updateMapVisuals();
+
+        // 3. Limpa os campos do formulário
         const ids = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         ids.forEach(id => {
             const el = document.getElementById(id);
