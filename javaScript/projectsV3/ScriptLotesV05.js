@@ -337,13 +337,18 @@ class MapaLotesManager {
     _fillForm(lote) {
         const setVal = (id, val) => {
             const el = document.getElementById(id);
-            if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
+            if (el) { 
+                el.value = val; 
+                el.dispatchEvent(new Event("change")); 
+            }
         };
         
+        // CORREÇÃO AQUI: Removida a template string que adicionava aspas extras `"${...}"`
+        // Agora passamos o valor cru.
         setVal("quadra_lote2", lote.Nome);
         setVal("area2", String(lote.Área || 0));
-        setVal("status2", `"${lote.Status || "Desconhecido"}"`);
-        setVal("zona2", `"${lote.Zoneamento || "Desconhecido"}"`);
+        setVal("status2", lote.Status || "Desconhecido"); // Corrigido
+        setVal("zona2", lote.Zoneamento || "Desconhecido"); // Corrigido
         setVal("frente2", String(lote.Frente || 0));
         setVal("lateral2", String(lote.Lateral || 0));
         setVal("valor_metro2", String(lote.ValorM2 || 0));
@@ -385,11 +390,12 @@ class MapaLotesManager {
         const getVal = id => document.getElementById(id).value;
         const unmask = (val) => parseFloat(val.replace(/R\$|\s|\./g, "").replace(",", ".")) || 0;
 
+        // CORREÇÃO AQUI: Removido .replace(/"/g, '') pois não há mais aspas extras
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
             Área: unmask(getVal("area2")),
-            Status: getVal("status2").replace(/"/g, ''),
-            Zoneamento: getVal("zona2").replace(/"/g, ''),
+            Status: getVal("status2"), // Corrigido
+            Zoneamento: getVal("zona2"), // Corrigido
             Frente: unmask(getVal("frente2")),
             Lateral: unmask(getVal("lateral2")),
             ValorM2: unmask(getVal("valor_metro2")),
