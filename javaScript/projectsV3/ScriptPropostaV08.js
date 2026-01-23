@@ -279,10 +279,15 @@ async function gerarProposta(username) {
 
     yAtual += Math.max(alturaBlocoLotes, 24) + 8;
 
-    // --- SEÇÃO: DADOS CLIENTE (Revertido para V03 - Original) ---
-    // Layout fixo de duas colunas com espaçamento de 8mm
+     // Seção: Dados Cliente
     yAtual = desenharSecao('Dados Cliente', yAtual);
-    
+   
+    doc.setFontSize(14).setFont('helvetica', 'bold');
+    doc.text('Dados Cliente', 20, yAtual);
+    doc.setFontSize(10).setFont('helvetica', 'normal');
+    yAtual += 2; doc.line(20, yAtual, 190, yAtual);
+    yAtual += 8;
+
     const colCliEsq = [
         `Nome: ${dados.nomeCliente}`,
         `CPF: ${dados.cpfCliente}`,
@@ -298,7 +303,7 @@ async function gerarProposta(username) {
 
     colCliEsq.forEach((linha, i) => doc.text(linha, 20, yAtual + i * 8));
     colCliDir.forEach((linha, i) => doc.text(linha, 105, yAtual + i * 8));
-    yAtual += 40; // Espaço fixo igual ao original
+    yAtual += 40;
 
     // --- SEÇÃO: CONDIÇÃO FINANCEIRA (Revertido para V03 - Original) ---
     // Escrita linha a linha para garantir formatação idêntica
@@ -307,14 +312,20 @@ async function gerarProposta(username) {
     const fmtMoeda = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fmtData = d => formatDateStr(d);
 
-    doc.text(`Entrada: ${fmtMoeda(dados.finValorEntrada)}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento Entrada: ${fmtData(dados.finDataEntrada)}`, 20, yAtual); yAtual += 8;
+    doc.setFontSize(14).setFont('helvetica', 'bold');
+    doc.text('Condição Financeira', 20, yAtual);
+    doc.setFontSize(10).setFont('helvetica', 'normal');
+    yAtual += 2; doc.line(20, yAtual, 190, yAtual);
+    yAtual += 8;
+
+    doc.text(`Entrada: ${dados.finValorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento Entrada: ${formatDateStr(dados.finDataEntrada)}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
-    doc.text(`Valor Parcelas: ${fmtMoeda(dados.finValorParcela)}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento 1ª Parcela: ${fmtData(dados.finDataParcela)}`, 20, yAtual); yAtual += 8;
+    doc.text(`Valor Parcelas: ${dados.finValorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1ª Parcela: ${formatDateStr(dados.finDataParcela)}`, 20, yAtual); yAtual += 8;
     doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
-    doc.text(`Valor Reforços: ${fmtMoeda(dados.finValorReforco)}`, 20, yAtual); yAtual += 8;
-    doc.text(`Data de Vencimento 1º Reforço: ${fmtData(dados.finDataReforco)}`, 20, yAtual); yAtual += 16;
+    doc.text(`Valor Reforços: ${dados.finValorReforco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1º Reforço: ${formatDateStr(dados.finDataReforco)}`, 20, yAtual); yAtual += 16;
 
     // Assinaturas Pg 1
     doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
