@@ -213,6 +213,8 @@ class MapaLotesManager {
             zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
 
+        console.log("Filtros atualizados:", this.filters);
+
         // Pequeno timeout para não travar a UI
         setTimeout(() => {
             this._updateMapVisuals();
