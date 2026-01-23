@@ -292,8 +292,8 @@ class MapaLotesManager {
             } else if (isMatch) {
                 // COM FILTROS E DEU MATCH: Destaca (Borda mais grossa)
                 poly.setStyle({
-                    weight: 1.6,
-                    color: "#2d1791",
+                    weight: 2,
+                    color: "#2c2ebb",
                     fillColor: baseColor,
                     fillOpacity: 1
                 });
