@@ -197,23 +197,37 @@ class MapaLotesManager {
     _handleFilterChange() {
         document.body.classList.add('app-loading');
 
-        const getVal = (id) => {
+        // --- CORREÇÃO PRINCIPAL: Limpeza de valores do Bubble ---
+        const getCleanVal = (id) => {
             const el = document.getElementById(id);
-            return el ? el.value : "";
+            if (!el) return "";
+            
+            let val = el.value;
+            
+            // 1. Remove aspas extras (ex: "\"Q6216\"" vira "Q6216")
+            val = val.replace(/"/g, '');
+
+            // 2. Se for placeholder do Bubble (BLANK ou PLACEHOLDER), retorna vazio real
+            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) {
+                return "";
+            }
+            
+            return val.trim();
         };
 
-        const empVal = getVal("empreendimentoSelect");
-        const empId = empVal.includes('__LOOKUP__') ? (empVal.split('__LOOKUP__')[1]).slice(0, -1) : empVal;
+        // Lógica específica do Empreendimento (Lookup do Bubble)
+        let empVal = getCleanVal("empreendimentoSelect");
+        if (empVal.includes('__LOOKUP__')) {
+            empVal = empVal.split('__LOOKUP__')[1]; // Pega o ID depois do lookup
+        }
 
         this.filters = {
-            empreendimento: empId,
-            quadra: getVal("selectQuadra"),
-            status: getVal("selectStatus"),
-            zoneamento: getVal("selectZoneamento"),
+            empreendimento: empVal,
+            quadra: getCleanVal("selectQuadra"),
+            status: getCleanVal("selectStatus"),
+            zoneamento: getCleanVal("selectZoneamento"),
             zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
-
-        console.log("Filtros atualizados:", this.filters);
 
         // Pequeno timeout para não travar a UI
         setTimeout(() => {
@@ -251,6 +265,8 @@ class MapaLotesManager {
                     const filterQ = this.filters.quadra.replace(/\D/g, ''); 
                     const matchQ = data.Nome.match(/Q(\d+)/i);
                     const lotQ = matchQ ? matchQ[1] : "";
+                    
+                    // Se a quadra filtrada não bater com a quadra do lote
                     if (filterQ !== lotQ) isMatch = false;
                 }
                 if (this.filters.status && data.Status !== this.filters.status) isMatch = false;
@@ -319,13 +335,11 @@ class MapaLotesManager {
     }
 
     _fillForm(lote) {
-        // Inputs Normais
         const setInput = (id, val) => {
             const el = document.getElementById(id);
             if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
         };
 
-        // Inputs Bubble (Dropdowns) - requer aspas
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
             if (el) { 
