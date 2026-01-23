@@ -1,5 +1,5 @@
 import { iniciarMapa } from './ScriptLotesV14.js';
-import { abrirEPreencherModalProposta } from './ScriptPropostaV05.js';
+import { abrirEPreencherModalProposta } from './ScriptPropostaV06.js';
 
 function inicializarApp(empreendimentosJSON, projectsUrl, username) {
     // 1. Inicia o mapa

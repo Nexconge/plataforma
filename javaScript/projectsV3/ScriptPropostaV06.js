@@ -194,17 +194,16 @@ async function gerarProposta(username) {
     const getText = id => getEl(id)?.textContent || '';
     const getValue = id => getEl(id)?.value || '';
     
-    // Função parseBR interna ou garantida no escopo
     const parseBR = (val) => {
         if (!val) return 0;
         return parseFloat(val.toString().replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
     };
 
-    // --- 1. CAPTURA DE DADOS (JÁ SOMADOS NO FORMULÁRIO) ---
+    // --- 1. CAPTURA DE DADOS ---
     const dados = {
-        // Dados dos Lotes (Texto já concatenado pelo MapaLotesManager)
-        lotesDescricao: getText('propLoteNome'), // Ex: "Q10L01, Q10L02..."
-        quadraGen: getText('propQuadraNome'),    // Ex: "Diversas"
+        // Dados dos Lotes
+        lotesDescricao: getText('propLoteNome'), 
+        quadraGen: getText('propQuadraNome'),
         areaTotal: parseBR(getText('propLoteArea')),
         valorTotal: parseBR(getText('propLoteValor')),
         
@@ -229,178 +228,147 @@ async function gerarProposta(username) {
         finDataReforco: getValue('propDataPrimeiroReforco')
     };
 
-    // Cálculo do valor médio do m² para exibição
     dados.valorMetroQuadrado = dados.valorTotal / (dados.areaTotal || 1);
 
-    // --- 2. VALIDAÇÃO BÁSICA ---
+    // --- 2. VALIDAÇÃO ---
     const camposObrigatorios = [
-        dados.nomeCliente, dados.cpfCliente, dados.finDataEntrada, 
-        dados.finDataParcela // Datas são cruciais para o contrato
+        dados.nomeCliente, dados.cpfCliente, dados.finDataEntrada, dados.finDataParcela
     ];
     if (camposObrigatorios.some(c => !c || c === "")) {
         alert("Preencha os campos obrigatórios (Cliente, CPF, Datas) antes de gerar.");
         return;
     }
 
-    // --- 3. INICIALIZAÇÃO DO PDF ---
+    // --- 3. GERAÇÃO PDF ---
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const hoje = new Date();
-    let yAtual = 50; // Posição vertical inicial
+    let yAtual = 50; 
 
-    // Carregar Imagem de Fundo (Timbrado)
+    // Imagem de Fundo
     try {
         const timbradoBase64 = await carregarTimbrado64();
-        if (timbradoBase64) {
-            doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
-        }
-    } catch (e) {
-        console.warn("Erro ao carregar timbrado, gerando sem fundo.", e);
-    }
+        if (timbradoBase64) doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
+    } catch (e) { console.warn("Sem timbrado"); }
 
-    // Título Página 1
+    // Título
     doc.setFontSize(18).setFont('helvetica', 'bold');
     doc.text('Proposta Comercial', 105, 30, { align: 'center' });
     
-    // Helper para desenhar linhas de seção
+    // Helper de Seção
     const desenharSecao = (titulo, y) => {
         doc.setFontSize(14).setFont('helvetica', 'bold').text(titulo, 20, y);
         const yLinha = y + 2;
         doc.line(20, yLinha, 190, yLinha);
-        return yLinha + 8; // Retorna novo Y
+        return yLinha + 8;
     };
 
-    // --- 4. SEÇÃO: DADOS DOS IMÓVEIS (COM QUEBRA DE LINHA) ---
+    // --- SEÇÃO: DADOS DOS IMÓVEIS (Mantido V04 para suportar Multi-Lotes) ---
     yAtual = desenharSecao('Dados dos Imóveis', yAtual);
     doc.setFontSize(10).setFont('helvetica', 'normal');
 
-    // Coluna Esquerda: Lista de Lotes (Pode ser grande)
-    const larguraTextoLotes = 80; // Largura máxima da coluna
-    // Quebra o texto em linhas se for muito longo
+    const larguraTextoLotes = 80;
     const linhasLotes = doc.splitTextToSize(`Lotes: ${dados.lotesDescricao}`, larguraTextoLotes);
     
-    // Desenha as linhas dos lotes
     doc.text(linhasLotes, 20, yAtual);
-
-    // Coluna Direita: Valores (Fixo)
     doc.text(`Valor Total: ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 105, yAtual);
     
-    // Calcula quanto espaço a lista de lotes ocupou
-    // 5mm por linha é um bom espaçamento aproximado para fonte size 10
     const alturaBlocoLotes = linhasLotes.length * 5; 
     
-    // Desenha o restante da coluna direita (ajustando Y se necessário, mas aqui fixamos relativo ao topo do bloco)
     doc.text(`Área Total: ${dados.areaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m²`, 105, yAtual + 8);
     doc.text(`Valor Médio m²: ${dados.valorMetroQuadrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 105, yAtual + 16);
 
-    // Atualiza o YAtual baseado no que for maior: o bloco de texto de lotes ou as 3 linhas de valores
-    yAtual += Math.max(alturaBlocoLotes, 24) + 8; // +8 de margem
+    yAtual += Math.max(alturaBlocoLotes, 24) + 8;
 
-    // --- 5. SEÇÃO: DADOS CLIENTE ---
+    // --- SEÇÃO: DADOS CLIENTE (Revertido para V03 - Original) ---
+    // Layout fixo de duas colunas com espaçamento de 8mm
     yAtual = desenharSecao('Dados Cliente', yAtual);
     
-    const colEsq = [
+    const colCliEsq = [
         `Nome: ${dados.nomeCliente}`,
         `CPF: ${dados.cpfCliente}`,
         `Telefone: ${dados.telefoneCliente}`,
         `Email: ${dados.emailCliente}`
     ];
-    const colDir = [
+    const colCliDir = [
         `Profissão: ${dados.profissaoCliente}`,
         `Estado Civil: ${dados.estadoCivilCliente}`,
         `Endereço: ${dados.enderecoCliente}`,
         `Cidade/UF: ${dados.cidadeCliente}`
     ];
 
-    colEsq.forEach((t, i) => doc.text(t, 20, yAtual + (i * 6)));
-    colDir.forEach((t, i) => doc.text(t, 105, yAtual + (i * 6)));
-    yAtual += 32;
+    colCliEsq.forEach((linha, i) => doc.text(linha, 20, yAtual + i * 8));
+    colCliDir.forEach((linha, i) => doc.text(linha, 105, yAtual + i * 8));
+    yAtual += 40; // Espaço fixo igual ao original
 
-    // --- 6. SEÇÃO: CONDIÇÃO FINANCEIRA ---
+    // --- SEÇÃO: CONDIÇÃO FINANCEIRA (Revertido para V03 - Original) ---
+    // Escrita linha a linha para garantir formatação idêntica
     yAtual = desenharSecao('Condição Financeira', yAtual);
 
     const fmtMoeda = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const fmtData = d => formatDateStr(d); // Assume função auxiliar existente
+    const fmtData = d => formatDateStr(d);
 
-    const linhasFin = [
-        `Entrada: ${fmtMoeda(dados.finValorEntrada)}`,
-        `Vencimento Entrada: ${fmtData(dados.finDataEntrada)}`,
-        `Qtd. Parcelas: ${dados.finQntParcela}`,
-        `Valor Parcela: ${fmtMoeda(dados.finValorParcela)}`,
-        `Vencimento 1ª Parcela: ${fmtData(dados.finDataParcela)}`,
-        `Qtd. Reforços: ${dados.finQntReforco}`,
-        `Valor Reforço: ${fmtMoeda(dados.finValorReforco)}`,
-        `Vencimento 1º Reforço: ${fmtData(dados.finDataReforco)}`
-    ];
-
-    linhasFin.forEach((t, i) => doc.text(t, 20, yAtual + (i * 6)));
-    yAtual += (linhasFin.length * 6) + 10;
+    doc.text(`Entrada: ${fmtMoeda(dados.finValorEntrada)}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento Entrada: ${fmtData(dados.finDataEntrada)}`, 20, yAtual); yAtual += 8;
+    doc.text(`Quantidade Parcelas: ${dados.finQntParcela}`, 20, yAtual); yAtual += 8;
+    doc.text(`Valor Parcelas: ${fmtMoeda(dados.finValorParcela)}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1ª Parcela: ${fmtData(dados.finDataParcela)}`, 20, yAtual); yAtual += 8;
+    doc.text(`Quantidade Reforços: ${dados.finQntReforco}`, 20, yAtual); yAtual += 8;
+    doc.text(`Valor Reforços: ${fmtMoeda(dados.finValorReforco)}`, 20, yAtual); yAtual += 8;
+    doc.text(`Data de Vencimento 1º Reforço: ${fmtData(dados.finDataReforco)}`, 20, yAtual); yAtual += 16;
 
     // Assinaturas Pg 1
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { dateStyle: 'long' })}.`, 190, yAtual, { align: 'right' });
-    yAtual += 20;
-    
-    // Verifica se cabe na página, senão cria nova
-    if (yAtual > 270) { doc.addPage(); yAtual = 40; }
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    yAtual += 28;
 
     doc.line(32, yAtual, 92, yAtual);
     doc.line(118, yAtual, 178, yAtual);
+
+    doc.setFontSize(10);
     doc.text(username, 62, yAtual + 5, { align: 'center' });
     doc.text("Corretor", 62, yAtual + 10, { align: 'center' });
     doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
 
-
-    // --- 7. PÁGINA 2: TERMO DE INTENÇÃO ---
+    // --- PÁGINA 2: TERMO DE INTENÇÃO ---
     doc.addPage();
-    // Reinsere timbrado na pag 2
     try {
         const timbradoBase64 = await carregarTimbrado64();
         if (timbradoBase64) doc.addImage(timbradoBase64, 'PNG', 0, 0, 210, 297);
     } catch (e) {}
 
     doc.setFontSize(18).setFont('helvetica', 'bold');
-    doc.text('Termo de Intenção de Compra', 105, 30, { align: 'center' });
+    doc.text('Termo de Intenção de Compra e Proposta Financeira', 105, 30, { align: 'center' });
     doc.setFontSize(10).setFont('helvetica', 'normal');
-    
     yAtual = 50;
 
-    // Texto Jurídico Montado
     const textoTermo = `
-        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, formaliza o Termo de Intenção de Compra e Proposta Financeira dos imóveis abaixo descritos:
+        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formaliza o Termo de Intenção de Compra e Proposta Financeira dos imóveis abaixo descritos:
 
         ${dados.lotesDescricao}.
         
-        Área Total: ${dados.areaTotal.toLocaleString('pt-BR')} m².
+        Área Total: ${dados.areaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m².
          
-        Ofereço para compra dos imóveis o valor total de ${dados.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${numeroPorExtenso(dados.valorTotal)}).
-        
-        Comprometo-me a realizar os pagamentos da seguinte forma: 
-        Entrada de ${fmtMoeda(dados.finValorEntrada)} para o dia ${fmtData(dados.finDataEntrada)}.
-        Saldo parcelado em ${dados.finQntParcela}x de ${fmtMoeda(dados.finValorParcela)}, com primeiro vencimento em ${fmtData(dados.finDataParcela)}.
-        ${dados.finQntReforco > 0 ? `Reforços: ${dados.finQntReforco}x de ${fmtMoeda(dados.finValorReforco)}, iniciando em ${fmtData(dados.finDataReforco)}.` : ''}
+        Ofereço para compra dos imóveis mencionados acima o valor de ${fmtMoeda(dados.valorTotal)} (${numeroPorExtenso(dados.valorTotal)}), me comprometo ainda a realizar os pagamentos da seguinte forma: Entrada de ${fmtMoeda(dados.finValorEntrada)} em moeda corrente nacional no dia ${fmtData(dados.finDataEntrada)} e o saldo dividido em ${dados.finQntParcela} parcelas mensais fixas e sucessivas vencendo a primeira em ${fmtData(dados.finDataParcela)} e ${dados.finQntReforco} reforços anuais vencendo o primeiro em ${fmtData(dados.finDataReforco)}.
         
         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.
     `;
 
-    // Quebra o texto jurídico longo
     const linhasTermo = doc.splitTextToSize(textoTermo.trim(), 170);
     doc.text(linhasTermo, 20, yAtual);
 
-    // Ajusta Y para assinaturas finais
     yAtual += (linhasTermo.length * 5) + 30;
 
-    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { dateStyle: 'long' })}.`, 190, yAtual, { align: 'right' });
-    yAtual += 25;
+    doc.text(`Chapecó, ${hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.`, 190, yAtual, { align: 'right' });
+    yAtual += 20;
 
     doc.line(75, yAtual, 135, yAtual);
     doc.text(dados.nomeCliente, 105, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 105, yAtual + 10, { align: 'center' });
 
-    // --- 8. EXPORTAÇÃO ---
-    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    // Exportação
+    if (/Android|iPhone/i.test(navigator.userAgent)) {
         window.open(doc.output('datauristring'), "_blank");
     } else {
-        // Nome do arquivo sanitizado
         const nomeArquivo = `Proposta_${dados.nomeCliente.replace(/[^a-z0-9]/gi, '_').substring(0, 15)}.pdf`;
         doc.save(nomeArquivo);
     }
