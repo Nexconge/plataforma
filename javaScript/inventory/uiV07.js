@@ -23,8 +23,7 @@ export function preencherSelect(idElemento, dados, placeholder = "Selecione...")
     });
 }
 
-// Função genérica para criar tabelas (Mais Vendidos / Maiores Saldos)
-export function gerarTabelaPadrao(idTabela, titulo, colunas, dados) {
+export function gerarTabelaPadrao(idTabela, titulo, colunas, dados, msgVazia = "Sem dados para exibir.") {
     const tabela = document.getElementById(idTabela);
     if (!tabela) return;
 
@@ -51,7 +50,7 @@ export function gerarTabelaPadrao(idTabela, titulo, colunas, dados) {
     });
     
     if (dados.length === 0) {
-        html += `<tr><td colspan="2" class="empty-message">Sem dados para exibir.</td></tr>`;
+        html += `<tr><td colspan="2" class="empty-message">${msgVazia}</td></tr>`;
     }
 
     html += `</tbody>`;
@@ -59,13 +58,14 @@ export function gerarTabelaPadrao(idTabela, titulo, colunas, dados) {
 }
 
 // Função específica para a tabela MRP
-export function gerarTabelaRecomendacao(idTabela, dados) {
+export function gerarTabelaRecomendacao(idTabela, dados, msgVazia = "Estoque saudável! Nenhuma compra urgente necessária.") {
     const tabela = document.getElementById(idTabela);
     if (!tabela) return;
 
-    //Ordena por venda/dia
-    dados.sort((a, b) => b.vendaMedia - a.vendaMedia);
-
+    //Ordena por venda/dia (proteção caso venha vazio)
+    if(dados.length > 0) {
+        dados.sort((a, b) => b.vendaMedia - a.vendaMedia);
+    }
 
     let html = `
         <thead>
@@ -102,7 +102,7 @@ export function gerarTabelaRecomendacao(idTabela, dados) {
     });
 
     if (dados.length === 0) {
-        html += `<tr><td colspan="5" class="empty-message">✅ Estoque saudável! Nenhuma compra urgente necessária.</td></tr>`;
+        html += `<tr><td colspan="5" class="empty-message">${msgVazia}</td></tr>`;
     }
 
     html += `</tbody>`;

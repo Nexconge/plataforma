@@ -1,7 +1,7 @@
-// mainV13.js
+// mainV31.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV05.js';
 import { extrairDadosRelatorio } from './processingV16.js';
-import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV06.js';
+import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV07.js';
 
 // --- ESTADO & CACHE ---
 const EstadoApp = {
@@ -18,7 +18,6 @@ window.iniciarAplicacao = function(textoCadastros) {
     
     try {
         // 1. Parse do Input (Trata o formato JSON colado)
-        // Adiciona colchetes se vier como objetos soltos separados por vírgula
         let jsonString = textoCadastros.trim();
         if (!jsonString.startsWith("[")) {
             jsonString = `[${jsonString}]`;
@@ -33,6 +32,9 @@ window.iniciarAplicacao = function(textoCadastros) {
         }));
         
         preencherSelect("empresaSelect", listaEmpresas, "Selecione a Empresa");
+
+        // 3. Renderizar Tabelas Vazias (Placeholders)
+        renderizarPlaceholders();
         
         // Configurar Listeners
         configurarListeners();
@@ -53,14 +55,14 @@ function configurarListeners() {
         const idEmpresa = e.target.value;
         EstadoApp.empresaSelecionada = idEmpresa;
         
-        // Limpa dependentes
+        // Limpa dependentes e restaura placeholders
         elFilial.innerHTML = "";
         elData.innerHTML = "";
-        limparTabelas();
+        limparTabelas(); 
 
         if (!idEmpresa) return;
 
-        // A. Preencher Filiais (baseado no JSON local)
+        // A. Preencher Filiais
         const empresaObj = EstadoApp.cadastrosRaw.find(c => c.id === idEmpresa);
         if (empresaObj && empresaObj.entidades) {
             const listaFiliais = empresaObj.entidades.map(ent => ({
@@ -70,17 +72,14 @@ function configurarListeners() {
             preencherSelect("filialSelect", listaFiliais, "Todas / Selecione Loja");
         }
 
-        // B. Buscar Datas (API ou Cache)
+        // B. Buscar Datas
         await carregarDatasRelatorios(idEmpresa);
     });
 
-    // Evento: Seleção de Filial (Apenas visual por enquanto, pois API pede apenas IDCadastro)
     elFilial.addEventListener("change", (e) => {
         EstadoApp.filialSelecionada = e.target.value;
-        // Opcional: Se a API suportar filtro por filial no futuro, limparíamos o cache aqui.
     });
 
-    // Evento: Seleção de Data (Dispara o Relatório Final)
     elData.addEventListener("change", async (e) => {
         const dataSelecionada = e.target.value;
         if (dataSelecionada && EstadoApp.empresaSelecionada) {
@@ -93,28 +92,22 @@ function configurarListeners() {
 async function carregarDatasRelatorios(idCadastro) {
     const elData = document.getElementById("dataSelect");
     
-    // 1. Checar Cache
     if (EstadoApp.cacheDatas[idCadastro]) {
         console.log("Usando datas em cache para:", idCadastro);
         popularSelectDatas(EstadoApp.cacheDatas[idCadastro]);
         return;
     }
 
-    // 2. Chamada API
     elData.innerHTML = "<option>Carregando...</option>";
     try {
         const resultado = await buscarRelatoriosDisponiveis(idCadastro);
         const stringDatas = resultado.response.relatoriosDisponivies || "";
         
-        // Converte string "dd/mm/yyyy,dd/mm/yyyy" em array de objetos
         const listaDatas = stringDatas.split(',')
             .filter(d => d.trim().length > 0)
-            .map(d => ({ id: d.trim(), nome: d.trim() })); // ID e Nome iguais
+            .map(d => ({ id: d.trim(), nome: d.trim() })); 
 
-        // Salva Cache
         EstadoApp.cacheDatas[idCadastro] = listaDatas;
-        
-        // Renderiza
         popularSelectDatas(listaDatas);
 
     } catch (erro) {
@@ -130,30 +123,27 @@ function popularSelectDatas(lista) {
 async function carregarRelatorioFinal(idCadastro, data) {
     const chaveCache = `${idCadastro}_${data}`;
     
-    // 1. Checar Cache
     if (EstadoApp.cacheRelatorios[chaveCache]) {
         console.log("Relatório em cache recuperado.");
         renderizarDashboards(EstadoApp.cacheRelatorios[chaveCache]);
         return;
     }
 
-    // 2. Chamada API
     console.log(`Buscando relatório para ${idCadastro} na data ${data}...`);
     try {
         const dadosBrutos = await buscarDadosEstoque(idCadastro, data);
         console.log("Dados brutos recebidos:", dadosBrutos);
-        // 3. Processamento
+        
         const dadosProcessados = extrairDadosRelatorio(dadosBrutos);
         console.log("Dados extraidos:", dadosProcessados);
-        // Salva Cache
+        
         EstadoApp.cacheRelatorios[chaveCache] = dadosProcessados;
 
-        // 4. Renderização
         renderizarDashboards(dadosProcessados);
 
     } catch (erro) {
         console.error("Erro fatal ao gerar relatório:", erro);
-        limparTabelas();
+        limparTabelas(); // Volta para o estado de placeholder
     }
 }
 
@@ -178,8 +168,34 @@ function renderizarDashboards(dados) {
     );
 }
 
+// --- FUNÇÕES VISUAIS ---
+
+function renderizarPlaceholders() {
+    // Renderiza as tabelas com arrays vazios e mensagem de espera
+    gerarTabelaPadrao(
+        "tabelaMaisVendidos", 
+        "Produtos Mais Movimentados", 
+        ["Produto", "Total Saída"], 
+        [], 
+        "Aguardando seleção..."
+    );
+
+    gerarTabelaPadrao(
+        "tabelaMaioresSaldos", 
+        "Maiores Saldos", 
+        ["Produto", "Saldo Total"], 
+        [], 
+        "Aguardando seleção..."
+    );
+
+    gerarTabelaRecomendacao(
+        "tabelaRecomendacaoCompra", 
+        [],
+        "Aguardando seleção..."
+    );
+}
+
 function limparTabelas() {
-    document.getElementById("tabelaMaisVendidos").innerHTML = "";
-    document.getElementById("tabelaMaioresSaldos").innerHTML = "";
-    document.getElementById("tabelaRecomendacaoCompra").innerHTML = "";
+    // Ao invés de apagar o HTML, restauramos os placeholders
+    renderizarPlaceholders();
 }
