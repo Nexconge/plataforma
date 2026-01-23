@@ -6,7 +6,7 @@ class MapaLotesManager {
         
         // Armazenamento de dados
         this.allLotes = [];
-        this.polygons = {}; // Mapa de _id -> Layer (Leaflet)
+        this.polygons = {}; 
         this.selectedLoteId = null;
 
         // Estado dos Filtros
@@ -15,10 +15,9 @@ class MapaLotesManager {
             quadra: "",
             status: "",
             zoneamento: "",
-            zonaColorMode: false // Checkbox de zona ativa
+            zonaColorMode: false
         };
 
-        // Binds
         this._handleFilterChange = this._handleFilterChange.bind(this);
         this._handlePolygonClick = this._handlePolygonClick.bind(this);
     }
@@ -31,16 +30,20 @@ class MapaLotesManager {
 
         if (!this.allLotes.length) {
             console.warn("Nenhum lote encontrado.");
+            document.body.classList.remove('app-loading'); // Garante que o loading sai
             return;
         }
 
         this._renderLotes(this.allLotes);
-        this._populateAuxiliaryFilters(); // Preenche Quadra, Status e Zoneamento dinamicamente
-        this._updateMapVisuals(); // Aplica filtros iniciais
+        this._populateAuxiliaryFilters(); 
+        
+        // Aplica estado inicial e remove loading
+        this._updateMapVisuals(); 
         this._centralizeView();
+        document.body.classList.remove('app-loading');
     }
 
-    // --- 1. Dados (Data Fetching) ---
+    // --- 1. Dados ---
     async _fetchLotesPermitidos() {
         const urlBase = this.urlAPI;
         let todosOsLotes = [];
@@ -74,14 +77,13 @@ class MapaLotesManager {
         return todosOsLotes;
     }
 
-    // --- 2. Mapa Core (Leaflet Init & Helpers) ---
+    // --- 2. Mapa ---
     _initMap() {
         this.map = L.map(this.mapId).setView([-27.093791, -52.6215887], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.map);
 
-        // Zoom Handler para labels das quadras
         this.map.on('zoom zoomend', () => {
             const z = this.map.getZoom();
             const scale = Math.max(0.45, z / 15);
@@ -90,15 +92,13 @@ class MapaLotesManager {
             if (z < 17) document.documentElement.classList.add('quadra-hidden');
             else document.documentElement.classList.remove('quadra-hidden');
             
-            // Ajuste de fonte dinâmico
             const fontSize = 14 * (z / 15);
             document.querySelectorAll(".quadra-tooltip").forEach(el => el.style.fontSize = fontSize + "px");
         });
     }
 
-    // --- 3. Renderização Inicial ---
+    // --- 3. Renderização ---
     _renderLotes(lotes) {
-        // Limpa camadas antigas
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
 
@@ -108,7 +108,6 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // Tipo A: Label de Quadra (marcador invisível)
             if (lote.Quadra) {
                 const tempPoly = L.polygon(coords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
@@ -116,15 +115,12 @@ class MapaLotesManager {
                     permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
                 });
                 marker.addTo(this.map);
-                // Não adicionamos ao this.polygons pois não é clicável/filtrável da mesma forma
-            } 
-            // Tipo B: Lote Real (Polígono)
-            else {
+            } else {
                 const polygon = L.polygon(coords, {
                     color: "black",
                     weight: 0.6,
                     fillOpacity: 1,
-                    fillColor: "#c7c7c7" // Cor inicial temporária
+                    fillColor: "#c7c7c7"
                 });
 
                 polygon.bindTooltip(`${lote.Nome} - ${lote.Status || "Desconhecido"}`, { permanent: false });
@@ -136,12 +132,11 @@ class MapaLotesManager {
                 });
 
                 this.polygons[lote._id] = polygon;
-                // Adicionaremos ao mapa no _updateMapVisuals
             }
         });
     }
 
-    // --- 4. Lógica de UI e Filtros ---
+    // --- 4. Filtros ---
     _setupEventListeners() {
         const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectZoneamento"];
         ids.forEach(id => {
@@ -149,30 +144,26 @@ class MapaLotesManager {
             if (el) el.addEventListener("change", this._handleFilterChange);
         });
 
-        // Toggle Zona
         const zonaCheck = document.getElementById("zona");
         if (zonaCheck) zonaCheck.addEventListener('click', () => {
-             // Pequeno delay para garantir que o checked atualizou
              setTimeout(() => this._handleFilterChange(), 50);
         });
 
-        // Botão Alterar
         document.getElementById("buttonAlterar")?.addEventListener('click', () => this._atualizarPoligonoSelecionado());
-        
-        // Limpar seleção ao clicar no mapa vazio
         this.map.on('click', () => this._clearForm());
     }
 
     _populateAuxiliaryFilters() {
-        // Extrai valores únicos para preencher os selects
+        // Evita repopular se já tiver opções (previne o bug de limpar seleção)
+        if (document.getElementById("selectQuadra")?.options.length > 1) return;
+
         const quadras = new Set();
         const status = new Set();
         const zonas = new Set();
 
         this.allLotes.forEach(l => {
-            if (l.Quadra) return; // Ignora labels de quadra
+            if (l.Quadra) return; 
             
-            // Tenta extrair número da quadra do Nome (Ex: Q10...)
             const matchQ = l.Nome && l.Nome.match(/^Q(\d+)/);
             if(matchQ) quadras.add(matchQ[1]);
 
@@ -183,8 +174,8 @@ class MapaLotesManager {
         const sortAndPopulate = (setId, values) => {
             const select = document.getElementById(setId);
             if(!select) return;
-            // Preserva a primeira opção (Geralmente "Todos")
-            const firstOpt = select.firstElementChild;
+            
+            const firstOpt = select.firstElementChild; // Guarda o "Todos"
             select.innerHTML = ''; 
             if(firstOpt) select.appendChild(firstOpt);
 
@@ -202,15 +193,14 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
-        document.body.classList.toggle('app-loading', true);
+        // Oculta loading apenas após processar
+        document.body.classList.add('app-loading');
 
-        // 1. Atualizar Estado dos Filtros
         const getVal = (id) => {
             const el = document.getElementById(id);
             return el ? el.value : "";
         };
 
-        // Lógica específica do Bubble para Empreendimento
         const empVal = getVal("empreendimentoSelect");
         const empId = empVal.includes('__LOOKUP__') ? (empVal.split('__LOOKUP__')[1]).slice(0, -1) : empVal;
 
@@ -222,139 +212,132 @@ class MapaLotesManager {
             zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
 
-        // 2. Atualizar Visuais
-        this._updateMapVisuals();
-
-        // 3. Limpar formulário se o lote selecionado sumir ou for filtrado
-        if (this.selectedLoteId && !this.map.hasLayer(this.polygons[this.selectedLoteId])) {
-            this._clearForm();
-        }
-
-        document.body.classList.toggle('app-loading', false);
+        // Pequeno timeout para garantir que a UI não trave
+        setTimeout(() => {
+            this._updateMapVisuals();
+            
+            if (this.selectedLoteId && !this.map.hasLayer(this.polygons[this.selectedLoteId])) {
+                this._clearForm();
+            }
+            document.body.classList.remove('app-loading');
+        }, 10);
     }
 
     _updateMapVisuals() {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            // --- Filtro 1: Visibilidade (Empreendimento) ---
-            // Se tiver filtro de empreendimento e não bater, remove do mapa.
+            // 1. Visibilidade (Empreendimento)
             if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
-                return; // Pula o resto
+                return;
             } else {
                 if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
             }
 
-            // --- Filtro 2: Match dos Filtros Auxiliares (Highlight vs Dim) ---
+            // 2. Filtros Auxiliares
             let isMatch = true;
-
-            // Match Quadra
             if (this.filters.quadra) {
                 const matchQ = data.Nome.match(/^Q(\d+)/);
                 const numQuadra = matchQ ? matchQ[1] : null;
-                if (numQuadra !== this.filters.quadra) isMatch = false;
+                // Compara strings para evitar erro de tipo
+                if (String(numQuadra) !== String(this.filters.quadra)) isMatch = false;
             }
-            // Match Status
             if (this.filters.status && data.Status !== this.filters.status) isMatch = false;
-            // Match Zoneamento
             if (this.filters.zoneamento && data.Zoneamento !== this.filters.zoneamento) isMatch = false;
 
-            // --- Aplicação de Estilo ---
+            // 3. Estilos
             const baseColor = this._getLoteColor(data);
             const isSelected = this.selectedLoteId === data._id;
+            const hasActiveFilters = this.filters.quadra || this.filters.status || this.filters.zoneamento;
 
             if (isSelected) {
-                // Estilo Selecionado (Prioridade Máxima)
                 poly.setStyle({ weight: 2, color: "blue", fillColor: "blue", fillOpacity: 0.6 });
                 poly.bringToFront();
             } else if (isMatch) {
-                // Estilo Normal (Passou nos filtros)
-                // Se houver algum filtro ativo (mas passou), damos destaque com borda azul. 
-                // Se não houver filtros ativos, mantemos borda preta.
-                const hasActiveFilters = this.filters.quadra || this.filters.status || this.filters.zoneamento;
-                
                 poly.setStyle({
                     weight: hasActiveFilters ? 2 : 0.6,
-                    color: hasActiveFilters ? "#1772CB" : "black", // Borda azul se filtrado
+                    color: hasActiveFilters ? "#1772CB" : "black",
                     fillColor: baseColor,
                     fillOpacity: 1
                 });
             } else {
-                // Estilo "Dimmed" (Não passou nos filtros)
                 poly.setStyle({
                     weight: 0.5,
-                    color: "#999",
+                    color: "#ccc", // Cor mais clara para borda
                     fillColor: baseColor,
-                    fillOpacity: 0.4 // Bem transparente
+                    fillOpacity: 0.3 // Mais transparente
                 });
             }
 
-            // Atualiza Tooltip com base no modo de cor
             const txtStatus = this.filters.zonaColorMode ? (data.Zoneamento || "S/ Zoneamento") : (data.Status || "Desc.");
             poly.getTooltip()?.setContent(`${data.Nome} - ${txtStatus}`);
         });
     }
 
     _getLoteColor(lote) {
-        // Se checkbox "zona" estiver ativo, cor por zoneamento. Senão, por status.
         const mode = this.filters.zonaColorMode ? lote.Zoneamento?.toLowerCase() : lote.Status?.toLowerCase();
         
         const colors = {
-            // Zoneamento
-            "comercial": "#9fbfdf",
-            "residencial": "#dad2b4",
-            "equipamento público": "#f0c9ad",
-            "app": "#88c4a6",
-            "área verde": "#88c4a6",
-            // Status
-            "disponível": "lightblue",
-            "vendido": "ForestGreen",
-            "reservado": "#f0c9ad",
-            "indisponível": "#c7c7c7"
+            "comercial": "#9fbfdf", "residencial": "#dad2b4", "equipamento público": "#f0c9ad",
+            "app": "#88c4a6", "área verde": "#88c4a6",
+            "disponível": "lightblue", "vendido": "ForestGreen", "reservado": "#f0c9ad", "indisponível": "#c7c7c7"
         };
         return colors[mode] || "#c7c7c7";
     }
 
-    // --- 5. Interação e Formulário ---
+    // --- 5. Interação ---
     _handlePolygonClick(polygon) {
-        // Reseta estilo do anterior
-        if (this.selectedLoteId && this.polygons[this.selectedLoteId]) {
-            // Apenas chamamos updateVisuals para restaurar o estado correto (match ou dim)
-            // mas precisamos limpar o ID primeiro temporariamente para ele não ser re-selecionado
-            const prevId = this.selectedLoteId;
+        if (this.selectedLoteId) {
             this.selectedLoteId = null; 
-            // Atualiza visual daquele poligono especifico seria mais performatico, 
-            // mas chamar updateMapVisuals garante consistencia com filtros
             this._updateMapVisuals(); 
         }
 
         this.selectedLoteId = polygon.loteData._id;
-        this._updateMapVisuals(); // Aplica estilo de seleção no novo
+        this._updateMapVisuals();
         this._fillForm(polygon.loteData);
     }
 
     _fillForm(lote) {
-        const setVal = (id, val) => {
+        // Helper para Inputs Normais (Texto/Numero)
+        const setInput = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
+        };
+
+        // Helper para Dropdowns do Bubble (exige aspas duplas no valor para ser JSON válido)
+        const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
             if (el) { 
-                el.value = val; 
+                // AQUI ESTAVA O ERRO: Adicionamos aspas explicitamente
+                el.value = `"${val || ""}"`; 
                 el.dispatchEvent(new Event("change")); 
             }
         };
         
-        // CORREÇÃO AQUI: Removida a template string que adicionava aspas extras `"${...}"`
-        // Agora passamos o valor cru.
-        setVal("quadra_lote2", lote.Nome);
-        setVal("area2", String(lote.Área || 0));
-        setVal("status2", lote.Status || "Desconhecido"); // Corrigido
-        setVal("zona2", lote.Zoneamento || "Desconhecido"); // Corrigido
-        setVal("frente2", String(lote.Frente || 0));
-        setVal("lateral2", String(lote.Lateral || 0));
-        setVal("valor_metro2", String(lote.ValorM2 || 0));
-        setVal("valor_total2", String(lote.Valor || 0));
-        setVal("indice2", String(lote.IndiceConstrutivo || 0));
-        setVal("empreendimento2", lote.Empreendimento);
+        // Campos de texto simples
+        setInput("quadra_lote2", lote.Nome || "");
+        setInput("area2", String(lote.Área || 0));
+        setInput("frente2", String(lote.Frente || 0));
+        setInput("lateral2", String(lote.Lateral || 0));
+        setInput("valor_metro2", String(lote.ValorM2 || 0));
+        setInput("valor_total2", String(lote.Valor || 0));
+        setInput("indice2", String(lote.IndiceConstrutivo || 0));
+
+        // Campos que são Dropdowns no Bubble (Usam aspas)
+        setBubbleDropdown("status2", lote.Status || "Desconhecido");
+        setBubbleDropdown("zona2", lote.Zoneamento || "Desconhecido");
+        
+        // Empreendimento pode ser complexo, verifica se é dropdown ou input
+        // Assumindo input hidden ou dropdown:
+        if (lote.Empreendimento) {
+             const el = document.getElementById("empreendimento2");
+             if(el && el.tagName === "SELECT") {
+                 setBubbleDropdown("empreendimento2", lote.Empreendimento);
+             } else {
+                 setInput("empreendimento2", lote.Empreendimento);
+             }
+        }
     }
 
     _clearForm() {
@@ -390,12 +373,14 @@ class MapaLotesManager {
         const getVal = id => document.getElementById(id).value;
         const unmask = (val) => parseFloat(val.replace(/R\$|\s|\./g, "").replace(",", ".")) || 0;
 
-        // CORREÇÃO AQUI: Removido .replace(/"/g, '') pois não há mais aspas extras
+        // Ao ler DO formulário para o objeto, removemos aspas se vierem do Bubble Dropdown
+        const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
+
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
             Área: unmask(getVal("area2")),
-            Status: getVal("status2"), // Corrigido
-            Zoneamento: getVal("zona2"), // Corrigido
+            Status: cleanStr(getVal("status2")), 
+            Zoneamento: cleanStr(getVal("zona2")),
             Frente: unmask(getVal("frente2")),
             Lateral: unmask(getVal("lateral2")),
             ValorM2: unmask(getVal("valor_metro2")),
