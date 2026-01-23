@@ -4,12 +4,11 @@ class MapaLotesManager {
         this.urlAPI = url;
         this.map = null;
         
-        // Armazenamento de dados
+        this.selectedIds = new Set();
+        
         this.allLotes = [];
         this.polygons = {}; 
-        this.selectedLoteId = null;
-
-        // Estado dos Filtros
+        
         this.filters = {
             empreendimento: "",
             quadra: "",
@@ -193,25 +192,19 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
+        // (Código anterior mantido, apenas adicionando a limpeza do selectedIds se necessário)
         document.body.classList.add('app-loading');
 
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return "";
-            
-            let val = el.value;
-            // Limpeza de aspas e placeholders do Bubble
-            val = val.replace(/"/g, '');
-            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) {
-                return "";
-            }
+            let val = el.value.replace(/"/g, '');
+            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) return "";
             return val.trim();
         };
 
         let empVal = getCleanVal("empreendimentoSelect");
-        if (empVal.includes('__LOOKUP__')) {
-            empVal = empVal.split('__LOOKUP__')[1];
-        }
+        if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
 
         this.filters = {
             empreendimento: empVal,
@@ -224,24 +217,30 @@ class MapaLotesManager {
         setTimeout(() => {
             this._updateMapVisuals();
             
-            //Zoom ao trocar de filtro/empreendimento
-            this._centralizeView(); 
-            
-            if (this.selectedLoteId && !this.map.hasLayer(this.polygons[this.selectedLoteId])) {
-                this._clearForm();
-            }
+            // Remove da seleção lotes que não estão mais visíveis
+            let changed = false;
+            this.selectedIds.forEach(id => {
+                if (!this.map.hasLayer(this.polygons[id])) {
+                    this.selectedIds.delete(id);
+                    changed = true;
+                }
+            });
+
+            if (changed) this._fillForm();
+            if (this.selectedIds.size === 0) this._clearForm();
+
+            this._centralizeView();
             document.body.classList.remove('app-loading');
         }, 10);
     }
 
     _updateMapVisuals() {
-        // Verifica se existe algum filtro auxiliar ativo (diferente de vazio)
         const hasActiveFilters = !!(this.filters.quadra || this.filters.status || this.filters.zoneamento);
 
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            // 1. Visibilidade (Empreendimento - remove do mapa se não bater)
+            // 1. Visibilidade
             if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
@@ -249,17 +248,13 @@ class MapaLotesManager {
                 if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
             }
 
-            // 2. Filtros Auxiliares (Match)
+            // 2. Filtros Auxiliares
             let isMatch = true;
-
             if (hasActiveFilters) {
-                // Quadra: Compara apenas os números (ex: Filtro "Q6216" -> "6216" == Lote "Q6216L13" -> "6216")
                 if (this.filters.quadra) {
                     const filterQ = this.filters.quadra.replace(/\D/g, ''); 
                     const matchQ = data.Nome.match(/Q(\d+)/i);
                     const lotQ = matchQ ? matchQ[1] : "";
-                    
-                    // Se a quadra filtrada não bater com a quadra do lote
                     if (filterQ !== lotQ) isMatch = false;
                 }
                 if (this.filters.status && data.Status !== this.filters.status) isMatch = false;
@@ -268,36 +263,19 @@ class MapaLotesManager {
 
             // 3. Estilos
             const baseColor = this._getLoteColor(data);
-            const isSelected = this.selectedLoteId === data._id;
+            
+            // Verifica se está no conjunto de selecionados
+            const isSelected = this.selectedIds.has(data._id);
 
             if (isSelected) {
-                // Selecionado: Azul forte
                 poly.setStyle({ weight: 2, color: "blue", fillColor: "blue", fillOpacity: 0.6 });
                 poly.bringToFront();
             } else if (!hasActiveFilters) {
-                // SEM FILTROS: Estado padrão (Opacidade total, borda preta fina)
-                poly.setStyle({
-                    weight: 0.6,
-                    color: "black",
-                    fillColor: baseColor,
-                    fillOpacity: 1 
-                });
+                poly.setStyle({ weight: 0.6, color: "black", fillColor: baseColor, fillOpacity: 1 });
             } else if (isMatch) {
-                // COM FILTROS E DEU MATCH: Destaca (Borda mais grossa)
-                poly.setStyle({
-                    weight: 2,
-                    color: "#2c2ebb",
-                    fillColor: baseColor,
-                    fillOpacity: 1
-                });
+                poly.setStyle({ weight: 2, color: "#1772CB", fillColor: baseColor, fillOpacity: 1 });
             } else {
-                // COM FILTROS E NÃO DEU MATCH: Apaga (Transparente)
-                poly.setStyle({
-                    weight: 0.5,
-                    color: "#ccc",
-                    fillColor: baseColor,
-                    fillOpacity: 0.65
-                });
+                poly.setStyle({ weight: 0.5, color: "#ccc", fillColor: baseColor, fillOpacity: 0.65 });
             }
 
             const txtStatus = this.filters.zonaColorMode ? (data.Zoneamento || "S/ Zoneamento") : (data.Status || "Desc.");
@@ -317,57 +295,88 @@ class MapaLotesManager {
 
     // --- 5. Interação ---
     _handlePolygonClick(polygon) {
-        if (this.selectedLoteId) {
-            this.selectedLoteId = null; 
-            this._updateMapVisuals(); 
+        const id = polygon.loteData._id;
+
+        // Lógica de Toggle: Se já tem, remove. Se não tem, adiciona.
+        if (this.selectedIds.has(id)) {
+            this.selectedIds.delete(id);
+        } else {
+            this.selectedIds.add(id);
         }
 
-        this.selectedLoteId = polygon.loteData._id;
         this._updateMapVisuals();
-        this._fillForm(polygon.loteData);
+        this._fillForm(); // Agora chama sem argumento, pois ele varre o Set
     }
 
-    _fillForm(lote) {
+    _fillForm() {
         const setInput = (id, val) => {
             const el = document.getElementById(id);
             if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
         };
-
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
-            if (el) { 
-                el.value = `"${val || ""}"`; 
-                el.dispatchEvent(new Event("change")); 
-            }
+            if (el) { el.value = `"${val || ""}"`; el.dispatchEvent(new Event("change")); }
         };
-        
-        setInput("quadra_lote2", lote.Nome || "");
-        setInput("area2", String(lote.Área || 0));
-        setInput("frente2", String(lote.Frente || 0));
-        setInput("lateral2", String(lote.Lateral || 0));
-        setInput("valor_metro2", String(lote.ValorM2 || 0));
-        setInput("valor_total2", String(lote.Valor || 0));
-        setInput("indice2", String(lote.IndiceConstrutivo || 0));
 
-        setBubbleDropdown("status2", lote.Status || "Desconhecido");
-        setBubbleDropdown("zona2", lote.Zoneamento || "Desconhecido");
+        // Se nada selecionado, limpa e retorna
+        if (this.selectedIds.size === 0) {
+            this._clearForm();
+            return;
+        }
+
+        // Agregação de Dados
+        let totalArea = 0;
+        let totalFrente = 0;
+        let totalLateral = 0;
+        let totalValor = 0;
+        let nomes = [];
+        let statusSet = new Set();
+        let zonaSet = new Set();
+        let empSet = new Set();
+
+        this.selectedIds.forEach(id => {
+            const lote = this.polygons[id].loteData;
+            totalArea += (lote.Área || 0);
+            totalFrente += (lote.Frente || 0);
+            totalLateral += (lote.Lateral || 0);
+            totalValor += (lote.Valor || 0);
+            nomes.push(lote.Nome);
+            statusSet.add(lote.Status);
+            zonaSet.add(lote.Zoneamento);
+            empSet.add(lote.Empreendimento);
+        });
+
+        // Formatação para exibição
+        const nomeDisplay = nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0];
+        const statusDisplay = statusSet.size === 1 ? [...statusSet][0] : "Vários";
+        const zonaDisplay = zonaSet.size === 1 ? [...zonaSet][0] : "Vários";
+        const empDisplay = empSet.size === 1 ? [...empSet][0] : "";
+        const valorM2Medio = totalArea > 0 ? (totalValor / totalArea) : 0;
+
+        setInput("quadra_lote2", nomeDisplay);
+        setInput("area2", totalArea.toFixed(2));
+        setInput("frente2", totalFrente.toFixed(2)); 
+        setInput("lateral2", totalLateral.toFixed(2));
+        setInput("valor_metro2", valorM2Medio.toFixed(2));
+        setInput("valor_total2", totalValor.toFixed(2));
         
-        if (lote.Empreendimento) {
-             const el = document.getElementById("empreendimento2");
-             if(el && el.tagName === "SELECT") {
-                 setBubbleDropdown("empreendimento2", lote.Empreendimento);
-             } else {
-                 setInput("empreendimento2", lote.Empreendimento);
-             }
+        // Campos de texto/select
+        setBubbleDropdown("status2", statusDisplay);
+        setBubbleDropdown("zona2", zonaDisplay);
+
+        const elEmp = document.getElementById("empreendimento2");
+        if(elEmp && elEmp.tagName === "SELECT") {
+             setBubbleDropdown("empreendimento2", empDisplay);
+        } else {
+             setInput("empreendimento2", empDisplay);
         }
     }
 
     _clearForm() {
-        if (this.selectedLoteId) {
-            this.selectedLoteId = null;
-            this._updateMapVisuals();
-        }
+        // Se chamado via evento de mapa (clique fora), limpa tudo
+        // Mas se chamado internamente, apenas limpa inputs
         
+        // Para garantir consistência no clique fora:
         const ids = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -408,6 +417,10 @@ class MapaLotesManager {
         });
 
         this._updateMapVisuals();
+    }
+
+    getSelectedLotesData() {
+        return Array.from(this.selectedIds).map(id => this.polygons[id].loteData);
     }
 }
 
