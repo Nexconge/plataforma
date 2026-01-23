@@ -290,10 +290,10 @@ class MapaLotesManager {
                     fillOpacity: 1 
                 });
             } else if (isMatch) {
-                // COM FILTROS E DEU MATCH: Destaca (Borda azul, peso maior)
+                // COM FILTROS E DEU MATCH: Destaca (Borda mais grossa)
                 poly.setStyle({
-                    weight: 2,
-                    color: "#1772CB",
+                    weight: 1.5,
+                    color: "#000000",
                     fillColor: baseColor,
                     fillOpacity: 1
                 });
@@ -303,7 +303,7 @@ class MapaLotesManager {
                     weight: 0.5,
                     color: "#ccc",
                     fillColor: baseColor,
-                    fillOpacity: 0.3
+                    fillOpacity: 0.65
                 });
             }
 
