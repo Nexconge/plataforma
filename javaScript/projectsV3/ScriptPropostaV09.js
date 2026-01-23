@@ -262,8 +262,8 @@ async function gerarProposta(username) {
         return yLinha + 8;
     };
 
-    // --- SEÇÃO: DADOS DOS IMÓVEIS (Mantido V04 para suportar Multi-Lotes) ---
-    yAtual = desenharSecao('Dados dos Imóveis', yAtual);
+    // --- SEÇÃO: DADOS DOS Lotes (Mantido V04 para suportar Multi-Lotes) ---
+    yAtual = desenharSecao('Dados dos Lotes', yAtual);
     doc.setFontSize(10).setFont('helvetica', 'normal');
 
     const larguraTextoLotes = 80;
@@ -280,8 +280,6 @@ async function gerarProposta(username) {
     yAtual += Math.max(alturaBlocoLotes, 24) + 8;
 
      // Seção: Dados Cliente
-    yAtual = desenharSecao('Dados Cliente', yAtual);
-   
     doc.setFontSize(14).setFont('helvetica', 'bold');
     doc.text('Dados Cliente', 20, yAtual);
     doc.setFontSize(10).setFont('helvetica', 'normal');
@@ -305,10 +303,7 @@ async function gerarProposta(username) {
     colCliDir.forEach((linha, i) => doc.text(linha, 105, yAtual + i * 8));
     yAtual += 40;
 
-    // --- SEÇÃO: CONDIÇÃO FINANCEIRA (Revertido para V03 - Original) ---
-    // Escrita linha a linha para garantir formatação idêntica
-    yAtual = desenharSecao('Condição Financeira', yAtual);
-
+    // Seção: Condição Financeira
     const fmtMoeda = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const fmtData = d => formatDateStr(d);
 
@@ -353,13 +348,13 @@ async function gerarProposta(username) {
     yAtual = 50;
 
     const textoTermo = `
-        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formaliza o Termo de Intenção de Compra e Proposta Financeira dos imóveis abaixo descritos:
+        Pelo presente termo e na melhor forma de direito o Sr(a). ${dados.nomeCliente}, Brasileiro(a), ${dados.estadoCivilCliente}, inscrito(a) sob CPF nº ${dados.cpfCliente}, ${dados.profissaoCliente}, residente e domiciliado(a) em ${dados.enderecoCliente}, no Município de ${dados.cidadeCliente}, formaliza o Termo de Intenção de Compra e Proposta Financeira dos lotes abaixo descritos:
 
         ${dados.lotesDescricao}.
         
         Área Total: ${dados.areaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m².
          
-        Ofereço para compra dos imóveis mencionados acima o valor de ${fmtMoeda(dados.valorTotal)} (${numeroPorExtenso(dados.valorTotal)}), me comprometo ainda a realizar os pagamentos da seguinte forma: Entrada de ${fmtMoeda(dados.finValorEntrada)} em moeda corrente nacional no dia ${fmtData(dados.finDataEntrada)} e o saldo dividido em ${dados.finQntParcela} parcelas mensais fixas e sucessivas vencendo a primeira em ${fmtData(dados.finDataParcela)} e ${dados.finQntReforco} reforços anuais vencendo o primeiro em ${fmtData(dados.finDataReforco)}.
+        Ofereço para compra dos lotes mencionados acima o valor de ${fmtMoeda(dados.valorTotal)} (${numeroPorExtenso(dados.valorTotal)}), me comprometo ainda a realizar os pagamentos da seguinte forma: Entrada de ${fmtMoeda(dados.finValorEntrada)} em moeda corrente nacional no dia ${fmtData(dados.finDataEntrada)} e o saldo dividido em ${dados.finQntParcela} parcelas mensais fixas e sucessivas vencendo a primeira em ${fmtData(dados.finDataParcela)} e ${dados.finQntReforco} reforços anuais vencendo o primeiro em ${fmtData(dados.finDataReforco)}.
         
         Caso essa proposta seja aceita, assumo desde já o compromisso de fornecer todos os documentos necessários para formalização da negociação dentro de um prazo máximo de 05 (cinco) dias.
     `;
