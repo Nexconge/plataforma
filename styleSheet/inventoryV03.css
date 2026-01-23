@@ -1,5 +1,29 @@
 /* style.css */
 
+/* =========================================================
+   CONTROLES
+========================================================= */
+label { margin-right: 5px; }
+label[for="empresaSelect"], label[for="dataSelect"], label[for="filialSelect"] { width: 100px; display: inline-block; }
+
+.custom-select {
+  width: 300px; height: 30px;
+  border: 1px solid #C7C7C7; border-radius: 4px;
+  background-color: white;
+  text-align: center; font-family: var(--font);
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 25px;
+}
+
+.multiSelectCustom {
+  width: 300px; height: 85px;
+  border: 1px solid #C7C7C7; border-radius: 4px; background: white;
+  overflow-y: auto;
+}
+.multiSelectCustom option { padding: 5px; font-family: var(--font); }
+
+
 /* --- CONFIGURAÇÃO GERAL DAS TABELAS --- */
 table {
     width: 100%;
