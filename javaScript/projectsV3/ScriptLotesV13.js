@@ -28,7 +28,6 @@ class MapaLotesManager {
         
         this.allLotes = await this._fetchLotesPermitidos();
 
-        // Se não houver lotes, remove loading e encerra
         if (!this.allLotes.length) {
             console.warn("Nenhum lote encontrado.");
             document.body.classList.remove('app-loading'); 
@@ -38,10 +37,9 @@ class MapaLotesManager {
         this._renderLotes(this.allLotes);
         this._populateAuxiliaryFilters(); 
         
-        // Aplica estado inicial e garante que o loading suma
-        this._updateMapVisuals(); 
-        this._centralizeView();
-        document.body.classList.remove('app-loading');
+        // CORREÇÃO: Substituímos o _updateMapVisuals manual pelo _handleFilterChange.
+        // Isso força o código a LER o valor inicial do select (HTML) e aplicar o zoom correto logo na carga.
+        this._handleFilterChange();
     }
 
     // --- 1. Dados ---
@@ -197,28 +195,22 @@ class MapaLotesManager {
     _handleFilterChange() {
         document.body.classList.add('app-loading');
 
-        // --- CORREÇÃO PRINCIPAL: Limpeza de valores do Bubble ---
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return "";
             
             let val = el.value;
-            
-            // 1. Remove aspas extras (ex: "\"Q6216\"" vira "Q6216")
+            // Limpeza de aspas e placeholders do Bubble
             val = val.replace(/"/g, '');
-
-            // 2. Se for placeholder do Bubble (BLANK ou PLACEHOLDER), retorna vazio real
             if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) {
                 return "";
             }
-            
             return val.trim();
         };
 
-        // Lógica específica do Empreendimento (Lookup do Bubble)
         let empVal = getCleanVal("empreendimentoSelect");
         if (empVal.includes('__LOOKUP__')) {
-            empVal = empVal.split('__LOOKUP__')[1]; // Pega o ID depois do lookup
+            empVal = empVal.split('__LOOKUP__')[1];
         }
 
         this.filters = {
@@ -229,11 +221,12 @@ class MapaLotesManager {
             zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
 
-        // Pequeno timeout para não travar a UI
         setTimeout(() => {
             this._updateMapVisuals();
             
-            // Limpa form se o lote sumiu
+            //Zoom ao trocar de filtro/empreendimento
+            this._centralizeView(); 
+            
             if (this.selectedLoteId && !this.map.hasLayer(this.polygons[this.selectedLoteId])) {
                 this._clearForm();
             }
