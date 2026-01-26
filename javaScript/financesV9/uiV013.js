@@ -194,6 +194,12 @@ function atualizarVisualizacoes(dados, colunas, cache) {
 // 1. DRE
 function renderizarDRE(matriz, colunas, userType) {
     const tabela = document.getElementById('tabelaMatriz');
+
+    if (!tabela) {
+        console.warn('Tabela tabelaMatriz não encontrada no DOM');
+        return;
+    }
+
     const thead = tabela.createTHead();
     const trH = thead.insertRow();
     trH.insertCell().textContent = 'Fluxo de Caixa';
@@ -235,6 +241,12 @@ function renderizarDRE(matriz, colunas, userType) {
 // 2. Detalhamento
 function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     const tabela = document.getElementById('tabelaCustos');
+
+    if (!tabela) {
+        console.warn('Tabela tabelaCustos não encontrada no DOM');
+        return;
+    }
+
     const thead = tabela.createTHead();
     const trH = thead.insertRow();
     trH.insertCell().textContent = 'Detalhamento';
@@ -600,6 +612,12 @@ function configurarAbasGraficos() {
 // ------ Fluxo Diário ------
 function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const tb = document.getElementById('tabelaFluxoDiario');
+
+    if (!tb) {
+        console.warn('Tabela tabelaFluxoDiario não encontrada no DOM');
+        return;
+    }
+
     tb.textContent = '';
     if (!colunas.length) return;
 

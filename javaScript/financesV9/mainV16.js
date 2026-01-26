@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV012.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV013.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -223,7 +223,6 @@ function processarRespostaTitulos(apiResponse) {
         processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
     } else {
         // Lógica Padrão REALIZADO
-        //console.log('processar realizado', contaId, anoOuTag, response);
         processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
     }
 }
@@ -269,7 +268,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
             //Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
             //PORTANDO È NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA INPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
             const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
-            console.log('extracted realizado', extractedCY);
+            //console.log('extracted realizado', extractedCY);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
             
@@ -288,7 +287,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     if (response.dadosArealizar?.length > 2) {
         try {
             const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
-            console.log('extracted arealizar', extracted);
+            //console.log('extracted arealizar', extracted);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
