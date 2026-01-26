@@ -441,7 +441,6 @@ function criarLinhaEspacadora(target, colunas) {
 
 // ------ Gráficos ------
 function renderizarGraficos(dados, colunas) {
-    // Verificação de segurança
     if (!dados?.matrizDRE || !window.Chart) {
         console.warn("Chart.js não carregado ou dados insuficientes.");
         return;
@@ -450,11 +449,7 @@ function renderizarGraficos(dados, colunas) {
     let l=[], s=[], r=[], p=[], accR=0, accP=0, rAc=[], pAc=[];
 
     colunas.forEach(c => {
-        // LÓGICA ALTERADA:
-        // Verifica se o valor existe (diferente de undefined/null). 
-        // Se existir, usa o valor. Se não existir, mantém como null.
-        // Isso impede que meses futuros virem "0".
-
+        // Lógica de tratamento de nulos (mantida da versão anterior)
         const valSaldo = dados.matrizDRE['Caixa Final']?.[c];
         const sv = (valSaldo === undefined || valSaldo === null) ? null : valSaldo;
 
@@ -462,36 +457,21 @@ function renderizarGraficos(dados, colunas) {
         const rv = (valEntrada === undefined || valEntrada === null) ? null : valEntrada;
 
         const valSaida = dados.entradasESaidas['(-) Saídas']?.[c];
-        // Math.abs falha com null (vira 0), então verificamos antes
         const pv = (valSaida === undefined || valSaida === null) ? null : Math.abs(valSaida);
         
-        // Adiciona aos arrays
         l.push(c);
-        s.push(sv); // Se for null, o gráfico de linha do saldo para aqui
+        s.push(sv);
         r.push(rv);
         p.push(pv);
 
-        // Lógica de Acumulado:
-        // Se não houver dados de entrada (rv é null), interrompemos a linha acumulada também
-        if (rv !== null) {
-            accR += rv;
-            rAc.push(accR);
-        } else {
-            rAc.push(null);
-        }
-
-        if (pv !== null) {
-            accP += pv;
-            pAc.push(accP);
-        } else {
-            pAc.push(null);
-        }
+        if (rv !== null) { accR += rv; rAc.push(accR); } else { rAc.push(null); }
+        if (pv !== null) { accP += pv; pAc.push(accP); } else { pAc.push(null); }
     });
 
     const common = (tit) => ({
         responsive: true, 
         maintainAspectRatio: false,
-        spanGaps: false, // Garante que a linha não pule os nulls (embora false seja o padrão)
+        spanGaps: false, // Importante: não conecta pontos distantes com nulos no meio
         plugins: { 
             title: {display:true, text:tit, font:{size:16}}, 
             legend:{position:'bottom'},
@@ -517,15 +497,15 @@ function renderizarGraficos(dados, colunas) {
     const createChart = (id, key, cfg) => {
         const ctx = document.getElementById(id);
         if (!ctx) return;
-        
-        // Mantém a lógica visual de abas
-        if (graficosAtuais[key]) {
-            graficosAtuais[key].destroy();
-        }
-        
+        if (graficosAtuais[key]) graficosAtuais[key].destroy();
         graficosAtuais[key] = new window.Chart(ctx, cfg);
     };
 
+    // Cores constantes para reutilização
+    const VERDE = '#28a745';
+    const VERMELHO = '#dc3545';
+
+    // Configuração do Gráfico de Saldo
     let optSaldo = common('Saldo de Caixa (R$)');
     optSaldo.plugins.legend = {display:false};
     
@@ -536,40 +516,68 @@ function renderizarGraficos(dados, colunas) {
             datasets: [{ 
                 label: 'Saldo',
                 data:s, 
-                tension:0.3, 
-                segment:{
-                    // Ajuste na cor: só pinta se os dois pontos existirem e um for negativo
+                tension:0.3,
+                // Aumentamos o raio para o ponto ser visivel sozinho
+                pointRadius: 4, 
+                pointHoverRadius: 6,
+                // Colore o PONTO individualmente
+                pointBackgroundColor: (ctx) => {
+                    const v = ctx.parsed.y;
+                    return v < 0 ? VERMELHO : VERDE;
+                },
+                pointBorderColor: (ctx) => {
+                    const v = ctx.parsed.y;
+                    return v < 0 ? VERMELHO : VERDE;
+                },
+                // Colore a LINHA (segmento entre dois pontos)
+                segment: {
                     borderColor: ctx => {
-                        // Se um dos pontos for null (fim do gráfico), essa lógica é ignorada pelo Chartjs
-                        if(ctx.p0.parsed.y === null || ctx.p1.parsed.y === null) return undefined; 
-                        return ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? '#dc3545' : '#28a745';
+                        if(ctx.p0.parsed.y === null || ctx.p1.parsed.y === null) return undefined;
+                        return ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? VERMELHO : VERDE;
                     }
-                }, 
-                pointRadius:2
+                }
             }] 
         }, 
         options: optSaldo
     });
 
+    // Configuração do Gráfico Acumulado
     createChart('graficoRecebientoPagamentoAcumulado', 'acumulado', {
         type: 'line', 
         data: { 
             labels:l, 
             datasets:[
-                {label:'Entradas', data:rAc, borderColor:'#28a745', backgroundColor:'rgba(40, 167, 69, 0.2)', fill:true, tension:0.3, pointRadius:0},
-                {label:'Saídas', data:pAc, borderColor:'#dc3545', backgroundColor:'rgba(220, 53, 69, 0.2)', fill:true, tension:0.3, pointRadius:0}
+                {
+                    label:'Entradas', 
+                    data:rAc, 
+                    borderColor: VERDE, 
+                    backgroundColor:'rgba(40, 167, 69, 0.2)', 
+                    fill:true, 
+                    tension:0.3, 
+                    pointRadius: 3 // Antes era 0, agora é 3 para aparecer se for ponto único
+                },
+                {
+                    label:'Saídas', 
+                    data:pAc, 
+                    borderColor: VERMELHO, 
+                    backgroundColor:'rgba(220, 53, 69, 0.2)', 
+                    fill:true, 
+                    tension:0.3, 
+                    pointRadius: 3 // Antes era 0, agora é 3
+                }
             ]
         }, 
         options: common('Evolução (R$)')
     });
 
+    // Configuração do Gráfico Mensal (Barras não precisam de ajuste de ponto)
     createChart('graficoEntradasSaidasMensal', 'mensal', {
         type: 'bar', 
         data: { 
             labels:l, 
             datasets:[
-                {label:'Entradas', data:r, backgroundColor:'#28a745'},
-                {label:'Pagamentos', data:p, backgroundColor:'#dc3545'}
+                {label:'Entradas', data:r, backgroundColor: VERDE},
+                {label:'Pagamentos', data:p, backgroundColor: VERMELHO}
             ]
         }, 
         options: common('Mensal (R$)')
