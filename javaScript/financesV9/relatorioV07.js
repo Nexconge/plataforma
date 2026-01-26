@@ -1,9 +1,8 @@
 import { buscarTitulos } from './apiV03.js';
 import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
 
-
 /**
- * Realiza a busca por ano e dispara a geração do Excel.
+ * Realiza a busca por ano, processa imediatamente e dispara a geração do Excel.
  */
 window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFinalStr) {
     try {
@@ -18,13 +17,12 @@ window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFin
         const anoInicial = dtInicio.getFullYear();
         const anoFinal = dtFim.getFullYear();
 
-        // Variáveis para agregação dos dados de múltiplos anos
-        let bufferCapitalG = [];
-        let bufferLancamentos = [];
+        // Lista acumuladora de objetos já processados (não mais strings JSON)
+        let todosLancamentos = [];
         let saldoInicial = 0;
         let isPrimeiroAno = true;
 
-        // 1. Loop de Requisições (Ano a Ano)
+        // 1. Loop de Requisições e Processamento (Ano a Ano)
         for (let ano = anoInicial; ano <= anoFinal; ano++) {
             const apiRaw = await buscarTitulos({ conta: contaId, ano: String(ano) });
             const response = apiRaw.response || apiRaw; // Normaliza resposta do Bubble
@@ -35,25 +33,35 @@ window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFin
                 isPrimeiroAno = false;
             }
 
-            // Acumula strings JSON se existirem
+            // --- PROCESSAMENTO IMEDIATO (Corrigido) ---
+            // Passamos o 'ano' do loop atual como referência para a extração
+            
+            // A. Processar Títulos (CapitalG) deste ano
             if (response.dadosCapitalG?.length > 2) {
-                bufferCapitalG.push(response.dadosCapitalG);
+                const jsonTitulos = safeJsonParse(response.dadosCapitalG, `CapitalG ${ano}`);
+                if (jsonTitulos) {
+                    try {
+                        const extracao = extrairDadosDosTitulos(jsonTitulos, contaId, ano);
+                        todosLancamentos.push(...extracao.lancamentosProcessados);
+                    } catch (e) { console.error(`Erro processando Títulos de ${ano}:`, e); }
+                }
             }
+
+            // B. Processar Lançamentos Manuais deste ano
             if (response.dadosLancamentos?.length > 2) {
-                bufferLancamentos.push(response.dadosLancamentos);
+                const jsonManuais = safeJsonParse(response.dadosLancamentos, `LancamentosManuais ${ano}`);
+                if (jsonManuais) {
+                    try {
+                        const manuais = extrairLancamentosSimples(jsonManuais, contaId, ano);
+                        todosLancamentos.push(...manuais);
+                    } catch (e) { console.error(`Erro processando Manuais de ${ano}:`, e); }
+                }
             }
         }
 
-        // 2. Montagem do Objeto Unificado
-        // Junta as strings com vírgula para formar um JSON array válido posteriormente
-        const dadosUnificados = {
-            rawCapitalG: bufferCapitalG.join(','),
-            rawLancamentos: bufferLancamentos.join(','),
-            saldoInicial: saldoInicial
-        };
-
-        // 3. Processamento e Exportação
-        processarEExportarExcel(dadosUnificados, contaId, dtInicio, dtFim);
+        // 2. Exportação
+        // Agora passamos a lista já pronta e o saldo
+        exportarRelatorioFinal(todosLancamentos, contaId, dtInicio, dtFim);
 
     } catch (error) {
         console.error("Erro fatal ao gerar relatório:", error);
@@ -61,48 +69,23 @@ window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFin
 };
 
 /**
- * Processa os dados brutos unificados, aplica filtros de data e gera o arquivo Excel.
+ * Aplica filtros de data na lista já processada e gera o arquivo Excel.
  */
-function processarEExportarExcel(dados, contaId, dtInicio, dtFim) {
-    let listaFinal = [];
-
-    // Referência de ano para as funções de extração (usa o ano inicial do filtro)
-    const anoRef = dtInicio.getFullYear(); 
-
-    // 1. Processar Títulos (CapitalG)
-    if (dados.rawCapitalG) {
-        const jsonTitulos = safeJsonParse(dados.rawCapitalG, `CapitalG`);
-        if (jsonTitulos) {
-            try {
-                const extracao = extrairDadosDosTitulos(jsonTitulos, contaId, anoRef);
-                listaFinal.push(...extracao.lancamentosProcessados);
-            } catch (e) { console.error("Erro no processamento interno de Títulos:", e); }
-        }
-    }
-
-    // 2. Processar Lançamentos Manuais
-    if (dados.rawLancamentos) {
-        const jsonManuais = safeJsonParse(dados.rawLancamentos, `LancamentosManuais`);
-        if (jsonManuais) {
-            try {
-                const manuais = extrairLancamentosSimples(jsonManuais, contaId, anoRef);
-                listaFinal.push(...manuais);
-            } catch (e) { console.error("Erro no processamento interno de Manuais:", e); }
-        }
-    }
-
-    // 3. Filtragem (Intervalo de Datas Exato)
-    const lancamentosFiltrados = listaFinal.filter(item => {
+function exportarRelatorioFinal(listaBruta, contaId, dtInicio, dtFim) {
+    
+    // 1. Filtragem (Intervalo de Datas Exato)
+    const lancamentosFiltrados = listaBruta.filter(item => {
         const dtItem = converterParaData(item.DataLancamento);
+        // Garante que a data é válida e está dentro do range
         return dtItem && dtItem >= dtInicio && dtItem <= dtFim;
     });
 
-    // 4. Ordenação Cronológica
+    // 2. Ordenação Cronológica
     lancamentosFiltrados.sort((a, b) => 
         converterParaData(a.DataLancamento) - converterParaData(b.DataLancamento)
     );
 
-    // 5. Mapeamento para Excel
+    // 3. Mapeamento para Excel
     const linhasExcel = lancamentosFiltrados.map(l => ({
         Data: l.DataLancamento,
         Descrição: l.Cliente || '',
@@ -117,10 +100,20 @@ function processarEExportarExcel(dados, contaId, dtInicio, dtFim) {
 //                                         FUNÇÕES AUXILIARES
 //----------------------------------------------------------------------------------------------------//
 
-/** Tenta fazer o parse de uma string JSON concatenada. Retorna null em caso de erro. */
+/** Tenta fazer o parse de uma string JSON. Retorna null em caso de erro. */
 function safeJsonParse(jsonString, contexto) {
     try {
-        // Envolve em colchetes pois a string original vem sem eles ou concatenada
+        // Verifica se já não é um objeto (algumas APIs retornam JSON parsed)
+        if (typeof jsonString === 'object') return jsonString;
+        
+        // Se a string não começar com [ ou {, tentamos envolver em array
+        // (Assumindo comportamento anterior de concatenação, mas agora é por ano,
+        // então verificamos se precisa dos colchetes)
+        const strAnalise = jsonString.trim();
+        if (strAnalise.startsWith('{')) return JSON.parse(`[${jsonString}]`);
+        if (strAnalise.startsWith('[')) return JSON.parse(jsonString);
+        
+        // Fallback para strings soltas separadas por vírgula
         return JSON.parse(`[${jsonString}]`);
     } catch (e) {
         console.error(`Erro ao fazer parse do JSON (${contexto}):`, e);
@@ -131,8 +124,12 @@ function safeJsonParse(jsonString, contexto) {
 /** Converte string "DD/MM/YYYY" para objeto Date */
 function converterParaData(dataStr) {
     if (!dataStr) return null;
-    const [dia, mes, ano] = dataStr.split('/').map(Number);
-    return new Date(ano, mes - 1, dia);
+    // Suporte a DD/MM/YYYY
+    if (dataStr.includes('/')) {
+        const [dia, mes, ano] = dataStr.split('/').map(Number);
+        return new Date(ano, mes - 1, dia);
+    }
+    return null;
 }
 
 /** Formatação contábil (ex: 1.000,00 ou (1.000,00) para negativos) */
