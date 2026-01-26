@@ -26,7 +26,7 @@ window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFin
 
         // 1. Loop de Requisições (Ano a Ano)
         for (let ano = anoInicial; ano <= anoFinal; ano++) {
-            const apiRaw = await buscarTitulos({ conta: contaId, ano: ano });
+            const apiRaw = await buscarTitulos({ conta: contaId, ano: String(ano) });
             const response = apiRaw.response || apiRaw; // Normaliza resposta do Bubble
 
             // Captura saldo inicial apenas do primeiro ano do range
