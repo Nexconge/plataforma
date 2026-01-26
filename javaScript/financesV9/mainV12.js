@@ -1,6 +1,6 @@
 // mainV25.js
 
-import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV02.js';
+import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV01.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV010.js';
 
@@ -171,7 +171,7 @@ async function stepCarregarProcessarDados(filtros) {
 
     // Prepara Promises de Títulos
     const promises = requisicoesNecessarias.map(req => 
-        buscarTitulos({ contas: [req.contaId], anos: req.filtrosApi })
+        buscarTitulos({ conta: req.contaId, ano: req.filtrosApi })
             .then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
     );
 
