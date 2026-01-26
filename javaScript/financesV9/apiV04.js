@@ -47,8 +47,8 @@ async function realizarPost(endpoint, payload, nomeFuncao) {
  */
 async function buscarTitulos(filtros) {
     const payload = {
-        conta: filtros.conta,
-        ano: filtros.ano // "2024" ou "AREALIZAR"
+        conta: String(filtros.conta),
+        ano: String(filtros.ano) // "2024" ou "AREALIZAR"
     };
 
     try {

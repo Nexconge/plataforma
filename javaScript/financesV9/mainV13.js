@@ -1,6 +1,6 @@
 // mainV25.js
 
-import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
+import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV01.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV010.js';
 
@@ -150,7 +150,7 @@ async function stepCarregarProcessarDados(filtros) {
             anos.forEach(ano => {
                 const chaveCache = `${contaId}|${ano}`;
                 if (!appCache.dadosPorContaAno.has(chaveCache)) {
-                    requisicoesNecessarias.push({ contaId, anoOuTag: ano, filtrosApi: [ano] });
+                    requisicoesNecessarias.push({ contaId, anoOuTag: ano, filtrosApi: String(ano) });
                     appCache.dadosPorContaAno.set(chaveCache, null); // Placeholder
                 }
             });
