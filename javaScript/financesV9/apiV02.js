@@ -43,12 +43,12 @@ async function realizarPost(endpoint, payload, nomeFuncao) {
 
 /**
  * Busca os títulos financeiros com base nos filtros.
- * @param {object} filtros - { contas: [], anos: [] }
+ * @param {object} filtros - { conta: [""], ano: [""]}
  */
 async function buscarTitulos(filtros) {
     const payload = {
-        contas: filtros.contas,
-        anos: filtros.anos // ["2024"] ou ["AREALIZAR"]
+        conta: filtros.contas[0],
+        ano: filtros.anos[0] // "2024" ou "AREALIZAR"
     };
 
     try {

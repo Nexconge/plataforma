@@ -1,6 +1,6 @@
 // mainV25.js
 
-import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
+import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV02.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV01.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV010.js';
 
