@@ -441,7 +441,7 @@ function criarLinhaEspacadora(target, colunas) {
 
 // ------ Gráficos ------
 function renderizarGraficos(dados, colunas) {
-    // Verificação de segurança mais robusta
+    // Verificação de segurança
     if (!dados?.matrizDRE || !window.Chart) {
         console.warn("Chart.js não carregado ou dados insuficientes.");
         return;
@@ -450,20 +450,48 @@ function renderizarGraficos(dados, colunas) {
     let l=[], s=[], r=[], p=[], accR=0, accP=0, rAc=[], pAc=[];
 
     colunas.forEach(c => {
-        const sv = dados.matrizDRE['Caixa Final']?.[c]??0;
-        const rv = dados.entradasESaidas['(+) Entradas']?.[c]??0;
-        const pv = Math.abs(dados.entradasESaidas['(-) Saídas']?.[c]??0);
+        // LÓGICA ALTERADA:
+        // Verifica se o valor existe (diferente de undefined/null). 
+        // Se existir, usa o valor. Se não existir, mantém como null.
+        // Isso impede que meses futuros virem "0".
+
+        const valSaldo = dados.matrizDRE['Caixa Final']?.[c];
+        const sv = (valSaldo === undefined || valSaldo === null) ? null : valSaldo;
+
+        const valEntrada = dados.entradasESaidas['(+) Entradas']?.[c];
+        const rv = (valEntrada === undefined || valEntrada === null) ? null : valEntrada;
+
+        const valSaida = dados.entradasESaidas['(-) Saídas']?.[c];
+        // Math.abs falha com null (vira 0), então verificamos antes
+        const pv = (valSaida === undefined || valSaida === null) ? null : Math.abs(valSaida);
         
-        // Regra frouxa para garantir que o gráfico desenhe mesmo com poucos dados
-        if (true) { 
-            l.push(c); s.push(sv); r.push(rv); p.push(pv);
-            accR += rv; accP += pv; rAc.push(accR); pAc.push(accP);
+        // Adiciona aos arrays
+        l.push(c);
+        s.push(sv); // Se for null, o gráfico de linha do saldo para aqui
+        r.push(rv);
+        p.push(pv);
+
+        // Lógica de Acumulado:
+        // Se não houver dados de entrada (rv é null), interrompemos a linha acumulada também
+        if (rv !== null) {
+            accR += rv;
+            rAc.push(accR);
+        } else {
+            rAc.push(null);
+        }
+
+        if (pv !== null) {
+            accP += pv;
+            pAc.push(accP);
+        } else {
+            pAc.push(null);
         }
     });
 
     const common = (tit) => ({
         responsive: true, 
-        maintainAspectRatio: false, // Importante para ocupar 100% da div
+        maintainAspectRatio: false,
+        spanGaps: false, // Garante que a linha não pule os nulls (embora false seja o padrão)
         plugins: { 
             title: {display:true, text:tit, font:{size:16}}, 
             legend:{position:'bottom'},
@@ -490,13 +518,7 @@ function renderizarGraficos(dados, colunas) {
         const ctx = document.getElementById(id);
         if (!ctx) return;
         
-        // Garante que o canvas esteja visível se for a aba ativa
-        // (Assume-se que a primeira aba é a padrão se nenhuma estiver ativa)
-        const content = document.getElementById('graficos-content');
-        if (content && window.getComputedStyle(ctx).display === 'none' && !graficosAtuais[key]) {
-             // Não força display block aqui para não sobrepor, a função de abas cuida disso
-        }
-
+        // Mantém a lógica visual de abas
         if (graficosAtuais[key]) {
             graficosAtuais[key].destroy();
         }
@@ -516,9 +538,14 @@ function renderizarGraficos(dados, colunas) {
                 data:s, 
                 tension:0.3, 
                 segment:{
-                    borderColor: ctx => ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? '#dc3545' : '#28a745'
+                    // Ajuste na cor: só pinta se os dois pontos existirem e um for negativo
+                    borderColor: ctx => {
+                        // Se um dos pontos for null (fim do gráfico), essa lógica é ignorada pelo Chartjs
+                        if(ctx.p0.parsed.y === null || ctx.p1.parsed.y === null) return undefined; 
+                        return ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0 ? '#dc3545' : '#28a745';
+                    }
                 }, 
-                pointRadius:2 // Aumentei um pouco para ver os pontos
+                pointRadius:2
             }] 
         }, 
         options: optSaldo
@@ -537,7 +564,7 @@ function renderizarGraficos(dados, colunas) {
     });
 
     createChart('graficoEntradasSaidasMensal', 'mensal', {
-        type: 'bar', // Mudei para BARRA que é melhor para mensal, mas pode voltar para line
+        type: 'bar', 
         data: { 
             labels:l, 
             datasets:[
