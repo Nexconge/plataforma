@@ -89,6 +89,7 @@ function exportarRelatorioFinal(listaBruta, contaId, dtInicio, dtFim) {
     const linhasExcel = lancamentosFiltrados.map(l => ({
         Data: l.DataLancamento,
         Descrição: l.Cliente || '',
+        Observação: l.obs || '',
         Débito: l.Natureza === 'R' ? formatarMoeda(l.ValorLancamento) : '-',
         Crédito: l.Natureza === 'P' ? formatarMoeda(-l.ValorLancamento) : '-'
     }));
