@@ -118,14 +118,6 @@ table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] th {
 table:not(#tabelaFluxoDiario) tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
 table:not(#tabelaFluxoDiario) tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
 
-/* Estilos de Linha */
-tr { height: 30px; background: white; }
-tr:hover { background-color: var(--bg-light); }
-
-tr[data-type="total"] { font-weight: bold; border-top: 2px solid #F2F2F2; }
-tr[data-type="header-group"] { background-color: #A6CCEB; font-weight: bold; }
-tr[data-type="spacer"] td { height: 30px; background: transparent; border: none; }
-
 /* Saldo */
 tr[data-type="saldo"] { background-color: var(--primary); color: white; font-weight: bold; border: none; }
 tr[data-type="saldo"]:hover { background-color: var(--primary); }
