@@ -131,12 +131,101 @@ tr[data-type="saldo"] { background-color: var(--primary); color: white; font-wei
 tr[data-type="saldo"]:hover { background-color: var(--primary); }
 tr[data-type="saldo"] td { border-bottom: none; }
 
-/* Utilitários Tabela */
-.expand-btn { cursor: pointer; color: var(--primary); margin-right: 5px; }
-tr[data-indent="1"] td:first-child { padding-left: 30px !important; }
-tr[data-indent="2"] td:first-child { padding-left: 60px !important; }
-tr[data-indent="lancamento"] { font-size: 12px; }
-tr[data-indent="lancamento"] td:first-child { padding-left: 80px !important; }
+/* =========================================================
+   HIERARQUIA VISUAL TABELA DETALHAMENTO COM DRILL DOWN
+========================================================= */
+
+/* --- Nível 0: Grupo/Classe Principal --- */
+tr[data-type="header-group"] {
+  background-color: #EBF5FC; /* Azul muito suave (Baseado no Primary) */
+  border-bottom: 2px solid #fff;
+}
+tr[data-type="header-group"] td:first-child {
+  color: var(--primary-dark);
+  font-weight: 800;
+  position: relative;
+}
+/* Barra lateral forte para o nível principal */
+tr[data-type="header-group"] td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
+  background-color: var(--primary);
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+/* --- Nível 1: Departamento --- */
+tr[data-indent="1"] td:first-child { 
+  padding-left: 25px !important; 
+  position: relative;
+  font-weight: 600;
+  color: #444;
+}
+/* Linha guia contínua azulada */
+tr[data-indent="1"] td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 10px; top: 0; bottom: 0;
+  width: 2px;
+  background-color: #A6CCEB; /* Tom médio do azul */
+}
+
+/* --- Nível 2: Categoria --- */
+tr[data-indent="2"] td:first-child { 
+  padding-left: 50px !important;
+  position: relative;
+  color: #555;
+}
+/* Linha guia cinza para subnível */
+tr[data-indent="2"] td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 35px; top: 0; bottom: 0;
+  width: 1px;
+  background-color: #CCC;
+}
+
+/* --- Nível 3: Lançamentos (Itens finais) --- */
+tr[data-indent="lancamento"] { 
+  font-size: 13px;
+  background-color: #fcfcfc;
+}
+tr[data-indent="lancamento"]:hover {
+  background-color: #fffde7; /* Destaque sutil ao passar o mouse */
+}
+tr[data-indent="lancamento"] td:first-child { 
+  padding-left: 75px !important;
+  font-style: italic;
+  color: #666;
+  position: relative;
+}
+/* Marcador pontilhado para o item final */
+tr[data-indent="lancamento"] td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 60px; top: 50%; 
+  width: 8px; height: 1px;
+  border-bottom: 1px dotted #999;
+}
+
+/* Botão de Expandir */
+.expand-btn { 
+  cursor: pointer; 
+  display: inline-block;
+  width: 20px;
+  text-align: center;
+  color: var(--primary); 
+  font-weight: bold;
+  font-family: monospace;
+  margin-right: 5px;
+  user-select: none;
+}
+.expand-btn:hover {
+  background-color: rgba(23, 114, 203, 0.1);
+  border-radius: 3px;
+}
 
 /* Garante que linhas de espaçamento e saldos não mudem de cor errada */
 tr[data-type="spacer"]:hover { background-color: transparent; cursor: default; }

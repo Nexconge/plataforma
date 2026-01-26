@@ -29,21 +29,34 @@ function getSelectItems(select) {
 function toggleLinha(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     if (filhos.length === 0) return;
-    const algumVisivel = [...filhos].some(l => !l.classList.contains('hidden'));
+
+    // Detecta se vamos abrir ou fechar baseando-se no primeiro filho
+    const vaiFechar = !filhos[0].classList.contains('hidden');
     
-    filhos.forEach(filho => {
-        if (algumVisivel) {
-            filho.classList.add('hidden');
-            if (filho.id) esconderDescendentes(filho.id);
-        } else {
-            filho.classList.remove('hidden');
-        }
-    });
+    // Referência ao elemento pai (linha clicada) para trocar o ícone
+    const linhaPai = document.getElementById(id);
+    const btn = linhaPai ? linhaPai.querySelector('.expand-btn') : null;
+
+    if (vaiFechar) {
+        // Fecha recursivamente
+        esconderDescendentes(id);
+        if (btn) btn.textContent = '[+]';
+    } else {
+        // Abre apenas os filhos diretos
+        filhos.forEach(filho => filho.classList.remove('hidden'));
+        if (btn) btn.textContent = '[-]';
+    }
 }
 
 function esconderDescendentes(id) {
     document.querySelectorAll(`.parent-${id}`).forEach(filho => {
         filho.classList.add('hidden');
+        
+        // Se o filho também for um "pai" (tiver botão), reseta o ícone para [+]
+        const btn = filho.querySelector('.expand-btn');
+        if (btn) btn.textContent = '[+]';
+
+        // Continua a recursão se o filho tiver ID (for um sub-pai)
         if (filho.id) esconderDescendentes(filho.id);
     });
 }
