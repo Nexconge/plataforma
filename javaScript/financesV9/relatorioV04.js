@@ -1,4 +1,4 @@
-import { buscarTitulos } from './apiV01.js';
+import { buscarTitulos } from './apiV03.js';
 import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
 
 
