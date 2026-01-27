@@ -1,15 +1,15 @@
-// mainV31.js
+// mainV32.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV05.js';
 import { extrairDadosRelatorio } from './processingV16.js';
-import { gerarTabelaPadrao, gerarTabelaRecomendacao, preencherSelect } from './uiV07.js';
+import { gerarTabelaDetalhada, gerarTabelaRecomendacao, preencherSelect } from './uiV07.js';
 
 // --- ESTADO & CACHE ---
 const EstadoApp = {
-    cadastrosRaw: [], // Dados brutos recebidos
+    cadastrosRaw: [], 
     empresaSelecionada: null,
     filialSelecionada: null,
-    cacheDatas: {}, // Key: IDCadastro -> Value: Array de datas
-    cacheRelatorios: {} // Key: IDCadastro_Data -> Value: Dados Processados
+    cacheDatas: {}, 
+    cacheRelatorios: {} 
 };
 
 // --- FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ---
@@ -17,7 +17,6 @@ window.iniciarAplicacao = function(textoCadastros) {
     console.log("Iniciando aplicação...");
     
     try {
-        // 1. Parse do Input (Trata o formato JSON colado)
         let jsonString = textoCadastros.trim();
         if (!jsonString.startsWith("[")) {
             jsonString = `[${jsonString}]`;
@@ -25,18 +24,13 @@ window.iniciarAplicacao = function(textoCadastros) {
         
         EstadoApp.cadastrosRaw = JSON.parse(jsonString);
         
-        // 2. Preencher Dropdown de Empresas
         const listaEmpresas = EstadoApp.cadastrosRaw.map(c => ({
             id: c.id,
             nome: c.cadastro
         }));
         
         preencherSelect("empresaSelect", listaEmpresas, "Selecione a Empresa");
-
-        // 3. Renderizar Tabelas Vazias (Placeholders)
         renderizarPlaceholders();
-        
-        // Configurar Listeners
         configurarListeners();
 
     } catch (e) {
@@ -50,19 +44,16 @@ function configurarListeners() {
     const elFilial = document.getElementById("filialSelect");
     const elData = document.getElementById("dataSelect");
 
-    // Evento: Seleção de Empresa
     elEmpresa.addEventListener("change", async (e) => {
         const idEmpresa = e.target.value;
         EstadoApp.empresaSelecionada = idEmpresa;
         
-        // Limpa dependentes e restaura placeholders
         elFilial.innerHTML = "";
         elData.innerHTML = "";
         limparTabelas(); 
 
         if (!idEmpresa) return;
 
-        // A. Preencher Filiais
         const empresaObj = EstadoApp.cadastrosRaw.find(c => c.id === idEmpresa);
         if (empresaObj && empresaObj.entidades) {
             const listaFiliais = empresaObj.entidades.map(ent => ({
@@ -72,7 +63,6 @@ function configurarListeners() {
             preencherSelect("filialSelect", listaFiliais, "Todas / Selecione Loja");
         }
 
-        // B. Buscar Datas
         await carregarDatasRelatorios(idEmpresa);
     });
 
@@ -132,33 +122,29 @@ async function carregarRelatorioFinal(idCadastro, data) {
     console.log(`Buscando relatório para ${idCadastro} na data ${data}...`);
     try {
         const dadosBrutos = await buscarDadosEstoque(idCadastro, data);
-        console.log("Dados brutos recebidos:", dadosBrutos);
-        
         const dadosProcessados = extrairDadosRelatorio(dadosBrutos);
-        console.log("Dados extraidos:", dadosProcessados);
         
         EstadoApp.cacheRelatorios[chaveCache] = dadosProcessados;
-
         renderizarDashboards(dadosProcessados);
 
     } catch (erro) {
         console.error("Erro fatal ao gerar relatório:", erro);
-        limparTabelas(); // Volta para o estado de placeholder
+        limparTabelas(); 
     }
 }
 
 function renderizarDashboards(dados) {
-    gerarTabelaPadrao(
+    // Usamos sempre a tabela detalhada. 
+    // Se o dado for antigo (sem valorUnitario), as colunas extras ficarão em branco.
+    gerarTabelaDetalhada(
         "tabelaMaisVendidos", 
         "Produtos Mais Movimentados", 
-        ["Produto", "Total Saída"], 
         dados.maisVendidos
     );
 
-    gerarTabelaPadrao(
+    gerarTabelaDetalhada(
         "tabelaMaioresSaldos", 
         "Maiores Saldos", 
-        ["Produto", "Saldo Total"], 
         dados.maioresSaldos
     );
 
@@ -171,19 +157,16 @@ function renderizarDashboards(dados) {
 // --- FUNÇÕES VISUAIS ---
 
 function renderizarPlaceholders() {
-    // Renderiza as tabelas com arrays vazios e mensagem de espera
-    gerarTabelaPadrao(
+    gerarTabelaDetalhada(
         "tabelaMaisVendidos", 
         "Produtos Mais Movimentados", 
-        ["Produto", "Total Saída"], 
         [], 
         "Aguardando seleção..."
     );
 
-    gerarTabelaPadrao(
+    gerarTabelaDetalhada(
         "tabelaMaioresSaldos", 
         "Maiores Saldos", 
-        ["Produto", "Saldo Total"], 
         [], 
         "Aguardando seleção..."
     );
@@ -196,6 +179,5 @@ function renderizarPlaceholders() {
 }
 
 function limparTabelas() {
-    // Ao invés de apagar o HTML, restauramos os placeholders
     renderizarPlaceholders();
 }

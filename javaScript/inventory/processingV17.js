@@ -46,20 +46,14 @@ export function extrairDadosRelatorio(dadosApi) {
 //Função utilizada dentro do workflow do bubble para gerar os relatórios e salvar no banco de dados
 /*function corrigirEParsearJSON(dados) {
     if (!dados) return [];
-
-    // Se já for array real
     if (Array.isArray(dados)) return dados;
-
-    // Se for objeto único
     if (typeof dados === 'object') return [dados];
-
     try {
         return JSON.parse(dados);
     } catch {
         try {
             return JSON.parse(`[${dados}]`);
         } catch (e) {
-            console.error("Erro ao parsear JSON:", e, dados);
             return [];
         }
     }
@@ -70,59 +64,105 @@ function limparID(valor) {
     return String(valor).replace(/[^a-zA-Z0-9]/g, "");
 }
 
+// --- CONSTANTES ---
 const LEAD_TIME_DIAS = 15;
 const MARGEM_SEGURANCA = 0.50; 
 const JANELA_ANALISE_DIAS = 90; 
 
+// --- INPUTS ---
 const rawNotas  = corrigirEParsearJSON(properties.thing1);
 const rawSaldos = corrigirEParsearJSON(properties.thing3);
 const rawNomes  = corrigirEParsearJSON(properties.thing2);
 
-// --- 1. MAPEAMENTO DE NOMES (Com limpeza) ---
+// --- 1. MAPEAMENTO DE NOMES (Whitelist) ---
 const mapaNomes = {};
 rawNomes.forEach(item => { 
-    // Usa limparID aqui
     mapaNomes[limparID(item.idProduto)] = item.produto; 
 });
 const getNome = (id) => mapaNomes[id] || `ID: ${id}`;
 
-// --- 2. CALCULAR VENDAS (Com limpeza) ---
+// --- 2. PROCESSAMENTO DE VENDAS E PREÇOS ---
 const vendasTotais = {};
+const dadosFinanceiros = {}; // Armazena { qtd: 0, valorTotal: 0 } para média
+
 rawNotas.forEach(nota => {
     if (nota.produtos && Array.isArray(nota.produtos)) {
         nota.produtos.forEach(prod => {
-            // Usa limparID aqui
             const id = limparID(prod.idProduto);
-            let qtd = parseInt(prod.quantidade) || 0;
+            if (!mapaNomes.hasOwnProperty(id)) return; 
 
-            if (nota.tipo && String(nota.tipo).toLowerCase() !== 'saida') qtd = -qtd; 
-            vendasTotais[id] = (vendasTotais[id] || 0) + qtd;
+            const qtd = parseInt(prod.quantidade) || 0;
+            const valorTotalItem = parseFloat(prod.valorTotal) || 0;
+            const tipo = String(nota.tipo || "").toLowerCase();
+
+            // Lógica de Vendas (Quantidade Líquida)
+            let qtdParaSoma = qtd;
+            if (tipo !== 'saida') qtdParaSoma = -qtd; 
+            vendasTotais[id] = (vendasTotais[id] || 0) + qtdParaSoma;
+
+            // Lógica de Preço Médio (Apenas Saídas contam para o preço de mercado)
+            if (tipo === 'saida') {
+                if (!dadosFinanceiros[id]) dadosFinanceiros[id] = { qtd: 0, valor: 0 };
+                dadosFinanceiros[id].qtd += qtd;
+                dadosFinanceiros[id].valor += valorTotalItem;
+            }
         });
     }
 });
 
-// --- 3. CALCULAR ESTOQUE (Com limpeza) ---
+// Helper para calcular preço médio
+const getPrecoMedio = (id) => {
+    const dados = dadosFinanceiros[id];
+    if (!dados || dados.qtd === 0) return 0;
+    return dados.valor / dados.qtd;
+};
+
+// --- 3. PROCESSAMENTO DE ESTOQUE ---
 const estoqueAtualMap = {};
 rawSaldos.forEach(item => {
-    // Usa limparID aqui - Isso vai garantir que o ID do estoque bata com o da venda
     const id = limparID(item.idProduto);
+    if (!mapaNomes.hasOwnProperty(id)) return;
+
     const saldo = parseInt(item.SaldoAtual) || 0;
     estoqueAtualMap[id] = (estoqueAtualMap[id] || 0) + saldo;
 });
 
-// --- LISTAS PARA VISUALIZAÇÃO ---
+// --- 4. GERAÇÃO DAS LISTAS ---
+
+// A) Mais Vendidos (Enriquecido)
 const maisVendidos = Object.keys(vendasTotais)
-    .map(id => ({ nome: getNome(id), quantidade: vendasTotais[id] }))
+    .map(id => {
+        const qtd = vendasTotais[id];
+        const precoMedio = getPrecoMedio(id);
+        return { 
+            nome: getNome(id), 
+            quantidade: qtd,
+            valorUnitario: precoMedio,
+            valorTotal: qtd * precoMedio,
+            vendasDia: qtd / JANELA_ANALISE_DIAS
+        };
+    })
     .sort((a, b) => b.quantidade - a.quantidade)
-    .slice(0, 10);
+    .slice(0, 15);
 
+// B) Maiores Saldos (Enriquecido)
 const maioresSaldos = Object.keys(estoqueAtualMap)
-    .map(id => ({ nome: getNome(id), quantidade: estoqueAtualMap[id] }))
-    .sort((a, b) => b.quantidade - a.quantidade)
-    .slice(0, 10);
+    .map(id => {
+        const saldo = estoqueAtualMap[id];
+        const precoMedio = getPrecoMedio(id);
+        const qtdVendas = vendasTotais[id] || 0;
+        return { 
+            nome: getNome(id), 
+            quantidade: saldo,
+            valorUnitario: precoMedio,
+            valorTotal: saldo * precoMedio,
+            vendasDia: qtdVendas / JANELA_ANALISE_DIAS
+        };
+    })
+    .sort((a, b) => b.quantidade - a.quantidade) // Ordena por quantidade em estoque
+    .slice(0, 15);
 
-// --- CÁLCULO FINAL MRP ---
-// Agora o Set vai unificar corretamente porque as chaves são idênticas
+// C) Recomendação de Compra (MRP)
 const todosIds = new Set([...Object.keys(vendasTotais), ...Object.keys(estoqueAtualMap)]);
 const recomendacaoCompra = [];
 
@@ -132,16 +172,12 @@ todosIds.forEach(id => {
     const totalVendas = vendasTotais[id] || 0;
     const estoqueReal = estoqueAtualMap[id] || 0; 
     
-    // Como agora os IDs são iguais, estoqueReal deve vir corretamente como 207 para o ID 1649
-
     const estoqueCalculo = estoqueReal < 0 ? 0 : estoqueReal;
     const vendaMediaDiaria = totalVendas / JANELA_ANALISE_DIAS;
     const estoqueMinimo = vendaMediaDiaria * LEAD_TIME_DIAS * (1 + MARGEM_SEGURANCA);
 
     if (estoqueCalculo < estoqueMinimo) {
         const sugestaoCompra = Math.ceil(estoqueMinimo - estoqueCalculo);
-        
-        // Evita divisão por zero se estoqueMinimo for muito baixo
         const urgencia = estoqueMinimo === 0 ? 1 : (estoqueCalculo / estoqueMinimo);
 
         if (sugestaoCompra > 0) {
@@ -157,10 +193,11 @@ todosIds.forEach(id => {
     }
 });
 
-// Ordenar pela sugestão (maior necessidade primeiro)
-recomendacaoCompra.sort((a, b) => b.vendaMedia - a.vendaMedia).slice(0, 15);
+recomendacaoCompra.sort((a, b) => b.vendaMedia - a.vendaMedia);
+const recomendacaoFinal = recomendacaoCompra.slice(0, 15);
 
+// --- SAÍDA ---
 const separador = "|SPLIT|";
-const relatorioFinal = JSON.stringify(maisVendidos) + separador + JSON.stringify(maioresSaldos) + separador + JSON.stringify(recomendacaoCompra);
+const relatorioFinal = JSON.stringify(maisVendidos) + separador + JSON.stringify(maioresSaldos) + separador + JSON.stringify(recomendacaoFinal);
 
 return relatorioFinal;*/
