@@ -1,6 +1,6 @@
 // mainV32.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV05.js';
-import { extrairDadosRelatorio } from './processingV17.js';
+import { extrairDadosRelatorio } from './processingV18.js';
 import { gerarTabelaDetalhada, gerarTabelaRecomendacao, preencherSelect } from './uiV08.js';
 
 // --- ESTADO & CACHE ---

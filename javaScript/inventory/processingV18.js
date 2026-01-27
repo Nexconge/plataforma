@@ -149,13 +149,13 @@ const maisVendidos = Object.keys(vendasTotais)
 const maioresSaldos = Object.keys(estoqueAtualMap)
     .map(id => {
         const saldo = estoqueAtualMap[id];
-        const precoMedio = getPrecoMedio(id);
+        const precoAtual = mapaNomes[id]?.preco || getPrecoMedio(id);
         const qtdVendas = vendasTotais[id] || 0;
         return { 
             nome: getNome(id), 
             quantidade: saldo,
-            valorUnitario: precoMedio,
-            valorTotal: saldo * precoMedio,
+            valorUnitario: precoAtual,
+            valorTotal: saldo * precoAtual,
             vendasDia: qtdVendas / JANELA_ANALISE_DIAS
         };
     })
