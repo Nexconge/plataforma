@@ -815,8 +815,10 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
     let cellsSaldoIni = [];
     let cellsSaldoFim = [];
 
-    // Variável acumuladora para controlar o saldo ao longo das colunas
+    // Variável acumuladora do saldo ao longo do tempo
     let saldoCorrente = saldoIni;
+    // Guardamos o saldo inicial original para usar na coluna TOTAL
+    const saldoInicialPeriodo = saldoIni;
 
     colunasProcessar.forEach(col => {
         const isTotal = col === 'TOTAL';
