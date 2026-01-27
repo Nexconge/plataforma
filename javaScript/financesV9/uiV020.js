@@ -847,17 +847,17 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
         }
 
         // --- 4. Formatação Visual ---
-        const styleCell = isTotal ? 'font-weight:bold; background-color: #f8f9fa; border-left: 2px solid #ddd;' : '';
+        const styleCell = isTotal ? 'font-weight:bold;' : '';
         
         // Classes de cor
         const classeBalanco = vBalanco >= 0 ? 'texto-verde' : 'texto-vermelho';
-        const sinalBalanco = vBalanco < 0 ? '- ' : '';
 
         cellsEntradas.push(`<td class="texto-verde" style="${styleCell}">${formatarValor(vEntradas)}</td>`);
         cellsSaidas.push(`<td class="texto-vermelho" style="${styleCell}">${formatarValor(vSaidas)}</td>`);
         cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
+
         cellsSaldoIni.push(`<td style="${styleCell}">${formatarValor(valSaldoIni)}</td>`);
-        cellsSaldoFim.push(`<td style="${styleCell} font-weight:bold; color:${isTotal ? '#000' : 'inherit'}">${formatarValor(valSaldoFim)}</td>`);
+        cellsSaldoFim.push(`<td style="${styleCell}">${formatarValor(valSaldoFim)}</td>`);
     });
 
     // --- 3. Montagem do Corpo da Tabela ---
