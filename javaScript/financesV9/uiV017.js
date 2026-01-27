@@ -795,6 +795,9 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
     const tabela = document.getElementById('resumoFluxoCaixa');
     if (!tabela) return;
 
+    // Criamos um array local com 'TOTAL' no final para iterar tudo junto
+    const colunasProcessar = [...colunas, 'TOTAL'];
+
     // --- 1. Construção do Cabeçalho ---
     let htmlHeader = `
         <thead>
@@ -815,29 +818,44 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
     // Variável acumuladora para controlar o saldo ao longo das colunas
     let saldoCorrente = saldoIni;
 
-    colunas.forEach(col => {
-        // Entradas desconsiderando transferencias
-        const vEntradas = (es['(+) Entradas']?.[col] || 0) // + (es['(+) Entradas de Transferência']?.[col] || 0);
+    colunasProcessar.forEach(col => {
+        const isTotal = col === 'TOTAL';
+
+        // 1. Recuperação de Valores (Entradas e Saídas)
+        const vEntradas = (es['(+) Entradas']?.[col] || 0);
+        const vSaidas = (es['(-) Saídas']?.[col] || 0);
         
-        // Saídas desconsiderando transferencias
-        const vSaidas = (es['(-) Saídas']?.[col] || 0) // + (es['(-) Saídas de Transferência']?.[col] || 0);
-        
-        // Balanço do Período
+        // 2. Balanço (Matemática é igual para todos)
         const vBalanco = vEntradas + vSaidas;
+
+        // 3. Lógica de Saldo (Aqui muda se for TOTAL)
+        let valSaldoIni, valSaldoFim;
+
+        if (isTotal) {
+            // No Total: Ini é o começo de tudo, Fim é o acumulado até agora
+            valSaldoIni = saldoInicialPeriodo;
+            valSaldoFim = saldoCorrente;
+        } else {
+            // Nos Dias: Ini é o corrente, Fim é (corrente + balanço)
+            valSaldoIni = saldoCorrente;
+            valSaldoFim = saldoCorrente + vBalanco;
+            
+            // Atualiza o acumulador para o próximo loop
+            saldoCorrente = valSaldoFim;
+        }
+
+        // --- 4. Formatação Visual ---
+        const styleCell = isTotal ? 'font-weight:bold; background-color: #f8f9fa; border-left: 2px solid #ddd;' : '';
+        
+        // Classes de cor
         const classeBalanco = vBalanco >= 0 ? 'texto-verde' : 'texto-vermelho';
+        const sinalBalanco = vBalanco < 0 ? '- ' : '';
 
-        // Saldo Final deste período
-        const vSaldoFinal = saldoCorrente + vBalanco;
-
-        // Monta as células HTML
-        cellsEntradas.push(`<td class="texto-verde">${formatarValor(vEntradas)}</td>`);
-        cellsSaidas.push(`<td class="texto-vermelho">${formatarValor(vSaidas)}</td>`);
-        cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
-        cellsSaldoIni.push(`<td>${formatarValor(saldoCorrente)}</td>`);
-        cellsSaldoFim.push(`<td style="font-weight:bold">${formatarValor(vSaldoFinal)}</td>`);
-
-        // O saldo final deste mês vira o inicial do próximo no loop
-        saldoCorrente = vSaldoFinal;
+        cellsEntradas.push(`<td class="texto-verde" style="${styleCell}">${formatarValor(vEntradas)}</td>`);
+        cellsSaidas.push(`<td class="texto-vermelho" style="${styleCell}">${formatarValor(vSaidas)}</td>`);
+        cellsBalanco.push(`<td class="${classeBalanco}" style="${styleCell} font-weight:bold">${sinalBalanco}${formatarValor(Math.abs(vBalanco))}</td>`);
+        cellsSaldoIni.push(`<td style="${styleCell}">${formatarValor(valSaldoIni)}</td>`);
+        cellsSaldoFim.push(`<td style="${styleCell} font-weight:bold; color:${isTotal ? '#000' : 'inherit'}">${formatarValor(valSaldoFim)}</td>`);
     });
 
     // --- 3. Montagem do Corpo da Tabela ---
