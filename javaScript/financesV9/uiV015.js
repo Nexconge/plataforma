@@ -820,10 +820,10 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
         const vEntradas = (es['(+) Entradas']?.[col] || 0) // + (es['(+) Entradas de Transferência']?.[col] || 0);
         
         // Saídas desconsiderando transferencias
-        const vSaidas = Math.abs(es['(-) Saídas']?.[col] || 0) // + (es['(-) Saídas de Transferência']?.[col] || 0);
+        const vSaidas = (es['(-) Saídas']?.[col] || 0) // + (es['(-) Saídas de Transferência']?.[col] || 0);
         
         // Balanço do Período
-        const vBalanco = vEntradas - vSaidas;
+        const vBalanco = vEntradas + vSaidas;
         const classeBalanco = vBalanco >= 0 ? 'texto-verde' : 'texto-vermelho';
 
         // Saldo Final deste período
@@ -831,7 +831,7 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
 
         // Monta as células HTML
         cellsEntradas.push(`<td class="texto-verde">${formatarValor(vEntradas)}</td>`);
-        cellsSaidas.push(`<td class="texto-vermelho">- ${formatarValor(vSaidas)}</td>`);
+        cellsSaidas.push(`<td class="texto-vermelho">(${formatarValor(vSaidas)})</td>`);
         cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
         cellsSaldoIni.push(`<td>${formatarValor(saldoCorrente)}</td>`);
         cellsSaldoFim.push(`<td style="font-weight:bold">${formatarValor(vSaldoFinal)}</td>`);
