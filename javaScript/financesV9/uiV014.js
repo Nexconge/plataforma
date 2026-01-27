@@ -831,7 +831,7 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
 
         // Monta as células HTML
         cellsEntradas.push(`<td class="texto-verde">${formatarValor(vEntradas)}</td>`);
-        cellsSaidas.push(`<td class="texto-vermelho">- ${formatarValor(vSaidas).replace(/[()]/g, '')}</td>`);
+        cellsSaidas.push(`<td class="texto-vermelho">- ${formatarValor(vSaidas)}</td>`);
         cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
         cellsSaldoIni.push(`<td>${formatarValor(saldoCorrente)}</td>`);
         cellsSaldoFim.push(`<td style="font-weight:bold">${formatarValor(vSaldoFinal)}</td>`);
