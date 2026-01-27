@@ -803,7 +803,7 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
         <thead>
             <tr>
                 <th>Resumo Financeiro</th>
-                ${colunas.map(c => `<th>${c}</th>`).join('')}
+                ${colunasProcessar.map(c => `<th>${c}</th>`).join('')}
             </tr>
         </thead>`;
 
@@ -855,7 +855,7 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
 
         cellsEntradas.push(`<td class="texto-verde" style="${styleCell}">${formatarValor(vEntradas)}</td>`);
         cellsSaidas.push(`<td class="texto-vermelho" style="${styleCell}">${formatarValor(vSaidas)}</td>`);
-        cellsBalanco.push(`<td class="${classeBalanco}" style="${styleCell} font-weight:bold">${sinalBalanco}${formatarValor(Math.abs(vBalanco))}</td>`);
+        cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
         cellsSaldoIni.push(`<td style="${styleCell}">${formatarValor(valSaldoIni)}</td>`);
         cellsSaldoFim.push(`<td style="${styleCell} font-weight:bold; color:${isTotal ? '#000' : 'inherit'}">${formatarValor(valSaldoFim)}</td>`);
     });
