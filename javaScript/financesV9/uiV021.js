@@ -188,7 +188,7 @@ function atualizarVisualizacoes(dados, colunas, cache) {
     
     renderizarGraficos(dados, colunas);
     renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
-    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, dados.entradasESaidas, colunas);
+    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
 }
 
 // 1. DRE
@@ -791,7 +791,7 @@ function compKeys(a, b) {
 }
 
 // ------ Fluxo Diário Resumido -----
-function renderizarFluxoDiarioResumido(saldoIni, es, colunas) { 
+function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
     const tabela = document.getElementById('resumoFluxoCaixa');
     if (!tabela) return;
 
@@ -808,17 +808,11 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
         </thead>`;
 
     // --- 2. Preparação dos Dados por Coluna ---
-    // Arrays para guardar o HTML das células de cada linha
     let cellsEntradas = [];
     let cellsSaidas = [];
     let cellsBalanco = [];
     let cellsSaldoIni = [];
     let cellsSaldoFim = [];
-
-    // Variável acumuladora do saldo ao longo do tempo
-    let saldoCorrente = saldoIni;
-    // Guardamos o saldo inicial original para usar na coluna TOTAL
-    const saldoInicialPeriodo = saldoIni;
 
     colunasProcessar.forEach(col => {
         const isTotal = col === 'TOTAL';
@@ -827,35 +821,23 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
         const vEntradas = (es['(+) Entradas']?.[col] || 0);
         const vSaidas = (es['(-) Saídas']?.[col] || 0);
         
-        // 2. Balanço (Matemática é igual para todos)
+        // 2. Balanço do dia/período (Entradas + Saídas)
         const vBalanco = vEntradas + vSaidas;
 
-        // 3. Lógica de Saldo (Aqui muda se for TOTAL)
-        let valSaldoIni, valSaldoFim;
-
-        if (isTotal) {
-            // No Total: Ini é o começo de tudo, Fim é o acumulado até agora
-            valSaldoIni = saldoInicialPeriodo;
-            valSaldoFim = saldoCorrente;
-        } else {
-            // Nos Dias: Ini é o corrente, Fim é (corrente + balanço)
-            valSaldoIni = saldoCorrente;
-            valSaldoFim = saldoCorrente + vBalanco;
-            
-            // Atualiza o acumulador para o próximo loop
-            saldoCorrente = valSaldoFim;
-        }
+        // 3. Recuperação de Saldos (Direto dos objetos passados, sem cálculo manual)
+        const valSaldoIni = linhaCaixaIni[col] || 0;
+        const valSaldoFim = linhaCaixaFim[col] || 0;
 
         // --- 4. Formatação Visual ---
         const styleCell = isTotal ? 'font-weight:bold;' : '';
-        
-        // Classes de cor
         const classeBalanco = vBalanco >= 0 ? 'texto-verde' : 'texto-vermelho';
 
+        // Linhas Operacionais
         cellsEntradas.push(`<td class="texto-verde" style="${styleCell}">${formatarValor(vEntradas)}</td>`);
         cellsSaidas.push(`<td class="texto-vermelho" style="${styleCell}">${formatarValor(vSaidas)}</td>`);
         cellsBalanco.push(`<td class="${classeBalanco}" style="font-weight:bold">${formatarValor(vBalanco)}</td>`);
 
+        // Linhas de Caixa (Dados prontos)
         cellsSaldoIni.push(`<td style="${styleCell}">${formatarValor(valSaldoIni)}</td>`);
         cellsSaldoFim.push(`<td style="${styleCell}">${formatarValor(valSaldoFim)}</td>`);
     });
@@ -876,7 +858,8 @@ function renderizarFluxoDiarioResumido(saldoIni, es, colunas) {
                 ${cellsBalanco.join('')}
             </tr>
             <tr>
-                <td colspan="${colunas.length + 1}" style="height:10px; padding:0; background:transparent; border:none;"></td> </tr>
+                <td colspan="${colunasProcessar.length + 1}" style="height:10px; padding:0; background:transparent; border:none;"></td> 
+            </tr>
             <tr data-type="saldo">
                 <td>Caixa Inicial</td>
                 ${cellsSaldoIni.join('')}
