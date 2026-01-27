@@ -1,7 +1,7 @@
 // mainV32.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV05.js';
-import { extrairDadosRelatorio } from './processingV16.js';
-import { gerarTabelaDetalhada, gerarTabelaRecomendacao, preencherSelect } from './uiV07.js';
+import { extrairDadosRelatorio } from './processingV17.js';
+import { gerarTabelaDetalhada, gerarTabelaRecomendacao, preencherSelect } from './uiV08.js';
 
 // --- ESTADO & CACHE ---
 const EstadoApp = {
