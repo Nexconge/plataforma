@@ -5,10 +5,12 @@ class MapaLotesManager {
         this.map = null;
         
         this.selectedIds = new Set();
-        
         this.allLotes = [];
         this.polygons = {}; 
         
+        // Controle de "Debounce" para evitar tremedeira
+        this.filterDebounceTimer = null;
+
         this.filters = {
             empreendimento: "",
             quadra: "",
@@ -36,6 +38,7 @@ class MapaLotesManager {
         this._renderLotes(this.allLotes);
         this._populateAuxiliaryFilters(); 
         
+        // Chama o filtro inicial
         this._handleFilterChange();
     }
 
@@ -120,7 +123,7 @@ class MapaLotesManager {
                 });
 
                 polygon.bindTooltip(`${lote.Nome} - ${lote.Status || "Desconhecido"}`, { permanent: false });
-                polygon.loteData = lote; // Referência direta ao objeto
+                polygon.loteData = lote; 
                 
                 polygon.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
@@ -142,12 +145,11 @@ class MapaLotesManager {
 
         const zonaCheck = document.getElementById("zona");
         if (zonaCheck) zonaCheck.addEventListener('click', () => {
+             // Pequeno delay para garantir que o checkbox mudou de estado
              setTimeout(() => this._handleFilterChange(), 50);
         });
 
-        // Botão para salvar alterações na MEMÓRIA do mapa
         document.getElementById("buttonAlterar")?.addEventListener('click', () => {
-            console.log("Botão alterar clicado via Script JS");
             this._atualizarPoligonoSelecionado();
         });
         
@@ -163,10 +165,8 @@ class MapaLotesManager {
 
         this.allLotes.forEach(l => {
             if (l.Quadra) return; 
-            
             const matchQ = l.Nome && l.Nome.match(/^(Q\d+)/); 
             if(matchQ) quadras.add(matchQ[1]); 
-
             if(l.Status) status.add(l.Status);
             if(l.Atividade) zonas.add(l.Atividade);
         });
@@ -174,9 +174,7 @@ class MapaLotesManager {
         const sortAndPopulate = (setId, values) => {
             const select = document.getElementById(setId);
             if(!select) return;
-            
             select.innerHTML = '<option value="">Todos</option>';
-
             Array.from(values).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(val => {
                 if(!val) return;
                 const opt = document.createElement("option");
@@ -191,9 +189,23 @@ class MapaLotesManager {
         sortAndPopulate("selectAtividade", zonas);
     }
 
+    // --- CORREÇÃO AQUI: DEBOUNCE PARA EVITAR TREMEDEIRA ---
     _handleFilterChange() {
+        // 1. Cancela a execução anterior se ela ainda não aconteceu
+        if (this.filterDebounceTimer) {
+            clearTimeout(this.filterDebounceTimer);
+        }
+
         document.body.classList.add('app-loading');
 
+        // 2. Define uma nova execução para daqui a 100ms
+        this.filterDebounceTimer = setTimeout(() => {
+            this._executarFiltroReal();
+            this.filterDebounceTimer = null;
+        }, 100); 
+    }
+
+    _executarFiltroReal() {
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return "";
@@ -213,23 +225,21 @@ class MapaLotesManager {
             zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
 
-        setTimeout(() => {
-            this._updateMapVisuals();
-            
-            let changed = false;
-            this.selectedIds.forEach(id => {
-                if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
-                    this.selectedIds.delete(id);
-                    changed = true;
-                }
-            });
+        this._updateMapVisuals();
+        
+        let changed = false;
+        this.selectedIds.forEach(id => {
+            if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
+                this.selectedIds.delete(id);
+                changed = true;
+            }
+        });
 
-            if (changed) this._fillForm();
-            if (this.selectedIds.size === 0) this._clearForm();
+        if (changed) this._fillForm();
+        if (this.selectedIds.size === 0) this._clearForm();
 
-            this._centralizeView();
-            document.body.classList.remove('app-loading');
-        }, 10);
+        this._centralizeView();
+        document.body.classList.remove('app-loading');
     }
 
     _updateMapVisuals() {
@@ -238,7 +248,6 @@ class MapaLotesManager {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            // Filtro Empreendimento
             if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
@@ -246,7 +255,6 @@ class MapaLotesManager {
                 if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
             }
 
-            // Filtros Auxiliares
             let isMatch = true;
             if (hasActiveFilters) {
                 if (this.filters.quadra) {
@@ -259,7 +267,6 @@ class MapaLotesManager {
                 if (this.filters.Atividade && data.Atividade !== this.filters.Atividade) isMatch = false;
             }
 
-            // Estilos
             const baseColor = this._getLoteColor(data);
             const isSelected = this.selectedIds.has(data._id);
 
@@ -289,16 +296,13 @@ class MapaLotesManager {
         return colors[mode] || "#c7c7c7";
     }
 
-    // --- 5. Interação ---
     _handlePolygonClick(polygon) {
         const id = polygon.loteData._id;
-
         if (this.selectedIds.has(id)) {
             this.selectedIds.delete(id);
         } else {
             this.selectedIds.add(id);
         }
-
         this._updateMapVisuals();
         this._fillForm();
     }
@@ -309,15 +313,10 @@ class MapaLotesManager {
             if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
         };
 
-        // --- CORREÇÃO DO CRASH: Uso seguro de JSON.stringify ---
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
             if (!el) return;
-            
-            // Tratamento de undefined/null para string vazia
             let valorSeguro = (val === undefined || val === null || val === "undefined") ? "" : val;
-            
-            // O Bubble espera uma string formatada como JSON para dropdowns dinâmicos
             el.value = JSON.stringify(valorSeguro); 
             el.dispatchEvent(new Event("change"));
         };
@@ -327,14 +326,8 @@ class MapaLotesManager {
             return;
         }
 
-        let totalArea = 0;
-        let totalFrente = 0;
-        let totalLateral = 0;
-        let totalValor = 0;
-        let nomes = [];
-        let statusSet = new Set();
-        let zonaSet = new Set();
-        let empSet = new Set();
+        let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
+        let nomes = [], statusSet = new Set(), zonaSet = new Set(), empSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
@@ -348,51 +341,36 @@ class MapaLotesManager {
             empSet.add(lote.Empreendimento);
         });
 
-        // Filtragem de valores inválidos antes de mostrar
         const cleanList = (set) => [...set].filter(v => v && v !== "undefined" && v !== "null");
-
         const statusList = cleanList(statusSet);
-        const statusDisplay = statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : "");
-
         const zonaList = cleanList(zonaSet);
-        const zonaDisplay = zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : "");
-        
         const empList = cleanList(empSet);
-        const empDisplay = empList.length === 1 ? empList[0] : "";
 
-        const nomeDisplay = nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0];
-        const valorM2Medio = totalArea > 0 ? (totalValor / totalArea) : 0;
-
-        setInput("quadra_lote2", nomeDisplay);
+        setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
         setInput("area2", totalArea.toFixed(2));
         setInput("frente2", totalFrente.toFixed(2)); 
         setInput("lateral2", totalLateral.toFixed(2));
-        setInput("valor_metro2", valorM2Medio.toFixed(2));
+        setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
         
-        setBubbleDropdown("status2", statusDisplay);
-        setBubbleDropdown("zona2", zonaDisplay);
+        setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
+        setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
 
         const elEmp = document.getElementById("empreendimento2");
         if(elEmp && elEmp.tagName === "SELECT") {
-             setBubbleDropdown("empreendimento2", empDisplay);
+             setBubbleDropdown("empreendimento2", empList.length === 1 ? empList[0] : "");
         } else {
-             setInput("empreendimento2", empDisplay);
+             setInput("empreendimento2", empList.length === 1 ? empList[0] : "");
         }
     }
 
     _clearForm() {
         this.selectedIds.clear();
         this._updateMapVisuals();
-
         const ids = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) { 
-                el.value = ""; 
-                // Disparar evento para limpar visualmente no Bubble, se necessário
-                el.dispatchEvent(new Event("change"));
-            }
+            if (el) { el.value = ""; el.dispatchEvent(new Event("change")); }
         });
     }
 
@@ -405,27 +383,26 @@ class MapaLotesManager {
                 count++;
             }
         });
-        if (count > 0) this.map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
-        else this.map.flyTo(this.map.options.center, this.map.options.zoom);
+        
+        // CORREÇÃO: Impede animação se não houver lotes visíveis ou se já estiver centralizando
+        if (count > 0) {
+            // duration: 1 segundo, mas se for chamado de novo, o Debounce protegeu
+            this.map.flyToBounds(bounds, { padding: [50, 50], duration: 1.2 });
+        } else {
+            this.map.flyTo(this.map.options.center, this.map.options.zoom);
+        }
     }
 
     _atualizarPoligonoSelecionado() {
-        // Verifica se há apenas um lote selecionado (edição em massa não suportada aqui)
         if (this.selectedIds.size !== 1) return;
-
-        const [id] = this.selectedIds; // Pega o único ID
+        const [id] = this.selectedIds;
         const poligono = this.polygons[id];
         if(!poligono) return;
 
         const getVal = id => document.getElementById(id)?.value || "";
-        
-        // Remove R$, espaços e converte vírgula para ponto
         const unmask = (val) => parseFloat(val.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
-        
-        // Remove aspas que o Bubble/JSON possa ter adicionado
         const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
 
-        // Atualiza o objeto na memória
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
             Área: unmask(getVal("area2")),
@@ -436,10 +413,6 @@ class MapaLotesManager {
             ValorM2: unmask(getVal("valor_metro2")),
             Valor: unmask(getVal("valor_total2"))
         });
-
-        console.log("Lote atualizado localmente:", poligono.loteData);
-        
-        // Atualiza a cor imediatamente
         this._updateMapVisuals();
     }
 
