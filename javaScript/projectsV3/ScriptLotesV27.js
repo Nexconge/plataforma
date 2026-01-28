@@ -343,6 +343,7 @@ class MapaLotesManager {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
+            cliente = lote.Cliente || "";
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             zonaSet.add(lote.Atividade);
@@ -360,7 +361,8 @@ class MapaLotesManager {
         setInput("lateral2", totalLateral.toFixed(2));
         setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
-        
+        setInput("cliente2", cliente);
+
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
 
