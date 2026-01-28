@@ -317,28 +317,9 @@ class MapaLotesManager {
     }
 
     _fillForm() {
-        // --- FUNÇÃO AUXILIAR INTERNA CORRIGIDA ---
         const setInput = (id, val) => {
             const el = document.getElementById(id);
-            if (el) {
-                // Garante que null/undefined vire string vazia
-                const safeVal = (val === null || val === undefined) ? "" : String(val);
-                
-                el.value = safeVal;
-                
-                // DISPARA OS DOIS EVENTOS (O Segredo do Bubble)
-                // 'input' avisa que está sendo digitado/alterado
-                // 'change' avisa que a edição terminou
-                el.dispatchEvent(new Event("input", { bubbles: true }));
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-                
-                // Log para confirmar que o código rodou
-                if (id === "cliente2") {
-                    console.log(`[ScriptLotes] Atualizando #cliente2 para: "${safeVal}"`);
-                }
-            } else {
-                console.warn(`[ScriptLotes] ALERTA: Elemento com ID '${id}' NÃO foi encontrado no HTML.`);
-            }
+            if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
         };
 
         const setBubbleDropdown = (id, val) => {
@@ -346,10 +327,9 @@ class MapaLotesManager {
             if (!el) return;
             let valorSeguro = (val === undefined || val === null || val === "undefined") ? "" : val;
             el.value = JSON.stringify(valorSeguro); 
-            el.dispatchEvent(new Event("change", { bubbles: true }));
+            el.dispatchEvent(new Event("change"));
         };
 
-        // Se nada selecionado, limpa tudo
         if (this.selectedIds.size === 0) {
             this._clearForm();
             return;
@@ -360,53 +340,29 @@ class MapaLotesManager {
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
-            
             totalArea += (lote.Área || 0);
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            
-            // --- CORREÇÃO DE EXTRAÇÃO DO CLIENTE ---
-            // Verifica se existe, remove espaços extras e garante que não é undefined
-            const clienteRaw = lote.Cliente; 
-            const clienteLimpo = (clienteRaw && clienteRaw !== "undefined") ? String(clienteRaw).trim() : "";
-            
-            // Só adiciona na lista se não for vazio (para evitar " , , " na visualização em massa)
-            if (clienteLimpo) {
-                clientes.push(clienteLimpo);
-            }
-            
+            clientes.push(lote.Cliente || "");
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             zonaSet.add(lote.Atividade);
             empSet.add(lote.Empreendimento);
         });
 
-        // Preenche campos numéricos/texto simples
+        const cleanList = (set) => [...set].filter(v => v && v !== "undefined" && v !== "null");
+        const statusList = cleanList(statusSet);
+        const zonaList = cleanList(zonaSet);
+        const empList = cleanList(empSet);
+
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
         setInput("area2", totalArea.toFixed(2));
         setInput("frente2", totalFrente.toFixed(2)); 
         setInput("lateral2", totalLateral.toFixed(2));
         setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
-
-        // --- LÓGICA DO CLIENTE ---
-        let valorFinalCliente = "";
-        if (clientes.length === 0) {
-            valorFinalCliente = ""; // Nenhum cliente encontrado
-        } else if (clientes.length === 1) {
-            valorFinalCliente = clientes[0]; // Apenas um
-        } else {
-            valorFinalCliente = `Clientes: ${clientes.join(", ")}`; // Vários
-        }
-        
-        setInput("cliente2", valorFinalCliente);
-
-        // Dropdowns
-        const cleanList = (set) => [...set].filter(v => v && v !== "undefined" && v !== "null");
-        const statusList = cleanList(statusSet);
-        const zonaList = cleanList(zonaSet);
-        const empList = cleanList(empSet);
+        setInput("cliente2", clientes.length > 1 ? `Clientes: ${clientes.join(", ")}` : clientes[0]);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
