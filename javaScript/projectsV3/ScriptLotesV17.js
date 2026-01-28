@@ -36,8 +36,6 @@ class MapaLotesManager {
         this._renderLotes(this.allLotes);
         this._populateAuxiliaryFilters(); 
         
-        // CORREÇÃO: Substituímos o _updateMapVisuals manual pelo _handleFilterChange.
-        // Isso força o código a LER o valor inicial do select (HTML) e aplicar o zoom correto logo na carga.
         this._handleFilterChange();
     }
 
@@ -152,7 +150,6 @@ class MapaLotesManager {
     }
 
     _populateAuxiliaryFilters() {
-        // Se já existem opções além da padrão, não faz nada (evita resetar filtro ativo)
         if (document.getElementById("selectQuadra")?.options.length > 1) return;
 
         const quadras = new Set();
@@ -162,7 +159,6 @@ class MapaLotesManager {
         this.allLotes.forEach(l => {
             if (l.Quadra) return; 
             
-            // Extrai a Quadra (ex: Q6216L13 -> Q6216)
             const matchQ = l.Nome && l.Nome.match(/^(Q\d+)/); 
             if(matchQ) quadras.add(matchQ[1]); 
 
@@ -174,10 +170,8 @@ class MapaLotesManager {
             const select = document.getElementById(setId);
             if(!select) return;
             
-            // Garante que a opção "Todos" exista e tenha valor vazio
             select.innerHTML = '<option value="">Todos</option>';
 
-            // Ordenação alfanumérica
             Array.from(values).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(val => {
                 const opt = document.createElement("option");
                 opt.value = val;
@@ -192,7 +186,6 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
-        // (Código anterior mantido, apenas adicionando a limpeza do selectedIds se necessário)
         document.body.classList.add('app-loading');
 
         const getCleanVal = (id) => {
@@ -217,7 +210,6 @@ class MapaLotesManager {
         setTimeout(() => {
             this._updateMapVisuals();
             
-            // Remove da seleção lotes que não estão mais visíveis
             let changed = false;
             this.selectedIds.forEach(id => {
                 if (!this.map.hasLayer(this.polygons[id])) {
@@ -240,7 +232,6 @@ class MapaLotesManager {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            // 1. Visibilidade
             if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
@@ -248,7 +239,6 @@ class MapaLotesManager {
                 if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
             }
 
-            // 2. Filtros Auxiliares
             let isMatch = true;
             if (hasActiveFilters) {
                 if (this.filters.quadra) {
@@ -261,10 +251,7 @@ class MapaLotesManager {
                 if (this.filters.Atividade && data.Atividade !== this.filters.Atividade) isMatch = false;
             }
 
-            // 3. Estilos
             const baseColor = this._getLoteColor(data);
-            
-            // Verifica se está no conjunto de selecionados
             const isSelected = this.selectedIds.has(data._id);
 
             if (isSelected) {
@@ -297,7 +284,6 @@ class MapaLotesManager {
     _handlePolygonClick(polygon) {
         const id = polygon.loteData._id;
 
-        // Lógica de Toggle: Se já tem, remove. Se não tem, adiciona.
         if (this.selectedIds.has(id)) {
             this.selectedIds.delete(id);
         } else {
@@ -305,7 +291,7 @@ class MapaLotesManager {
         }
 
         this._updateMapVisuals();
-        this._fillForm(); // Agora chama sem argumento, pois ele varre o Set
+        this._fillForm();
     }
 
     _fillForm() {
@@ -313,18 +299,24 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
         };
+
+        // --- CORREÇÃO: Função auxiliar mais segura para Dropdowns do Bubble ---
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
-            if (el) { el.value = `"${val || ""}"`; el.dispatchEvent(new Event("change")); }
+            if (el) { 
+                // Evita passar "undefined" ou null para o Bubble
+                let safeVal = (val && val !== "undefined" && val !== "null") ? val : "";
+                // Envia string vazia com aspas ("") para resetar, ou valor com aspas ("Valor")
+                el.value = `"${safeVal}"`; 
+                el.dispatchEvent(new Event("change")); 
+            }
         };
 
-        // Se nada selecionado, limpa e retorna
         if (this.selectedIds.size === 0) {
             this._clearForm();
             return;
         }
 
-        // Agregação de Dados
         let totalArea = 0;
         let totalFrente = 0;
         let totalLateral = 0;
@@ -346,12 +338,20 @@ class MapaLotesManager {
             empSet.add(lote.Empreendimento);
         });
 
-        // Formatação para exibição
         const nomeDisplay = nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0];
-        const statusDisplay = statusSet.size === 1 ? [...statusSet][0] : "Vários";
-        const zonaDisplay = zonaSet.size === 1 ? [...zonaSet][0] : "Vários";
-        const empDisplay = empSet.size === 1 ? [...empSet][0] : "";
         const valorM2Medio = totalArea > 0 ? (totalValor / totalArea) : 0;
+
+        // --- CORREÇÃO: Filtrar Undefined antes de decidir o Display ---
+        const cleanSet = (s) => [...s].filter(v => v !== undefined && v !== null && v !== "" && v !== "undefined");
+        
+        const statusList = cleanSet(statusSet);
+        const statusDisplay = statusList.length === 1 ? statusList[0] : (statusList.length > 0 ? "Vários" : "");
+
+        const zonaList = cleanSet(zonaSet);
+        const zonaDisplay = zonaList.length === 1 ? zonaList[0] : (zonaList.length > 0 ? "Vários" : "");
+
+        const empList = cleanSet(empSet);
+        const empDisplay = empList.length === 1 ? empList[0] : "";
 
         setInput("quadra_lote2", nomeDisplay);
         setInput("area2", totalArea.toFixed(2));
@@ -360,7 +360,6 @@ class MapaLotesManager {
         setInput("valor_metro2", valorM2Medio.toFixed(2));
         setInput("valor_total2", totalValor.toFixed(2));
         
-        // Campos de texto/select
         setBubbleDropdown("status2", statusDisplay);
         setBubbleDropdown("zona2", zonaDisplay);
 
@@ -373,13 +372,9 @@ class MapaLotesManager {
     }
 
     _clearForm() {
-        // 1. Limpa o conjunto de IDs selecionados
         this.selectedIds.clear();
-
-        // 2. Atualiza o mapa para remover o destaque azul (volta ao padrão)
         this._updateMapVisuals();
 
-        // 3. Limpa os campos do formulário
         const ids = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         ids.forEach(id => {
             const el = document.getElementById(id);
