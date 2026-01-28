@@ -1,3 +1,11 @@
+:root {
+  --primary: #1772CB;
+  --primary-dark: #0052a3;
+  --bg-light: #F7F7F7;
+  --text: #333;
+  --font: 'Nunito', sans-serif;
+}
+
 label {
     height: 22px;
     font-family: 'Nunito', sans-serif;
