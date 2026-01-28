@@ -124,6 +124,7 @@ class MapaLotesManager {
 
                 polygon.bindTooltip(`${lote.Nome} - ${lote.Status || "Desconhecido"}`, { permanent: false });
                 polygon.loteData = lote; 
+                console.log("Lote adicionado ao mapa:", lote);
                 
                 polygon.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
