@@ -196,13 +196,11 @@ class MapaLotesManager {
             clearTimeout(this.filterDebounceTimer);
         }
 
-        document.body.classList.add('app-loading');
-
-        // 2. Define uma nova execução para daqui a 100ms
+        // 2. Define uma nova execução para daqui a 500ms
         this.filterDebounceTimer = setTimeout(() => {
             this._executarFiltroReal();
             this.filterDebounceTimer = null;
-        }, 1000); 
+        }, 500); 
     }
 
     _executarFiltroReal() {
