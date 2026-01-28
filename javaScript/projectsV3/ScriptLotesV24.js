@@ -202,7 +202,7 @@ class MapaLotesManager {
         this.filterDebounceTimer = setTimeout(() => {
             this._executarFiltroReal();
             this.filterDebounceTimer = null;
-        }, 100); 
+        }, 1000); 
     }
 
     _executarFiltroReal() {
@@ -214,28 +214,26 @@ class MapaLotesManager {
             return val.trim();
         };
 
+        // 1. Captura o valor atual do Empreendimento ANTES de atualizar os filtros
+        // Isso é crucial para saber se mudamos de mapa ou apenas de filtro visual
+        const prevEmp = this.filters.empreendimento;
+
         let empVal = getCleanVal("empreendimentoSelect");
         if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
 
-        // --- CORREÇÃO: Captura os valores ANTES de atualizar para comparar ---
-        const prevQuadra = this.filters.quadra;
-        const prevEmp = this.filters.empreendimento;
-        
-        const newQuadra = getCleanVal("selectQuadra");
-        const newStatus = getCleanVal("selectStatus");
-        const newAtividade = getCleanVal("selectAtividade");
-        const newZonaMode = document.querySelector("#zona input[type='checkbox']")?.checked || false;
-
+        // 2. Atualiza o objeto de filtros
         this.filters = {
             empreendimento: empVal,
-            quadra: newQuadra,
-            status: newStatus,
-            Atividade: newAtividade,
-            zonaColorMode: newZonaMode
+            quadra: getCleanVal("selectQuadra"),
+            status: getCleanVal("selectStatus"),
+            Atividade: getCleanVal("selectAtividade"),
+            zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
 
+        // 3. Atualiza as cores/visibilidade dos polígonos
         this._updateMapVisuals();
         
+        // 4. Verifica se os polígonos selecionados ainda são válidos
         let changed = false;
         this.selectedIds.forEach(id => {
             if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
@@ -247,11 +245,10 @@ class MapaLotesManager {
         if (changed) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
 
-        // --- CORREÇÃO: Só centraliza se mudar o contexto geográfico (Quadra ou Empreendimento)
-        if (prevEmp !== empVal || prevQuadra !== newQuadra) {
+        if (prevEmp !== empVal) {
             this._centralizeView();
-        } 
-        
+        }
+
         document.body.classList.remove('app-loading');
     }
 
