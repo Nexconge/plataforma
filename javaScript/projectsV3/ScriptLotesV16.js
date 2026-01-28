@@ -13,7 +13,7 @@ class MapaLotesManager {
             empreendimento: "",
             quadra: "",
             status: "",
-            zoneamento: "",
+            Atividade: "",
             zonaColorMode: false
         };
 
@@ -136,7 +136,7 @@ class MapaLotesManager {
 
     // --- 4. Filtros ---
     _setupEventListeners() {
-        const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectZoneamento"];
+        const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade"];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener("change", this._handleFilterChange);
@@ -167,7 +167,7 @@ class MapaLotesManager {
             if(matchQ) quadras.add(matchQ[1]); 
 
             if(l.Status) status.add(l.Status);
-            if(l.Zoneamento) zonas.add(l.Zoneamento);
+            if(l.Atividade) zonas.add(l.Atividade);
         });
 
         const sortAndPopulate = (setId, values) => {
@@ -188,7 +188,7 @@ class MapaLotesManager {
 
         sortAndPopulate("selectQuadra", quadras);
         sortAndPopulate("selectStatus", status);
-        sortAndPopulate("selectZoneamento", zonas);
+        sortAndPopulate("selectAtividade", zonas);
     }
 
     _handleFilterChange() {
@@ -210,7 +210,7 @@ class MapaLotesManager {
             empreendimento: empVal,
             quadra: getCleanVal("selectQuadra"),
             status: getCleanVal("selectStatus"),
-            zoneamento: getCleanVal("selectZoneamento"),
+            Atividade: getCleanVal("selectAtividade"),
             zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
         };
 
@@ -235,7 +235,7 @@ class MapaLotesManager {
     }
 
     _updateMapVisuals() {
-        const hasActiveFilters = !!(this.filters.quadra || this.filters.status || this.filters.zoneamento);
+        const hasActiveFilters = !!(this.filters.quadra || this.filters.status || this.filters.Atividade);
 
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
@@ -258,7 +258,7 @@ class MapaLotesManager {
                     if (filterQ !== lotQ) isMatch = false;
                 }
                 if (this.filters.status && data.Status !== this.filters.status) isMatch = false;
-                if (this.filters.zoneamento && data.Zoneamento !== this.filters.zoneamento) isMatch = false;
+                if (this.filters.Atividade && data.Atividade !== this.filters.Atividade) isMatch = false;
             }
 
             // 3. Estilos
@@ -278,13 +278,13 @@ class MapaLotesManager {
                 poly.setStyle({ weight: 0.5, color: "#ccc", fillColor: baseColor, fillOpacity: 0.65 });
             }
 
-            const txtStatus = this.filters.zonaColorMode ? (data.Zoneamento || "S/ Zoneamento") : (data.Status || "Desc.");
+            const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
             poly.getTooltip()?.setContent(`${data.Nome} - ${txtStatus}`);
         });
     }
 
     _getLoteColor(lote) {
-        const mode = this.filters.zonaColorMode ? lote.Zoneamento?.toLowerCase() : lote.Status?.toLowerCase();
+        const mode = this.filters.zonaColorMode ? lote.Atividade?.toLowerCase() : lote.Status?.toLowerCase();
         const colors = {
             "comercial": "#9fbfdf", "residencial": "#dad2b4", "equipamento público": "#f0c9ad",
             "app": "#88c4a6", "área verde": "#88c4a6",
@@ -342,7 +342,7 @@ class MapaLotesManager {
             totalValor += (lote.Valor || 0);
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
-            zonaSet.add(lote.Zoneamento);
+            zonaSet.add(lote.Atividade);
             empSet.add(lote.Empreendimento);
         });
 
@@ -412,7 +412,7 @@ class MapaLotesManager {
             Nome: getVal("quadra_lote2"),
             Área: unmask(getVal("area2")),
             Status: cleanStr(getVal("status2")), 
-            Zoneamento: cleanStr(getVal("zona2")),
+            Atividade: cleanStr(getVal("zona2")),
             Frente: unmask(getVal("frente2")),
             Lateral: unmask(getVal("lateral2")),
             ValorM2: unmask(getVal("valor_metro2")),
