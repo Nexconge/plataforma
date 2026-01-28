@@ -8,7 +8,7 @@ class MapaLotesManager {
         this.allLotes = [];
         this.polygons = {}; 
         
-        // Timer for Debounce (prevents duplicate processing)
+        // Controle de "Debounce" para evitar tremedeira
         this.filterDebounceTimer = null;
 
         this.filters = {
@@ -38,11 +38,11 @@ class MapaLotesManager {
         this._renderLotes(this.allLotes);
         this._populateAuxiliaryFilters(); 
         
-        // Execute initial filter without abrupt animation
-        this._executarFiltroReal(false);
+        // Chama o filtro inicial
+        this._handleFilterChange();
     }
 
-    // --- 1. Data ---
+    // --- 1. Dados ---
     async _fetchLotesPermitidos() {
         const urlBase = this.urlAPI;
         let todosOsLotes = [];
@@ -76,7 +76,7 @@ class MapaLotesManager {
         return todosOsLotes;
     }
 
-    // --- 2. Map ---
+    // --- 2. Mapa ---
     _initMap() {
         this.map = L.map(this.mapId).setView([-27.093791, -52.6215887], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -96,7 +96,7 @@ class MapaLotesManager {
         });
     }
 
-    // --- 3. Rendering ---
+    // --- 3. Renderização ---
     _renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
@@ -135,33 +135,24 @@ class MapaLotesManager {
         });
     }
 
-    // --- 4. Filters ---
+    // --- 4. Filtros ---
     _setupEventListeners() {
-        // Dropdown change events
         const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade"];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener("change", this._handleFilterChange);
         });
 
-        // Specific event for Zone/Activity Checkbox
         const zonaCheck = document.getElementById("zona");
-        if (zonaCheck) {
-            // Remove old listeners to prevent duplication if script runs twice
-            const clone = zonaCheck.cloneNode(true);
-            zonaCheck.parentNode.replaceChild(clone, zonaCheck);
-            clone.addEventListener('click', (e) => {
-                // Short delay to ensure checkbox state (checked/unchecked) updated
-                setTimeout(() => this._handleFilterChange(), 50);
-            });
-        }
+        if (zonaCheck) zonaCheck.addEventListener('click', () => {
+             // Pequeno delay para garantir que o checkbox mudou de estado
+             setTimeout(() => this._handleFilterChange(), 50);
+        });
 
-        // Edit Button
         document.getElementById("buttonAlterar")?.addEventListener('click', () => {
             this._atualizarPoligonoSelecionado();
         });
         
-        // Click on map clears selection
         this.map.on('click', () => this._clearForm());
     }
 
@@ -198,24 +189,23 @@ class MapaLotesManager {
         sortAndPopulate("selectAtividade", zonas);
     }
 
-    // --- FILTER LOGIC WITH INCREASED DEBOUNCE ---
+    // --- CORREÇÃO AQUI: DEBOUNCE PARA EVITAR TREMEDEIRA ---
     _handleFilterChange() {
-        // Cancel pending execution
+        // 1. Cancela a execução anterior se ela ainda não aconteceu
         if (this.filterDebounceTimer) {
             clearTimeout(this.filterDebounceTimer);
         }
 
         document.body.classList.add('app-loading');
 
-        // Increased to 300ms to ensure previous animations finish
-        // and multiple clicks are ignored
+        // 2. Define uma nova execução para daqui a 100ms
         this.filterDebounceTimer = setTimeout(() => {
-            this._executarFiltroReal(true);
+            this._executarFiltroReal();
             this.filterDebounceTimer = null;
-        }, 300); 
+        }, 100); 
     }
 
-    _executarFiltroReal(animate = true) {
+    _executarFiltroReal() {
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return "";
@@ -227,7 +217,6 @@ class MapaLotesManager {
         let empVal = getCleanVal("empreendimentoSelect");
         if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
 
-        // Read current filter state
         this.filters = {
             empreendimento: empVal,
             quadra: getCleanVal("selectQuadra"),
@@ -238,7 +227,6 @@ class MapaLotesManager {
 
         this._updateMapVisuals();
         
-        // Remove selection of disappeared lots
         let changed = false;
         this.selectedIds.forEach(id => {
             if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
@@ -250,7 +238,7 @@ class MapaLotesManager {
         if (changed) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
 
-        if (animate) this._centralizeView();
+        this._centralizeView();
         document.body.classList.remove('app-loading');
     }
 
@@ -260,7 +248,6 @@ class MapaLotesManager {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            // Project Filter (Main)
             if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
@@ -268,7 +255,6 @@ class MapaLotesManager {
                 if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
             }
 
-            // Auxiliary Filters
             let isMatch = true;
             if (hasActiveFilters) {
                 if (this.filters.quadra) {
@@ -330,7 +316,6 @@ class MapaLotesManager {
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
             if (!el) return;
-            // Prevent JSON "undefined" error
             let valorSeguro = (val === undefined || val === null || val === "undefined") ? "" : val;
             el.value = JSON.stringify(valorSeguro); 
             el.dispatchEvent(new Event("change"));
@@ -389,34 +374,23 @@ class MapaLotesManager {
         });
     }
 
-    // --- SHAKING FIX ---
     _centralizeView() {
         const bounds = new L.LatLngBounds();
         let count = 0;
-        
         Object.values(this.polygons).forEach(layer => {
             if (this.map.hasLayer(layer)) {
                 bounds.extend(layer.getBounds());
                 count++;
             }
         });
-
-        // If nothing visible, don't move
-        if (count === 0) return;
         
-        // Check if bounds are valid to avoid JS error
-        if (!bounds.isValid()) return;
-
-        // 1. STOP any ongoing animation
-        this.map.stop(); 
-
-        // 2. Execute movement smoothly
-        // Adjusted duration to 1s and added padding
-        this.map.flyToBounds(bounds, { 
-            padding: [50, 50], 
-            duration: 1.0,
-            easeLinearity: 0.5 
-        });
+        // CORREÇÃO: Impede animação se não houver lotes visíveis ou se já estiver centralizando
+        if (count > 0) {
+            // duration: 1 segundo, mas se for chamado de novo, o Debounce protegeu
+            this.map.flyToBounds(bounds, { padding: [50, 50], duration: 1.2 });
+        } else {
+            this.map.flyTo(this.map.options.center, this.map.options.zoom);
+        }
     }
 
     _atualizarPoligonoSelecionado() {
