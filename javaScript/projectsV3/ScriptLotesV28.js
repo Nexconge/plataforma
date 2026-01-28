@@ -335,7 +335,7 @@ class MapaLotesManager {
         }
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        let nomes = [], statusSet = new Set(), zonaSet = new Set(), empSet = new Set();
+        let nomes = [], clientes = [], statusSet = new Set(), zonaSet = new Set(), empSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
@@ -343,7 +343,7 @@ class MapaLotesManager {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            cliente = lote.Cliente || "";
+            clientes.push(lote.Cliente || "");
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             zonaSet.add(lote.Atividade);
@@ -361,7 +361,7 @@ class MapaLotesManager {
         setInput("lateral2", totalLateral.toFixed(2));
         setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
-        setInput("cliente2", cliente);
+        setInput("cliente2", clientes.length > 1 ? `Clientes: ${clientes.join(", ")}` : clientes[0]);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
