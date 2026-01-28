@@ -367,7 +367,7 @@ class MapaLotesManager {
     _clearForm() {
         this.selectedIds.clear();
         this._updateMapVisuals();
-        const ids = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
+        const ids = ["zona2", "quadra_lote2", "area2","cliente2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) { el.value = ""; el.dispatchEvent(new Event("change")); }
@@ -406,6 +406,7 @@ class MapaLotesManager {
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
             Área: unmask(getVal("area2")),
+            Cliente: cleanStr(getVal("cliente2")),
             Status: cleanStr(getVal("status2")), 
             Atividade: cleanStr(getVal("zona2")),
             Frente: unmask(getVal("frente2")),
