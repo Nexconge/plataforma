@@ -120,7 +120,7 @@ class MapaLotesManager {
                 });
 
                 polygon.bindTooltip(`${lote.Nome} - ${lote.Status || "Desconhecido"}`, { permanent: false });
-                polygon.loteData = lote;
+                polygon.loteData = lote; // Referência direta ao objeto
                 
                 polygon.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
@@ -145,7 +145,12 @@ class MapaLotesManager {
              setTimeout(() => this._handleFilterChange(), 50);
         });
 
-        document.getElementById("buttonAlterar")?.addEventListener('click', () => this._atualizarPoligonoSelecionado());
+        // Botão para salvar alterações na MEMÓRIA do mapa
+        document.getElementById("buttonAlterar")?.addEventListener('click', () => {
+            console.log("Botão alterar clicado via Script JS");
+            this._atualizarPoligonoSelecionado();
+        });
+        
         this.map.on('click', () => this._clearForm());
     }
 
@@ -173,6 +178,7 @@ class MapaLotesManager {
             select.innerHTML = '<option value="">Todos</option>';
 
             Array.from(values).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(val => {
+                if(!val) return;
                 const opt = document.createElement("option");
                 opt.value = val;
                 opt.textContent = val;
@@ -212,7 +218,7 @@ class MapaLotesManager {
             
             let changed = false;
             this.selectedIds.forEach(id => {
-                if (!this.map.hasLayer(this.polygons[id])) {
+                if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
                     this.selectedIds.delete(id);
                     changed = true;
                 }
@@ -232,6 +238,7 @@ class MapaLotesManager {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
+            // Filtro Empreendimento
             if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
@@ -239,6 +246,7 @@ class MapaLotesManager {
                 if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
             }
 
+            // Filtros Auxiliares
             let isMatch = true;
             if (hasActiveFilters) {
                 if (this.filters.quadra) {
@@ -251,6 +259,7 @@ class MapaLotesManager {
                 if (this.filters.Atividade && data.Atividade !== this.filters.Atividade) isMatch = false;
             }
 
+            // Estilos
             const baseColor = this._getLoteColor(data);
             const isSelected = this.selectedIds.has(data._id);
 
@@ -300,16 +309,17 @@ class MapaLotesManager {
             if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
         };
 
-        // --- CORREÇÃO: Função auxiliar mais segura para Dropdowns do Bubble ---
+        // --- CORREÇÃO DO CRASH: Uso seguro de JSON.stringify ---
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
-            if (el) { 
-                // Evita passar "undefined" ou null para o Bubble
-                let safeVal = (val && val !== "undefined" && val !== "null") ? val : "";
-                // Envia string vazia com aspas ("") para resetar, ou valor com aspas ("Valor")
-                el.value = `"${safeVal}"`; 
-                el.dispatchEvent(new Event("change")); 
-            }
+            if (!el) return;
+            
+            // Tratamento de undefined/null para string vazia
+            let valorSeguro = (val === undefined || val === null || val === "undefined") ? "" : val;
+            
+            // O Bubble espera uma string formatada como JSON para dropdowns dinâmicos
+            el.value = JSON.stringify(valorSeguro); 
+            el.dispatchEvent(new Event("change"));
         };
 
         if (this.selectedIds.size === 0) {
@@ -338,20 +348,20 @@ class MapaLotesManager {
             empSet.add(lote.Empreendimento);
         });
 
+        // Filtragem de valores inválidos antes de mostrar
+        const cleanList = (set) => [...set].filter(v => v && v !== "undefined" && v !== "null");
+
+        const statusList = cleanList(statusSet);
+        const statusDisplay = statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : "");
+
+        const zonaList = cleanList(zonaSet);
+        const zonaDisplay = zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : "");
+        
+        const empList = cleanList(empSet);
+        const empDisplay = empList.length === 1 ? empList[0] : "";
+
         const nomeDisplay = nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0];
         const valorM2Medio = totalArea > 0 ? (totalValor / totalArea) : 0;
-
-        // --- CORREÇÃO: Filtrar Undefined antes de decidir o Display ---
-        const cleanSet = (s) => [...s].filter(v => v !== undefined && v !== null && v !== "" && v !== "undefined");
-        
-        const statusList = cleanSet(statusSet);
-        const statusDisplay = statusList.length === 1 ? statusList[0] : (statusList.length > 0 ? "Vários" : "");
-
-        const zonaList = cleanSet(zonaSet);
-        const zonaDisplay = zonaList.length === 1 ? zonaList[0] : (zonaList.length > 0 ? "Vários" : "");
-
-        const empList = cleanSet(empSet);
-        const empDisplay = empList.length === 1 ? empList[0] : "";
 
         setInput("quadra_lote2", nomeDisplay);
         setInput("area2", totalArea.toFixed(2));
@@ -378,7 +388,11 @@ class MapaLotesManager {
         const ids = ["zona2", "quadra_lote2", "area2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.value = "";
+            if (el) { 
+                el.value = ""; 
+                // Disparar evento para limpar visualmente no Bubble, se necessário
+                el.dispatchEvent(new Event("change"));
+            }
         });
     }
 
@@ -396,13 +410,22 @@ class MapaLotesManager {
     }
 
     _atualizarPoligonoSelecionado() {
-        if (!this.selectedLoteId || !this.polygons[this.selectedLoteId]) return;
+        // Verifica se há apenas um lote selecionado (edição em massa não suportada aqui)
+        if (this.selectedIds.size !== 1) return;
 
-        const poligono = this.polygons[this.selectedLoteId];
-        const getVal = id => document.getElementById(id).value;
-        const unmask = (val) => parseFloat(val.replace(/R\$|\s|\./g, "").replace(",", ".")) || 0;
+        const [id] = this.selectedIds; // Pega o único ID
+        const poligono = this.polygons[id];
+        if(!poligono) return;
+
+        const getVal = id => document.getElementById(id)?.value || "";
+        
+        // Remove R$, espaços e converte vírgula para ponto
+        const unmask = (val) => parseFloat(val.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+        
+        // Remove aspas que o Bubble/JSON possa ter adicionado
         const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
 
+        // Atualiza o objeto na memória
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
             Área: unmask(getVal("area2")),
@@ -414,6 +437,9 @@ class MapaLotesManager {
             Valor: unmask(getVal("valor_total2"))
         });
 
+        console.log("Lote atualizado localmente:", poligono.loteData);
+        
+        // Atualiza a cor imediatamente
         this._updateMapVisuals();
     }
 
