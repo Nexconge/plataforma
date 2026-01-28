@@ -200,7 +200,7 @@ class MapaLotesManager {
         this.filterDebounceTimer = setTimeout(() => {
             this._executarFiltroReal();
             this.filterDebounceTimer = null;
-        }, 500); 
+        }, 100); 
     }
 
     _executarFiltroReal() {
