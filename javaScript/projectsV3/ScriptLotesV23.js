@@ -217,12 +217,21 @@ class MapaLotesManager {
         let empVal = getCleanVal("empreendimentoSelect");
         if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
 
+        // --- CORREÇÃO: Captura os valores ANTES de atualizar para comparar ---
+        const prevQuadra = this.filters.quadra;
+        const prevEmp = this.filters.empreendimento;
+        
+        const newQuadra = getCleanVal("selectQuadra");
+        const newStatus = getCleanVal("selectStatus");
+        const newAtividade = getCleanVal("selectAtividade");
+        const newZonaMode = document.querySelector("#zona input[type='checkbox']")?.checked || false;
+
         this.filters = {
             empreendimento: empVal,
-            quadra: getCleanVal("selectQuadra"),
-            status: getCleanVal("selectStatus"),
-            Atividade: getCleanVal("selectAtividade"),
-            zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
+            quadra: newQuadra,
+            status: newStatus,
+            Atividade: newAtividade,
+            zonaColorMode: newZonaMode
         };
 
         this._updateMapVisuals();
@@ -238,7 +247,11 @@ class MapaLotesManager {
         if (changed) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
 
-        this._centralizeView();
+        // --- CORREÇÃO: Só centraliza se mudar o contexto geográfico (Quadra ou Empreendimento)
+        if (prevEmp !== empVal || prevQuadra !== newQuadra) {
+            this._centralizeView();
+        } 
+        
         document.body.classList.remove('app-loading');
     }
 
