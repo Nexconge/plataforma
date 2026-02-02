@@ -88,7 +88,7 @@ class MapaLotesManager {
             const scale = Math.max(0.45, z / 15);
             document.documentElement.style.setProperty('--quadra-scale', String(scale));
             
-            if (z < 18) document.documentElement.classList.add('quadra-hidden');
+            if (z < 16) document.documentElement.classList.add('quadra-hidden');
             else document.documentElement.classList.remove('quadra-hidden');
             
             const fontSize = 14 * (z / 15);
