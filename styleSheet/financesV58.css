@@ -107,11 +107,11 @@ table:not(#tabelaFluxoDiario) thead tr:first-child th:last-child {
   border-top-right-radius: 10px; 
 }
 
-/* Correção para linhas espaçadoras no thead */
+/* linhas espaçadoras no table head */
 table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] td,
 table:not(#tabelaFluxoDiario) thead tr[data-type="spacer"] th {
   background-color: transparent !important;
-  height: 10px; /* Reduzi a altura do espaçador */
+  height: 30px; /* Aumentado para altura padrão */
 }
 
 /* --- ARREDONDAMENTO DO RODAPÉ --- */
@@ -285,7 +285,7 @@ tr[data-type="saldo"]:hover { background-color: var(--primary); cursor: default;
   width: 100%; 
   border: 1px solid #ddd; 
   border-radius: 10px; /* Arredondamento igual ao das tabelas */
-  margin-top: 20px; 
+  margin-top: 0px; 
   background: white;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }

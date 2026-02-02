@@ -365,6 +365,7 @@ function renderizarCapitalGiro(matriz, colunas, estoque) {
     trH.innerHTML = `<td>Capital de Giro</td>${colunas.map(c=>`<td>${c}</td>`).join('')}<td></td>`;
     
     const tb = t.createTBody();
+    criarLinhaEspacadora(tb, colunas);
 
     // --- CORREÇÃO AQUI ---
     const calcPct = (tipo) => {
@@ -846,6 +847,9 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
     const htmlBody = `
         <tbody>
             <tr>
+                <td colspan="${colunasProcessar.length + 1}" style="height:30px; padding:0; background:transparent; border:none;"></td> 
+            </tr>
+            <tr>
                 <td class="texto-verde">(+) Entradas</td>
                 ${cellsEntradas.join('')}
             </tr>
@@ -858,7 +862,7 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
                 ${cellsBalanco.join('')}
             </tr>
             <tr>
-                <td colspan="${colunasProcessar.length + 1}" style="height:10px; padding:0; background:transparent; border:none;"></td> 
+                <td colspan="${colunasProcessar.length + 1}" style="height:30px; padding:0; background:transparent; border:none;"></td> 
             </tr>
             <tr data-type="saldo">
                 <td>Caixa Inicial</td>
