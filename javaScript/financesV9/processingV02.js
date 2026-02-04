@@ -83,7 +83,23 @@ function gerarPeriodosEntre(primeiraChave, ultimaChave, modo = "mensal") {
     }
     return resultado;
 }
+function segmentarDadosPorProjeto(lista) {
+    const buckets = { 'SEM_PROJETO': [] };
+    
+    if (!Array.isArray(lista)) return buckets;
 
+    lista.forEach(item => {
+        // Se não tem projeto ou é string vazia/null, vai para o bucket padrão
+        const projKey = item.CODProjeto ? String(item.CODProjeto) : 'SEM_PROJETO';
+        
+        if (!buckets[projKey]) {
+            buckets[projKey] = [];
+        }
+        buckets[projKey].push(item);
+    });
+
+    return buckets;
+}
 // --- Lógica de Negócio Auxiliar ---
 
 function gerarDepartamentosObj(departamentos, valorTotalLancamento) {
@@ -111,34 +127,57 @@ function somaValor(destino, chave, valor) {
  * Processa Realizado, A Realizar e Capital de Giro.
  */
 function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno = 0) {
-    // Normalização das entradas
-    const lancamentos = dadosApi.lancamentosProcessados || dadosApi.lancamentos || [];
-    const titulos = dadosApi.titulosEmAberto || dadosApi.titulos || [];
-    const capitalDeGiro = dadosApi.capitalDeGiro || [];
+    // 1. Normalização das entradas
+    const lancamentosRaw = dadosApi.lancamentosProcessados || dadosApi.lancamentos || [];
+    const titulosRaw = dadosApi.titulosEmAberto || dadosApi.titulos || [];
+    const capitalGiroRaw = dadosApi.capitalDeGiro || [];
     const saldoIniCC = Number(saldoInicialExterno);
-    
-    // 1. Processa MODO REALIZADO (Baseado em lançamentos efetivos)
-    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
-    
-    // 2. Processa MODO A REALIZAR (Baseado em títulos em aberto)
-    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniCC);
-    
-    // 3. Processa CAPITAL DE GIRO 
-    // Nota: Passamos 'dadosRealizado' para sincronizar o saldo de caixa acumulado corretamente.
-    const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId, saldoIniCC, dadosRealizado);
+
+    // 2. Segmentação dos Inputs (Raw Data -> Buckets)
+    const bucketsLancamentos = segmentarDadosPorProjeto(lancamentosRaw);
+    const bucketsTitulos = segmentarDadosPorProjeto(titulosRaw);
+    const bucketsCG = segmentarDadosPorProjeto(capitalGiroRaw);
+
+    // Identifica todos os projetos únicos encontrados nos dados
+    const todosProjetos = new Set([
+        ...Object.keys(bucketsLancamentos), 
+        ...Object.keys(bucketsTitulos), 
+        ...Object.keys(bucketsCG)
+    ]);
+
+    const resultadoSegmentado = {};
+
+    // 3. Processamento Individual por Segmento
+    todosProjetos.forEach(projKey => {
+        const l = bucketsLancamentos[projKey] || [];
+        const t = bucketsTitulos[projKey] || [];
+        const cg = bucketsCG[projKey] || [];
+
+        // O Saldo Inicial (saldoIniCC) só deve ser considerado uma vez no global.
+        // Dentro dos segmentos, consideramos 0 para calcular apenas a VARIAÇÃO (Movimentação).
+        // O Saldo Inicial será injetado depois no Merge.
+        const dadosRealizado = processarRealizadoRealizar(AppCache, l, contaId, 0);
+        const dadosARealizar = processarRealizadoRealizar(AppCache, t, contaId, 0);
+        
+        // Passamos o realizado deste segmento para o CG deste segmento
+        const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, cg, contaId, 0, dadosRealizado);
+
+        resultadoSegmentado[projKey] = {
+            realizado: dadosRealizado,
+            arealizar: dadosARealizar,
+            capitalDeGiro: dadosCapitalDeGiro
+        };
+    });
 
     return {
-        realizado: dadosRealizado,
-        arealizar: dadosARealizar,
-        capitalDeGiro: dadosCapitalDeGiro,
-        saldoInicialBase: saldoIniCC
+        // Marcador para o merge saber que este objeto é segmentado
+        isSegmented: true, 
+        segments: resultadoSegmentado,
+        // O saldo inicial fica na raiz, pois é da conta
+        saldoInicialBase: saldoIniCC 
     };
 }
 
-/**
- * Converte a estrutura de TÍTULOS da API em objetos de negócio.
- * Filtra lançamentos da DRE pelo ano solicitado, mas calcula saldo total baseado em todo o histórico.
- */
 /**
  * Converte a estrutura de TÍTULOS da API em objetos de negócio.
  * CORREÇÃO: 
@@ -189,6 +228,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         Natureza: natureza,
                         DataLancamento: lancamento.DataLancamento,
                         CODContaC: lancamento.CODContaC,
+                        CODProjeto: titulo.CODProjeto || null,
                         ValorLancamento: lancamento.ValorLancamento,
                         CODCategoria: titulo.Categoria,
                         Cliente: titulo.Cliente,
@@ -205,7 +245,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                     DataEmissao: titulo.DataEmissao || null,
                     ValorTitulo: lancamento.ValorLancamento,
                     CODContaEmissao: titulo.CODContaC || null,
-                    CODContaPagamento: lancamento.CODContaC || null
+                    CODContaPagamento: lancamento.CODContaC || null,
+                    CODProjeto: titulo.CODProjeto || null
                 });
             });
         }
@@ -221,6 +262,7 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 Natureza: natureza,
                 DataLancamento: titulo.DataVencimento,
                 CODContaC: titulo.CODContaC,
+                CODProjeto: titulo.CODProjeto || null,
                 ValorLancamento: valorFaltante,
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente || "Cliente",
@@ -235,7 +277,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 DataEmissao: titulo.DataEmissao || null,
                 ValorTitulo: valorFaltante,
                 CODContaEmissao: titulo.CODContaC || null,
-                CODContaPagamento: null
+                CODContaPagamento: null,
+                CODProjeto: titulo.CODProjeto || null
             });
         }
     });
@@ -280,6 +323,7 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
                     Natureza: natureza,
                     DataLancamento: lancamento.DataLancamento,
                     CODContaC: lancamento.CODContaC,
+                    CODProjeto: item.CODProjeto || null,
                     ValorLancamento: lancamento.ValorLancamento,
                     CODCategoria: item.Categoria,
                     Cliente: item.Cliente,
@@ -524,26 +568,61 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
 
 // --- Função de Consolidação (Merge) ---
 
-function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque, saldoInicialExterno = null) {
-    // 1. Filtragem de dados baseada na projeção
-    const dadosSelecionados = dadosProcessados.map(dadosConta => {
-        const projData = dadosConta[projecao.toLowerCase()];
-        if (!projData) return null;
+function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque, saldoInicialExterno = null, projetosFiltro = []) {
+    
+    // Conjunto de projetos permitidos para busca rápida O(1)
+    // Se projetosFiltro for vazio, assume-se todos? Normalmente na UI sempre tem algo selecionado.
+    // O requisito é: mostrar se estiver no filtro OU se não tiver projeto (SEM_PROJETO).
+    const setProjetosPermitidos = new Set((projetosFiltro || []).map(String));
+    
+    // 1. Flattening: Transforma a lista de contas segmentadas em uma lista de segmentos planos para processar
+    const dadosParaMerge = [];
+    let saldoInicialAcumulado = 0;
 
-        // Anexa Capital de Giro se disponível
-        if (dadosConta.capitalDeGiro) {
-            projData.matrizCapitalGiro = dadosConta.capitalDeGiro.matrizCapitalGiro;
+    dadosProcessados.forEach(conta => {
+        if (!conta) return;
+        
+        // Soma o saldo inicial da conta (independente de projeto, pois é dinheiro no banco)
+        saldoInicialAcumulado += (conta.saldoInicialBase || 0);
+
+        if (conta.isSegmented && conta.segments) {
+            // Itera sobre os segmentos (Projetos) dentro da conta
+            Object.entries(conta.segments).forEach(([projKey, dadosProj]) => {
+                
+                // LÓGICA DE FILTRO AQUI:
+                // Aceita se for 'SEM_PROJETO' OU se o projeto estiver no filtro selecionado
+                const deveIncluir = (projKey === 'SEM_PROJETO') || setProjetosPermitidos.has(projKey);
+
+                if (deveIncluir) {
+                    const projData = dadosProj[projecao.toLowerCase()];
+                    if (projData) {
+                        // Anexa Capital de Giro se disponível (para manter compatibilidade com função antiga)
+                        if (dadosProj.capitalDeGiro) {
+                            projData.matrizCapitalGiro = dadosProj.capitalDeGiro.matrizCapitalGiro;
+                        }
+                        dadosParaMerge.push(projData);
+                    }
+                }
+            });
+        } else {
+            // Fallback para estrutura antiga (sem segmentos), se houver
+            const projData = conta[projecao.toLowerCase()];
+            if (projData) {
+                if (conta.capitalDeGiro) projData.matrizCapitalGiro = conta.capitalDeGiro.matrizCapitalGiro;
+                dadosParaMerge.push(projData);
+            }
         }
-        return projData;
-    }).filter(Boolean);
+    });
+
+    // --- Daqui para baixo, a lógica é idêntica à original, usando dadosParaMerge ---
 
     // Retorno rápido se vazio
-    if (!dadosSelecionados || dadosSelecionados.length === 0) {
+    if (dadosParaMerge.length === 0) {
         return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
     }
 
     // 2. Merge inicial em nível MENSAL
-    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados, projecao, dadosEstoque);
+    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosParaMerge, projecao, dadosEstoque);
 
     // 3. Agregação para ANUAL se necessário
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
@@ -553,10 +632,8 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     // 4. Cálculo de Totais e Linhas Calculadas da DRE
     const PeUChave = getChavesDeControle(todasChaves, modo);
 
-    // Determina Saldo Inicial Global
-    let saldoInicialConsolidado = (saldoInicialExterno !== null) 
-        ? saldoInicialExterno 
-        : dadosProcessados.reduce((acc, d) => acc + (d.saldoInicialBase || 0), 0);
+    // Determina Saldo Inicial Global (Usa o parâmetro externo ou o acumulado das contas)
+    let saldoInicialFinal = (saldoInicialExterno !== null) ? saldoInicialExterno : saldoInicialAcumulado;
     
     const matrizDRE = dadosParaExibir.matrizDRE;
     const colunasParaCalcular = gerarPeriodosEntre(PeUChave.primeiraChave, PeUChave.ultimaChave, modo.toLowerCase());
@@ -566,9 +643,10 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
     });
     
-    calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
+    calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialFinal);
     calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
     calcularColunaTotalDRE(dadosParaExibir.entradasESaidas, colunasVisiveis, PeUChave)
+    
     return { ...dadosParaExibir };
 }
 

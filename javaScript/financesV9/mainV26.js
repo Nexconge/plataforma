@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV01.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV02.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV022.js';
 
 // --- Cache da Aplicação ---
@@ -36,8 +36,6 @@ async function handleFiltroChange() {
             return;
         }
 
-        // --- ALTERAÇÃO AQUI: Lógica bifurcada para Realizado vs A Realizar ---
-
         if (appCache.projecao === 'arealizar') {
             // MODO A REALIZAR:
             // 1. Carrega os dados PRIMEIRO (pois a API já traz tudo futuro)
@@ -50,7 +48,7 @@ async function handleFiltroChange() {
             filtrosAtuais = obterFiltrosAtuais();
 
         } else {
-            // MODO REALIZADO (Comportamento original):
+            // MODO REALIZADO:
             // 1. Pergunta à API quais anos existem (metadados)
             await stepGerenciarPeriodos(filtrosAtuais.contas);
             
@@ -58,8 +56,6 @@ async function handleFiltroChange() {
             filtrosAtuais = obterFiltrosAtuais();
             await stepCarregarProcessarDados(filtrosAtuais);
         }
-
-        // --- FIM DA ALTERAÇÃO ---
 
         // ETAPA FINAL: Renderização
         stepConsolidarExibir(filtrosAtuais);
@@ -378,7 +374,8 @@ function stepConsolidarExibir(filtros) {
         colunas, 
         appCache.projecao, 
         dadosEstoque,
-        saldoInicialConsolidado
+        saldoInicialConsolidado,
+        projetos
     );
 
     atualizarVisualizacoes(dadosParaExibir, colunas, appCache);
