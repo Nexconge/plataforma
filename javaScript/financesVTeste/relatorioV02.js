@@ -1,5 +1,5 @@
 import { buscarTitulos } from './apiV03.js';
-import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV04.js';
+import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV05.js';
 
 /**
  * Realiza a busca por ano, processa imediatamente e dispara a geração do Excel.

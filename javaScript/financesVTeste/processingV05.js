@@ -325,47 +325,6 @@ function processarDetalhamento(matriz, appCache, lanc, classe, periodo, valorTot
     });
 }
 
-// Helper para isolar a complexidade do loop de projeção do Capital de Giro
-function processarProjecaoCG(matriz, item, chaveAtual, chavesSet) {
-    const val = item.Natureza === 'P' ? -item.ValorTitulo : item.ValorTitulo;
-    const [, me, ae] = item.DataEmissao.split('/');
-    const [, mv, av] = item.DataVencimento.split('/');
-    
-    // Define fim da projeção: Pagamento (se houve) ou Vencimento
-    let chaveFim = `${mv.padStart(2,'0')}-${av}`;
-    if(item.DataPagamento) {
-        const [, mp, ap] = item.DataPagamento.split('/');
-        chaveFim = `${mp.padStart(2,'0')}-${ap}`;
-    }
-
-    let cursor = `${me.padStart(2,'0')}-${ae}`;
-    // Validação de datas invertidas
-    if (DataUtils.compareChaves(cursor, chaveFim) > 0) return;
-
-    // Loop mês a mês
-    while (cursor && DataUtils.compareChaves(cursor, chaveFim) <= 0) {
-        // Se entrou no futuro (modo Realizado), pare.
-        if (DataUtils.compareChaves(cursor, chaveAtual) >= 0) break;
-
-        const isUltimo = cursor === chaveFim;
-        const mainLine = item.Natureza === 'P' ? '(-) Fornecedores a Pagar' : '(+) Clientes a Receber';
-        const sufixo = item.Natureza === 'P' ? 'AP' : 'AR';
-
-        // Preenche linha principal
-        matriz[mainLine][cursor] = (matriz[mainLine][cursor] || 0) + val;
-        
-        // Distribui Curto/Longo Prazo
-        const prazoLine = isUltimo ? `Curto Prazo ${sufixo}` : `Longo Prazo ${sufixo}`;
-        matriz[prazoLine][cursor] = (matriz[prazoLine][cursor] || 0) + val;
-
-        chavesSet.add(cursor);
-        
-        if (isUltimo) break;
-        cursor = DataUtils.incrementarMes(cursor);
-    }
-}
-
-
 // --- Consolidação (Merge) ---
 
 export function mergeMatrizes(dadosProcessados, modo, colunas, projecao, dadosEstoque, saldoInicialExterno, projetosFiltro) {
