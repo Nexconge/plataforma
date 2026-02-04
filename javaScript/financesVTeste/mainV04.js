@@ -1,6 +1,6 @@
 // mainV27.js
 import * as API from './apiV03.js';
-import * as Processing from './processingV03.js';
+import * as Processing from './processingV04.js';
 import * as UI from './uiV03.js';
 
 // --- State Manager (Centraliza dados e cache) ---
