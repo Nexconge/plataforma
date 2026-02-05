@@ -21,9 +21,7 @@ label { margin-right: 5px; }
 label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-block; }
 
 .custom-select {
-  width: 100%;
-  max-width: 300px; /* Limite para PC */
-  height: 30px;
+  width: 300px; height: 30px;
   border: 1px solid #C7C7C7; border-radius: 4px;
   background-color: white;
   text-align: center; font-family: var(--font);
@@ -33,9 +31,7 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 }
 
 .multiSelectCustom {
-  width: 100%;
-  max-width: 300px; /* Limite para PC */
-  height: 85px;
+  width: 300px; height: 85px;
   border: 1px solid #C7C7C7; border-radius: 4px; background: white;
   overflow-y: auto;
 }
@@ -44,30 +40,10 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 /* =========================================================
    TABELAS PRINCIPAIS (Matriz, Detalhamento, Capital Giro)
 ========================================================= */
-/* Wrapper para permitir scroll horizontal em telas pequenas sem quebrar o layout */
-.table-responsive {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin-bottom: 15px;
-}
-
 table:not(#tabelaFluxoDiario) {
-  width: 100%;
-  min-width: 1000px; /* Garante que não quebre em telas pequenas, força o scroll */
+  width: 1400px; 
   border-collapse: separate; 
   border-spacing: 0; 
-  font-size: 14px;
-}
-
-#resumoFluxoDiario {
-  width: 100%;
-  min-width: 1000px; /* Força scroll horizontal no mobile */
-  background-color: white;
-  border-collapse: separate; 
-  border-spacing: 0;
-  margin-bottom: 20px;
-  font-family: var(--font);
   font-size: 14px;
 }
 
@@ -534,56 +510,4 @@ body.app-loading::after {
   height: 100%;
   animation: spin 2s linear infinite;
   margin: auto;
-}
-
-/* =========================================================
-   RESPONSIVIDADE (MOBILE)
-========================================================= */
-@media screen and (max-width: 768px) {
-  
-  /* Ajuste de Labels e Inputs para empilhar verticalmente */
-  label[for="modoSelect"], label[for="anoSelect"] {
-    width: 100%;
-    display: block;
-    margin-bottom: 5px;
-  }
-
-  .custom-select, .multiSelectCustom {
-    max-width: 100%; /* Ocupa toda a tela no mobile */
-  }
-
-  /* Filtro Ano (Dropdown) */
-  .filtro-dropdown {
-    width: 90%; /* Evita vazar da tela */
-    left: 5%;
-  }
-
-  /* Ajuste de altura dos gráficos */
-  #graficos-content {
-    height: 300px;
-    padding: 10px;
-  }
-
-  /* Abas dos gráficos - rolagem horizontal se muitos botões */
-  .grafico-tabs {
-    overflow-x: auto;
-    white-space: nowrap;
-    padding-bottom: 0;
-  }
-  
-  .tab-link {
-    padding: 8px 15px;
-    font-size: 13px;
-  }
-
-  /* Loading - Centralizar corretamente no mobile */
-  body.app-loading::before {
-    transform: translate(-50%, -50%); /* Remove o offset de -95px do PC */
-  }
-  
-  body.app-loading::after {
-    width: 80%;
-    text-align: center;
-    padding: 15px;
-  }
 }
