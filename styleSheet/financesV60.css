@@ -10,7 +10,7 @@
 }
 
 html { overflow-y: scroll; }
-body { font-family: var(--font); margin: 8px; color: var(--text); }
+body { font-family: var(--font); margin: 0px; color: var(--text); }
 div, label, select, table { box-sizing: border-box; }
 .hidden { display: none !important; }
 
