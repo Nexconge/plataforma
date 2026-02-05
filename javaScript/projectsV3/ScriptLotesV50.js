@@ -174,17 +174,30 @@ _renderLotes(lotes) {
             if (el) el.addEventListener("change", this._handleFilterChange);
         });
 
-        document.addEventListener('change', (e) => {
-            if (e.target && e.target.id === 'zona') {
-                this._handleFilterChange();
-            }
-        });
-
         document.getElementById("buttonAlterar")?.addEventListener('click', () => {
             this._atualizarPoligonoSelecionado();
         });
         
         this.map.on('click', () => this._clearForm());
+
+        const checkExist = setInterval(() => {
+            const zonaCheck = document.getElementById("zona");
+            
+            if (zonaCheck) {
+                // Remove listeners antigos (hack para evitar duplicação se o script rodar 2x)
+                const novoElemento = zonaCheck.cloneNode(true);
+                zonaCheck.parentNode.replaceChild(novoElemento, zonaCheck);
+                
+                // Adiciona o evento Change (mais confiável que click para checkboxes)
+                novoElemento.addEventListener('change', (e) => {
+                    console.log("DEBUG: Switch clicado via JS. Estado:", e.target.checked);
+                    this._handleFilterChange();
+                });
+                
+                // Para de procurar
+                clearInterval(checkExist);
+            }
+        }, 500); 
     }
 
     _populateAuxiliaryFilters() {
