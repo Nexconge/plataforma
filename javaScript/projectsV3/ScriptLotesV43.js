@@ -107,12 +107,6 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // Ordenação Radial para evitar polígonos "furados" ou cruzados
-            const center = coords.reduce((acc, curr) => [acc[0] + curr[0] / coords.length, acc[1] + curr[1] / coords.length], [0, 0]);
-            coords.sort((a, b) => {
-                return Math.atan2(a[0] - center[0], a[1] - center[1]) - Math.atan2(b[0] - center[0], b[1] - center[1]);
-            });
-
             if (lote.Quadra) {
                 const tempPoly = L.polygon(coords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
