@@ -97,6 +97,27 @@ class MapaLotesManager {
     }
 
     // --- 3. Renderização ---
+    // Função auxiliar para calcular a envoltória (adicione antes do _renderLotes)
+    _getConvexHull(points) {
+        if (points.length <= 2) return points;
+        points.sort((a, b) => a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]);
+        const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        const upper = [];
+        for (let p of points) {
+            while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+            upper.push(p);
+        }
+        const lower = [];
+        for (let i = points.length - 1; i >= 0; i--) {
+            let p = points[i];
+            while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+            lower.push(p);
+        }
+        upper.pop();
+        lower.pop();
+        return upper.concat(lower);
+    }
+
     _renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
@@ -107,15 +128,19 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
+            // Se o lote for de um tipo que costuma dar erro (como o do buraco),
+            // você pode forçar o fechamento usando a envoltória:
+            const finalCoords = this._getConvexHull(coords);
+
             if (lote.Quadra) {
-                const tempPoly = L.polygon(coords);
+                const tempPoly = L.polygon(finalCoords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Nome, {
                     permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
                 });
                 marker.addTo(this.map);
             } else {
-                const polygon = L.polygon(coords, {
+                const polygon = L.polygon(finalCoords, {
                     color: "black",
                     weight: 0.6,
                     fillOpacity: 1,
