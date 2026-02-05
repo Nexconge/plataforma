@@ -83,61 +83,78 @@ label {
    Checkbox estilo Interruptor
 ========================================================= */
 
-.switch-wrapper {
+.switch-container {
     display: flex;
     align-items: center;
-    gap: 10px;
-    cursor: pointer;
+    gap: 12px;
+    font-family: 'Open Sans', 'Roboto', sans-serif; /* Fontes comuns no Bubble */
+    margin-top: 5px; /* Ajuste fino de alinhamento */
   }
 
+  /* O texto "Ver Atividade" */
+  .switch-label {
+    font-size: 14px;
+    color: #4a4a4a; /* Cinza escuro igual aos seus labels */
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Estrutura do Switch */
   .switch {
     position: relative;
     display: inline-block;
-    width: 40px;
-    height: 22px;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
   }
 
-  /* O seu script busca este ID */
-  #zona {
+  /* O Input (ID=zona) fica invisível mas funcional */
+  .switch input {
     opacity: 0;
     width: 0;
     height: 0;
-    position: absolute;
   }
 
+  /* O "trilho" do switch */
   .slider {
     position: absolute;
     cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc; /* Cinza desativado */
+    transition: .3s;
     border-radius: 34px;
   }
 
+  /* A bolinha branca */
   .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
+    height: 18px;
+    width: 18px;
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: .4s;
+    transition: .3s;
     border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Sombra suave */
   }
 
-  #zona:checked + .slider {
-    background-color: #4A90E2;
+  /* Estado ATIVADO (Cor dos seus botões) */
+  input:checked + .slider {
+    background-color: #1772CB; /* Azul exato do botão "Alterar" */
   }
 
-  #zona:checked + .slider:before {
-    transform: translateX(18px);
+  input:checked + .slider:before {
+    transform: translateX(20px);
   }
 
-  .label-text {
-    font-size: 14px;
-    font-family: sans-serif;
-    user-select: none;
+  /* Efeito de foco para acessibilidade */
+  input:focus + .slider {
+    box-shadow: 0 0 1px #1772CB;
   }
   
 /* =========================================================

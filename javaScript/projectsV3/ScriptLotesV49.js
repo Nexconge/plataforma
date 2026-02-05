@@ -174,10 +174,10 @@ _renderLotes(lotes) {
             if (el) el.addEventListener("change", this._handleFilterChange);
         });
 
-        const zonaCheck = document.getElementById("zona");
-        if (zonaCheck) zonaCheck.addEventListener('click', () => {
-             // Pequeno delay para garantir que o checkbox mudou de estado
-             setTimeout(() => this._handleFilterChange(), 50);
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.id === 'zona') {
+                this._handleFilterChange();
+            }
         });
 
         document.getElementById("buttonAlterar")?.addEventListener('click', () => {
