@@ -359,6 +359,38 @@ _renderLotes(lotes) {
         this._fillForm();
     }
 
+    // --- Substitua o método _clearForm antigo por este ---
+    _clearForm() {
+        this.selectedIds.clear();
+        this._updateMapVisuals();
+        
+        // Inputs de Texto Simples (aceitam string vazia)
+        const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2"];
+        
+        // Inputs "Complexos" (Dropdowns ou SearchBoxes do Bubble)
+        // Esses campos crasham se receberem "" porque o Bubble tenta fazer JSON.parse
+        const complexIds = ["zona2", "status2", "empreendimento2"];
+
+        textIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { 
+                el.value = ""; 
+                el.dispatchEvent(new Event("change")); 
+            }
+        });
+
+        complexIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                // Envia a string "null". O Bubble lê isso como o objeto null (vazio) válido.
+                // Isso evita o erro "undefined is not valid JSON"
+                el.value = "null"; 
+                el.dispatchEvent(new Event("change"));
+            }
+        });
+    }
+
+    // --- Substitua também o _fillForm para garantir consistência ---
     _fillForm() {
         const setInput = (id, val) => {
             const el = document.getElementById(id);
@@ -368,8 +400,14 @@ _renderLotes(lotes) {
         const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
             if (!el) return;
-            let valorSeguro = (val === undefined || val === null || val === "undefined") ? "" : val;
-            el.value = JSON.stringify(valorSeguro); 
+            
+            // Se o valor for vazio/nulo, enviamos "null" (string) para não quebrar o JSON.parse do Bubble
+            if (val === undefined || val === null || val === "undefined" || val === "") {
+                el.value = "null"; 
+            } else {
+                // Se tiver valor, converte para JSON string
+                el.value = JSON.stringify(val); 
+            }
             el.dispatchEvent(new Event("change"));
         };
 
@@ -410,22 +448,13 @@ _renderLotes(lotes) {
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
 
+        // Tratamento especial para Empreendimento (pode ser select ou input)
         const elEmp = document.getElementById("empreendimento2");
         if(elEmp && elEmp.tagName === "SELECT") {
              setBubbleDropdown("empreendimento2", empList.length === 1 ? empList[0] : "");
         } else {
              setInput("empreendimento2", empList.length === 1 ? empList[0] : "");
         }
-    }
-
-    _clearForm() {
-        this.selectedIds.clear();
-        this._updateMapVisuals();
-        const ids = ["zona2", "quadra_lote2", "area2","cliente2", "status2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "empreendimento2"];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { el.value = ""; el.dispatchEvent(new Event("change")); }
-        });
     }
 
     _centralizeView() {
