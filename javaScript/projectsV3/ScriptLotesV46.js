@@ -97,32 +97,6 @@ class MapaLotesManager {
     }
 
     // --- 3. Renderização ---
-    // Método para ordenar pontos em sentido horário preservando concavidades (entradas)
-    _organizarPontosRadialmente(points) {
-        if (points.length <= 2) return points;
-
-        // 1. Encontrar o centro geométrico (Centróide da Bounding Box)
-        // Usamos min/max em vez da média para evitar que aglomerados de pontos puxem o centro
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        
-        points.forEach(p => {
-            if (p[0] < minX) minX = p[0];
-            if (p[0] > maxX) maxX = p[0];
-            if (p[1] < minY) minY = p[1];
-            if (p[1] > maxY) maxY = p[1];
-        });
-
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-
-        // 2. Ordenar pelo ângulo em relação a esse centro (Math.atan2)
-        return points.sort((a, b) => {
-            const angleA = Math.atan2(a[0] - centerX, a[1] - centerY);
-            const angleB = Math.atan2(b[0] - centerX, b[1] - centerY);
-            return angleA - angleB;
-        });
-    }
-
     _renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
@@ -133,19 +107,23 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // Remove duplicatas consecutivas para limpar o desenho
-            const uniqueCoords = coords.filter((item, index, arr) => {
+            // Limpeza básica de duplicatas consecutivas
+            let finalCoords = coords.filter((item, index, arr) => {
                 if (index === 0) return true;
                 const prev = arr[index - 1];
                 return item[0] !== prev[0] || item[1] !== prev[1];
             });
 
-            // Aplica a ordenação radial que respeita o ponto "vermelho" (concavidade)
-            // mas impede que as linhas se cruzem (furo)
-            const finalCoords = this._organizarPontosRadialmente(uniqueCoords);
+            // 1. Verificamos se o polígono original é válido (nao tem linhas que se cruzam)
+            const isClean = this._isSimplePolygon(finalCoords);
+
+            // 2. Se NÃO for limpo (tiver buracos/cruzamentos), aplicamos a correção radial.
+            if (!isClean) {
+                finalCoords = this._organizarPontosRadialmente(finalCoords);
+            }
+            // ------------------------------
 
             if (lote.Quadra) {
-                // Lógica de Quadra (mantida igual)
                 const tempPoly = L.polygon(finalCoords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Nome, {
@@ -153,7 +131,6 @@ class MapaLotesManager {
                 });
                 marker.addTo(this.map);
             } else {
-                // Lógica de Lotes Individuais
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
                     weight: 0.6,
@@ -464,6 +441,66 @@ class MapaLotesManager {
             Valor: unmask(getVal("valor_total2"))
         });
         this._updateMapVisuals();
+    }
+
+    // Verifica se o polígono é "Simples" (não tem linhas se cruzando)
+    _isSimplePolygon(coords) {
+        // Função auxiliar para verificar intersecção de dois segmentos (p1-q1 e p2-q2)
+        const onSegment = (p, q, r) => {
+            return q[0] <= Math.max(p[0], r[0]) && q[0] >= Math.min(p[0], r[0]) &&
+                   q[1] <= Math.max(p[1], r[1]) && q[1] >= Math.min(p[1], r[1]);
+        };
+
+        const orientation = (p, q, r) => {
+            const val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+            if (val === 0) return 0; // Colinear
+            return (val > 0) ? 1 : 2; // Horário ou Anti-horário
+        };
+
+        const doIntersect = (p1, q1, p2, q2) => {
+            const o1 = orientation(p1, q1, p2);
+            const o2 = orientation(p1, q1, q2);
+            const o3 = orientation(p2, q2, p1);
+            const o4 = orientation(p2, q2, q1);
+
+            if (o1 !== o2 && o3 !== o4) return true;
+            
+            // Casos especiais (colineares)
+            if (o1 === 0 && onSegment(p1, p2, q1)) return true;
+            if (o2 === 0 && onSegment(p1, q2, q1)) return true;
+            if (o3 === 0 && onSegment(p2, p1, q2)) return true;
+            if (o4 === 0 && onSegment(p2, q1, q2)) return true;
+            return false;
+        };
+
+        const n = coords.length;
+        if (n < 4) return true; // Triângulos nunca se cruzam
+
+        // Testa cada segmento contra todos os outros não-adjacentes
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 2; j < n; j++) {
+                // Ignora o fechamento do último com o primeiro se forem vizinhos
+                if (i === 0 && j === n - 1) continue;
+                
+                // P1-Q1 é o segmento atual, P2-Q2 é o segmento de teste
+                if (doIntersect(coords[i], coords[(i + 1) % n], coords[j], coords[(j + 1) % n])) {
+                    return false; // ENCONTROU CRUZAMENTO! O polígono está quebrado.
+                }
+            }
+        }
+        return true; // Polígono limpo
+    }
+
+    // Mantemos o método de correção radial que criamos antes
+    _organizarPontosRadialmente(points) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        points.forEach(p => {
+            if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+            if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+        });
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
     }
 
     getSelectedLotesData() {
