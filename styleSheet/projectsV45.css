@@ -80,6 +80,55 @@ label {
 }
 
 /* =========================================================
+   Checkbox estilo Interruptor
+========================================================= */
+
+/* Esconde o checkbox original */
+#zona input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 40px;
+    height: 20px;
+    background: #ccc;
+    border-radius: 20px;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.3s;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* Cor de fundo quando marcado */
+#zona input[type="checkbox"]:checked {
+    background: #4A90E2;
+}
+
+/* O "círculo" do interruptor */
+#zona input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    background: white;
+    transition: transform 0.3s;
+}
+
+/* Movimento do círculo ao clicar */
+#zona input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+/* Alinhamento do Label */
+#zona label {
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* =========================================================
    LOADING
 ========================================================= */
 
