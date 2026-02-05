@@ -97,25 +97,30 @@ class MapaLotesManager {
     }
 
     // --- 3. Renderização ---
-    // Função auxiliar para calcular a envoltória (adicione antes do _renderLotes)
-    _getConvexHull(points) {
+    // Método para ordenar pontos em sentido horário preservando concavidades (entradas)
+    _organizarPontosRadialmente(points) {
         if (points.length <= 2) return points;
-        points.sort((a, b) => a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]);
-        const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-        const upper = [];
-        for (let p of points) {
-            while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-            upper.push(p);
-        }
-        const lower = [];
-        for (let i = points.length - 1; i >= 0; i--) {
-            let p = points[i];
-            while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-            lower.push(p);
-        }
-        upper.pop();
-        lower.pop();
-        return upper.concat(lower);
+
+        // 1. Encontrar o centro geométrico (Centróide da Bounding Box)
+        // Usamos min/max em vez da média para evitar que aglomerados de pontos puxem o centro
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        
+        points.forEach(p => {
+            if (p[0] < minX) minX = p[0];
+            if (p[0] > maxX) maxX = p[0];
+            if (p[1] < minY) minY = p[1];
+            if (p[1] > maxY) maxY = p[1];
+        });
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        // 2. Ordenar pelo ângulo em relação a esse centro (Math.atan2)
+        return points.sort((a, b) => {
+            const angleA = Math.atan2(a[0] - centerX, a[1] - centerY);
+            const angleB = Math.atan2(b[0] - centerX, b[1] - centerY);
+            return angleA - angleB;
+        });
     }
 
     _renderLotes(lotes) {
@@ -128,11 +133,19 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // Se o lote for de um tipo que costuma dar erro (como o do buraco),
-            // você pode forçar o fechamento usando a envoltória:
-            const finalCoords = this._getConvexHull(coords);
+            // Remove duplicatas consecutivas para limpar o desenho
+            const uniqueCoords = coords.filter((item, index, arr) => {
+                if (index === 0) return true;
+                const prev = arr[index - 1];
+                return item[0] !== prev[0] || item[1] !== prev[1];
+            });
+
+            // Aplica a ordenação radial que respeita o ponto "vermelho" (concavidade)
+            // mas impede que as linhas se cruzem (furo)
+            const finalCoords = this._organizarPontosRadialmente(uniqueCoords);
 
             if (lote.Quadra) {
+                // Lógica de Quadra (mantida igual)
                 const tempPoly = L.polygon(finalCoords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Nome, {
@@ -140,6 +153,7 @@ class MapaLotesManager {
                 });
                 marker.addTo(this.map);
             } else {
+                // Lógica de Lotes Individuais
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
                     weight: 0.6,
