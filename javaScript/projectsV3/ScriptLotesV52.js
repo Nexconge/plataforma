@@ -256,21 +256,25 @@ _renderLotes(lotes) {
             return val.trim();
         };
 
-        // 1. Captura o valor atual do Empreendimento ANTES de atualizar os filtros
-        // Isso é crucial para saber se mudamos de mapa ou apenas de filtro visual
+        // 1. Captura o valor atual do Empreendimento
         const prevEmp = this.filters.empreendimento;
 
         let empVal = getCleanVal("empreendimentoSelect");
         if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
 
         // 2. Atualiza o objeto de filtros
+        const zonaEl = document.getElementById("zona");
+        
         this.filters = {
             empreendimento: empVal,
             quadra: getCleanVal("selectQuadra"),
             status: getCleanVal("selectStatus"),
             Atividade: getCleanVal("selectAtividade"),
-            zonaColorMode: document.querySelector("#zona input[type='checkbox']")?.checked || false
+            // Antes estava procurando '#zona input', o que retornava null
+            zonaColorMode: zonaEl ? zonaEl.checked : false 
         };
+
+        console.log("DEBUG: Modo Zona Ativo?", this.filters.zonaColorMode); // Para confirmar no console
 
         // 3. Atualiza as cores/visibilidade dos polígonos
         this._updateMapVisuals();
