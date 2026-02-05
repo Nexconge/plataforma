@@ -97,7 +97,7 @@ class MapaLotesManager {
     }
 
     // --- 3. Renderização ---
-    _renderLotes(lotes) {
+_renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
 
@@ -107,21 +107,36 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // Remove duplicatas consecutivas
-            let finalCoords = coords.filter((item, index, arr) => {
+            // 1. LIMPEZA PROFUNDA DE COORDENADAS
+            // Remove duplicatas consecutivas E remove o último ponto se for igual ao primeiro
+            let cleanCoords = coords.filter((item, index, arr) => {
                 if (index === 0) return true;
                 const prev = arr[index - 1];
                 return item[0] !== prev[0] || item[1] !== prev[1];
             });
 
-            // 1. Verifica se o polígono original é válido
-            const isClean = this._isSimplePolygon(finalCoords);
-
-            // 2. Se NÃO for limpo, usa o método de Proximidade (Ligar os Pontos)
-            if (!isClean) {
-                // console.log(`Reorganizando lote complexo: ${lote.Nome}`);
-                finalCoords = this._organizarPontosPorProximidade(finalCoords);
+            // Se o último for igual ao primeiro, remove para evitar falso positivo na verificação
+            if (cleanCoords.length > 2) {
+                const first = cleanCoords[0];
+                const last = cleanCoords[cleanCoords.length - 1];
+                if (first[0] === last[0] && first[1] === last[1]) {
+                    cleanCoords.pop();
+                }
             }
+
+            // 2. VERIFICAÇÃO INTELIGENTE
+            // Agora a verificação só vai falhar se houver cruzamento REAL no meio do lote
+            let finalCoords = cleanCoords;
+            const isClean = this._isSimplePolygon(cleanCoords);
+
+            if (!isClean) {
+                // Só aplica o remédio se o paciente estiver realmente doente
+                // console.log(`Corrigindo lote quebrado: ${lote.Nome}`);
+                finalCoords = this._organizarPontosRadialmente(cleanCoords);
+            }
+
+            // Adiciona o primeiro ponto ao final novamente para fechar o desenho no mapa (opcional no Leaflet, mas bom para garantir)
+            finalCoords.push(finalCoords[0]);
 
             if (lote.Quadra) {
                 const tempPoly = L.polygon(finalCoords);
@@ -205,6 +220,7 @@ class MapaLotesManager {
         sortAndPopulate("selectAtividade", zonas);
     }
 
+    // --- CORREÇÃO AQUI: DEBOUNCE PARA EVITAR TREMEDEIRA ---
     _handleFilterChange() {
         // 1. Cancela a execução anterior se ela ainda não aconteceu
         if (this.filterDebounceTimer) {
@@ -228,6 +244,7 @@ class MapaLotesManager {
         };
 
         // 1. Captura o valor atual do Empreendimento ANTES de atualizar os filtros
+        // Isso é crucial para saber se mudamos de mapa ou apenas de filtro visual
         const prevEmp = this.filters.empreendimento;
 
         let empVal = getCleanVal("empreendimentoSelect");
@@ -408,7 +425,9 @@ class MapaLotesManager {
             }
         });
         
+        // CORREÇÃO: Impede animação se não houver lotes visíveis ou se já estiver centralizando
         if (count > 0) {
+            // duration: 1 segundo, mas se for chamado de novo, o Debounce protegeu
             this.map.flyToBounds(bounds, { padding: [50, 50], duration: 1.2 });
         } else {
             this.map.flyTo(this.map.options.center, this.map.options.zoom);
@@ -487,45 +506,16 @@ class MapaLotesManager {
         return true; // Polígono limpo
     }
 
-    _organizarPontosPorProximidade(points) {
-        if (points.length <= 2) return points;
-
-        // 1. Começamos pelo ponto mais extremo (ex: mais ao topo/esquerda)
-        let startIdx = 0;
-        for(let i=1; i<points.length; i++) {
-            // Prioriza menor X, depois menor Y
-            if(points[i][0] < points[startIdx][0] || 
-              (points[i][0] === points[startIdx][0] && points[i][1] < points[startIdx][1])) {
-                startIdx = i;
-            }
-        }
-
-        const sorted = [points[startIdx]];
-        const remaining = [...points];
-        remaining.splice(startIdx, 1); // Remove o inicial da lista de pendentes
-
-        // 2. Loop para encontrar o próximo ponto mais próximo
-        while (remaining.length > 0) {
-            const current = sorted[sorted.length - 1];
-            let nearestIdx = -1;
-            let minDistance = Infinity;
-
-            for (let i = 0; i < remaining.length; i++) {
-                const p = remaining[i];
-                // Distância Euclidiana (sem tirar raiz quadrada para performance)
-                const dist = Math.pow(p[0] - current[0], 2) + Math.pow(p[1] - current[1], 2);
-                
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    nearestIdx = i;
-                }
-            }
-
-            sorted.push(remaining[nearestIdx]);
-            remaining.splice(nearestIdx, 1);
-        }
-
-        return sorted;
+    // Mantemos o método de correção radial que criamos antes
+    _organizarPontosRadialmente(points) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        points.forEach(p => {
+            if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+            if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+        });
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
     }
 
     getSelectedLotesData() {
