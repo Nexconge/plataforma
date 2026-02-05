@@ -373,7 +373,7 @@ _renderLotes(lotes) {
         
         // Inputs "Complexos" (Dropdowns ou SearchBoxes do Bubble)
         // Esses campos crasham se receberem "" porque o Bubble tenta fazer JSON.parse
-        const complexIds = ["zona2", "status2", "empreendimento2"];
+        const complexIds = ["atividade2", "status2", "empreendimento2", "zona2"];
 
         textIds.forEach(id => {
             const el = document.getElementById(id);
@@ -421,7 +421,7 @@ _renderLotes(lotes) {
         }
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        let nomes = [], clientes = [], statusSet = new Set(), zonaSet = new Set(), empSet = new Set();
+        let nomes = [], clientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
@@ -432,12 +432,14 @@ _renderLotes(lotes) {
             clientes.push(lote.Cliente || "");
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
-            zonaSet.add(lote.Atividade);
+            attSet.add(lote.Atividade);
             empSet.add(lote.Empreendimento);
+            zonaSet.add(lote.Zoneamento);
         });
 
         const cleanList = (set) => [...set].filter(v => v && v !== "undefined" && v !== "null");
         const statusList = cleanList(statusSet);
+        const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
         const empList = cleanList(empSet);
 
@@ -450,6 +452,7 @@ _renderLotes(lotes) {
         setInput("cliente2", clientes.length > 1 ? `Clientes: ${clientes.join(", ")}` : clientes[0]);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
+        setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
 
         // Tratamento especial para Empreendimento (pode ser select ou input)
@@ -495,11 +498,12 @@ _renderLotes(lotes) {
             Área: unmask(getVal("area2")),
             Cliente: cleanStr(getVal("cliente2")),
             Status: cleanStr(getVal("status2")), 
-            Atividade: cleanStr(getVal("zona2")),
+            Atividade: cleanStr(getVal("atividade2")),
             Frente: unmask(getVal("frente2")),
             Lateral: unmask(getVal("lateral2")),
             ValorM2: unmask(getVal("valor_metro2")),
-            Valor: unmask(getVal("valor_total2"))
+            Valor: unmask(getVal("valor_total2")),
+            Zoneamento: cleanStr(getVal("zona2"))
         });
         this._updateMapVisuals();
     }
