@@ -364,22 +364,21 @@ _renderLotes(lotes) {
         this.selectedIds.clear();
         this._updateMapVisuals();
         
-        // Função para resetar estilo e valor
         const resetEl = (id, isComplex = false) => {
             const el = document.getElementById(id);
             if (!el) return;
 
-            // 1. Reseta valor
             if (isComplex) el.value = "null";
             else el.value = "";
 
-            // 2. Reseta Estilos (remove o cinza e libera o clique)
+            // Remove todas as propriedades forçadas para restaurar o CSS original do Bubble
+            el.style.removeProperty('pointer-events');
+            el.style.removeProperty('background');
             el.style.removeProperty('background-color');
             el.style.removeProperty('color');
-            el.style.removeProperty('pointer-events');
             el.style.removeProperty('opacity');
-            el.removeAttribute('disabled');
-
+            el.style.removeProperty('border-color');
+            
             el.dispatchEvent(new Event("change"));
         };
 
@@ -399,30 +398,36 @@ _renderLotes(lotes) {
 
     _fillForm() {
         // Função auxiliar robusta para aplicar estilos em elementos Bubble
-        const applyLockStyle = (el, disable) => {
+        const applyLockStyle = (el, disable, isDropdown = false) => {
             if (disable) {
-                // Força visual cinza e bloqueia cliques do mouse
-                el.style.setProperty('background-color', '#e9ecef', 'important'); // Cinza padrão
-                el.style.setProperty('color', '#6c757d', 'important'); // Texto cinza escuro
-                el.style.setProperty('pointer-events', 'none', 'important'); // Bloqueia qualquer clique
-                el.style.setProperty('opacity', '0.7', 'important'); // Garante aspecto visual
-                // Tenta atributo nativo também
-                el.setAttribute('disabled', 'true');
+                // Bloqueia cliques
+                el.style.setProperty('pointer-events', 'none', 'important');
+                
+                // Força visual cinza (Bootstrap disabled style)
+                // Usamos 'background' (shorthand) para garantir que sobrescreva imagens/gradientes do Bubble
+                el.style.setProperty('background', '#e9ecef', 'important'); 
+                el.style.setProperty('background-color', '#e9ecef', 'important'); 
+                
+                el.style.setProperty('color', '#6c757d', 'important');
+                el.style.setProperty('opacity', '1', 'important'); // Remove transparência para o cinza aparecer
+                el.style.setProperty('border-color', '#ced4da', 'important');
             } else {
                 // Remove estilos forçados para voltar ao padrão do Bubble
+                el.style.removeProperty('pointer-events');
+                el.style.removeProperty('background');
                 el.style.removeProperty('background-color');
                 el.style.removeProperty('color');
-                el.style.removeProperty('pointer-events');
                 el.style.removeProperty('opacity');
-                el.removeAttribute('disabled');
+                el.style.removeProperty('border-color');
             }
         };
 
         const setInput = (id, val, disable = false) => {
             const el = document.getElementById(id);
             if (el) { 
-                el.value = val; 
-                applyLockStyle(el, disable);
+                // Proteção contra undefined/null sendo escritos como texto
+                el.value = (val === undefined || val === null) ? "" : val; 
+                applyLockStyle(el, disable, false);
                 el.dispatchEvent(new Event("change")); 
             }
         };
@@ -456,7 +461,9 @@ _renderLotes(lotes) {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            if (lote.Cliente) clientes.add(lote.Cliente);
+            if (lote.Cliente && lote.Cliente.trim() !== "") {
+                clientes.push(lote.Cliente);
+            }
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);
@@ -477,7 +484,9 @@ _renderLotes(lotes) {
         setInput("lateral2", this.selectedIds.size === 1 ? totalLateral.toFixed(2) : "-");
         setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
-        setInput("cliente2", clientsList.length > 1 ? `Clientes: ${clientsList.join(", ")}` : clientsList[0]);
+        
+        const clienteValor = isMulti ? `Clientes: ${clientes.join(", ")}` : (clientes[0] || "");
+        setInput("cliente2", clienteValor, isMulti);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
