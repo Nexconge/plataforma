@@ -107,7 +107,6 @@ _renderLotes(lotes) {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // 1. LIMPEZA PROFUNDA DE COORDENADAS
             // Remove duplicatas consecutivas E remove o último ponto se for igual ao primeiro
             let cleanCoords = coords.filter((item, index, arr) => {
                 if (index === 0) return true;
@@ -130,7 +129,6 @@ _renderLotes(lotes) {
             const isClean = this._isSimplePolygon(cleanCoords);
 
             if (!isClean) {
-                // Só aplica o remédio se o paciente estiver realmente doente
                 // console.log(`Corrigindo lote quebrado: ${lote.Nome}`);
                 finalCoords = this._organizarPontosRadialmente(cleanCoords);
             }
@@ -233,7 +231,6 @@ _renderLotes(lotes) {
         sortAndPopulate("selectAtividade", zonas);
     }
 
-    // --- CORREÇÃO AQUI: DEBOUNCE PARA EVITAR TREMEDEIRA ---
     _handleFilterChange() {
         // 1. Cancela a execução anterior se ela ainda não aconteceu
         if (this.filterDebounceTimer) {
@@ -363,51 +360,73 @@ _renderLotes(lotes) {
         this._fillForm();
     }
 
-    // --- Substitua o método _clearForm antigo por este ---
     _clearForm() {
         this.selectedIds.clear();
         this._updateMapVisuals();
         
-        // Inputs de Texto Simples (aceitam string vazia)
+        // Função para resetar estilo e valor
+        const resetEl = (id, isComplex = false) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            // 1. Reseta valor
+            if (isComplex) el.value = "null";
+            else el.value = "";
+
+            // 2. Reseta Estilos (remove o cinza e libera o clique)
+            el.style.removeProperty('background-color');
+            el.style.removeProperty('color');
+            el.style.removeProperty('pointer-events');
+            el.style.removeProperty('opacity');
+            el.removeAttribute('disabled');
+
+            el.dispatchEvent(new Event("change"));
+        };
+
         const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2"];
-        
-        // Inputs "Complexos" (Dropdowns ou SearchBoxes do Bubble)
-        // Esses campos crasham se receberem "" porque o Bubble tenta fazer JSON.parse
         const complexIds = ["atividade2", "status2", "empreendimento2", "zona2"];
 
-        textIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { 
-                el.value = ""; 
-                el.dispatchEvent(new Event("change")); 
-            }
-        });
+        textIds.forEach(id => resetEl(id, false));
+        complexIds.forEach(id => resetEl(id, true));
 
-        complexIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                // Envia a string "null". O Bubble lê isso como o objeto null (vazio) válido.
-                // Isso evita o erro "undefined is not valid JSON"
-                el.value = "null"; 
-                el.dispatchEvent(new Event("change"));
-            }
-        });
+        // Reseta o botão Alterar
+        const btnAlterar = document.getElementById("buttonAlterar");
+        if (btnAlterar) {
+            btnAlterar.style.opacity = "1";
+            btnAlterar.style.cursor = "pointer";
+        }
     }
 
-    // --- Substitua também o _fillForm para garantir consistência ---
     _fillForm() {
+        // Função auxiliar robusta para aplicar estilos em elementos Bubble
+        const applyLockStyle = (el, disable) => {
+            if (disable) {
+                // Força visual cinza e bloqueia cliques do mouse
+                el.style.setProperty('background-color', '#e9ecef', 'important'); // Cinza padrão
+                el.style.setProperty('color', '#6c757d', 'important'); // Texto cinza escuro
+                el.style.setProperty('pointer-events', 'none', 'important'); // Bloqueia qualquer clique
+                el.style.setProperty('opacity', '0.7', 'important'); // Garante aspecto visual
+                // Tenta atributo nativo também
+                el.setAttribute('disabled', 'true');
+            } else {
+                // Remove estilos forçados para voltar ao padrão do Bubble
+                el.style.removeProperty('background-color');
+                el.style.removeProperty('color');
+                el.style.removeProperty('pointer-events');
+                el.style.removeProperty('opacity');
+                el.removeAttribute('disabled');
+            }
+        };
+
         const setInput = (id, val, disable = false) => {
             const el = document.getElementById(id);
             if (el) { 
                 el.value = val; 
-                el.disabled = disable;
-                // Aplica estilo acinzentado se desabilitado
-                el.style.backgroundColor = disable ? "#f0f0f0" : "";
-                el.style.cursor = disable ? "not-allowed" : "";
+                applyLockStyle(el, disable);
                 el.dispatchEvent(new Event("change")); 
             }
         };
-
+        
         const setBubbleDropdown = (id, val, disable = false) => {
             const el = document.getElementById(id);
             if (!el) return;
@@ -417,10 +436,8 @@ _renderLotes(lotes) {
             } else {
                 el.value = JSON.stringify(val); 
             }
-
-            el.disabled = disable;
-            el.style.backgroundColor = disable ? "#f0f0f0" : "";
-            el.style.cursor = disable ? "not-allowed" : "";
+            
+            applyLockStyle(el, disable);
             el.dispatchEvent(new Event("change"));
         };
 
@@ -431,7 +448,7 @@ _renderLotes(lotes) {
         const isMulti = this.selectedIds.size > 1;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        let nomes = [], clientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
+        let nomes = [], clientes = new Set(), statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
@@ -439,7 +456,7 @@ _renderLotes(lotes) {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            if (lote.Cliente) clientes.push(lote.Cliente);
+            if (lote.Cliente) clientes.add(lote.Cliente);
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);
@@ -452,14 +469,15 @@ _renderLotes(lotes) {
         const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
         const empList = cleanList(empSet);
+        const clientsList = cleanList(clientes);
 
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
         setInput("area2", totalArea.toFixed(2));
-        setInput("frente2", totalFrente.toFixed(2)); 
-        setInput("lateral2", totalLateral.toFixed(2));
+        setInput("frente2", this.selectedIds.size === 1 ? totalFrente.toFixed(2) : "-");
+        setInput("lateral2", this.selectedIds.size === 1 ? totalLateral.toFixed(2) : "-");
         setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
-        setInput("cliente2", clientes.length > 1 ? `Clientes: ${clientes.join(", ")}` : clientes[0]);
+        setInput("cliente2", clientsList.length > 1 ? `Clientes: ${clientsList.join(", ")}` : clientsList[0]);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
