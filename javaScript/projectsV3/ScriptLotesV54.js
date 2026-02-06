@@ -429,7 +429,7 @@ _renderLotes(lotes) {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            clientes.push(lote.Cliente || "");
+            if (lote.Cliente) clientes.push(lote.Cliente);
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);

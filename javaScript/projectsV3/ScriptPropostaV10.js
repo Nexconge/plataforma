@@ -117,6 +117,12 @@ function configurarEventosDoModal(username) {
     });
 }
 
+
+function extrairQuadraNome(nomeLote) {
+    const match = nomeLote.match(/Q\d+/i);
+    return match ? match[0].toUpperCase() : "Q????";
+}
+
 // --- LÓGICA DE NEGÓCIO ---
 export async function abrirEPreencherModalProposta(mapaManager, username) {
     // --- MUDANÇA: Usa a nova função getSelectedLotesData ---
@@ -145,12 +151,18 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
     // Formatação de Nomes (Agrupa Quadras se possível)
     // Ex: "Quadra 10 Lotes 01, 02" ou "Q10 L01, Q11 L02"
     const nomesList = lotesSelecionados.map(l => l.Nome).join(", ");
+    const quadrasLista = [...new Set(
+    lotesSelecionados
+        .map(l => extrairQuadraNome(l.Nome))
+        .filter(Boolean) // remove null
+    )].join(", ");
+
     
     // Preenche Modal
     const fmtMoney = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
     
     // Ajuste visual para múltiplos
-    document.getElementById('propQuadraNome').textContent = "Diversas"; // Simplificação
+    document.getElementById('propQuadraNome').textContent = quadrasLista || "Diversas";
     document.getElementById('propLoteNome').textContent = nomesList; 
     document.getElementById('propLoteArea').textContent = totalArea.toLocaleString('pt-BR', {minimumFractionDigits:2});
     document.getElementById('propLoteValor').textContent = fmtMoney.format(totalValor);
