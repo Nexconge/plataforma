@@ -396,22 +396,31 @@ _renderLotes(lotes) {
 
     // --- Substitua também o _fillForm para garantir consistência ---
     _fillForm() {
-        const setInput = (id, val) => {
+        const setInput = (id, val, disable = false) => {
             const el = document.getElementById(id);
-            if (el) { el.value = val; el.dispatchEvent(new Event("change")); }
+            if (el) { 
+                el.value = val; 
+                el.disabled = disable;
+                // Aplica estilo acinzentado se desabilitado
+                el.style.backgroundColor = disable ? "#f0f0f0" : "";
+                el.style.cursor = disable ? "not-allowed" : "";
+                el.dispatchEvent(new Event("change")); 
+            }
         };
 
-        const setBubbleDropdown = (id, val) => {
+        const setBubbleDropdown = (id, val, disable = false) => {
             const el = document.getElementById(id);
             if (!el) return;
             
-            // Se o valor for vazio/nulo, enviamos "null" (string) para não quebrar o JSON.parse do Bubble
             if (val === undefined || val === null || val === "undefined" || val === "") {
                 el.value = "null"; 
             } else {
-                // Se tiver valor, converte para JSON string
                 el.value = JSON.stringify(val); 
             }
+
+            el.disabled = disable;
+            el.style.backgroundColor = disable ? "#f0f0f0" : "";
+            el.style.cursor = disable ? "not-allowed" : "";
             el.dispatchEvent(new Event("change"));
         };
 
@@ -419,6 +428,7 @@ _renderLotes(lotes) {
             this._clearForm();
             return;
         }
+        const isMulti = this.selectedIds.size > 1;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
         let nomes = [], clientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
@@ -462,6 +472,12 @@ _renderLotes(lotes) {
         } else {
              setInput("empreendimento2", empList.length === 1 ? empList[0] : "");
         }
+
+        const btnAlterar = document.getElementById("buttonAlterar");
+        if (btnAlterar) {
+            btnAlterar.style.opacity = isMulti ? "0.5" : "1";
+            btnAlterar.style.cursor = isMulti ? "not-allowed" : "pointer";
+        }
     }
 
     _centralizeView() {
@@ -484,7 +500,12 @@ _renderLotes(lotes) {
     }
 
     _atualizarPoligonoSelecionado() {
+        if (this.selectedIds.size > 1) {
+            alert("Não é possível alterar múltiplos lotes ao mesmo tempo.");
+            return;
+        }
         if (this.selectedIds.size !== 1) return;
+
         const [id] = this.selectedIds;
         const poligono = this.polygons[id];
         if(!poligono) return;
