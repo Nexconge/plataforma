@@ -370,16 +370,13 @@ _renderLotes(lotes) {
 
             if (isComplex) el.value = "null";
             else el.value = "";
-
-            // Remove todas as propriedades forçadas para restaurar o CSS original do Bubble
-            el.style.removeProperty('pointer-events');
-            el.style.removeProperty('background');
-            el.style.removeProperty('background-color');
-            el.style.removeProperty('color');
-            el.style.removeProperty('opacity');
-            el.style.removeProperty('border-color');
             
-            el.dispatchEvent(new Event("change"));
+            try {
+                el.dispatchEvent(new Event("change"));
+            } catch (e) {
+                // Silencia o erro "undefined is not valid JSON" pois o campo já está visualmente limpo
+                // console.warn("Bubble JSON error ignorado ao limpar:", id); 
+            }
         };
 
         const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2"];
@@ -397,37 +394,11 @@ _renderLotes(lotes) {
     }
 
     _fillForm() {
-        // Função auxiliar robusta para aplicar estilos em elementos Bubble
-        const applyLockStyle = (el, disable, isDropdown = false) => {
-            if (disable) {
-                // Bloqueia cliques
-                el.style.setProperty('pointer-events', 'none', 'important');
-                
-                // Força visual cinza (Bootstrap disabled style)
-                // Usamos 'background' (shorthand) para garantir que sobrescreva imagens/gradientes do Bubble
-                el.style.setProperty('background', '#e9ecef', 'important'); 
-                el.style.setProperty('background-color', '#e9ecef', 'important'); 
-                
-                el.style.setProperty('color', '#6c757d', 'important');
-                el.style.setProperty('opacity', '1', 'important'); // Remove transparência para o cinza aparecer
-                el.style.setProperty('border-color', '#ced4da', 'important');
-            } else {
-                // Remove estilos forçados para voltar ao padrão do Bubble
-                el.style.removeProperty('pointer-events');
-                el.style.removeProperty('background');
-                el.style.removeProperty('background-color');
-                el.style.removeProperty('color');
-                el.style.removeProperty('opacity');
-                el.style.removeProperty('border-color');
-            }
-        };
-
         const setInput = (id, val, disable = false) => {
             const el = document.getElementById(id);
             if (el) { 
                 // Proteção contra undefined/null sendo escritos como texto
                 el.value = (val === undefined || val === null) ? "" : val; 
-                applyLockStyle(el, disable, false);
                 el.dispatchEvent(new Event("change")); 
             }
         };
@@ -442,7 +413,6 @@ _renderLotes(lotes) {
                 el.value = JSON.stringify(val); 
             }
             
-            applyLockStyle(el, disable);
             el.dispatchEvent(new Event("change"));
         };
 
@@ -453,7 +423,7 @@ _renderLotes(lotes) {
         const isMulti = this.selectedIds.size > 1;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        let nomes = [], clientes = new Set(), statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
+        let nomes = [], listaClientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
@@ -461,8 +431,9 @@ _renderLotes(lotes) {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            if (lote.Cliente && lote.Cliente.trim() !== "") {
-                clientes.push(lote.Cliente);
+            // Verificação robusta para cliente
+            if (lote.Cliente && typeof lote.Cliente === 'string' && lote.Cliente.trim() !== "") {
+                listaClientes.push(lote.Cliente);
             }
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
@@ -476,7 +447,7 @@ _renderLotes(lotes) {
         const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
         const empList = cleanList(empSet);
-        const clientsList = cleanList(clientes);
+        const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
 
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
         setInput("area2", totalArea.toFixed(2));
@@ -484,10 +455,7 @@ _renderLotes(lotes) {
         setInput("lateral2", this.selectedIds.size === 1 ? totalLateral.toFixed(2) : "-");
         setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
         setInput("valor_total2", totalValor.toFixed(2));
-        
-        const clienteValor = isMulti ? `Clientes: ${clientes.join(", ")}` : (clientes[0] || "");
         setInput("cliente2", clienteValor, isMulti);
-
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
