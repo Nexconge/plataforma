@@ -429,8 +429,7 @@ _renderLotes(lotes) {
             const el = document.getElementById(id);
             if (!el) return;
 
-            if (isComplex) el.value = "null";
-            else el.value = "";
+            el.value = "";
             
             try {
                 el.dispatchEvent(new Event("change"));
