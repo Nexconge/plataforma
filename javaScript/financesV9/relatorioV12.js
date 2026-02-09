@@ -1,5 +1,5 @@
 import { buscarTitulos } from './apiV04.js';
-import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV03.js';
+import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV04.js';
 
 /**
  * Realiza a busca por ano, processa imediatamente e dispara a geração do Excel.
@@ -91,6 +91,7 @@ function exportarRelatorioFinal(listaBruta, contaId, dtInicio, dtFim) {
         Descrição: l.Cliente
         ? `${l.Cliente}${l.obs ? ' - ' + l.obs : ''}`
         : (l.obs || ''),
+        Documento: l.NUMDoc || '-',
         Débito: l.Natureza === 'R' ? formatarMoeda(l.ValorLancamento) : '-',
         Crédito: l.Natureza === 'P' ? formatarMoeda(-l.ValorLancamento) : '-'
     }));

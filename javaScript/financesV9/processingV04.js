@@ -233,7 +233,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         CODCategoria: titulo.Categoria,
                         Cliente: titulo.Cliente,
                         Departamentos: deptosRateio,
-                        obs: obs || null
+                        obs: obs || null,
+                        NUMDoc: titulo.NF || null
                     });
                 }
 
@@ -267,7 +268,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente || "Cliente",
                 Departamentos: deptosRateio,
-                obs: titulo.obsTitulo || null
+                obs: titulo.obsTitulo || null,
+                NUMDoc: titulo.NF || null
             });
             
             capitalDeGiro.push({
@@ -328,7 +330,8 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
                     CODCategoria: item.Categoria,
                     Cliente: item.Cliente,
                     Departamentos: deptosRateio,
-                    obs: lancamento.obs || null
+                    obs: lancamento.obs || null,
+                    NUMDoc: item.NF || null
                 });
             }
         });
