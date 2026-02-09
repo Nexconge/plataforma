@@ -93,7 +93,7 @@ class MapaLotesManager {
         document.head.appendChild(style);
 
         // --- ADIÇÃO: Controle da Legenda ---
-        const legend = L.control({ position: 'bottomright' });
+        const legend = L.control({ position: 'topright' });
         legend.onAdd = () => {
             this.legendContainer = L.DomUtil.create('div', 'info legend');
             L.DomEvent.disableClickPropagation(this.legendContainer); // Evita clique no mapa através da legenda
@@ -280,7 +280,7 @@ _renderLotes(lotes) {
             { label: "Indisponível", color: "#c7c7c7" }
         ];
 
-        let html = `<h4 style="margin:0 0 8px; font-weight:bold; border-bottom:1px solid #eee; padding-bottom:4px;">${isZona ? "Zoneamento" : "Situação"}</h4>`;
+        let html = `<h4 style="margin:0 0 8px; font-weight:bold; border-bottom:1px solid #eee; padding-bottom:4px;">${isZona ? "Atividade" : "Situação"}</h4>`;
         
         items.forEach(item => {
             html += `
