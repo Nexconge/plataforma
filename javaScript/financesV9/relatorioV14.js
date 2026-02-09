@@ -85,15 +85,19 @@ function exportarRelatorioFinal(listaBruta, contaId, dtInicio, dtFim) {
         converterParaData(a.DataLancamento) - converterParaData(b.DataLancamento)
     );
 
-    const suffix = l.NUMDoc ? (l.Natureza === 'R' ? 'RCTO NF ' + l.NUMDoc : 'PGTO NF ' + l.NUMDoc) : (l.Natureza === 'R' ? 'RCTO ' + l.NUMDoc : 'PGTO ' + l.NUMDoc);
-
     // 3. Mapeamento para Excel
-    const linhasExcel = lancamentosFiltrados.map(l => ({
-        Data: l.DataLancamento,
-        Descrição: `${suffix} - ${l.Cliente} - ${l.obs || ''}`,
-        Débito: l.Natureza === 'R' ? formatarMoeda(l.ValorLancamento) : '-',
-        Crédito: l.Natureza === 'P' ? formatarMoeda(-l.ValorLancamento) : '-'
-    }));
+    const linhasExcel = lancamentosFiltrados.map(l => {
+        const suffix = l.NUMDoc
+            ? (l.Natureza === 'R' ? `RCTO NF ${l.NUMDoc}` : `PGTO NF ${l.NUMDoc}`)
+            : (l.Natureza === 'R' ? 'RCTO' : 'PGTO');
+
+        return {
+            Data: l.DataLancamento,
+            Descrição: `${suffix} - ${l.Cliente || ''}${l.obs ? ' - ' + l.obs : ''}`,
+            Débito: l.Natureza === 'R' ? formatarMoeda(l.ValorLancamento) : '-',
+            Crédito: l.Natureza === 'P' ? formatarMoeda(-l.ValorLancamento) : '-'
+        };
+    });
 
     exportarParaXLSX(linhasExcel, contaId, dtFim);
 }
