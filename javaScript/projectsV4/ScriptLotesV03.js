@@ -7,6 +7,7 @@ class MapaLotesManager {
         this.selectedIds = new Set();
         this.allLotes = [];
         this.polygons = {}; 
+        this.quadraMarkers = [];
         
         // Controle de "Debounce" para evitar tremedeira
         this.filterDebounceTimer = null;
@@ -119,6 +120,9 @@ _renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
 
+        this.quadraMarkers.forEach(m => m.remove());
+        this.quadraMarkers = [];
+
         lotes.forEach(lote => {
             if (!lote.Coordenadas) return;
             let coords;
@@ -160,7 +164,10 @@ _renderLotes(lotes) {
                 marker.bindTooltip(lote.Nome, {
                     permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
                 });
+
+                marker.loteData = lote; 
                 marker.addTo(this.map);
+                this.quadraMarkers.push(marker);
             } else {
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
@@ -340,6 +347,17 @@ _renderLotes(lotes) {
 
     _updateMapVisuals() {
         const hasActiveFilters = !!(this.filters.quadra || this.filters.status || this.filters.Atividade);
+
+        this.quadraMarkers.forEach(marker => {
+            const data = marker.loteData;
+            // Se tem filtro de empreendimento e o da quadra for diferente, remove
+            if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
+                if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
+            } else {
+                // Caso contrário, garante que está no mapa
+                if (!this.map.hasLayer(marker)) this.map.addLayer(marker);
+            }
+        });
 
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
