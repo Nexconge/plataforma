@@ -210,7 +210,7 @@ tr[data-indent="lancamento"] td:first-child::before {
   text-align: center;
   color: var(--primary); 
   font-weight: bold;
-  font-family: monospace;
+  font-family: var(--font);
   margin-right: 5px;
   user-select: none;
 }
@@ -243,7 +243,7 @@ tr[data-type="saldo"]:hover { background-color: var(--primary); cursor: default;
 #tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid #ddd; }
 #tabelaFluxoDiario tbody tr:nth-child(even) { background-color: #f5f5f5; }
 #tabelaFluxoDiario tbody tr:hover { background-color: #e6f0ff; }
-#tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: monospace; }
+#tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: var(--font); }
 
 /* Filtro */
 #fd-periodo-container { display: flex; align-items: center; gap: 5px; }

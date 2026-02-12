@@ -624,6 +624,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
 
     // 2. Merge inicial em nível MENSAL
     const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosParaMerge, projecao, dadosEstoque);
+    // Se não houver dados para extrair as chaves, força a primeira chave das colunas visiveis para garantir o saldo inicial na visualização
     const chavesParaCalculo = todasChaves.size > 0 ? todasChaves : new Set().add(colunasVisiveis[0]);
 
     // 3. Agregação para ANUAL se necessário
