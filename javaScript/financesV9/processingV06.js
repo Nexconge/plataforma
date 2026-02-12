@@ -624,6 +624,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
 
     // 2. Merge inicial em nível MENSAL
     const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosParaMerge, projecao, dadosEstoque);
+    const chavesParaCalculo = todasChaves.size > 0 ? todasChaves : colunasVisiveis;
 
     // 3. Agregação para ANUAL se necessário
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
@@ -631,7 +632,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
         : monthlyMerged;
 
     // 4. Cálculo de Totais e Linhas Calculadas da DRE
-    const PeUChave = getChavesDeControle(todasChaves, modo);
+    const PeUChave = getChavesDeControle(chavesParaCalculo, modo);
 
     // Determina Saldo Inicial Global (Usa o parâmetro externo ou o acumulado das contas)
     let saldoInicialFinal = (saldoInicialExterno !== null) ? saldoInicialExterno : saldoInicialAcumulado;
@@ -855,10 +856,6 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
         if (colunasVisiveis.length > 0) {
             if(matrizDRE['Caixa Inicial']) matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][colSaldIni] || 0;
             if(matrizDRE['Caixa Final']) matrizDRE['Caixa Final'].TOTAL = matrizDRE['Caixa Final'][colSaldFim] || 0;
-        }
-        else {
-            if(matrizDRE['Caixa Inicial']) matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][PeUChave.ultimaChave] || 0;
-            if(matrizDRE['Caixa Final']) matrizDRE['Caixa Final'].TOTAL = matrizDRE['Caixa Final'][PeUChave.ultimaChave] || 0;
         }
     }
 }
