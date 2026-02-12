@@ -617,8 +617,6 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
         }
     });
 
-    // --- Daqui para baixo, a lógica é idêntica à original, usando dadosParaMerge ---
-
     // Retorno rápido se vazio
     if (dadosParaMerge.length === 0) {
         return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
@@ -857,6 +855,10 @@ function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
         if (colunasVisiveis.length > 0) {
             if(matrizDRE['Caixa Inicial']) matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][colSaldIni] || 0;
             if(matrizDRE['Caixa Final']) matrizDRE['Caixa Final'].TOTAL = matrizDRE['Caixa Final'][colSaldFim] || 0;
+        }
+        else {
+            if(matrizDRE['Caixa Inicial']) matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][PeUChave.ultimaChave] || 0;
+            if(matrizDRE['Caixa Final']) matrizDRE['Caixa Final'].TOTAL = matrizDRE['Caixa Final'][PeUChave.ultimaChave] || 0;
         }
     }
 }
