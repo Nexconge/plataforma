@@ -90,7 +90,7 @@ function segmentarDadosPorProjeto(lista) {
 
     lista.forEach(item => {
         // Se não tem projeto ou é string vazia/null, vai para o bucket padrão
-        const projKey = item.CODProjeto ? String(item.CODProjeto) : 'SEM_PROJETO';
+        const projKey = (item.CODProjeto || item.CODProjeto === 0) ? String(item.CODProjeto) : 'SEM_PROJETO';
         
         if (!buckets[projKey]) {
             buckets[projKey] = [];
