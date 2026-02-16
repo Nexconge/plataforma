@@ -7,9 +7,9 @@ const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Se
 const MAX_MESES_FLUXO = 6;
 
 // ------ Formatação ------
-function formatarValor(valor) {
+function formatarValor(valor, fractionDigits = 0) {
     if (Math.abs(valor) < 0.01) return '-';
-    const num = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const num = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
     return valor < 0 ? `(${num})` : num;
 }
 
@@ -667,13 +667,13 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
     itens.forEach(x => { if(compKeys(x.k, ini) < 0) s += x.valor; });
 
     const rS = tbody.insertRow();
-    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(s)}</b></td>`;
+    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(s, 2)}</b></td>`;
 
     visiveis.forEach(i => {
         s += i.valor;
         const r = tbody.insertRow();
         const obs = i.obs ? ` <span class="tooltip-target" data-tooltip="${i.obs}">ℹ️</span>` : '';
-        r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor)}</td><td style="text-align:right">${formatarValor(s)}</td>`;
+        r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor, 2)}</td><td style="text-align:right">${formatarValor(s, 2)}</td>`;
     });
 }
 
