@@ -29,9 +29,9 @@ async function handleFiltroChange() {
     alternarEstadoCarregamento(true);
     
     try {
+        // 1. Leitura Inicial
         let filtrosAtuais = obterFiltrosAtuais();
         
-        // Se a seleção estiver incompleta (ex: usuário clicou inicio mas nao fim), não processa
         if (!filtrosAtuais) {
             alternarEstadoCarregamento(false);
             return; 
@@ -43,17 +43,42 @@ async function handleFiltroChange() {
         }
 
         if (appCache.projecao === 'arealizar') {
+            // Antes de carregar, forçamos uma validação de datas.
+            // Se o usuário estava em 2023 (Realizado) e mudou para A Realizar, 
+            // isso vai forçar o filtro a pular para o Ano Atual/Futuro IMEDIATAMENTE.
+            const anoAtual = new Date().getFullYear();
+            appCache.flagAnos = true;
+            // Define um range seguro inicial (ex: Ano Atual até +5) para garantir que saia do passado
+            atualizarOpcoesAnoSelect(null, anoAtual, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
+            appCache.flagAnos = false;
+
+            // CRUCIAL: Atualiza a variável 'filtrosAtuais' com as novas datas (ex: 2026)
+            // Se não fizer isso, ele busca e desenha 2023 (vazio) mesmo com o botão mostrando 2026.
+            filtrosAtuais = obterFiltrosAtuais();
+
+            // 1. Carrega os dados com o filtro já corrigido
             await stepCarregarProcessarDados(filtrosAtuais);
-            // No modo A Realizar, atualizamos o limite máximo do calendário baseado nos dados
+
+            // 2. Analisa os dados carregados para descobrir o range REAL (ex: financiamento até 2040)
             stepAtualizarAnosPeloCache(filtrosAtuais.contas);
+
+            // 3. Refresh Final: O passo anterior pode ter expandido ou truncado as datas.
+            // Atualizamos a variável novamente para garantir que a tabela renderize exatamente o que está no botão.
+            filtrosAtuais = obterFiltrosAtuais();
+
         } else {
-            // No modo Realizado, verificamos metadados para definir limites do calendário (Min/Max Anos)
+            // MODO REALIZADO:
+            // 1. Pergunta à API quais anos existem (metadados) e ajusta o filtro se necessário
             await stepGerenciarPeriodos(filtrosAtuais.contas);
-            // Re-lê filtros pois os metadados podem não ter alterado a seleção, mas é bom garantir
-            filtrosAtuais = obterFiltrosAtuais(); 
+            
+            // 2. CRUCIAL: Atualiza filtros, pois stepGerenciarPeriodos pode ter mudado o ano (ex: de 2030 p/ 2024)
+            filtrosAtuais = obterFiltrosAtuais();
+            
+            // 3. Carrega os dados do ano específico correto
             await stepCarregarProcessarDados(filtrosAtuais);
         }
 
+        // ETAPA FINAL: Renderização com a variável filtrosAtuais 100% sincronizada
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
