@@ -496,11 +496,9 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
 
 // ------ Tabelas (Renderização) ------
 function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
-
-    console.log(colunas);
-
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
-    ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro'].forEach(limpar);
+    const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
+    idsTabelas.forEach(limpar);
 
     renderizarDRE(dados.matrizDRE, colunas, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
@@ -512,12 +510,7 @@ function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
 
     // Adiciona as colunas vazias nas tabelas que possuem estrutura de colunas temporais
     if (colunasPlaceholder && colunasPlaceholder.length > 0) {
-        renderizarColunasPlaceholder(colunasPlaceholder, [
-            'tabelaMatriz',         // DRE
-            'tabelaCustos',         // Detalhamento
-            'tabelaCapitalGiro',    // Capital de Giro
-            'resumoFluxoCaixa'      // Resumo Financeiro
-        ]);
+        renderizarColunasPlaceholder(colunasPlaceholder, idsTabelas);
     }
 }
 
@@ -1119,6 +1112,7 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
     tabela.innerHTML = htmlHeader + htmlBody;
 }
 
+//Placeholders para colunas sem dados
 /**
  * Insere colunas vazias antes da coluna TOTAL.
  * @param {string[]} colunasVazias - Lista de nomes das colunas (ex: ['01-2026', '02-2026'])
@@ -1135,23 +1129,23 @@ function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
         const thead = tabela.tHead;
         if (thead) {
             Array.from(thead.rows).forEach(row => {
-                // Se for linha de título/spacer (colspan), aumenta o tamanho
+                // Caso 1: Linha de Título/Espaçador com Colspan (ex: linha vazia no topo)
+                // Se a linha tem apenas 1 célula e ela tem colspan, expandimos o colspan
                 if (row.cells.length === 1 && row.cells[0].hasAttribute('colspan')) {
                     const atualColspan = parseInt(row.cells[0].getAttribute('colspan')) || 1;
                     row.cells[0].setAttribute('colspan', atualColspan + colunasVazias.length);
                     return;
                 }
 
-                // Encontra índice do TOTAL (última célula)
-                // Se não houver células, insere no fim.
+                // Caso 2: Linha de Cabeçalho Normal (Rótulo | Col1 | Col2 ... | Total)
+                // Inserimos ANTES da última célula (TOTAL)
                 const indiceTotal = Math.max(0, row.cells.length - 1); 
                 const celulaTotal = row.cells[indiceTotal];
 
                 colunasVazias.forEach(nomeColuna => {
                     const th = document.createElement('th');
-                    th.textContent = nomeColuna;
-                    // O CSS global já estiliza <th> dentro de thead, não precisamos adicionar classes manuais
-                    // Apenas garantimos que insere ANTES do Total
+                    th.textContent = nomeColuna; 
+                    // NÃO aplicamos styles manuais. O CSS 'table thead th' fará o trabalho (fundo azul, texto branco, etc).
                     row.insertBefore(th, celulaTotal);
                 });
             });
@@ -1161,10 +1155,9 @@ function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
         const tbody = tabela.tBodies[0];
         if (tbody) {
             Array.from(tbody.rows).forEach(row => {
-                // 1. Verifica se é Spacer ou Título de Grupo (Colspan total)
+                // Caso 1: Linhas de Espaçamento ou Títulos de Seção (que usam colspan total)
+                // Identificamos se é spacer pelo dataset OU se tem apenas 1 célula com colspan
                 const isSpacer = row.dataset.type === 'spacer';
-                // Algumas linhas como o título de grupo no detalhamento tem colspan na primeira célula depois do nome
-                // Mas aqui estamos falando daquelas linhas vazias cinzas
                 const temColspanUnico = row.cells.length === 1 && row.cells[0].hasAttribute('colspan');
 
                 if (isSpacer || temColspanUnico) {
@@ -1174,19 +1167,18 @@ function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
                     return;
                 }
 
-                // 2. Linhas Normais de Dados
-                // Precisamos inserir antes da última célula (Total)
+                // Caso 2: Linhas de Dados Normais
+                // Inserimos as células vazias antes da coluna de Total
                 const indiceTotal = Math.max(0, row.cells.length - 1);
                 const celulaTotal = row.cells[indiceTotal];
 
                 colunasVazias.forEach(() => {
                     const td = document.createElement('td');
-                    td.textContent = '-'; // Padrão financeiro para "sem dados" ou "zero"
+                    // Usamos '-' para seguir o padrão visual de "sem valor" do formatarValor()
+                    td.textContent = '-'; 
                     
-                    // Força alinhamento à direita para combinar com números (caso o CSS genérico falhe)
-                    // Mas geralmente o CSS 'table tbody td { text-align: right }' já resolve.
-                    td.style.textAlign = 'right'; 
-                    
+                    // O CSS global já alinha à direita (text-align: right) para td dentro de tbody.
+                    // Não adicionamos classes ou estilos inline para garantir identidade visual.
                     row.insertBefore(td, celulaTotal);
                 });
             });
