@@ -21,6 +21,31 @@ function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
 
+// ------ Auxiliares ------
+function gerarColunasPeriodo(inicioStr, fimStr) {
+    // Entradas esperadas no formato YYYY-MM (padrão do input type="month")
+    if (!inicioStr || !fimStr) return [];
+    
+    let [anoIni, mesIni] = inicioStr.split('-').map(Number);
+    let [anoFim, mesFim] = fimStr.split('-').map(Number);
+    
+    let colunas = [];
+    let atualAno = anoIni;
+    let atualMes = mesIni;
+
+    while (atualAno < anoFim || (atualAno === anoFim && atualMes <= mesFim)) {
+        // Formata para MM-YYYY (formato usado nas chaves do seus objetos de dados)
+        colunas.push(`${String(atualMes).padStart(2, '0')}-${atualAno}`);
+        
+        atualMes++;
+        if (atualMes > 12) {
+            atualMes = 1;
+            atualAno++;
+        }
+    }
+    return colunas;
+}
+
 // ------ Utilitários DOM ------
 function getSelectItems(select) {
     return Array.from(select.selectedOptions || []).map(o => o.value);
@@ -72,7 +97,6 @@ function alternarEstadoCarregamento(carregando) {
         }
     });
 }
-
 // ------ Chart.js ------
 function carregarChartJs() {
     if (window.Chart) return Promise.resolve();
@@ -95,7 +119,9 @@ function configurarFiltros(appCache, anosDisp, callback) {
         conta: document.getElementById('contaSelect'),
         modo: document.getElementById('modoSelect'),
         btnARealizar: document.getElementById('btnARealizar'),
-        btnRealizado: document.getElementById('btnRealizado')
+        btnRealizado: document.getElementById('btnRealizado'),
+        ini: document.getElementById('filtroDataInicio'), // Novo
+        fim: document.getElementById('filtroDataFim')     // Novo
     };
 
     el.proj.innerHTML = '';
@@ -113,6 +139,8 @@ function configurarFiltros(appCache, anosDisp, callback) {
 
     el.btnARealizar.onclick = () => setProj("arealizar");
     el.btnRealizado.onclick = () => setProj("realizado");
+    
+    // Listeners existentes
     el.ano.onchange = callback;
     el.conta.onchange = callback;
     el.proj.onchange = () => {
@@ -124,6 +152,9 @@ function configurarFiltros(appCache, anosDisp, callback) {
         callback();
     };
 
+    if (el.ini) el.ini.onchange = callback;
+    if (el.fim) el.fim.onchange = callback;
+
     carregarChartJs();
     configurarAbasGraficos();
     atualizarOpcoesAnoSelect(el.ano, anosDisp, el.modo.value, appCache.projecao);
@@ -132,7 +163,37 @@ function configurarFiltros(appCache, anosDisp, callback) {
 }
 
 function obterFiltrosAtuais() {
-    const el = { modo: document.getElementById('modoSelect'), ano: document.getElementById('anoSelect'), proj: document.getElementById('projSelect'), conta: document.getElementById('contaSelect') };
+    const el = { 
+        modo: document.getElementById('modoSelect'), 
+        ano: document.getElementById('anoSelect'), 
+        proj: document.getElementById('projSelect'), 
+        conta: document.getElementById('contaSelect'),
+        ini: document.getElementById('filtroDataInicio'), // Novo
+        fim: document.getElementById('filtroDataFim')     // Novo
+    };
+
+    // Se os inputs de data existirem e tiverem valor, usamos eles como prioridade
+    if (el.ini && el.fim && el.ini.value && el.fim.value) {
+        // Validação básica
+        if (el.ini.value > el.fim.value) {
+            alert("A data inicial não pode ser maior que a final");
+            return null;
+        }
+
+        const colunas = gerarColunasPeriodo(el.ini.value, el.fim.value);
+        // Extrai os anos únicos para buscar no banco de dados, se necessário
+        const anos = [...new Set(colunas.map(c => c.split('-')[1]))];
+
+        return { 
+            modo: 'mensal', // Força modo mensal quando usa range personalizado
+            anos, 
+            projetos: getSelectItems(el.proj), 
+            contas: getSelectItems(el.conta), 
+            colunas 
+        };
+    }
+
+    // --- Fallback para o comportamento original (Seleção apenas por Ano) ---
     if (!el.modo || !el.ano || !el.ano.value) return null;
 
     const modo = el.modo.value;
@@ -613,46 +674,73 @@ function configurarAbasGraficos() {
 // ------ Fluxo Diário ------
 function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const tb = document.getElementById('tabelaFluxoDiario');
+    if (!tb) return;
 
-    if (!tb) {
-        console.warn('Tabela tabelaFluxoDiario não encontrada no DOM');
+    tb.innerHTML = ''; // Limpa tudo
+    
+    // Se não houver colunas (filtro inválido), sai
+    if (!colunas || !colunas.length) return;
+
+    // Cria Header Simples (sem o dropdown antigo)
+    const thead = tb.createTHead();
+    const trH = thead.insertRow();
+    ['Data', 'Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => {
+        const th = document.createElement('th');
+        th.textContent = t;
+        trH.appendChild(th);
+    });
+
+    const tbody = tb.createTBody();
+
+    // Filtra os dados baseados nas colunas globais recebidas
+    // As colunas já vêm no formato 'MM-YYYY', precisamos converter para comparar ou usar Set
+    const colunasSet = new Set(colunas);
+    
+    // Filtra lançamentos que pertencem às colunas selecionadas
+    const dadosFiltrados = fluxo.filter(item => {
+        // item.data vem como 'DD/MM/YYYY'. Convertemos para 'MM-YYYY'
+        const parts = item.data.split('/');
+        const key = `${parts[1]}-${parts[2]}`;
+        return colunasSet.has(key);
+    });
+
+    if (dadosFiltrados.length === 0) {
+        tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento no período selecionado.</td>`;
         return;
     }
 
-    tb.textContent = '';
-    if (!colunas.length) return;
-
-    const colsAll = colunas[0].length === 4 ? colunas.flatMap(a => Array.from({length:12},(_,i)=>`${String(i+1).padStart(2,'0')}-${a}`)) : colunas;
-    const colSet = new Set(colsAll);
-    const dados = [], periodos = new Set();
-
-    fluxo.forEach(x => {
-        const k = `${x.data.split('/')[1]}-${x.data.split('/')[2]}`;
-        periodos.add(k);
-        if (colSet.has(k)) dados.push({...x, k});
+    // Ordena por data (assumindo formato DD/MM/YYYY)
+    dadosFiltrados.sort((a, b) => {
+        const da = a.data.split('/').reverse().join('-');
+        const db = b.data.split('/').reverse().join('-');
+        return da.localeCompare(db);
     });
 
-    const perOrd = Array.from(periodos).filter(p=>colSet.has(p)).sort(compKeys);
-    let iniVis, fimVis;
+    // Renderiza Saldo Inicial
+    // O saldo inicial precisa ser calculado até o primeiro dia do filtro
+    // A lógica original já passava o 'saldoIni' do DRE. 
+    // Se o filtro for parcial (ex: Março a Maio), o backend ou a lógica anterior 
+    // deve garantir que 'saldoIni' seja o saldo acumulado até final de Fev.
+    // Assumindo que 'saldoIni' passado para esta função já é o correto para o início do período:
     
-    if (perOrd.length) {
-        if (projecao === 'arealizar') {
-            iniVis = colsAll[colsAll.indexOf(perOrd[0])] || perOrd[0];
-            fimVis = colsAll[Math.min(colsAll.length-1, colsAll.indexOf(iniVis) + MAX_MESES_FLUXO - 1)];
-        } else {
-            fimVis = colsAll[colsAll.indexOf(perOrd[perOrd.length-1])] || perOrd[perOrd.length-1];
-            iniVis = colsAll[Math.max(0, colsAll.indexOf(fimVis) - MAX_MESES_FLUXO + 1)];
-        }
-    } else {
-        const c = projecao === 'arealizar' ? colsAll.slice(0, MAX_MESES_FLUXO) : colsAll.slice(-MAX_MESES_FLUXO);
-        iniVis = c[0]; fimVis = c[c.length-1];
-    }
+    let saldoAcumulado = saldoIni;
+    
+    const rS = tbody.insertRow();
+    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(saldoAcumulado, 2)}</b></td>`;
 
-    const tbody = tb.createTBody();
-    criarHeaderFluxo(tb, Array.from(periodos).sort(compKeys), (i, f) => renderFD(tbody, dados, saldoIni, i, f), iniVis, fimVis);
-    renderFD(tbody, dados, saldoIni, iniVis, fimVis);
+    // Renderiza linhas
+    dadosFiltrados.forEach(i => {
+        saldoAcumulado += i.valor;
+        const r = tbody.insertRow();
+        const obs = i.obs ? ` <span class="tooltip-target" data-tooltip="${i.obs}">ℹ️</span>` : '';
+        r.innerHTML = `
+            <td>${i.data}</td>
+            <td>${i.descricao}${obs}</td>
+            <td style="text-align:right">${formatarValor(i.valor, 2)}</td>
+            <td style="text-align:right">${formatarValor(saldoAcumulado, 2)}</td>
+        `;
+    });
 }
-
 function renderFD(tbody, itens, baseSaldo, ini, fim) {
     tbody.innerHTML = '';
     if (!ini || !fim || !itens.length) return tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento.</td>`;
