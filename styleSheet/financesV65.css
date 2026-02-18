@@ -512,12 +512,128 @@ body.app-loading::after {
   margin: auto;
 }
 
+/* =========================================================
+   DROPDOWN E BOTÃO DE DATA (REVISADO)
+========================================================= */
+
+/* Estilo do Botão para igualar ao .custom-select */
 .btn-filtro-data {
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-    min-width: 150px;
-    text-align: center;
-    border-radius: 4px;
+  /* Geometria idêntica ao select nativo */
+  height: 30px;
+  min-width: 220px; /* Largura mínima para caber "MM-AAAA até MM-AAAA" */
+  border: 1px solid #C7C7C7;
+  border-radius: 4px;
+  background-color: white;
+  
+  /* Tipografia */
+  font-family: var(--font, sans-serif);
+  font-size: 13.33px; /* Tamanho padrão de selects */
+  color: var(--text, #333);
+  text-align: center;
+  line-height: 28px; /* Centraliza verticalmente (30px altura - 2px borda) */
+  
+  /* Ícone de Seta (Igual ao custom-select) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  
+  /* Espaçamento */
+  padding-left: 10px;
+  padding-right: 30px; /* Espaço para a seta não ficar em cima do texto */
+  
+  /* Comportamento */
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+.btn-filtro-data:hover {
+  border-color: #999;
+}
+
+/* Container do Dropdown */
+.filtro-dropdown {
+  display: none; 
+  position: absolute; 
+  top: 100%; 
+  left: 0;
+  margin-top: 4px; /* Pequeno respiro do botão */
+  
+  background: white; 
+  border: 1px solid #ccc; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Sombra mais suave e difusa */
+  
+  padding: 10px; 
+  border-radius: 6px; 
+  min-width: 320px; /* Garante largura para o grid */
+  max-height: 400px; /* Aumentado para evitar corte em telas maiores */
+  overflow-y: auto; 
+  
+  color: #333; 
+  font-weight: normal;
+  z-index: 10005; /* Valor alto para garantir que fique acima de tudo */
+}
+
+/* Cabeçalho do Ano (2024, 2025...) dentro do dropdown */
+.filtro-ano-header { 
+  text-align: center; 
+  font-weight: 800; 
+  color: var(--primary, #1772CB);
+  padding: 8px 0; 
+  border-bottom: 2px solid #f0f0f0; 
+  margin-bottom: 8px;
+  margin-top: 5px;
+}
+
+/* Grid de Meses */
+.filtro-meses-grid { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); /* 4 colunas fixas */
+  gap: 6px; 
+  margin-bottom: 15px; /* Espaço entre um ano e outro */
+}
+
+/* Botões de Mês */
+.filtro-mes-btn {
+  padding: 6px 2px;
+  text-align: center; 
+  border-radius: 4px; 
+  font-size: 12px; 
+  cursor: pointer;
+  background: #fff; 
+  color: #555; 
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.filtro-mes-btn:hover { 
+  background: #f0f8ff; 
+  border-color: var(--primary, #1772CB);
+  color: var(--primary, #1772CB);
+}
+
+/* Estado: Dentro do intervalo selecionado */
+.filtro-mes-btn.in-range { 
+  background: #e6f2ff; 
+  border-color: #cce5ff;
+  color: var(--primary-dark, #0052a3);
+}
+
+/* Estado: Seleção Inicial e Final (Azul Escuro) */
+.filtro-mes-btn.selected-start, 
+.filtro-mes-btn.selected-end {
+  background: var(--primary, #1772CB); 
+  color: white; 
+  border-color: var(--primary-dark, #0052a3); 
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(23, 114, 203, 0.3);
+}
+
+/* Placeholder para meses vazios (se houver) */
+.filtro-mes-slot { 
+  padding: 8px; 
+  background: transparent; 
 }
