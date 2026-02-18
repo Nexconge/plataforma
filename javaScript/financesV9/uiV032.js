@@ -206,71 +206,76 @@ function resetarSelecaoPeloModo(modo) {
 }
 
 function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
-    // 1. Definição dos Limites (Mantendo a regra original de +5 anos para projeção)
+    // No Realizado, o limite é estritamente o maxAno com dados.
+    // No A Realizar, damos uma margem de +5 anos.
     const margemFim = projecao === 'arealizar' ? Math.max(maxAno, new Date().getFullYear() + 5) : maxAno;
     
     EstadoData.minDataDisponivel = `01-${minAno}`;
     EstadoData.maxDataDisponivel = `12-${margemFim}`;
     
-    // 2. Validação: A seleção atual ainda é válida?
-    // Precisamos extrair o ANO da seleção atual para comparar
-    let anoSelecionadoInicio = 0;
-    let anoSelecionadoFim = 0;
+    // 2. Extração da Seleção Atual
+    let anoSelInicio = 0;
+    let anoSelFim = 0;
 
     if (EstadoData.selecaoInicio) {
-        // Pega o ano independente se for "MM-YYYY" ou "YYYY"
-        const partes = EstadoData.selecaoInicio.split('-');
-        anoSelecionadoInicio = parseInt(partes.length === 2 ? partes[1] : partes[0]);
+        const p = EstadoData.selecaoInicio.split('-');
+        anoSelInicio = parseInt(p.length === 2 ? p[1] : p[0]);
     }
 
     if (EstadoData.selecaoFim) {
-        const partes = EstadoData.selecaoFim.split('-');
-        anoSelecionadoFim = parseInt(partes.length === 2 ? partes[1] : partes[0]);
+        const p = EstadoData.selecaoFim.split('-');
+        anoSelFim = parseInt(p.length === 2 ? p[1] : p[0]);
     } else {
-        anoSelecionadoFim = anoSelecionadoInicio;
+        anoSelFim = anoSelInicio;
     }
 
-    let precisaResetar = false;
+    // 3. Validação e Correção
+    let mudou = false;
 
-    // Regra A: Seleção está ANTES do mínimo permitido (ex: 2020 quando o min é 2022)
-    if (anoSelecionadoFim < minAno) {
-        precisaResetar = true;
+    // Cenário 1: O Início está fora dos limites?
+    // Ex: Estava em 2020, mas o dados começam em 2022 -> Move tudo para 2022
+    if (anoSelInicio < minAno) {
+        anoSelInicio = minAno;
+        anoSelFim = Math.max(anoSelFim, minAno); // Garante que fim >= inicio
+        mudou = true;
     }
 
-    // Regra B: Seleção está DEPOIS do máximo permitido (ex: 2028 quando muda para Realizado 2025)
-    if (anoSelecionadoInicio > margemFim) {
-        precisaResetar = true;
+    // Cenário 2: O Início está depois do fim dos dados?
+    // Ex: Estava em 2028 (A Realizar), mudei para Realizado (Max 2026) -> Move tudo para 2026
+    if (anoSelInicio > margemFim) {
+        anoSelInicio = margemFim;
+        anoSelFim = margemFim;
+        mudou = true;
     }
 
-    // 3. Aplicação do Reset (Se necessário)
-    if (precisaResetar) {
-        // Se for Realizado -> Vai para o ano mais recente (maxAno/margemFim)
-        // Se for A Realizar -> Vai para o ano atual ou minAno
-        
-        let anoAlvo;
-        if (projecao === 'realizado') {
-            anoAlvo = margemFim;
-        } else {
-            // No 'A Realizar', geralmente queremos ver a partir de hoje ou do inicio da projeção
-            const anoAtual = new Date().getFullYear();
-            anoAlvo = (anoAtual >= minAno && anoAtual <= margemFim) ? anoAtual : minAno;
+    // Cenário 3 (O SEU CASO): O Início é válido, mas o Fim estoura o limite?
+    // Ex: 2026 a 2031. 2026 ok, mas 2031 > 2026 (Realizado). -> Trunca o fim para 2026.
+    if (anoSelFim > margemFim) {
+        anoSelFim = margemFim;
+        // Se após truncar o fim, ele ficou menor que o início (impossível, mas por segurança), ajusta o início
+        if (anoSelInicio > anoSelFim) {
+            anoSelInicio = anoSelFim;
         }
+        mudou = true;
+    }
 
-        // Aplica o novo ano respeitando o modo (Mensal/Anual)
+    // 4. Aplicação das Mudanças
+    if (mudou) {
         if (modo.toLowerCase() === 'mensal') {
-            EstadoData.selecaoInicio = `01-${anoAlvo}`;
-            EstadoData.selecaoFim = `12-${anoAlvo}`;
+            // Se for mensal e teve que ajustar, geralmente resetamos para o ano "cheio" (Jan-Dez) do ano ajustado
+            // para evitar ficar com meses quebrados de um ano que não existe mais
+            EstadoData.selecaoInicio = `01-${anoSelInicio}`;
+            EstadoData.selecaoFim = `12-${anoSelInicio}`; // Força apenas 1 ano se houve estouro no mensal
         } else {
-            // Modo anual
-            EstadoData.selecaoInicio = `${anoAlvo}`;
-            EstadoData.selecaoFim = `${anoAlvo}`; 
+            // Modo Anual: Ajusta apenas os anos
+            EstadoData.selecaoInicio = `${anoSelInicio}`;
+            EstadoData.selecaoFim = `${anoSelFim}`; 
         }
     }
 
-    // 4. Atualiza visualmente o botão
+    // Atualiza o texto do botão visualmente
     renderizarComponenteFiltro();
 }
-
 function renderizarComponenteFiltro() {
     const btn = document.getElementById('globalDatePickerBtn');
     if (!btn) return;
@@ -927,36 +932,64 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     if (!tb) return;
     tb.textContent = '';
     
-    if (!colunas.length) return;
+    if (!colunas || !colunas.length) return;
 
-    // Como o filtro global já limita as colunas, usamos todas que vieram
+    // 1. Detecta se estamos no modo Anual (strings de 4 dígitos)
+    const isAnual = colunas[0].length === 4;
+
     const dados = [];
     const colSet = new Set(colunas);
     
+    // 2. Filtragem dos dados
     fluxo.forEach(x => {
-        const k = `${x.data.split('/')[1]}-${x.data.split('/')[2]}`;
-        if (colSet.has(k)) dados.push({...x, k});
+        // Extrai partes da data do lançamento (DD/MM/AAAA)
+        const parts = x.data.split('/');
+        const mes = parts[1];
+        const ano = parts[2];
+        
+        // Chave usada para ordenação e display (sempre MM-AAAA)
+        const k = `${mes}-${ano}`;
+        
+        // Lógica de inclusão:
+        // Se for Anual: Verifica se o ANO (2026) está nas colunas
+        // Se for Mensal: Verifica se a chave completa (05-2026) está nas colunas
+        if (isAnual) {
+            if (colSet.has(ano)) dados.push({...x, k});
+        } else {
+            if (colSet.has(k)) dados.push({...x, k});
+        }
     });
 
     const tbody = tb.createTBody();
     
-    // Cabeçalho Simplificado (Sem Dropdown)
+    // 3. Cabeçalho
     const thead = tb.createTHead();
     const trH = thead.insertRow();
     
-    // Coluna Data com indicação do range
     const thData = document.createElement('th');
-    thData.innerHTML = `Data`;
+    thData.innerHTML = `Data<br><span style="font-size:0.8em; font-weight:normal;">${colunas[0]} a ${colunas[colunas.length-1]}</span>`;
     trH.appendChild(thData);
     
     ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => {
         const th = document.createElement('th'); th.textContent = t; trH.appendChild(th);
     });
 
-    // Renderiza dados (sem necessidade de lógica complexa de janela, pois o filtro global já restringiu)
-    renderFD(tbody, dados, saldoIni, colunas[0], colunas[colunas.length-1]);
-}
+    // 4. Definição dos Limites Visuais (Para a função renderFD funcionar corretamente)
+    // A função renderFD exige o formato MM-AAAA para calcular a ordem cronológica.
+    let iniVis, fimVis;
 
+    if (isAnual) {
+        // Se é 2026 a 2028, transformamos em "01-2026" a "12-2028"
+        iniVis = `01-${colunas[0]}`;
+        fimVis = `12-${colunas[colunas.length - 1]}`;
+    } else {
+        iniVis = colunas[0];
+        fimVis = colunas[colunas.length - 1];
+    }
+
+    // Renderiza passando os limites convertidos
+    renderFD(tbody, dados, saldoIni, iniVis, fimVis);
+}
 function renderFD(tbody, itens, baseSaldo, ini, fim) {
     tbody.innerHTML = '';
     if (!ini || !fim || !itens.length) return tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento.</td>`;
@@ -980,121 +1013,11 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
         r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor, 2)}</td><td style="text-align:right">${formatarValor(s, 2)}</td>`;
     });
 }
-
-function criarHeaderFluxo(tab, pers, cb, iniDef, fimDef) {
-    const thead = tab.createTHead();
-    const thRow = thead.insertRow();
-    
-    // --- Célula 1: Filtro (TH manual) ---
-    const thData = document.createElement('th');
-    thData.className = 'data-header';
-    thData.style.position = 'relative'; // Importante para o dropdown absoluto
-
-    // Container do Filtro
-    const wrap = document.createElement('div');
-    wrap.id = 'fd-periodo-container';
-    
-    // Label clicável
-    const labelDiv = document.createElement('div');
-    labelDiv.id = 'fd-periodo-label';
-    labelDiv.textContent = `${iniDef} → ${fimDef} ▼`;
-    
-    // Texto fixo "Data"
-    const textDiv = document.createElement('div');
-    textDiv.textContent = 'Data';
-    
-    wrap.appendChild(textDiv);
-    wrap.appendChild(labelDiv);
-    
-    // Lógica do Dropdown
-    const { drop, ini, fim } = criarDropCal(pers, (i, f) => { 
-        labelDiv.textContent = `${i} → ${f} ▼`; 
-        cb(i, f); 
-    }, iniDef, fimDef);
-
-    if(ini) labelDiv.textContent = `${ini} → ${fim} ▼`;
-
-    // Eventos de Clique (Corrigido)
-    labelDiv.onclick = (e) => { 
-        e.stopPropagation(); 
-        const isVisible = drop.style.display === 'block';
-        drop.style.display = isVisible ? 'none' : 'block'; 
-    };
-    
-    document.addEventListener('click', (e) => { 
-        // Fecha se clicar fora da TH
-        if (!thData.contains(e.target)) drop.style.display = 'none'; 
-    });
-
-    thData.appendChild(wrap);
-    thData.appendChild(drop);
-    thRow.appendChild(thData);
-
-    // --- Células 2, 3, 4: Colunas Normais (TH manuais) ---
-    // Usamos createElement('th') para garantir que peguem o estilo do CSS
-    ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(text => {
-        const th = document.createElement('th');
-        th.textContent = text;
-        thRow.appendChild(th);
-    });
-}
-
-function criarDropCal(pers, cb, sIni, sFim) {
-    const d = document.createElement('div'); d.className = 'filtro-dropdown';
-    let selI = sIni || pers[0], selF = sFim || pers[pers.length-1];
-
-    const render = () => {
-        d.innerHTML = '';
-        const grp = {}; pers.forEach(p=>{ const[m,a]=p.split('-'); (grp[a]=grp[a]||[]).push(m); });
-        
-        Object.keys(grp).sort().forEach(a => {
-            const row = document.createElement('div');
-            row.innerHTML = `<div class="filtro-ano-header">${a}</div><div class="filtro-meses-grid"></div>`;
-            const grid = row.querySelector('.grid') || row.lastChild;
-            
-            for(let i=1; i<=12; i++){
-                const m = String(i).padStart(2,'0'), k = `${m}-${a}`;
-                const btn = document.createElement('div');
-                btn.textContent = MESES_ABREV[i-1];
-                
-                const hasData = grp[a].includes(m);
-                const isSel = selI && !selF; // Selecionando...
-                const diff = isSel ? Math.abs(((Number(a)-Number(selI.split('-')[1]))*12) + (i - Number(selI.split('-')[0]))) : 0;
-                
-                if (hasData && (!isSel || diff <= MAX_MESES_FLUXO)) {
-                    btn.className = 'filtro-mes-btn';
-                    if (selI === k || (selI && selF && compKeys(k, selI)>=0 && compKeys(k, selF)<=0)) btn.classList.add('in-range');
-                    if (k === selI || k === selF) btn.classList.add('selected-start');
-                    
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (!selI || (selI && selF)) { selI = k; selF = null; } 
-                        else { 
-                            let [i, f] = [selI, k]; if(compKeys(f, i)<0) [i,f]=[f,i];
-                            if (Math.abs(((Number(f.split('-')[1])-Number(i.split('-')[1]))*12)+(Number(f.split('-')[0])-Number(i.split('-')[0]))) <= MAX_MESES_FLUXO) {
-                                selI = i; selF = f; cb(i, f);
-                            }
-                        }
-                        render();
-                    };
-                } else {
-                    btn.className = 'filtro-mes-slot';
-                }
-                grid.appendChild(btn);
-            }
-            d.appendChild(row);
-        });
-    };
-    render();
-    return { drop: d, ini: selI, fim: selF };
-}
-
 function compKeys(a, b) {
     if(!a||!b) return 0;
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
 }
-
 // ------ Fluxo Diário Resumido -----
 function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
     const tabela = document.getElementById('resumoFluxoCaixa');
