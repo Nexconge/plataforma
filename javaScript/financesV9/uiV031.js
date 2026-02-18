@@ -206,14 +206,68 @@ function resetarSelecaoPeloModo(modo) {
 }
 
 function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
-    // Esta função substitui a antiga lógica de preencher o <select>
-    // Agora ela atualiza os limites do EstadoData e redesenha o botão
+    // 1. Definição dos Limites (Mantendo a regra original de +5 anos para projeção)
+    const margemFim = projecao === 'arealizar' ? Math.max(maxAno, new Date().getFullYear() + 5) : maxAno;
     
     EstadoData.minDataDisponivel = `01-${minAno}`;
-    // Se for "A Realizar", garantimos margem futura
-    const margemFim = projecao === 'arealizar' ? Math.max(maxAno, new Date().getFullYear() + 5) : maxAno;
     EstadoData.maxDataDisponivel = `12-${margemFim}`;
     
+    // 2. Validação: A seleção atual ainda é válida?
+    // Precisamos extrair o ANO da seleção atual para comparar
+    let anoSelecionadoInicio = 0;
+    let anoSelecionadoFim = 0;
+
+    if (EstadoData.selecaoInicio) {
+        // Pega o ano independente se for "MM-YYYY" ou "YYYY"
+        const partes = EstadoData.selecaoInicio.split('-');
+        anoSelecionadoInicio = parseInt(partes.length === 2 ? partes[1] : partes[0]);
+    }
+
+    if (EstadoData.selecaoFim) {
+        const partes = EstadoData.selecaoFim.split('-');
+        anoSelecionadoFim = parseInt(partes.length === 2 ? partes[1] : partes[0]);
+    } else {
+        anoSelecionadoFim = anoSelecionadoInicio;
+    }
+
+    let precisaResetar = false;
+
+    // Regra A: Seleção está ANTES do mínimo permitido (ex: 2020 quando o min é 2022)
+    if (anoSelecionadoFim < minAno) {
+        precisaResetar = true;
+    }
+
+    // Regra B: Seleção está DEPOIS do máximo permitido (ex: 2028 quando muda para Realizado 2025)
+    if (anoSelecionadoInicio > margemFim) {
+        precisaResetar = true;
+    }
+
+    // 3. Aplicação do Reset (Se necessário)
+    if (precisaResetar) {
+        // Se for Realizado -> Vai para o ano mais recente (maxAno/margemFim)
+        // Se for A Realizar -> Vai para o ano atual ou minAno
+        
+        let anoAlvo;
+        if (projecao === 'realizado') {
+            anoAlvo = margemFim;
+        } else {
+            // No 'A Realizar', geralmente queremos ver a partir de hoje ou do inicio da projeção
+            const anoAtual = new Date().getFullYear();
+            anoAlvo = (anoAtual >= minAno && anoAtual <= margemFim) ? anoAtual : minAno;
+        }
+
+        // Aplica o novo ano respeitando o modo (Mensal/Anual)
+        if (modo.toLowerCase() === 'mensal') {
+            EstadoData.selecaoInicio = `01-${anoAlvo}`;
+            EstadoData.selecaoFim = `12-${anoAlvo}`;
+        } else {
+            // Modo anual
+            EstadoData.selecaoInicio = `${anoAlvo}`;
+            EstadoData.selecaoFim = `${anoAlvo}`; 
+        }
+    }
+
+    // 4. Atualiza visualmente o botão
     renderizarComponenteFiltro();
 }
 
@@ -892,7 +946,7 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     
     // Coluna Data com indicação do range
     const thData = document.createElement('th');
-    thData.innerHTML = `Data<br><span style="font-size:0.8em; font-weight:normal;">${colunas[0]} a ${colunas[colunas.length-1]}</span>`;
+    thData.innerHTML = `Data`;
     trH.appendChild(thData);
     
     ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => {
