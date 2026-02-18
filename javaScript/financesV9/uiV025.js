@@ -6,6 +6,47 @@ let chartJsPromise = null;
 const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const MAX_MESES_FLUXO = 6;
 
+const EstadoData = {
+    minDataDisponivel: null, // 'MM-YYYY'
+    maxDataDisponivel: null, // 'MM-YYYY'
+    selecaoInicio: null,     // 'MM-YYYY' ou 'YYYY'
+    selecaoFim: null,        // 'MM-YYYY' ou 'YYYY'
+    callbackMudanca: null
+};
+
+// --- Funções Auxiliares de Data para UI ---
+function parseDataStr(str) {
+    if (!str) return { m: 1, a: new Date().getFullYear() };
+    const [m, a] = str.includes('-') ? str.split('-').map(Number) : [1, Number(str)];
+    return { m, a };
+}
+
+function compStrData(a, b) {
+    const dA = parseDataStr(a);
+    const dB = parseDataStr(b);
+    return dA.a !== dB.a ? dA.a - dB.a : dA.m - dB.m;
+}
+
+function gerarColunasPeloIntervalo(inicio, fim, modo) {
+    const lista = [];
+    const i = parseDataStr(inicio);
+    const f = parseDataStr(fim);
+    
+    let currA = i.a;
+    let currM = i.m;
+
+    while (currA < f.a || (currA === f.a && currM <= f.m)) {
+        if (modo === 'mensal') {
+            lista.push(`${String(currM).padStart(2, '0')}-${currA}`);
+            currM++;
+            if (currM > 12) { currM = 1; currA++; }
+        } else {
+            lista.push(String(currA));
+            currA++;
+        }
+    }
+    return lista;
+}
 // ------ Formatação ------
 function formatarValor(valor, fractionDigits = 0) {
     if (Math.abs(valor) < 0.01) return '-';
@@ -21,30 +62,6 @@ function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
 
-// ------ Auxiliares ------
-function gerarColunasPeriodo(inicioStr, fimStr) {
-    // Entradas esperadas no formato YYYY-MM (padrão do input type="month")
-    if (!inicioStr || !fimStr) return [];
-    
-    let [anoIni, mesIni] = inicioStr.split('-').map(Number);
-    let [anoFim, mesFim] = fimStr.split('-').map(Number);
-    
-    let colunas = [];
-    let atualAno = anoIni;
-    let atualMes = mesIni;
-
-    while (atualAno < anoFim || (atualAno === anoFim && atualMes <= mesFim)) {
-        // Formata para MM-YYYY (formato usado nas chaves do seus objetos de dados)
-        colunas.push(`${String(atualMes).padStart(2, '0')}-${atualAno}`);
-        
-        atualMes++;
-        if (atualMes > 12) {
-            atualMes = 1;
-            atualAno++;
-        }
-    }
-    return colunas;
-}
 
 // ------ Utilitários DOM ------
 function getSelectItems(select) {
@@ -97,6 +114,7 @@ function alternarEstadoCarregamento(carregando) {
         }
     });
 }
+
 // ------ Chart.js ------
 function carregarChartJs() {
     if (window.Chart) return Promise.resolve();
@@ -113,23 +131,34 @@ function carregarChartJs() {
 
 // ------ Filtros ------
 function configurarFiltros(appCache, anosDisp, callback) {
+    // Inicializa limites baseados no anosDisp (fallback inicial)
+    const anoAtual = new Date().getFullYear();
+    EstadoData.minDataDisponivel = `01-${Math.min(...anosDisp.map(Number), anoAtual)}`;
+    EstadoData.maxDataDisponivel = `12-${Math.max(...anosDisp.map(Number), anoAtual)}`;
+    EstadoData.callbackMudanca = callback;
+
     const el = {
-        ano: document.getElementById('anoSelect'),
+        containerAno: document.getElementById('anoSelect').parentNode, // Pega o parent para substituir o select
         proj: document.getElementById('projSelect'),
         conta: document.getElementById('contaSelect'),
         modo: document.getElementById('modoSelect'),
         btnARealizar: document.getElementById('btnARealizar'),
-        btnRealizado: document.getElementById('btnRealizado'),
-        ini: document.getElementById('filtroDataInicio'), // Novo
-        fim: document.getElementById('filtroDataFim')     // Novo
+        btnRealizado: document.getElementById('btnRealizado')
     };
 
-    el.proj.innerHTML = '';
-    Array.from(appCache.projetosMap.entries())
-        .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
-        .forEach(([cod, { nome }]) => el.proj.appendChild(new Option(nome, cod)));
-    if (el.proj.options.length) el.proj.options[0].selected = true;
+    // Remove o Select antigo se existir e cria o container do novo Picker
+    const antigoSelect = document.getElementById('anoSelect');
+    if (antigoSelect) antigoSelect.style.display = 'none'; // Oculta original
+    
+    let pickerBtn = document.getElementById('globalDatePickerBtn');
+    if (!pickerBtn) {
+        pickerBtn = document.createElement('button');
+        pickerBtn.id = 'globalDatePickerBtn';
+        pickerBtn.className = 'btn-filtro-data'; // Necessário CSS para estilizar
+        el.containerAno.appendChild(pickerBtn);
+    }
 
+    // Inicializa lógica de projeção
     const setProj = (t) => {
         appCache.projecao = t;
         const divCG = document.getElementById('groupCapitalGiro');
@@ -140,69 +169,222 @@ function configurarFiltros(appCache, anosDisp, callback) {
     el.btnARealizar.onclick = () => setProj("arealizar");
     el.btnRealizado.onclick = () => setProj("realizado");
     
-    // Listeners existentes
-    el.ano.onchange = callback;
     el.conta.onchange = callback;
     el.proj.onchange = () => {
         atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
         callback();
     };
+    
+    // Setup do Modo (Mensal/Anual) e do Picker
     el.modo.onchange = () => {
-        atualizarOpcoesAnoSelect(el.ano, anosDisp, el.modo.value, appCache.projecao);
+        resetarSelecaoPeloModo(el.modo.value);
+        renderizarComponenteFiltro();
         callback();
     };
 
-    if (el.ini) el.ini.onchange = callback;
-    if (el.fim) el.fim.onchange = callback;
-
+    // Inicializa com padrão (ano corrente)
+    resetarSelecaoPeloModo(el.modo.value || 'mensal');
+    renderizarComponenteFiltro();
+    
+    // Preenche projetos/contas
+    el.proj.innerHTML = '';
+    Array.from(appCache.projetosMap.entries())
+        .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
+        .forEach(([cod, { nome }]) => el.proj.appendChild(new Option(nome, cod)));
+    if (el.proj.options.length) el.proj.options[0].selected = true;
+    
+    atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
     carregarChartJs();
     configurarAbasGraficos();
-    atualizarOpcoesAnoSelect(el.ano, anosDisp, el.modo.value, appCache.projecao);
-    atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
     callback();
+}
+function resetarSelecaoPeloModo(modo) {
+    const hoje = new Date();
+    if (modo.toLowerCase() === 'mensal') {
+        EstadoData.selecaoInicio = `01-${hoje.getFullYear()}`;
+        EstadoData.selecaoFim = `12-${hoje.getFullYear()}`;
+    } else {
+        EstadoData.selecaoInicio = `${hoje.getFullYear()}`;
+        EstadoData.selecaoFim = `${hoje.getFullYear() + 5}`;
+    }
+}
+
+function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
+    // Esta função substitui a antiga lógica de preencher o <select>
+    // Agora ela atualiza os limites do EstadoData e redesenha o botão
+    
+    EstadoData.minDataDisponivel = `01-${minAno}`;
+    // Se for "A Realizar", garantimos margem futura
+    const margemFim = projecao === 'arealizar' ? Math.max(maxAno, new Date().getFullYear() + 5) : maxAno;
+    EstadoData.maxDataDisponivel = `12-${margemFim}`;
+    
+    renderizarComponenteFiltro();
+}
+
+function renderizarComponenteFiltro() {
+    const btn = document.getElementById('globalDatePickerBtn');
+    if (!btn) return;
+
+    // Atualiza Texto do Botão
+    btn.textContent = `${EstadoData.selecaoInicio} até ${EstadoData.selecaoFim} ▼`;
+    
+    // Remove dropdown anterior se existir para recriar
+    const oldDrop = document.getElementById('globalDateDropdown');
+    if (oldDrop) oldDrop.remove();
+
+    // Cria Dropdown (Escondido)
+    const drop = document.createElement('div');
+    drop.id = 'globalDateDropdown';
+    drop.className = 'filtro-dropdown'; // Reutiliza classe CSS existente
+    drop.style.display = 'none';
+    drop.style.position = 'absolute';
+    drop.style.zIndex = '1000';
+    
+    btn.parentNode.style.position = 'relative';
+    btn.parentNode.appendChild(drop);
+
+    // Evento de Click no Botão
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        const estaVisivel = drop.style.display === 'block';
+        document.querySelectorAll('.filtro-dropdown').forEach(d => d.style.display = 'none'); // Fecha outros
+        if (!estaVisivel) {
+            montarGridCalendario(drop);
+            drop.style.display = 'block';
+        }
+    };
+
+    // Fecha ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!btn.contains(e.target) && !drop.contains(e.target)) {
+            drop.style.display = 'none';
+        }
+    });
+}
+
+function montarGridCalendario(container) {
+    container.innerHTML = '';
+    const modo = document.getElementById('modoSelect').value.toLowerCase();
+    const minA = parseDataStr(EstadoData.minDataDisponivel).a;
+    const maxA = parseDataStr(EstadoData.maxDataDisponivel).a;
+
+    // Cabeçalho de instrução
+    const header = document.createElement('div');
+    header.className = 'filtro-ano-header';
+    header.style.fontSize = '12px';
+    header.textContent = modo === 'mensal' ? 'Selecione até 12 meses' : 'Selecione até 6 anos';
+    container.appendChild(header);
+
+    for (let ano = minA; ano <= maxA; ano++) {
+        const row = document.createElement('div');
+        
+        if (modo === 'mensal') {
+            row.innerHTML = `<div class="filtro-ano-header">${ano}</div><div class="grid filtro-meses-grid"></div>`;
+            const grid = row.querySelector('.grid');
+            
+            for (let i = 1; i <= 12; i++) {
+                const m = String(i).padStart(2, '0');
+                const chave = `${m}-${ano}`;
+                const btn = criarBotaoPeriodo(chave, modo);
+                grid.appendChild(btn);
+            }
+        } else {
+            // Modo Anual (Botão unico por ano)
+            const btn = criarBotaoPeriodo(String(ano), modo);
+            btn.style.width = '100%';
+            btn.style.margin = '2px';
+            row.appendChild(btn);
+        }
+        container.appendChild(row);
+    }
+}
+
+function criarBotaoPeriodo(chave, modo) {
+    const btn = document.createElement('div');
+    btn.className = 'filtro-mes-btn';
+    btn.textContent = modo === 'mensal' ? MESES_ABREV[parseInt(chave.split('-')[0]) - 1] : chave;
+
+    const inicio = EstadoData.selecaoInicio;
+    const fim = EstadoData.selecaoFim;
+
+    // Estilização (Selecionado e Range)
+    const isInicio = chave === inicio;
+    const isFim = chave === fim;
+    const inRange = inicio && fim && compStrData(chave, inicio) >= 0 && compStrData(chave, fim) <= 0;
+
+    if (inRange) btn.classList.add('in-range');
+    if (isInicio || isFim) btn.classList.add('selected-start'); // Reutiliza classe CSS
+
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        tratarCliqueData(chave, modo);
+    };
+
+    return btn;
+}
+
+function tratarCliqueData(chave, modo) {
+    let i = EstadoData.selecaoInicio;
+    let f = EstadoData.selecaoFim;
+
+    // Lógica de Reinício ou Seleção de Range
+    if (!i || (i && f)) {
+        // Novo Início
+        EstadoData.selecaoInicio = chave;
+        EstadoData.selecaoFim = null;
+    } else {
+        // Fechando Range
+        if (compStrData(chave, i) < 0) { [i, chave] = [chave, i]; } // Swap se selecionou anterior
+        
+        // Validação de Limites
+        const maxCols = modo === 'mensal' ? 12 : 6;
+        const colunasTeste = gerarColunasPeloIntervalo(i, chave, modo);
+        
+        if (colunasTeste.length > maxCols) {
+            alert(`O período máximo é de ${maxCols} ${modo === 'mensal' ? 'meses' : 'anos'}.`);
+            EstadoData.selecaoInicio = chave;
+            EstadoData.selecaoFim = null;
+        } else {
+            EstadoData.selecaoInicio = i;
+            EstadoData.selecaoFim = chave;
+            // Dispara atualização
+            document.getElementById('globalDateDropdown').style.display = 'none';
+            renderizarComponenteFiltro();
+            if (EstadoData.callbackMudanca) EstadoData.callbackMudanca();
+        }
+    }
+    // Re-renderiza o grid para mostrar a seleção parcial
+    const drop = document.getElementById('globalDateDropdown');
+    if (drop.style.display === 'block') montarGridCalendario(drop);
 }
 
 function obterFiltrosAtuais() {
-    const el = { 
-        modo: document.getElementById('modoSelect'), 
-        ano: document.getElementById('anoSelect'), 
-        proj: document.getElementById('projSelect'), 
-        conta: document.getElementById('contaSelect'),
-        ini: document.getElementById('filtroDataInicio'), // Novo
-        fim: document.getElementById('filtroDataFim')     // Novo
-    };
-
-    // Se os inputs de data existirem e tiverem valor, usamos eles como prioridade
-    if (el.ini && el.fim && el.ini.value && el.fim.value) {
-        // Validação básica
-        if (el.ini.value > el.fim.value) {
-            alert("A data inicial não pode ser maior que a final");
-            return null;
-        }
-
-        const colunas = gerarColunasPeriodo(el.ini.value, el.fim.value);
-        // Extrai os anos únicos para buscar no banco de dados, se necessário
-        const anos = [...new Set(colunas.map(c => c.split('-')[1]))];
-
-        return { 
-            modo: 'mensal', // Força modo mensal quando usa range personalizado
-            anos, 
-            projetos: getSelectItems(el.proj), 
-            contas: getSelectItems(el.conta), 
-            colunas 
-        };
-    }
-
-    // --- Fallback para o comportamento original (Seleção apenas por Ano) ---
-    if (!el.modo || !el.ano || !el.ano.value) return null;
+    const el = { modo: document.getElementById('modoSelect'), proj: document.getElementById('projSelect'), conta: document.getElementById('contaSelect') };
+    
+    // Se o Picker ainda não foi inicializado corretamente
+    if (!EstadoData.selecaoInicio) return null;
 
     const modo = el.modo.value;
-    const valorAno = el.ano.value;
-    let anos = modo.toLowerCase() === 'mensal' ? [valorAno] : Array.from({length: 6}, (_, i) => String(Number(valorAno) + i));
     
-    const colunas = modo.toLowerCase() === 'anual' ? [...anos].sort() : Array.from({length: 12}, (_, i) => `${String(i + 1).padStart(2,'0')}-${valorAno}`);
+    // Se Fim é nulo (seleção em andamento), assume Início como Fim temporariamente
+    const fimEfetivo = EstadoData.selecaoFim || EstadoData.selecaoInicio;
+    
+    const colunas = gerarColunasPeloIntervalo(EstadoData.selecaoInicio, fimEfetivo, modo.toLowerCase());
 
-    return { modo, anos, projetos: getSelectItems(el.proj), contas: getSelectItems(el.conta), colunas };
+    // Calcula os Anos envolvidos para a API
+    const anosUnicos = new Set();
+    colunas.forEach(c => {
+        if (modo.toLowerCase() === 'mensal') anosUnicos.add(c.split('-')[1]);
+        else anosUnicos.add(c);
+    });
+
+    return { 
+        modo, 
+        anos: Array.from(anosUnicos), 
+        projetos: getSelectItems(el.proj), 
+        contas: getSelectItems(el.conta), 
+        colunas 
+    };
 }
 
 function atualizarOpcoesAnoSelect(select, inicio, fim, modo, projecao) {
@@ -675,72 +857,38 @@ function configurarAbasGraficos() {
 function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const tb = document.getElementById('tabelaFluxoDiario');
     if (!tb) return;
-
-    tb.innerHTML = ''; // Limpa tudo
+    tb.textContent = '';
     
-    // Se não houver colunas (filtro inválido), sai
-    if (!colunas || !colunas.length) return;
+    if (!colunas.length) return;
 
-    // Cria Header Simples (sem o dropdown antigo)
-    const thead = tb.createTHead();
-    const trH = thead.insertRow();
-    ['Data', 'Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => {
-        const th = document.createElement('th');
-        th.textContent = t;
-        trH.appendChild(th);
+    // Como o filtro global já limita as colunas, usamos todas que vieram
+    const dados = [];
+    const colSet = new Set(colunas);
+    
+    fluxo.forEach(x => {
+        const k = `${x.data.split('/')[1]}-${x.data.split('/')[2]}`;
+        if (colSet.has(k)) dados.push({...x, k});
     });
 
     const tbody = tb.createTBody();
-
-    // Filtra os dados baseados nas colunas globais recebidas
-    // As colunas já vêm no formato 'MM-YYYY', precisamos converter para comparar ou usar Set
-    const colunasSet = new Set(colunas);
     
-    // Filtra lançamentos que pertencem às colunas selecionadas
-    const dadosFiltrados = fluxo.filter(item => {
-        // item.data vem como 'DD/MM/YYYY'. Convertemos para 'MM-YYYY'
-        const parts = item.data.split('/');
-        const key = `${parts[1]}-${parts[2]}`;
-        return colunasSet.has(key);
+    // Cabeçalho Simplificado (Sem Dropdown)
+    const thead = tb.createTHead();
+    const trH = thead.insertRow();
+    
+    // Coluna Data com indicação do range
+    const thData = document.createElement('th');
+    thData.innerHTML = `Data<br><span style="font-size:0.8em; font-weight:normal;">${colunas[0]} a ${colunas[colunas.length-1]}</span>`;
+    trH.appendChild(thData);
+    
+    ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => {
+        const th = document.createElement('th'); th.textContent = t; trH.appendChild(th);
     });
 
-    if (dadosFiltrados.length === 0) {
-        tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento no período selecionado.</td>`;
-        return;
-    }
-
-    // Ordena por data (assumindo formato DD/MM/YYYY)
-    dadosFiltrados.sort((a, b) => {
-        const da = a.data.split('/').reverse().join('-');
-        const db = b.data.split('/').reverse().join('-');
-        return da.localeCompare(db);
-    });
-
-    // Renderiza Saldo Inicial
-    // O saldo inicial precisa ser calculado até o primeiro dia do filtro
-    // A lógica original já passava o 'saldoIni' do DRE. 
-    // Se o filtro for parcial (ex: Março a Maio), o backend ou a lógica anterior 
-    // deve garantir que 'saldoIni' seja o saldo acumulado até final de Fev.
-    // Assumindo que 'saldoIni' passado para esta função já é o correto para o início do período:
-    
-    let saldoAcumulado = saldoIni;
-    
-    const rS = tbody.insertRow();
-    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(saldoAcumulado, 2)}</b></td>`;
-
-    // Renderiza linhas
-    dadosFiltrados.forEach(i => {
-        saldoAcumulado += i.valor;
-        const r = tbody.insertRow();
-        const obs = i.obs ? ` <span class="tooltip-target" data-tooltip="${i.obs}">ℹ️</span>` : '';
-        r.innerHTML = `
-            <td>${i.data}</td>
-            <td>${i.descricao}${obs}</td>
-            <td style="text-align:right">${formatarValor(i.valor, 2)}</td>
-            <td style="text-align:right">${formatarValor(saldoAcumulado, 2)}</td>
-        `;
-    });
+    // Renderiza dados (sem necessidade de lógica complexa de janela, pois o filtro global já restringiu)
+    renderFD(tbody, dados, saldoIni, colunas[0], colunas[colunas.length-1]);
 }
+
 function renderFD(tbody, itens, baseSaldo, ini, fim) {
     tbody.innerHTML = '';
     if (!ini || !fim || !itens.length) return tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento.</td>`;

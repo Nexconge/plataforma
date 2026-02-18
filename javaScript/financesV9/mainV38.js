@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV10.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV024.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV025.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -31,33 +31,29 @@ async function handleFiltroChange() {
     try {
         let filtrosAtuais = obterFiltrosAtuais();
         
+        // Se a seleção estiver incompleta (ex: usuário clicou inicio mas nao fim), não processa
+        if (!filtrosAtuais) {
+            alternarEstadoCarregamento(false);
+            return; 
+        }
+
         if (!validarFiltros(filtrosAtuais)) {
             alternarEstadoCarregamento(false);
             return;
         }
 
         if (appCache.projecao === 'arealizar') {
-            // MODO A REALIZAR:
-            // 1. Carrega os dados PRIMEIRO (pois a API já traz tudo futuro)
             await stepCarregarProcessarDados(filtrosAtuais);
-
-            // 2. Analisa os dados carregados para descobrir o range de anos (Min/Max)
+            // No modo A Realizar, atualizamos o limite máximo do calendário baseado nos dados
             stepAtualizarAnosPeloCache(filtrosAtuais.contas);
-
-            // 3. Atualiza objeto de filtros (pois o 'anoSelect' pode ter mudado visualmente)
-            filtrosAtuais = obterFiltrosAtuais();
-
         } else {
-            // MODO REALIZADO:
-            // 1. Pergunta à API quais anos existem (metadados)
+            // No modo Realizado, verificamos metadados para definir limites do calendário (Min/Max Anos)
             await stepGerenciarPeriodos(filtrosAtuais.contas);
-            
-            // 2. Atualiza filtros e Carrega os dados do ano específico
-            filtrosAtuais = obterFiltrosAtuais();
+            // Re-lê filtros pois os metadados podem não ter alterado a seleção, mas é bom garantir
+            filtrosAtuais = obterFiltrosAtuais(); 
             await stepCarregarProcessarDados(filtrosAtuais);
         }
 
-        // ETAPA FINAL: Renderização
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
@@ -67,7 +63,6 @@ async function handleFiltroChange() {
         alternarEstadoCarregamento(false);
     }
 }
-
 
 // --- Funções Auxiliares do Workflow (Steps) ---
 function validarFiltros(filtros) {
@@ -89,47 +84,45 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
     if (contasSemPeriodo.length > 0) {
         document.body.classList.add('loading');
         
-        // Busca paralela
         const promises = contasSemPeriodo.map(id => 
             buscarPeriodosComDados(id, projecaoAtual).then(res => ({ id, res }))
         );
         const resultados = await Promise.all(promises);
         const anoAtual = new Date().getFullYear();
 
-        // Atualiza cache de períodos
         resultados.forEach(({ id, res }) => {
             let inicio = anoAtual, fim = anoAtual;
             if (res && res.response) {
                 const { periodo_ini, periodo_fim } = res.response;
-                if (periodo_ini && Number(periodo_ini) > 1900) inicio = Number(periodo_ini);
-                else if (periodo_ini) inicio = new Date(periodo_ini).getFullYear();
-
-                if (periodo_fim && Number(periodo_fim) > 1900) fim = Number(periodo_fim);
-                else if (periodo_fim) fim = new Date(periodo_fim).getFullYear();
+                if (periodo_ini) inicio = Number(String(periodo_ini).substring(0,4));
+                if (periodo_fim) fim = Number(String(periodo_fim).substring(0,4));
             }
             appCache.periodosPorConta.set(`${id}|${projecaoAtual}`, { inicio, fim });
         });
     }
 
-    // Calcula Range Global (Min/Max entre todas as contas selecionadas)
-    let minAno = null, maxAno = null;
-    const anoRef = new Date().getFullYear();
+    // Calcula Range Global para o Calendário
+    let minAno = new Date().getFullYear(); 
+    let maxAno = minAno;
     
-    contasSelecionadas.forEach(id => {
-        const p = appCache.periodosPorConta.get(`${id}|${projecaoAtual}`);
-        if (p) {
-            if (minAno === null || p.inicio < minAno) minAno = p.inicio;
-            if (maxAno === null || p.fim > maxAno) maxAno = p.fim;
-        }
-    });
-
-    // Atualiza UI
-    appCache.flagAnos = true;
-    const elmAno = document.getElementById('anoSelect');
-    const elmModo = document.getElementById('modoSelect');
-    if(elmAno && elmModo) {
-        atualizarOpcoesAnoSelect(elmAno, minAno || anoRef, maxAno || anoRef, elmModo.value, appCache.projecao);
+    // Se não houver contas, usa ano atual. Se houver, busca os extremos.
+    if (contasSelecionadas.length > 0) {
+        let first = true;
+        contasSelecionadas.forEach(id => {
+            const p = appCache.periodosPorConta.get(`${id}|${projecaoAtual}`);
+            if (p) {
+                if (first || p.inicio < minAno) minAno = p.inicio;
+                if (first || p.fim > maxAno) maxAno = p.fim;
+                first = false;
+            }
+        });
     }
+
+    // Atualiza o Picker Global via UI
+    appCache.flagAnos = true;
+    const elmModo = document.getElementById('modoSelect');
+    // Chama a função nova (que tem o mesmo nome da antiga importada)
+    atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo ? elmModo.value : 'mensal', appCache.projecao);
     appCache.flagAnos = false;
 }
 
@@ -137,21 +130,22 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
  * Passo 2: Identifica o que falta no cache, busca na API e processa os dados crus.
  */
 async function stepCarregarProcessarDados(filtros) {
-    const { contas, anos, projetos } = filtros;
+    const { contas, anos, projetos } = filtros; // 'anos' agora é uma lista derivada do range
     const requisicoesNecessarias = [];
 
-    // Identifica "buracos" no cache
+    // Identifica buracos no cache (por ANO)
     if (appCache.projecao === "realizado") {
         contas.forEach(contaId => {
             anos.forEach(ano => {
                 const chaveCache = `${contaId}|${ano}`;
                 if (!appCache.dadosPorContaAno.has(chaveCache)) {
                     requisicoesNecessarias.push({ contaId, anoOuTag: ano, filtrosApi: String(ano) });
-                    appCache.dadosPorContaAno.set(chaveCache, null); // Placeholder
+                    appCache.dadosPorContaAno.set(chaveCache, null);
                 }
             });
         });
     } else {
+        // A lógica do A REALIZAR permanece igual (traz tudo de uma vez com tag)
         const tagCache = "AREALIZAR";
         contas.forEach(contaId => {
             const chaveCache = `${contaId}|${tagCache}`;
@@ -162,16 +156,13 @@ async function stepCarregarProcessarDados(filtros) {
         });
     }
 
-    // Se tudo já está em cache, retorna cedo
     if (requisicoesNecessarias.length === 0 && verificarCacheProjetos(projetos)) return;
 
-    // Prepara Promises de Títulos
     const promises = requisicoesNecessarias.map(req => 
         buscarTitulos({ conta: req.contaId, ano: req.filtrosApi })
             .then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
     );
 
-    // Prepara Promises de Estoque
     const projetosParaProcessar = projetos.filter(p => !appCache.matrizesPorProjeto.has(p));
     if(projetosParaProcessar.length > 0) {
         promises.push(...projetosParaProcessar.map(proj => 
@@ -182,7 +173,6 @@ async function stepCarregarProcessarDados(filtros) {
 
     const responses = await Promise.all(promises);
 
-    // Processa Respostas
     for (const apiResponse of responses) {
         if (apiResponse.tipo === 'ESTOQUE') {
             processarRespostaEstoque(apiResponse);
@@ -301,37 +291,24 @@ function stepAtualizarAnosPeloCache(contasSelecionadas) {
     let maxAno = anoAtual;
 
     contasSelecionadas.forEach(contaId => {
-        // Busca o pacote de dados "AREALIZAR" desta conta
         const dados = appCache.dadosPorContaAno.get(`${contaId}|AREALIZAR`);
-        
-        if (dados && dados.arealizar) {
-            // Varre as chaves com dados (ex: "01-2025", "12-2028")
-            if (dados.arealizar.chavesComDados) {
-                dados.arealizar.chavesComDados.forEach(chave => {
-                    const partes = chave.split('-');
-                    if (partes.length === 2) {
-                        const ano = parseInt(partes[1], 10);
-                        if (!isNaN(ano)) {
-                            if (ano < minAno) minAno = ano;
-                            if (ano > maxAno) maxAno = ano;
-                        }
+        if (dados && dados.arealizar && dados.arealizar.chavesComDados) {
+            dados.arealizar.chavesComDados.forEach(chave => {
+                const partes = chave.split('-');
+                if (partes.length === 2) {
+                    const ano = parseInt(partes[1], 10);
+                    if (!isNaN(ano)) {
+                        if (ano < minAno) minAno = ano;
+                        if (ano > maxAno) maxAno = ano;
                     }
-                });
-            }
+                }
+            });
         }
     });
 
-    // Atualiza a UI (Select de Anos)
     appCache.flagAnos = true;
-    const elmAno = document.getElementById('anoSelect');
     const elmModo = document.getElementById('modoSelect');
-    
-    if(elmAno && elmModo) {
-        // Chama a função de UI existente passando o range descoberto nos dados
-        // Nota: A função atualizarOpcoesAnoSelect já adiciona +5 anos de margem no modo arealizar,
-        // mas agora ela respeitará se seus dados forem ALÉM desses 5 anos (ex: financiamento longo).
-        atualizarOpcoesAnoSelect(elmAno, minAno, maxAno, elmModo.value, appCache.projecao);
-    }
+    atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo.value, appCache.projecao);
     appCache.flagAnos = false;
 }
 

@@ -511,3 +511,13 @@ body.app-loading::after {
   animation: spin 2s linear infinite;
   margin: auto;
 }
+
+.btn-filtro-data {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    min-width: 150px;
+    text-align: center;
+    border-radius: 4px;
+}
