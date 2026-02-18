@@ -546,24 +546,22 @@ body.app-loading::after {
 /* Container do Dropdown */
 .filtro-dropdown {
   display: none; 
-  position: absolute; 
-  top: 100%; 
-  left: 0;
-  margin-top: 4px; /* Pequeno respiro do botão */
+  position: fixed !important; /* Força o Fixed */
+  z-index: 2147483647 !important; /* Garante ficar acima de qualquer coisa do Bubble */
   
   background: white; 
   border: 1px solid #ccc; 
-  box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* Sombra mais suave e difusa */
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3); /* Sombra mais forte para destacar */
   
   padding: 10px; 
   border-radius: 6px; 
-  min-width: 320px; /* Garante largura para o grid */
-  max-height: 400px; /* Aumentado para evitar corte em telas maiores */
+  
+  /* Tamanho */
+  width: 320px; 
+  max-height: 400px; 
   overflow-y: auto; 
   
-  color: #333; 
-  font-weight: normal;
-  z-index: 10005; /* Valor alto para garantir que fique acima de tudo */
+  margin: 0; 
 }
 
 /* Cabeçalho do Ano (2024, 2025...) dentro do dropdown */

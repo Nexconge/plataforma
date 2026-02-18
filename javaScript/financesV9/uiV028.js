@@ -221,41 +221,77 @@ function renderizarComponenteFiltro() {
     const btn = document.getElementById('globalDatePickerBtn');
     if (!btn) return;
 
-    // Atualiza Texto do Botão
-    btn.textContent = `${EstadoData.selecaoInicio} até ${EstadoData.selecaoFim} ▼`;
+    // Atualiza texto do botão
+    const textoPeriodo = (EstadoData.selecaoInicio === EstadoData.selecaoFim || !EstadoData.selecaoFim) 
+        ? EstadoData.selecaoInicio 
+        : `${EstadoData.selecaoInicio} até ${EstadoData.selecaoFim}`;
     
-    // Remove dropdown anterior se existir para recriar
+    btn.textContent = `${textoPeriodo} ▼`;
+    
+    // Remove anterior
     const oldDrop = document.getElementById('globalDateDropdown');
     if (oldDrop) oldDrop.remove();
 
-    // Cria Dropdown (Escondido)
+    // Cria Dropdown
     const drop = document.createElement('div');
     drop.id = 'globalDateDropdown';
-    drop.className = 'filtro-dropdown'; // Reutiliza classe CSS existente
+    drop.className = 'filtro-dropdown'; 
     drop.style.display = 'none';
-    drop.style.position = 'absolute';
-    drop.style.zIndex = '1000';
     
-    btn.parentNode.style.position = 'relative';
-    btn.parentNode.appendChild(drop);
+    // Anexa ao BODY (fora do container do Bubble)
+    document.body.appendChild(drop);
 
-    // Evento de Click no Botão
+    // Evento de Click
     btn.onclick = (e) => {
         e.stopPropagation();
-        const estaVisivel = drop.style.display === 'block';
-        document.querySelectorAll('.filtro-dropdown').forEach(d => d.style.display = 'none'); // Fecha outros
-        if (!estaVisivel) {
-            montarGridCalendario(drop);
-            drop.style.display = 'block';
+        
+        // Se já estiver aberto, fecha
+        if (drop.style.display === 'block') {
+            drop.style.display = 'none';
+            return;
+        }
+
+        // Fecha outros
+        document.querySelectorAll('.filtro-dropdown').forEach(d => d.style.display = 'none'); 
+
+        // Renderiza conteúdo
+        montarGridCalendario(drop);
+        
+        // --- CÁLCULO DE POSIÇÃO FIXA (Viewport) ---
+        // getBoundingClientRect pega a posição exata do botão em relação à janela visível
+        const rect = btn.getBoundingClientRect();
+
+        // Configura CSS direto no elemento para garantir prioridade
+        drop.style.position = 'fixed'; 
+        drop.style.top = `${rect.bottom + 5}px`; // Logo abaixo do botão
+        drop.style.left = `${rect.left}px`;       // Alinhado à esquerda do botão
+        drop.style.zIndex = '2147483647';         // Z-index máximo permitido pelo browser
+        drop.style.display = 'block';
+    };
+
+    // Fecha ao clicar fora ou ao ROLAR a página (para o menu não ficar flutuando solto)
+    const closeListener = (e) => {
+        if (drop.style.display === 'block' && !btn.contains(e.target) && !drop.contains(e.target)) {
+            drop.style.display = 'none';
+        }
+    };
+    
+    // Fecha o dropdown se o usuário rolar a página (pois position:fixed não acompanha a rolagem)
+    const scrollListener = () => {
+        if (drop.style.display === 'block') {
+            drop.style.display = 'none';
         }
     };
 
-    // Fecha ao clicar fora
-    document.addEventListener('click', (e) => {
-        if (!btn.contains(e.target) && !drop.contains(e.target)) {
-            drop.style.display = 'none';
-        }
-    });
+    // Limpa listeners antigos para não acumular
+    if (window._myDateDropClose) window.removeEventListener('click', window._myDateDropClose);
+    if (window._myDateDropScroll) window.removeEventListener('scroll', window._myDateDropScroll, true);
+
+    window._myDateDropClose = closeListener;
+    window._myDateDropScroll = scrollListener;
+
+    window.addEventListener('click', closeListener);
+    window.addEventListener('scroll', scrollListener, true); // True para capturar scroll de qualquer div
 }
 
 function montarGridCalendario(container) {
