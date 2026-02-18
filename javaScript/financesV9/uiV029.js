@@ -228,7 +228,7 @@ function renderizarComponenteFiltro() {
     
     btn.textContent = `${textoPeriodo} ▼`;
     
-    // Remove anterior
+    // Remove dropdown anterior se existir
     const oldDrop = document.getElementById('globalDateDropdown');
     if (oldDrop) oldDrop.remove();
 
@@ -241,49 +241,49 @@ function renderizarComponenteFiltro() {
     // Anexa ao BODY (fora do container do Bubble)
     document.body.appendChild(drop);
 
-    // Evento de Click
+    // Evento de Click no Botão
     btn.onclick = (e) => {
         e.stopPropagation();
         
-        // Se já estiver aberto, fecha
         if (drop.style.display === 'block') {
             drop.style.display = 'none';
             return;
         }
 
-        // Fecha outros
         document.querySelectorAll('.filtro-dropdown').forEach(d => d.style.display = 'none'); 
 
-        // Renderiza conteúdo
         montarGridCalendario(drop);
         
-        // --- CÁLCULO DE POSIÇÃO FIXA (Viewport) ---
-        // getBoundingClientRect pega a posição exata do botão em relação à janela visível
+        // --- CÁLCULO DE POSIÇÃO FIXA ---
         const rect = btn.getBoundingClientRect();
 
-        // Configura CSS direto no elemento para garantir prioridade
         drop.style.position = 'fixed'; 
-        drop.style.top = `${rect.bottom + 5}px`; // Logo abaixo do botão
-        drop.style.left = `${rect.left}px`;       // Alinhado à esquerda do botão
-        drop.style.zIndex = '2147483647';         // Z-index máximo permitido pelo browser
+        drop.style.top = `${rect.bottom + 5}px`; 
+        drop.style.left = `${rect.left}px`;       
+        drop.style.zIndex = '2147483647';         
         drop.style.display = 'block';
     };
 
-    // Fecha ao clicar fora ou ao ROLAR a página (para o menu não ficar flutuando solto)
+    // Fecha ao clicar fora
     const closeListener = (e) => {
         if (drop.style.display === 'block' && !btn.contains(e.target) && !drop.contains(e.target)) {
             drop.style.display = 'none';
         }
     };
     
-    // Fecha o dropdown se o usuário rolar a página (pois position:fixed não acompanha a rolagem)
-    const scrollListener = () => {
-        if (drop.style.display === 'block') {
-            drop.style.display = 'none';
-        }
+    // --- CORREÇÃO AQUI: Scroll Inteligente ---
+    const scrollListener = (e) => {
+        // Se o dropdown não está visível, não faz nada
+        if (drop.style.display !== 'block') return;
+
+        // Se o elemento que está rolando é o próprio dropdown (ou está dentro dele), NÃO FECHA
+        if (drop.contains(e.target)) return;
+
+        // Se for qualquer outro scroll (ex: scroll da página principal), aí sim fecha
+        drop.style.display = 'none';
     };
 
-    // Limpa listeners antigos para não acumular
+    // Limpeza de listeners antigos
     if (window._myDateDropClose) window.removeEventListener('click', window._myDateDropClose);
     if (window._myDateDropScroll) window.removeEventListener('scroll', window._myDateDropScroll, true);
 
@@ -291,7 +291,9 @@ function renderizarComponenteFiltro() {
     window._myDateDropScroll = scrollListener;
 
     window.addEventListener('click', closeListener);
-    window.addEventListener('scroll', scrollListener, true); // True para capturar scroll de qualquer div
+    
+    // 'true' aqui é importante para capturar o evento de scroll antes dele terminar
+    window.addEventListener('scroll', scrollListener, true); 
 }
 
 function montarGridCalendario(container) {
