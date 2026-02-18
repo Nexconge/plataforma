@@ -394,15 +394,18 @@ function stepConsolidarExibir(filtros) {
     );
 
     let colunasPlaceholder = [];
+    const ultimaColuna = colunas.length > 0 ? colunas[colunas.length - 1] : null;
     const colunasSize = colunas.length;
     const placeholderSize = modo === 'anual' ? (6 - colunasSize) : (12 - colunasSize);
     //Para garantir o tamanho das tabelas força colunas sem dados no visual
     if (modo === 'anual') {
+        colunasPlaceholder.push(String(Number(ultimaColuna) + 1));
         while(colunasPlaceholder.length < placeholderSize){
             const lastColuna = colunasPlaceholder.length > 0 ? colunasPlaceholder[colunasPlaceholder.length - 1] : String(new Date().getFullYear());
             colunasPlaceholder.push(String(Number(lastColuna) + 1));
         }
     }else{
+        colunasPlaceholder.push(incrementarMes(ultimaColuna));
         while(colunasPlaceholder.length < placeholderSize){
             colunasPlaceholder.push(incrementarMes(colunasPlaceholder[colunasPlaceholder.length - 1]));
         }
