@@ -276,6 +276,7 @@ function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
     // Atualiza o texto do botão visualmente
     renderizarComponenteFiltro();
 }
+
 function renderizarComponenteFiltro() {
     const btn = document.getElementById('globalDatePickerBtn');
     if (!btn) return;
@@ -495,6 +496,9 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
 
 // ------ Tabelas (Renderização) ------
 function atualizarVisualizacoes(dados, colunas, cache) {
+
+    console.log(colunas);
+
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
     ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro'].forEach(limpar);
 

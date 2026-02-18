@@ -2,21 +2,23 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV10.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV033.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV035.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
-    userId: null, 
+    userId: null,  
     userType: null,
-    dadosPorContaAno: new Map(),        // Cache de dados processados
-    matrizesPorProjeto: new Map(),      // Cache de estoque
-    periodosPorConta: new Map(),        // Cache de metadados de datas
-    // Mapas de referência cruzada
-    categoriasMap: new Map(), 
-    classesMap: new Map(),
-    projetosMap: new Map(), 
-    contasMap: new Map(), 
-    departamentosMap: new Map(),
+
+    dadosPorContaAno: new Map(),        // Cache de dados processados por conta e ano/tag (chave: "contaId|anoOuTag")
+    matrizesPorProjeto: new Map(),      // Cache de estoque por projeto (chave: codProj)
+    periodosPorConta: new Map(),        // Cache de metadados de datas por conta e projeção (chave: "contaId|projecao" -> { inicio, fim })
+    
+    categoriasMap: new Map(), //CODCategoria -> NomeCategoria
+    classesMap: new Map(), //CODCategoria -> { classe: NomeClasse, categoria: NomeCategoria }
+    projetosMap: new Map(), //CODProj -> { nome: NomeProjeto, contas: [codContas] }
+    contasMap: new Map(), //CODConta -> { descricao: NomeConta, saldoIni: Valor }
+    departamentosMap: new Map(), //CODDepto -> NomeDepto
+    
     // Estado atual
     projecao: "realizado",
     flagAnos: false
@@ -26,17 +28,17 @@ let appCache = {
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
     
-    alternarEstadoCarregamento(true);
-    
+    alternarEstadoCarregamento(true); //Exibe o visual de loading
     try {
-        // 1. Leitura Inicial
+
+        //Obtem os filtros atuais da UI (contas, anos, modo, colunas, projetos)
         let filtrosAtuais = obterFiltrosAtuais();
         
+        //Se não houver filtros válidos, exibe tabelas vazias e encerra o processo (evitando chamadas desnecessárias à API)
         if (!filtrosAtuais) {
             alternarEstadoCarregamento(false);
             return; 
         }
-
         if (!validarFiltros(filtrosAtuais)) {
             alternarEstadoCarregamento(false);
             return;
@@ -44,26 +46,24 @@ async function handleFiltroChange() {
 
         if (appCache.projecao === 'arealizar') {
             // Antes de carregar, forçamos uma validação de datas.
-            // Se o usuário estava em 2023 (Realizado) e mudou para A Realizar, 
-            // isso vai forçar o filtro a pular para o Ano Atual/Futuro IMEDIATAMENTE.
+            // Se o usuário estava em um ano passado em realizado e mudar para arealizar atualiza o filtro de anos
             const anoAtual = new Date().getFullYear();
             appCache.flagAnos = true;
-            // Define um range seguro inicial (ex: Ano Atual até +5) para garantir que saia do passado
+
+            // Define um range seguro inicial (Ano Atual + 5) para garantir que saia do passado
             atualizarOpcoesAnoSelect(null, anoAtual, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
             appCache.flagAnos = false;
 
-            // CRUCIAL: Atualiza a variável 'filtrosAtuais' com as novas datas (ex: 2026)
-            // Se não fizer isso, ele busca e desenha 2023 (vazio) mesmo com o botão mostrando 2026.
+            // Atualiza filtrosAtuais para obter o periodo atualizado acima
             filtrosAtuais = obterFiltrosAtuais();
 
             // 1. Carrega os dados com o filtro já corrigido
             await stepCarregarProcessarDados(filtrosAtuais);
 
-            // 2. Analisa os dados carregados para descobrir o range REAL (ex: financiamento até 2040)
+            // 2. Analisa os dados em cache da conta selecionada para identificar quais anos realmente existem e atualizar o filtro de anos novamente
             stepAtualizarAnosPeloCache(filtrosAtuais.contas);
 
-            // 3. Refresh Final: O passo anterior pode ter expandido ou truncado as datas.
-            // Atualizamos a variável novamente para garantir que a tabela renderize exatamente o que está no botão.
+            // 3. Atualiza filtrosAtuais novamente
             filtrosAtuais = obterFiltrosAtuais();
 
         } else {
@@ -71,14 +71,14 @@ async function handleFiltroChange() {
             // 1. Pergunta à API quais anos existem (metadados) e ajusta o filtro se necessário
             await stepGerenciarPeriodos(filtrosAtuais.contas);
             
-            // 2. CRUCIAL: Atualiza filtros, pois stepGerenciarPeriodos pode ter mudado o ano (ex: de 2030 p/ 2024)
+            // 2. Atualiza filtros, pois stepGerenciarPeriodos pode ter mudado o ano (ex: de 2030 p/ 2024)
             filtrosAtuais = obterFiltrosAtuais();
             
             // 3. Carrega os dados do ano específico correto
             await stepCarregarProcessarDados(filtrosAtuais);
         }
 
-        // ETAPA FINAL: Renderização com a variável filtrosAtuais 100% sincronizada
+        // ETAPA FINAL: Renderização
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
@@ -91,6 +91,7 @@ async function handleFiltroChange() {
 
 // --- Funções Auxiliares do Workflow (Steps) ---
 function validarFiltros(filtros) {
+    //Se não houver contas selecionadas, não faz sentido continuar. Exibe tabelas vazias e encerra o processo.
     if (!filtros || filtros.contas.length === 0) {
         exibirTabelasVazias();
         return false;
@@ -99,13 +100,15 @@ function validarFiltros(filtros) {
 }
 
 /**
- * Passo 1: Verifica se temos metadados de início/fim para as contas.
+ * Passo 1: Verifica se temos dados de início/fim para as contas.
  * Se não, busca na API e atualiza o Select de Anos na UI.
  */
 async function stepGerenciarPeriodos(contasSelecionadas) {
-    const projecaoAtual = appCache.projecao;
-    const contasSemPeriodo = contasSelecionadas.filter(id => !appCache.periodosPorConta.has(`${id}|${projecaoAtual}`));
+    const projecaoAtual = appCache.projecao; // "realizado" ou "arealizar"
+    //Contas cujo os periodos ainda não foram buscados via API
+    const contasSemPeriodo = contasSelecionadas.filter(id => !appCache.periodosPorConta.has(`${id}|${projecaoAtual}`)); 
 
+    // Para cada conta sem período, buscamos na API e atualizamos o cache
     if (contasSemPeriodo.length > 0) {
         document.body.classList.add('loading');
         
@@ -115,7 +118,9 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
         const resultados = await Promise.all(promises);
         const anoAtual = new Date().getFullYear();
 
+        // API retornar inicio e fim do pe´riodo, com base neles geramos os anos disponíveis para filtro.
         resultados.forEach(({ id, res }) => {
+            //Se a API falhar ou retornar dados inválidos, assumimos o ano atual como único disponível para evitar quebrar a UI.
             let inicio = anoAtual, fim = anoAtual;
             if (res && res.response) {
                 const { periodo_ini, periodo_fim } = res.response;
@@ -130,7 +135,7 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
     let minAno = new Date().getFullYear(); 
     let maxAno = minAno;
     
-    // Se não houver contas, usa ano atual. Se houver, busca os extremos.
+    // Se houve contasSelecionadas ajusta o range dos filtros para os períodos da conta.
     if (contasSelecionadas.length > 0) {
         let first = true;
         contasSelecionadas.forEach(id => {
@@ -146,7 +151,8 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
     // Atualiza o Picker Global via UI
     appCache.flagAnos = true;
     const elmModo = document.getElementById('modoSelect');
-    // Chama a função nova (que tem o mesmo nome da antiga importada)
+    
+    // Autaliza o select de anos para refletir as mudançcas, mas sem resetar o ano selecionado (passamos null para manter a seleção atual)
     atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo ? elmModo.value : 'mensal', appCache.projecao);
     appCache.flagAnos = false;
 }
@@ -164,6 +170,7 @@ async function stepCarregarProcessarDados(filtros) {
             anos.forEach(ano => {
                 const chaveCache = `${contaId}|${ano}`;
                 if (!appCache.dadosPorContaAno.has(chaveCache)) {
+                    // Se não temos dados processados para esta conta+ano, precisamos buscar da API
                     requisicoesNecessarias.push({ contaId, anoOuTag: ano, filtrosApi: String(ano) });
                     appCache.dadosPorContaAno.set(chaveCache, null);
                 }
@@ -181,13 +188,16 @@ async function stepCarregarProcessarDados(filtros) {
         });
     }
 
+    //Se não houver requisições necessárias para os títulos e os projetos já estiverem no cache, podemos pular direto para a etapa de renderização.
     if (requisicoesNecessarias.length === 0 && verificarCacheProjetos(projetos)) return;
 
+    //Realiza as requisições pendentes de titulos 
     const promises = requisicoesNecessarias.map(req => 
         buscarTitulos({ conta: req.contaId, ano: req.filtrosApi })
             .then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
     );
 
+    //Realiza as requisições pendentes de estoque
     const projetosParaProcessar = projetos.filter(p => !appCache.matrizesPorProjeto.has(p));
     if(projetosParaProcessar.length > 0) {
         promises.push(...projetosParaProcessar.map(proj => 
@@ -196,8 +206,10 @@ async function stepCarregarProcessarDados(filtros) {
         ));
     }
 
+    // Aguarda todas as requisições (títulos e estoque) serem concluídas
     const responses = await Promise.all(promises);
 
+    // Salva os dados no cache e processa os dados de títulos imediatamente para evitar acumular objetos grandes na memória
     for (const apiResponse of responses) {
         if (apiResponse.tipo === 'ESTOQUE') {
             processarRespostaEstoque(apiResponse);
@@ -306,6 +318,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioArealizar);
     appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, processedArealizar);
 }
+
 /**
  * Passo Especial (A Realizar): Varre o cache de dados já carregados
  * para determinar dinamicamente quais anos devem aparecer no filtro.
@@ -384,7 +397,6 @@ function stepConsolidarExibir(filtros) {
 }
 
 // --- Funções de UI Auxiliares ---
-
 function exibirTabelasVazias(){
     const anoAtual = String(new Date().getFullYear());
     const modoAtual = document.getElementById('modoSelect')?.value || 'mensal';
@@ -401,7 +413,6 @@ function exibirTabelasVazias(){
 }
 
 // --- Inicialização (Entry Point) ---
-
 window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJson, projetosJson) {
     // Reinicia Cache
     appCache = {
