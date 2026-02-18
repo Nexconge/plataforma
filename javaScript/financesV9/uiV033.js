@@ -967,7 +967,7 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const trH = thead.insertRow();
     
     const thData = document.createElement('th');
-    thData.innerHTML = `Data<br><span style="font-size:0.8em; font-weight:normal;">${colunas[0]} a ${colunas[colunas.length-1]}</span>`;
+    thData.innerHTML = `Data`;
     trH.appendChild(thData);
     
     ['Descrição', 'Valor (R$)', 'Saldo (R$)'].forEach(t => {
