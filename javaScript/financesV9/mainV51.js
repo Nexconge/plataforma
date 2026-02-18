@@ -405,6 +405,22 @@ function stepConsolidarExibir(filtros) {
             colunasFinais.push(incrementarMes(colunasFinais[colunasFinais.length - 1]));
         }
     }
+    //Filtra os dados para exibir apenas as colunas selecionadas (filtro de colunas)
+    dadosParaExibir.detalhamento = dadosParaExibir.detalhamento.map(item => {
+        const itemFiltrado = { ...item };
+        if (item.mesAno) {
+            itemFiltrado.mesAno = colunasFinais.includes(item.mesAno) ? item.mesAno : null;
+        }
+        return itemFiltrado;
+    });
+    dadosParaExibir.estoque = dadosParaExibir.estoque.map(item => {
+        const itemFiltrado = { ...item };
+        if (item.mesAno) {
+            itemFiltrado.mesAno = colunasFinais.includes(item.mesAno) ? item.mesAno : null;
+        }
+        return itemFiltrado;
+    });
+    dadosParaExibir.colunas = colunasFinais;
 
     atualizarVisualizacoes(dadosParaExibir, colunasFinais, appCache);
 }
