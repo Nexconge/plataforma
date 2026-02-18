@@ -1112,9 +1112,9 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
     tabela.innerHTML = htmlHeader + htmlBody;
 }
 
-//Placeholders para colunas sem dados
+// ------ Placeholders para colunas sem dados ------
 /**
- * Insere colunas vazias antes da coluna TOTAL.
+ * Insere colunas vazias antes da coluna TOTAL, mantendo a formatação visual.
  * @param {string[]} colunasVazias - Lista de nomes das colunas (ex: ['01-2026', '02-2026'])
  * @param {string[]} idsTabelas - IDs das tabelas a serem afetadas
  */
@@ -1125,64 +1125,89 @@ function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
         const tabela = document.getElementById(id);
         if (!tabela) return;
 
-        // --- A. Ajuste do Cabeçalho (THEAD) ---
+        // 1. Ajuste do Cabeçalho (THEAD)
         const thead = tabela.tHead;
         if (thead) {
             Array.from(thead.rows).forEach(row => {
-                // Caso 1: Linha de Título/Espaçador com Colspan (ex: linha vazia no topo)
-                // Se a linha tem apenas 1 célula e ela tem colspan, expandimos o colspan
-                if (row.cells.length === 1 && row.cells[0].hasAttribute('colspan')) {
-                    const atualColspan = parseInt(row.cells[0].getAttribute('colspan')) || 1;
-                    row.cells[0].setAttribute('colspan', atualColspan + colunasVazias.length);
+                const cells = row.cells;
+                
+                // Se for linha de espaçamento no header ou título full-width (com colspan total)
+                if (cells.length === 1 && cells[0].hasAttribute('colspan')) {
+                    const atual = parseInt(cells[0].getAttribute('colspan')) || 1;
+                    cells[0].setAttribute('colspan', atual + colunasVazias.length);
                     return;
                 }
 
-                // Caso 2: Linha de Cabeçalho Normal (Rótulo | Col1 | Col2 ... | Total)
-                // Inserimos ANTES da última célula (TOTAL)
-                const indiceTotal = Math.max(0, row.cells.length - 1); 
-                const celulaTotal = row.cells[indiceTotal];
+                // Insere antes do TOTAL (assumindo que TOTAL é a última coluna)
+                const indexTotal = cells.length - 1;
+                if (indexTotal < 0) return;
+                
+                const cellTotal = cells[indexTotal];
+                // Pega a célula anterior (última coluna de dados) para clonar o estilo
+                const cellAnterior = indexTotal > 0 ? cells[indexTotal - 1] : null;
 
-                colunasVazias.forEach(nomeColuna => {
+                colunasVazias.forEach(nome => {
                     const th = document.createElement('th');
-                    th.textContent = nomeColuna; 
-                    // NÃO aplicamos styles manuais. O CSS 'table thead th' fará o trabalho (fundo azul, texto branco, etc).
-                    row.insertBefore(th, celulaTotal);
+                    th.textContent = nome;
+                    // Copia estilos da célula anterior (bordas, alinhamento, fonte)
+                    if (cellAnterior) {
+                        th.className = cellAnterior.className;
+                        th.style.cssText = cellAnterior.style.cssText;
+                    }
+                    row.insertBefore(th, cellTotal);
                 });
             });
         }
 
-        // --- B. Ajuste do Corpo (TBODY) ---
-        const tbody = tabela.tBodies[0];
-        if (tbody) {
+        // 2. Ajuste do Corpo (TBODY)
+        // Itera sobre todos os tBodies (algumas tabelas podem ter múltiplos ou apenas um)
+        Array.from(tabela.tBodies).forEach(tbody => {
             Array.from(tbody.rows).forEach(row => {
-                // Caso 1: Linhas de Espaçamento ou Títulos de Seção (que usam colspan total)
-                // Identificamos se é spacer pelo dataset OU se tem apenas 1 célula com colspan
-                const isSpacer = row.dataset.type === 'spacer';
-                const temColspanUnico = row.cells.length === 1 && row.cells[0].hasAttribute('colspan');
+                const cells = row.cells;
+                
+                // Detecção robusta de linhas de espaçamento/título
+                // Verifica se a linha tem apenas 1 célula E essa célula tem colspan > 1
+                const primeiroColspan = cells.length > 0 && cells[0].hasAttribute('colspan') 
+                    ? parseInt(cells[0].getAttribute('colspan')) : 1;
 
-                if (isSpacer || temColspanUnico) {
-                    const cell = row.cells[0];
-                    const atualColspan = parseInt(cell.getAttribute('colspan')) || 1;
-                    cell.setAttribute('colspan', atualColspan + colunasVazias.length);
+                if (cells.length === 1 && primeiroColspan > 1) {
+                    cells[0].setAttribute('colspan', primeiroColspan + colunasVazias.length);
                     return;
                 }
 
-                // Caso 2: Linhas de Dados Normais
-                // Inserimos as células vazias antes da coluna de Total
-                const indiceTotal = Math.max(0, row.cells.length - 1);
-                const celulaTotal = row.cells[indiceTotal];
+                // Linhas normais de dados: insere antes do último (Total)
+                const indexTotal = cells.length - 1;
+                if (indexTotal < 0) return;
+
+                const cellTotal = cells[indexTotal];
+                const cellAnterior = indexTotal > 0 ? cells[indexTotal - 1] : null;
 
                 colunasVazias.forEach(() => {
                     const td = document.createElement('td');
-                    // Usamos '-' para seguir o padrão visual de "sem valor" do formatarValor()
-                    td.textContent = '-'; 
+                    td.textContent = '-'; // Placeholder padrão
+
+                    // Copia formatação visual da célula de dados anterior
+                    if (cellAnterior) {
+                        td.className = cellAnterior.className;
+                        td.style.cssText = cellAnterior.style.cssText;
+
+                        // IMPORTANTE: Remove classes semânticas de cor (verde/vermelho/azul)
+                        // para que o traço "-" fique neutro (cor padrão do texto)
+                        td.classList.remove('texto-verde', 'texto-vermelho', 'texto-azul');
+                        
+                        // Limpa cor inline se houver
+                        if (td.style.color) td.style.color = '';
+                    } 
                     
-                    // O CSS global já alinha à direita (text-align: right) para td dentro de tbody.
-                    // Não adicionamos classes ou estilos inline para garantir identidade visual.
-                    row.insertBefore(td, celulaTotal);
+                    // Garante alinhamento à direita para números se não herdou nada explícito
+                    if (!td.style.textAlign) {
+                        td.style.textAlign = 'right';
+                    }
+
+                    row.insertBefore(td, cellTotal);
                 });
             });
-        }
+        });
     });
 }
 
