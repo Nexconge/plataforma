@@ -516,38 +516,27 @@ body.app-loading::after {
    DROPDOWN E BOTÃO DE DATA (REVISADO)
 ========================================================= */
 
-/* Estilo do Botão para igualar ao .custom-select */
 .btn-filtro-data {
-  /* Geometria idêntica ao select nativo */
-  height: 30px;
-  min-width: 220px; /* Largura mínima para caber "MM-AAAA até MM-AAAA" */
+  height: 30px; /* Mesma altura do select vizinho */
+  min-width: 220px;
   border: 1px solid #C7C7C7;
   border-radius: 4px;
   background-color: white;
-  
-  /* Tipografia */
-  font-family: var(--font, sans-serif);
-  font-size: 13.33px; /* Tamanho padrão de selects */
-  color: var(--text, #333);
+  font-family: 'Nunito', sans-serif; /* Ou sua var(--font) */
+  font-size: 13.33px;
+  color: #333;
   text-align: center;
-  line-height: 28px; /* Centraliza verticalmente (30px altura - 2px borda) */
-  
-  /* Ícone de Seta (Igual ao custom-select) */
+  line-height: 28px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
-  
-  /* Espaçamento */
   padding-left: 10px;
-  padding-right: 30px; /* Espaço para a seta não ficar em cima do texto */
-  
-  /* Comportamento */
+  padding-right: 30px;
   cursor: pointer;
   display: inline-block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  user-select: none;
 }
 
 .btn-filtro-data:hover {

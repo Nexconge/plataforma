@@ -131,34 +131,25 @@ function carregarChartJs() {
 
 // ------ Filtros ------
 function configurarFiltros(appCache, anosDisp, callback) {
-    // Inicializa limites baseados no anosDisp (fallback inicial)
+    // 1. Configura Limites de Data
     const anoAtual = new Date().getFullYear();
     EstadoData.minDataDisponivel = `01-${Math.min(...anosDisp.map(Number), anoAtual)}`;
     EstadoData.maxDataDisponivel = `12-${Math.max(...anosDisp.map(Number), anoAtual)}`;
     EstadoData.callbackMudanca = callback;
 
     const el = {
-        containerAno: document.getElementById('anoSelect').parentNode, // Pega o parent para substituir o select
         proj: document.getElementById('projSelect'),
         conta: document.getElementById('contaSelect'),
         modo: document.getElementById('modoSelect'),
-        btnARealizar: document.getElementById('btnARealizar'),
-        btnRealizado: document.getElementById('btnRealizado')
+        // O botão agora já existe no HTML, apenas pegamos ele
+        pickerBtn: document.getElementById('globalDatePickerBtn') 
     };
 
-    // Remove o Select antigo se existir e cria o container do novo Picker
-    const antigoSelect = document.getElementById('anoSelect');
-    if (antigoSelect) antigoSelect.style.display = 'none'; // Oculta original
-    
-    let pickerBtn = document.getElementById('globalDatePickerBtn');
-    if (!pickerBtn) {
-        pickerBtn = document.createElement('button');
-        pickerBtn.id = 'globalDatePickerBtn';
-        pickerBtn.className = 'btn-filtro-data'; // Necessário CSS para estilizar
-        el.containerAno.appendChild(pickerBtn);
-    }
+    // 2. Lógica de Projeção (Botões A Realizar / Realizado - se existirem na página)
+    // Se esses botões não estiverem nesse bloco HTML, verifique se os IDs batem
+    const btnARealizar = document.getElementById('btnARealizar');
+    const btnRealizado = document.getElementById('btnRealizado');
 
-    // Inicializa lógica de projeção
     const setProj = (t) => {
         appCache.projecao = t;
         const divCG = document.getElementById('groupCapitalGiro');
@@ -166,34 +157,38 @@ function configurarFiltros(appCache, anosDisp, callback) {
         callback();
     };
 
-    el.btnARealizar.onclick = () => setProj("arealizar");
-    el.btnRealizado.onclick = () => setProj("realizado");
+    if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
+    if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
     
+    // 3. Listeners Básicos
     el.conta.onchange = callback;
+    
     el.proj.onchange = () => {
         atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
         callback();
     };
     
-    // Setup do Modo (Mensal/Anual) e do Picker
     el.modo.onchange = () => {
         resetarSelecaoPeloModo(el.modo.value);
         renderizarComponenteFiltro();
         callback();
     };
 
-    // Inicializa com padrão (ano corrente)
+    // 4. Inicialização
     resetarSelecaoPeloModo(el.modo.value || 'mensal');
-    renderizarComponenteFiltro();
     
-    // Preenche projetos/contas
+    // Preenche Selects de Projeto
     el.proj.innerHTML = '';
     Array.from(appCache.projetosMap.entries())
         .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
         .forEach(([cod, { nome }]) => el.proj.appendChild(new Option(nome, cod)));
+    
     if (el.proj.options.length) el.proj.options[0].selected = true;
     
+    // Dispara a renderização inicial do texto do botão e carrega dados
     atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
+    renderizarComponenteFiltro(); 
+    
     carregarChartJs();
     configurarAbasGraficos();
     callback();
