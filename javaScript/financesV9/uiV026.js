@@ -198,6 +198,7 @@ function configurarFiltros(appCache, anosDisp, callback) {
     configurarAbasGraficos();
     callback();
 }
+
 function resetarSelecaoPeloModo(modo) {
     const hoje = new Date();
     if (modo.toLowerCase() === 'mensal') {
@@ -385,26 +386,6 @@ function obterFiltrosAtuais() {
         contas: getSelectItems(el.conta), 
         colunas 
     };
-}
-
-function atualizarOpcoesAnoSelect(select, inicio, fim, modo, projecao) {
-    if (!select) return;
-    const atualVal = select.value;
-    select.innerHTML = '';
-    
-    const hoje = new Date().getFullYear();
-    let s = Number(inicio) || hoje, e = Number(fim) || hoje;
-    if (s > e) [s, e] = [e, s];
-    if (projecao === 'arealizar') { e = Math.max(e, hoje + 5); s = Math.min(s, hoje); }
-
-    if (modo.toLowerCase() === 'mensal') {
-        for (let y = s; y <= e; y++) select.appendChild(new Option(String(y), String(y)));
-        select.value = Array.from(select.options).some(o => o.value === atualVal) ? atualVal : String(projecao === "realizado" ? e : s);
-    } else {
-        for (let cursor = s; cursor <= e; cursor += 6) select.prepend(new Option(`${cursor}-${cursor + 5}`, cursor));
-        if (atualVal && Array.from(select.options).some(o => o.value === atualVal)) select.value = atualVal;
-        else select.value = select.options[projecao === "realizado" ? 0 : select.options.length - 1].value;
-    }
 }
 
 function atualizarFiltroContas(select, pMap, cMap, pSel) {
