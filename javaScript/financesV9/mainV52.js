@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes} from './processingV11.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV035.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV036.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -393,36 +393,22 @@ function stepConsolidarExibir(filtros) {
         projetos
     );
 
-    let colunasFinais = colunas;
-
+    let colunasPlaceholder = [];
+    const colunasSize = colunas.length;
+    const placeholderSize = modo === 'anual' ? (6 - colunasSize) : (12 - colunasSize);
     //Para garantir o tamanho das tabelas força colunas sem dados no visual
     if (modo === 'anual') {
-        while(colunasFinais.length < 6){
-            colunasFinais.push(String(Number(colunasFinais[colunasFinais.length - 1]) + 1));
+        while(colunasPlaceholder.length < placeholderSize){
+            const lastColuna = colunasPlaceholder.length > 0 ? colunasPlaceholder[colunasPlaceholder.length - 1] : String(new Date().getFullYear());
+            colunasPlaceholder.push(String(Number(lastColuna) + 1));
         }
     }else{
-        while(colunasFinais.length < 12){
-            colunasFinais.push(incrementarMes(colunasFinais[colunasFinais.length - 1]));
+        while(colunasPlaceholder.length < placeholderSize){
+            colunasPlaceholder.push(incrementarMes(colunasPlaceholder[colunasPlaceholder.length - 1]));
         }
     }
-    //Filtra os dados para exibir apenas as colunas selecionadas (filtro de colunas)
-    dadosParaExibir.detalhamento = dadosParaExibir.detalhamento.map(item => {
-        const itemFiltrado = { ...item };
-        if (item.mesAno) {
-            itemFiltrado.mesAno = colunasFinais.includes(item.mesAno) ? item.mesAno : null;
-        }
-        return itemFiltrado;
-    });
-    dadosParaExibir.estoque = dadosParaExibir.estoque.map(item => {
-        const itemFiltrado = { ...item };
-        if (item.mesAno) {
-            itemFiltrado.mesAno = colunasFinais.includes(item.mesAno) ? item.mesAno : null;
-        }
-        return itemFiltrado;
-    });
-    dadosParaExibir.colunas = colunasFinais;
 
-    atualizarVisualizacoes(dadosParaExibir, colunasFinais, appCache);
+    atualizarVisualizacoes(dadosParaExibir, colunas, colunasPlaceholder, appCache);
 }
 
 // --- Funções de UI Auxiliares ---

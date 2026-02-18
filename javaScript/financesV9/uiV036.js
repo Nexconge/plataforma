@@ -495,7 +495,7 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
 }
 
 // ------ Tabelas (Renderização) ------
-function atualizarVisualizacoes(dados, colunas, cache) {
+function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
 
     console.log(colunas);
 
@@ -509,6 +509,16 @@ function atualizarVisualizacoes(dados, colunas, cache) {
     renderizarGraficos(dados, colunas);
     renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
     renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+
+    // Adiciona as colunas vazias nas tabelas que possuem estrutura de colunas temporais
+    if (colunasPlaceholder && colunasPlaceholder.length > 0) {
+        renderizarColunasPlaceholder(colunasPlaceholder, [
+            'tabelaMatriz',         // DRE
+            'tabelaCustos',         // Detalhamento
+            'tabelaCapitalGiro',    // Capital de Giro
+            'resumoFluxoCaixa'      // Resumo Financeiro
+        ]);
+    }
 }
 
 // 1. DRE
@@ -1109,4 +1119,75 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
     tabela.innerHTML = htmlHeader + htmlBody;
 }
 
-export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento };
+function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
+    idsTabelas.forEach(id => {
+        const tabela = document.getElementById(id);
+        if (!tabela) return;
+
+        // --- A. Ajuste do Cabeçalho (THEAD) ---
+        const thead = tabela.tHead;
+        if (thead) {
+            Array.from(thead.rows).forEach(row => {
+                // Se for uma linha espaçadora no header (raro, mas possível), aumenta o colspan
+                if (row.cells.length === 1 && row.cells[0].hasAttribute('colspan')) {
+                    row.cells[0].colSpan += colunasVazias.length;
+                    return;
+                }
+
+                // Insere antes da última célula (que é o TOTAL)
+                const indiceAlvo = Math.max(0, row.cells.length - 1); 
+                
+                colunasVazias.forEach(nomeColuna => {
+                    const th = document.createElement('th');
+                    th.textContent = nomeColuna;
+                    // Estilo visual para indicar que é placeholder (opcional)
+                    th.style.opacity = '0.7'; 
+                    th.style.color = '#666'; 
+                    
+                    // Insere antes do Total
+                    if (row.cells[indiceAlvo]) {
+                        row.insertBefore(th, row.cells[indiceAlvo]);
+                    } else {
+                        row.appendChild(th);
+                    }
+                });
+            });
+        }
+
+        // --- B. Ajuste do Corpo (TBODY) ---
+        const tbody = tabela.tBodies[0];
+        if (tbody) {
+            Array.from(tbody.rows).forEach(row => {
+                // Verifica se é uma linha espaçadora (colspan total)
+                // Geralmente identificada por ter apenas 1 célula ou pelo dataset type
+                const ehEspacadora = row.dataset.type === 'spacer' || 
+                                     (row.cells.length === 1 && row.cells[0].hasAttribute('colspan'));
+
+                if (ehEspacadora) {
+                    const cell = row.cells[0];
+                    const atualColspan = parseInt(cell.getAttribute('colspan')) || 1;
+                    cell.setAttribute('colspan', atualColspan + colunasVazias.length);
+                    return;
+                }
+
+                // Linhas normais de dados
+                const indiceAlvo = Math.max(0, row.cells.length - 1);
+
+                colunasVazias.forEach(() => {
+                    const td = document.createElement('td');
+                    td.textContent = '-'; // Conteúdo vazio
+                    td.style.color = '#e0e0e0'; // Bem clarinho para não poluir
+                    td.style.pointerEvents = 'none'; // Não clicável
+
+                    if (row.cells[indiceAlvo]) {
+                        row.insertBefore(td, row.cells[indiceAlvo]);
+                    } else {
+                        row.appendChild(td);
+                    }
+                });
+            });
+        }
+    });
+}
+
+export { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento};
