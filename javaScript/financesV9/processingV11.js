@@ -20,6 +20,7 @@ function parseDate(dateString) {
     return new Date(parts[2], parts[1] - 1, parts[0]);
 }
 
+//Incrementa um mes em uma chave do tipo MM-AAAA
 function incrementarMes(chave) {
     if (!chave) return null;
     const [mesStr, anoStr] = chave.split('-');
@@ -101,7 +102,6 @@ function segmentarDadosPorProjeto(lista) {
     return buckets;
 }
 // --- Lógica de Negócio Auxiliar ---
-
 function gerarDepartamentosObj(departamentos, valorTotalLancamento) {
     if (Array.isArray(departamentos) && departamentos.length > 0) {
         return departamentos.map(depto => {
@@ -899,4 +899,4 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     });
 }
 
-export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes };
+export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes };

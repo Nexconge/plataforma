@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes } from './processingV10.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes} from './processingV11.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV035.js';
 
 // --- Cache da Aplicação ---
@@ -393,7 +393,20 @@ function stepConsolidarExibir(filtros) {
         projetos
     );
 
-    atualizarVisualizacoes(dadosParaExibir, colunas, appCache);
+    let colunasFinais = colunas;
+
+    //Para garantir o tamanho das tabelas força colunas sem dados no visual
+    if (modo === 'anual') {
+        while(colunasFinais.length < 6){
+            colunasFinais.push(String(Number(colunasFinais[colunasFinais.length - 1]) + 1));
+        }
+    }else{
+        while(colunasFinais.length < 12){
+            colunasFinais.push(incrementarMes(colunasFinais[colunasFinais.length - 1]));
+        }
+    }
+
+    atualizarVisualizacoes(dadosParaExibir, colunasFinais, appCache);
 }
 
 // --- Funções de UI Auxiliares ---
