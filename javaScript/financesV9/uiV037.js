@@ -1119,7 +1119,14 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
     tabela.innerHTML = htmlHeader + htmlBody;
 }
 
+/**
+ * Insere colunas vazias antes da coluna TOTAL.
+ * @param {string[]} colunasVazias - Lista de nomes das colunas (ex: ['01-2026', '02-2026'])
+ * @param {string[]} idsTabelas - IDs das tabelas a serem afetadas
+ */
 function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
+    if (!colunasVazias || colunasVazias.length === 0) return;
+
     idsTabelas.forEach(id => {
         const tabela = document.getElementById(id);
         if (!tabela) return;
@@ -1128,28 +1135,24 @@ function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
         const thead = tabela.tHead;
         if (thead) {
             Array.from(thead.rows).forEach(row => {
-                // Se for uma linha espaçadora no header (raro, mas possível), aumenta o colspan
+                // Se for linha de título/spacer (colspan), aumenta o tamanho
                 if (row.cells.length === 1 && row.cells[0].hasAttribute('colspan')) {
-                    row.cells[0].colSpan += colunasVazias.length;
+                    const atualColspan = parseInt(row.cells[0].getAttribute('colspan')) || 1;
+                    row.cells[0].setAttribute('colspan', atualColspan + colunasVazias.length);
                     return;
                 }
 
-                // Insere antes da última célula (que é o TOTAL)
-                const indiceAlvo = Math.max(0, row.cells.length - 1); 
-                
+                // Encontra índice do TOTAL (última célula)
+                // Se não houver células, insere no fim.
+                const indiceTotal = Math.max(0, row.cells.length - 1); 
+                const celulaTotal = row.cells[indiceTotal];
+
                 colunasVazias.forEach(nomeColuna => {
                     const th = document.createElement('th');
                     th.textContent = nomeColuna;
-                    // Estilo visual para indicar que é placeholder (opcional)
-                    th.style.opacity = '0.7'; 
-                    th.style.color = '#666'; 
-                    
-                    // Insere antes do Total
-                    if (row.cells[indiceAlvo]) {
-                        row.insertBefore(th, row.cells[indiceAlvo]);
-                    } else {
-                        row.appendChild(th);
-                    }
+                    // O CSS global já estiliza <th> dentro de thead, não precisamos adicionar classes manuais
+                    // Apenas garantimos que insere ANTES do Total
+                    row.insertBefore(th, celulaTotal);
                 });
             });
         }
@@ -1158,32 +1161,33 @@ function renderizarColunasPlaceholder(colunasVazias, idsTabelas) {
         const tbody = tabela.tBodies[0];
         if (tbody) {
             Array.from(tbody.rows).forEach(row => {
-                // Verifica se é uma linha espaçadora (colspan total)
-                // Geralmente identificada por ter apenas 1 célula ou pelo dataset type
-                const ehEspacadora = row.dataset.type === 'spacer' || 
-                                     (row.cells.length === 1 && row.cells[0].hasAttribute('colspan'));
+                // 1. Verifica se é Spacer ou Título de Grupo (Colspan total)
+                const isSpacer = row.dataset.type === 'spacer';
+                // Algumas linhas como o título de grupo no detalhamento tem colspan na primeira célula depois do nome
+                // Mas aqui estamos falando daquelas linhas vazias cinzas
+                const temColspanUnico = row.cells.length === 1 && row.cells[0].hasAttribute('colspan');
 
-                if (ehEspacadora) {
+                if (isSpacer || temColspanUnico) {
                     const cell = row.cells[0];
                     const atualColspan = parseInt(cell.getAttribute('colspan')) || 1;
                     cell.setAttribute('colspan', atualColspan + colunasVazias.length);
                     return;
                 }
 
-                // Linhas normais de dados
-                const indiceAlvo = Math.max(0, row.cells.length - 1);
+                // 2. Linhas Normais de Dados
+                // Precisamos inserir antes da última célula (Total)
+                const indiceTotal = Math.max(0, row.cells.length - 1);
+                const celulaTotal = row.cells[indiceTotal];
 
                 colunasVazias.forEach(() => {
                     const td = document.createElement('td');
-                    td.textContent = '-'; // Conteúdo vazio
-                    td.style.color = '#e0e0e0'; // Bem clarinho para não poluir
-                    td.style.pointerEvents = 'none'; // Não clicável
-
-                    if (row.cells[indiceAlvo]) {
-                        row.insertBefore(td, row.cells[indiceAlvo]);
-                    } else {
-                        row.appendChild(td);
-                    }
+                    td.textContent = '-'; // Padrão financeiro para "sem dados" ou "zero"
+                    
+                    // Força alinhamento à direita para combinar com números (caso o CSS genérico falhe)
+                    // Mas geralmente o CSS 'table tbody td { text-align: right }' já resolve.
+                    td.style.textAlign = 'right'; 
+                    
+                    row.insertBefore(td, celulaTotal);
                 });
             });
         }
