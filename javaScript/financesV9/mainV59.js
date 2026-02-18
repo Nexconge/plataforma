@@ -397,18 +397,18 @@ function stepConsolidarExibir(filtros) {
     const colunasSize = colunas.length;
     
     // Define o alvo (12 meses ou 6 anos)
-    const targetSize = modo === 'anual' ? 6 : 12;
+    const targetSize = modo.toLowerCase() === 'anual' ? 6 : 12;
     // Calcula quantos faltam
     const missingCount = Math.max(0, targetSize - colunasSize);
     if (missingCount > 0) {
         // Ex: Se tem ['01-2026', '02-2026'], a referência vira '02-2026'
         let ultimaReferencia = colunas.length > 0 
             ? colunas[colunas.length - 1] 
-            : (modo === 'anual' ? new Date().getFullYear().toString() : `12-${new Date().getFullYear() - 1}`);
+            : (modo.toLowerCase() === 'anual' ? new Date().getFullYear().toString() : `12-${new Date().getFullYear() - 1}`);
 
         for (let i = 0; i < missingCount; i++) {
             let proxima;
-            if (modo === 'anual') {
+            if (modo.toLowerCase() === 'anual') {
                 // Incrementa ano
                 proxima = String(Number(ultimaReferencia) + 1);
             } else {
