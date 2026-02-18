@@ -394,20 +394,31 @@ function stepConsolidarExibir(filtros) {
     );
 
     let colunasPlaceholder = [];
-    const ultimaColuna = colunas.length > 0 ? colunas[colunas.length - 1] : null;
     const colunasSize = colunas.length;
-    const placeholderSize = modo === 'anual' ? (6 - colunasSize) : (12 - colunasSize);
-    //Para garantir o tamanho das tabelas força colunas sem dados no visual
-    if (modo === 'anual') {
-        colunasPlaceholder.push(String(Number(ultimaColuna) + 1));
-        while(colunasPlaceholder.length < placeholderSize){
-            const lastColuna = colunasPlaceholder.length > 0 ? colunasPlaceholder[colunasPlaceholder.length - 1] : String(new Date().getFullYear());
-            colunasPlaceholder.push(String(Number(lastColuna) + 1));
-        }
-    }else{
-        colunasPlaceholder.push(incrementarMes(ultimaColuna));
-        while(colunasPlaceholder.length < placeholderSize){
-            colunasPlaceholder.push(incrementarMes(colunasPlaceholder[colunasPlaceholder.length - 1]));
+    
+    // Define o alvo (12 meses ou 6 anos)
+    const targetSize = modo === 'anual' ? 6 : 12;
+    // Calcula quantos faltam
+    const missingCount = Math.max(0, targetSize - colunasSize);
+    if (missingCount > 0) {
+        // Ex: Se tem ['01-2026', '02-2026'], a referência vira '02-2026'
+        let ultimaReferencia = colunas.length > 0 
+            ? colunas[colunas.length - 1] 
+            : (modo === 'anual' ? new Date().getFullYear().toString() : `12-${new Date().getFullYear() - 1}`);
+
+        for (let i = 0; i < missingCount; i++) {
+            let proxima;
+            if (modo === 'anual') {
+                // Incrementa ano
+                proxima = String(Number(ultimaReferencia) + 1);
+            } else {
+                // Incrementa mês usando sua função auxiliar
+                proxima = incrementarMes(ultimaReferencia);
+            }
+            if (proxima) {
+                colunasPlaceholder.push(proxima);
+                ultimaReferencia = proxima;
+            }
         }
     }
 
