@@ -59,9 +59,9 @@ function sincronizarEstadoComSelectAntigo(ano, modo) {
         EstadoData.selecaoInicio = `01-${ano}`;
         EstadoData.selecaoFim = `12-${ano}`;
     } else {
-        // No modo anual antigo, selecionar "2026" significava ver apenas 2026
+        // No modo anual antigo, selecionar a base "2026" significa ver 6 anos (2026 a 2031)
         EstadoData.selecaoInicio = `${ano}`;
-        EstadoData.selecaoFim = `${ano}`;
+        EstadoData.selecaoFim = `${parseInt(ano) + 5}`;
     }
 }
 function executarValidacaoRangeNovo(minAno, margemFim, modo) {
@@ -334,27 +334,35 @@ function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
 
         // 1. Salva valor atual para tentar manter
         const valorAtual = select.value;
-        let valorParaManter = valorAtual ? parseInt(valorAtual) : new Date().getFullYear();
-
-        // 2. Limpa e Recria Opções
         select.innerHTML = '';
         
-        // Loop do ano mínimo até o máximo permitido
-        for (let y = minAno; y <= margemFim; y++) {
-            const opt = new Option(String(y), String(y));
-            select.appendChild(opt);
+        // 2. Constrói as opções com base no modo
+        if (modo.toLowerCase() === 'mensal') {
+            for (let y = minAno; y <= margemFim; y++) {
+                select.appendChild(new Option(String(y), String(y)));
+            }
+            // Mantém a seleção ou vai pro limite padrão
+            if (valorAtual && Array.from(select.options).some(o => o.value === valorAtual)) {
+                select.value = valorAtual;
+            } else {
+                select.value = String(projecao === "realizado" ? margemFim : minAno);
+            }
+        } else {
+            // Modo Anual: Cria blocos de 6 anos usando o formato antigo
+            for (let cursor = minAno; cursor <= margemFim; cursor += 6) {
+                // prepend para a ordem decrescente que você usava, ou append se preferir normal
+                select.prepend(new Option(`${cursor} até ${cursor + 5}`, String(cursor)));
+            }
+            // Mantém a seleção ou vai pro limite padrão
+            if (valorAtual && Array.from(select.options).some(o => o.value === valorAtual)) {
+                select.value = valorAtual;
+            } else {
+                select.value = select.options[projecao === "realizado" ? 0 : select.options.length - 1].value;
+            }
         }
 
-        // 3. Validação: O valor antigo ainda é válido?
-        if (valorParaManter < minAno) valorParaManter = minAno;
-        if (valorParaManter > margemFim) valorParaManter = margemFim;
-
-        // 4. Seleciona o valor correto
-        select.value = String(valorParaManter);
-
-        // 5. CRUCIAL: Sincroniza o EstadoData com o valor que acabamos de setar
-        // Isso garante que o 'main.js' pegue o ano correto quando chamar obterFiltrosAtuais()
-        sincronizarEstadoComSelectAntigo(String(valorParaManter), modo);
+        // 3. CRUCIAL: Sincroniza o EstadoData com o valor que acabou de ser selecionado/recalculado
+        sincronizarEstadoComSelectAntigo(select.value, modo);
     }
 }
 function renderizarComponenteFiltro() {
