@@ -20,6 +20,7 @@ function parseDate(dateString) {
     return new Date(parts[2], parts[1] - 1, parts[0]);
 }
 
+//Incrementa um mes em uma chave do tipo MM-AAAA
 function incrementarMes(chave) {
     if (!chave) return null;
     const [mesStr, anoStr] = chave.split('-');
@@ -83,9 +84,24 @@ function gerarPeriodosEntre(primeiraChave, ultimaChave, modo = "mensal") {
     }
     return resultado;
 }
+function segmentarDadosPorProjeto(lista) {
+    const buckets = { 'SEM_PROJETO': [] };
+    
+    if (!Array.isArray(lista)) return buckets;
 
+    lista.forEach(item => {
+        // Se não tem projeto ou é string vazia/null, vai para o bucket padrão
+        const projKey = (item.CODProjeto && item.CODProjeto !== "0") ? String(item.CODProjeto) : 'SEM_PROJETO';
+        
+        if (!buckets[projKey]) {
+            buckets[projKey] = [];
+        }
+        buckets[projKey].push(item);
+    });
+
+    return buckets;
+}
 // --- Lógica de Negócio Auxiliar ---
-
 function gerarDepartamentosObj(departamentos, valorTotalLancamento) {
     if (Array.isArray(departamentos) && departamentos.length > 0) {
         return departamentos.map(depto => {
@@ -111,34 +127,57 @@ function somaValor(destino, chave, valor) {
  * Processa Realizado, A Realizar e Capital de Giro.
  */
 function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno = 0) {
-    // Normalização das entradas
-    const lancamentos = dadosApi.lancamentosProcessados || dadosApi.lancamentos || [];
-    const titulos = dadosApi.titulosEmAberto || dadosApi.titulos || [];
-    const capitalDeGiro = dadosApi.capitalDeGiro || [];
+    // 1. Normalização das entradas
+    const lancamentosRaw = dadosApi.lancamentosProcessados || dadosApi.lancamentos || [];
+    const titulosRaw = dadosApi.titulosEmAberto || dadosApi.titulos || [];
+    const capitalGiroRaw = dadosApi.capitalDeGiro || [];
     const saldoIniCC = Number(saldoInicialExterno);
-    
-    // 1. Processa MODO REALIZADO (Baseado em lançamentos efetivos)
-    const dadosRealizado = processarRealizadoRealizar(AppCache, lancamentos, contaId, saldoIniCC);
-    
-    // 2. Processa MODO A REALIZAR (Baseado em títulos em aberto)
-    const dadosARealizar = processarRealizadoRealizar(AppCache, titulos, contaId, saldoIniCC);
-    
-    // 3. Processa CAPITAL DE GIRO 
-    // Nota: Passamos 'dadosRealizado' para sincronizar o saldo de caixa acumulado corretamente.
-    const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, capitalDeGiro, contaId, saldoIniCC, dadosRealizado);
+
+    // 2. Segmentação dos Inputs (Raw Data -> Buckets)
+    const bucketsLancamentos = segmentarDadosPorProjeto(lancamentosRaw);
+    const bucketsTitulos = segmentarDadosPorProjeto(titulosRaw);
+    const bucketsCG = segmentarDadosPorProjeto(capitalGiroRaw);
+
+    // Identifica todos os projetos únicos encontrados nos dados
+    const todosProjetos = new Set([
+        ...Object.keys(bucketsLancamentos), 
+        ...Object.keys(bucketsTitulos), 
+        ...Object.keys(bucketsCG)
+    ]);
+
+    const resultadoSegmentado = {};
+
+    // 3. Processamento Individual por Segmento
+    todosProjetos.forEach(projKey => {
+        const l = bucketsLancamentos[projKey] || [];
+        const t = bucketsTitulos[projKey] || [];
+        const cg = bucketsCG[projKey] || [];
+
+        // O Saldo Inicial (saldoIniCC) só deve ser considerado uma vez no global.
+        // Dentro dos segmentos, consideramos 0 para calcular apenas a VARIAÇÃO (Movimentação).
+        // O Saldo Inicial será injetado depois no Merge.
+        const dadosRealizado = processarRealizadoRealizar(AppCache, l, contaId, 0);
+        const dadosARealizar = processarRealizadoRealizar(AppCache, t, contaId, 0);
+        
+        // Passamos o realizado deste segmento para o CG deste segmento
+        const dadosCapitalDeGiro = processarCapitalDeGiro(AppCache, cg, contaId, 0, dadosRealizado);
+
+        resultadoSegmentado[projKey] = {
+            realizado: dadosRealizado,
+            arealizar: dadosARealizar,
+            capitalDeGiro: dadosCapitalDeGiro
+        };
+    });
 
     return {
-        realizado: dadosRealizado,
-        arealizar: dadosARealizar,
-        capitalDeGiro: dadosCapitalDeGiro,
-        saldoInicialBase: saldoIniCC
+        // Marcador para o merge saber que este objeto é segmentado
+        isSegmented: true, 
+        segments: resultadoSegmentado,
+        // O saldo inicial fica na raiz, pois é da conta
+        saldoInicialBase: saldoIniCC 
     };
 }
 
-/**
- * Converte a estrutura de TÍTULOS da API em objetos de negócio.
- * Filtra lançamentos da DRE pelo ano solicitado, mas calcula saldo total baseado em todo o histórico.
- */
 /**
  * Converte a estrutura de TÍTULOS da API em objetos de negócio.
  * CORREÇÃO: 
@@ -189,11 +228,13 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                         Natureza: natureza,
                         DataLancamento: lancamento.DataLancamento,
                         CODContaC: lancamento.CODContaC,
+                        CODProjeto: titulo.CODProjeto || null,
                         ValorLancamento: lancamento.ValorLancamento,
                         CODCategoria: titulo.Categoria,
                         Cliente: titulo.Cliente,
                         Departamentos: deptosRateio,
-                        obs: obs || null
+                        obs: obs || null,
+                        NUMDoc: titulo.NF || null
                     });
                 }
 
@@ -205,7 +246,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                     DataEmissao: titulo.DataEmissao || null,
                     ValorTitulo: lancamento.ValorLancamento,
                     CODContaEmissao: titulo.CODContaC || null,
-                    CODContaPagamento: lancamento.CODContaC || null
+                    CODContaPagamento: lancamento.CODContaC || null,
+                    CODProjeto: titulo.CODProjeto || null
                 });
             });
         }
@@ -221,11 +263,13 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 Natureza: natureza,
                 DataLancamento: titulo.DataVencimento,
                 CODContaC: titulo.CODContaC,
+                CODProjeto: titulo.CODProjeto || null,
                 ValorLancamento: valorFaltante,
                 CODCategoria: titulo.Categoria,
                 Cliente: titulo.Cliente || "Cliente",
                 Departamentos: deptosRateio,
-                obs: titulo.obsTitulo || null
+                obs: titulo.obsTitulo || null,
+                NUMDoc: titulo.NF || null
             });
             
             capitalDeGiro.push({
@@ -235,7 +279,8 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
                 DataEmissao: titulo.DataEmissao || null,
                 ValorTitulo: valorFaltante,
                 CODContaEmissao: titulo.CODContaC || null,
-                CODContaPagamento: null
+                CODContaPagamento: null,
+                CODProjeto: titulo.CODProjeto || null
             });
         }
     });
@@ -280,11 +325,13 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
                     Natureza: natureza,
                     DataLancamento: lancamento.DataLancamento,
                     CODContaC: lancamento.CODContaC,
+                    CODProjeto: item.CODProjeto || null,
                     ValorLancamento: lancamento.ValorLancamento,
                     CODCategoria: item.Categoria,
                     Cliente: item.Cliente,
                     Departamentos: deptosRateio,
-                    obs: lancamento.obs || null
+                    obs: lancamento.obs || null,
+                    NUMDoc: item.NF || null
                 });
             }
         });
@@ -524,51 +571,69 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
 
 // --- Função de Consolidação (Merge) ---
 
-function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque, saldoInicialExterno = null) {
-    // 1. Filtragem de dados baseada na projeção
-    const dadosSelecionados = dadosProcessados.map(dadosConta => {
-        const projData = dadosConta[projecao.toLowerCase()];
-        if (!projData) return null;
+function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque, saldoInicialExterno = null, projetosFiltro = []) {
+    
+    const setProjetosPermitidos = new Set((projetosFiltro || []).map(String));
+    
+    const dadosParaMerge = [];
+    let saldoInicialAcumulado = 0;
 
-        // Anexa Capital de Giro se disponível
-        if (dadosConta.capitalDeGiro) {
-            projData.matrizCapitalGiro = dadosConta.capitalDeGiro.matrizCapitalGiro;
+    dadosProcessados.forEach(conta => {
+        if (!conta) return;
+        
+        saldoInicialAcumulado += (conta.saldoInicialBase || 0);
+
+        if (conta.isSegmented && conta.segments) {
+            Object.entries(conta.segments).forEach(([projKey, dadosProj]) => {
+                const deveIncluir = (projKey === 'SEM_PROJETO') || setProjetosPermitidos.has(projKey);
+
+                if (deveIncluir) {
+                    const projData = dadosProj[projecao.toLowerCase()];
+                    if (projData) {
+                        if (dadosProj.capitalDeGiro) {
+                            projData.matrizCapitalGiro = dadosProj.capitalDeGiro.matrizCapitalGiro;
+                        }
+                        dadosParaMerge.push(projData);
+                    }
+                }
+            });
+        } else {
+            const projData = conta[projecao.toLowerCase()];
+            if (projData) {
+                if (conta.capitalDeGiro) projData.matrizCapitalGiro = conta.capitalDeGiro.matrizCapitalGiro;
+                dadosParaMerge.push(projData);
+            }
         }
-        return projData;
-    }).filter(Boolean);
+    });
 
-    // Retorno rápido se vazio
-    if (!dadosSelecionados || dadosSelecionados.length === 0) {
+    if (dadosParaMerge.length === 0) {
         return { matrizDRE: {}, matrizDetalhamento: {}, matrizCapitalGiro: {}, entradasESaidas: {}, fluxoDeCaixa: {}, dadosEstoque: {} };
     }
 
-    // 2. Merge inicial em nível MENSAL
-    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosSelecionados, projecao, dadosEstoque);
+    const { monthlyMerged, todasChaves } = mergeDadosMensais(dadosParaMerge, projecao, dadosEstoque);
+    const chavesParaCalculo = todasChaves.size > 0 ? todasChaves : new Set().add(colunasVisiveis[0]);
 
-    // 3. Agregação para ANUAL se necessário
     const dadosParaExibir = (modo.toLowerCase() === 'anual')
         ? agregarDadosParaAnual(monthlyMerged, projecao)
         : monthlyMerged;
 
-    // 4. Cálculo de Totais e Linhas Calculadas da DRE
-    const PeUChave = getChavesDeControle(todasChaves, modo);
-
-    // Determina Saldo Inicial Global
-    let saldoInicialConsolidado = (saldoInicialExterno !== null) 
-        ? saldoInicialExterno 
-        : dadosProcessados.reduce((acc, d) => acc + (d.saldoInicialBase || 0), 0);
+    const PeUChave = getChavesDeControle(chavesParaCalculo, modo);
+    let saldoInicialFinal = (saldoInicialExterno !== null) ? saldoInicialExterno : saldoInicialAcumulado;
     
     const matrizDRE = dadosParaExibir.matrizDRE;
     const colunasParaCalcular = gerarPeriodosEntre(PeUChave.primeiraChave, PeUChave.ultimaChave, modo.toLowerCase());
     
-    // Inicializa linhas calculadas
     ['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Caixa Inicial', 'Caixa Final'].forEach(classe => {
         if (!matrizDRE[classe]) matrizDRE[classe] = {};
     });
     
-    calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialConsolidado);
-    calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave);
-    calcularColunaTotalDRE(dadosParaExibir.entradasESaidas, colunasVisiveis, PeUChave)
+    calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialFinal);
+    
+    // --- Nova lógica unificada para calcular a coluna TOTAL ---
+    const mapaTotal = { 'TOTAL': colunasVisiveis };
+    agregarMatrizPorGrupo(matrizDRE, mapaTotal, ['Caixa Inicial'], ['Caixa Final'], true);
+    agregarMatrizPorGrupo(dadosParaExibir.entradasESaidas, mapaTotal, [], [], true);
+    
     return { ...dadosParaExibir };
 }
 
@@ -642,41 +707,43 @@ function agregarDadosParaAnual(monthlyData, projecao) {
         matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {},
         matrizCapitalGiro: {}, fluxoDeCaixa: monthlyData.fluxoDeCaixa, dadosEstoque: {} 
     };
-    const saldosAnuais = {};
 
-    // 1. DRE Anual
-    for (const classe in monthlyData.matrizDRE) {
-        annualData.matrizDRE[classe] = {};
-        for (const periodo in monthlyData.matrizDRE[classe]) {
-            const [mes, ano] = periodo.split('-');
-            const valor = monthlyData.matrizDRE[classe][periodo];
-            
-            // Tratamento especial para saldos (não somam, pegam o último/primeiro)
-            if (classe === 'Caixa Inicial' || classe === 'Caixa Final') {
-                atualizarSaldoAnual(saldosAnuais, classe, ano, mes, valor);
-            } else {
-                somaValor(annualData.matrizDRE[classe], ano, valor);
-            }
+    const mapaAnos = {};
+    const mapaAnosSaldos = {};
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = hoje.getMonth() + 1;
+
+    const todasChaves = new Set([
+        ...Object.values(monthlyData.matrizDRE).flatMap(Object.keys),
+        ...Object.values(monthlyData.matrizCapitalGiro).flatMap(Object.keys)
+    ]);
+
+    const chavesOrdenadas = Array.from(todasChaves).filter(c => c.includes('-')).sort(compararChaves);
+    
+    chavesOrdenadas.forEach(c => {
+        const ano = c.split('-')[1];
+        const mes = parseInt(c.split('-')[0], 10);
+        
+        if (!mapaAnos[ano]) mapaAnos[ano] = [];
+        mapaAnos[ano].push(c);
+
+        // Mapa separado para os saldos finais, que corta meses futuros no modo realizado
+        if (projecao.toLowerCase() === "realizado" && parseInt(ano, 10) === anoAtual && mes > mesAtual) {
+            return;
         }
-    }
+        if (!mapaAnosSaldos[ano]) mapaAnosSaldos[ano] = [];
+        mapaAnosSaldos[ano].push(c);
+    });
 
-    // 2. Entradas e Saídas Anual
-    for (const classe in monthlyData.entradasESaidas) {
-        annualData.entradasESaidas[classe] = {};
-        for (const periodo in monthlyData.entradasESaidas[classe]) {
-            const ano = periodo.split('-')[1];
-            somaValor(annualData.entradasESaidas[classe], ano, monthlyData.entradasESaidas[classe][periodo]);
-        }
-    }
+    annualData.matrizDRE = agregarMatrizPorGrupo(monthlyData.matrizDRE, mapaAnos, ['Caixa Inicial'], ['Caixa Final']);
+    annualData.entradasESaidas = agregarMatrizPorGrupo(monthlyData.entradasESaidas, mapaAnos);
+    
+    // Capital de Giro e Estoque utilizam o mapa com filtro de data futura e consideram todas as linhas como saldo final ('*')
+    annualData.matrizCapitalGiro = agregarMatrizPorGrupo(monthlyData.matrizCapitalGiro, mapaAnosSaldos, [], ['*']);
+    annualData.dadosEstoque = agregarMatrizPorGrupo(monthlyData.dadosEstoque, mapaAnosSaldos, [], ['*']);
 
-    // Aplica os saldos calculados
-    for (const classe in saldosAnuais) {
-        for (const ano in saldosAnuais[classe]) {
-            annualData.matrizDRE[classe][ano] = saldosAnuais[classe][ano].valor;
-        }
-    }
-
-    // 3. Detalhamento Anual
+    // 3. Detalhamento Anual (Merge complexo de objetos aninhados mantido)
     for (const chaveMensal in monthlyData.matrizDetalhamento) {
         const dadosMensais = monthlyData.matrizDetalhamento[chaveMensal];
         const [classe, periodoMensal] = chaveMensal.split('|');
@@ -691,95 +758,47 @@ function agregarDadosParaAnual(monthlyData, projecao) {
         mergeDetalhamentoNivel(dadosAnuais.departamentos, dadosMensais.departamentos);
     }
 
-    // 4. Capital de Giro e Estoque Anual
-    // Dependendo da projeção, aplicamos filtros de data atual para saldos
-    const anoAtual = new Date().getFullYear();
-    const mesFiltro = new Date().getMonth(); 
-    
-    if(projecao.toLowerCase() === "realizado"){
-        annualData.matrizCapitalGiro = agregarSaldosAnuais(monthlyData.matrizCapitalGiro, anoAtual, mesFiltro);
-        annualData.dadosEstoque = agregarSaldosAnuais(monthlyData.dadosEstoque, anoAtual, mesFiltro);
-    } else {
-        annualData.matrizCapitalGiro = agregarSaldosAnuais(monthlyData.matrizCapitalGiro);
-        annualData.dadosEstoque = agregarSaldosAnuais(monthlyData.dadosEstoque);
-    }
-
     return annualData;
 }
 
 /**
- * Agrega saldos onde o valor do ano é o valor do último mês disponível.
+ * Agrupa e calcula valores de colunas em novas colunas (usado para Anual e para TOTAL).
+ * @param {Object} matriz - Matriz de dados (ex: matrizDRE)
+ * @param {Object} mapaGrupos - Mapa de destino -> [origens ordenadas] (ex: {'2026': ['01-2026', ...]})
+ * @param {Array} linhasSaldoIni - Linhas que reterão o PRIMEIRO valor daquele grupo de origens.
+ * @param {Array} linhasSaldoFim - Linhas que reterão o ÚLTIMO valor (['*'] aplica regra a todas).
+ * @param {Boolean} mutar - Se true, adiciona as colunas na matriz original.
  */
-function agregarSaldosAnuais(dadosMensais, anoFiltro = null, mesFiltro = null) {
-    const dadosAnuais = {}; 
-    const saldosTemporarios = {}; 
+function agregarMatrizPorGrupo(matriz, mapaGrupos, linhasSaldoIni = [], linhasSaldoFim = [], mutar = false) {
+    const resultado = mutar ? matriz : {};
+    const chavesSaldosFim = new Set(linhasSaldoFim);
+    const todasSaoSaldoFim = linhasSaldoFim.length > 0 && linhasSaldoFim[0] === '*'; 
 
-    for (const linha in dadosMensais) {
-        if (!saldosTemporarios[linha]) saldosTemporarios[linha] = {};
-        for (const periodoMensal in dadosMensais[linha]) {
-            const [mesKey, anoKey] = periodoMensal.split('-'); 
-            if (!mesKey || !anoKey) continue; 
+    for (const linha in matriz) {
+        if (!mutar) resultado[linha] = {};
+        const isInicial = linhasSaldoIni.includes(linha);
+        const isFinal = todasSaoSaldoFim || chavesSaldosFim.has(linha);
 
-            // Filtra futuro se solicitado (ex: não mostrar saldo de dez/2025 se estamos em jan/2025 no realizado)
-            if (anoFiltro !== null && mesFiltro !== null) {
-                const anoNum = Number(anoKey);
-                const mesNum = Number(mesKey) - 1; 
-                if (anoNum === anoFiltro && mesNum > mesFiltro) continue; 
+        for (const destino in mapaGrupos) {
+            const origens = mapaGrupos[destino];
+            let valor = 0;
+
+            if (origens && origens.length > 0) {
+                if (isInicial) {
+                    const col = origens.find(c => matriz[linha][c] != null);
+                    valor = col ? matriz[linha][col] : 0;
+                } else if (isFinal) {
+                    const col = [...origens].reverse().find(c => matriz[linha][c] != null);
+                    valor = col ? matriz[linha][col] : 0;
+                } else {
+                    valor = origens.reduce((acc, c) => acc + (matriz[linha][c] || 0), 0);
+                }
             }
-
-            const valor = dadosMensais[linha][periodoMensal];
-            const existente = saldosTemporarios[linha][anoKey];
-
-            // Pega sempre o mês mais avançado do ano
-            if (!existente || mesKey > existente.mesKey) {
-                saldosTemporarios[linha][anoKey] = { mesKey: mesKey, valor: valor };
-            }
+            resultado[linha][destino] = valor;
         }
     }
-
-    for (const linha in saldosTemporarios) {
-        dadosAnuais[linha] = {}; 
-        for (const ano in saldosTemporarios[linha]) {
-            dadosAnuais[linha][ano] = saldosTemporarios[linha][ano].valor;
-        }
-    }
-    return dadosAnuais;
+    return resultado;
 }
-
-function atualizarSaldoAnual(saldosAnuais, classe, ano, mes, valor) {
-    if (!saldosAnuais[classe]) saldosAnuais[classe] = {};
-    const existente = saldosAnuais[classe][ano];
-    
-    if (classe === 'Caixa Final') {
-        if (!existente || mes > existente.mes) saldosAnuais[classe][ano] = { mes, valor };
-    } else if (classe === 'Caixa Inicial') {
-        if (!existente || mes < existente.mes) saldosAnuais[classe][ano] = { mes, valor };
-    }
-}
-
-function calcularColunaTotalDRE(matrizDRE, colunasVisiveis, PeUChave) {
-    // Total soma simples
-    Object.values(matrizDRE).forEach(periodos => {
-        periodos.TOTAL = colunasVisiveis.reduce((acc, coluna) => acc + (periodos[coluna] || 0), 0);
-    });
-
-    // Sobrescrita para saldos (Total = Saldo Inicial do primeiro, Saldo Final do último)
-    if(PeUChave.primeiraChave){
-        let colSaldIni, colSaldFim;
-        
-        const idxPrimeira = compararChaves(PeUChave.primeiraChave, colunasVisiveis[0]);
-        colSaldIni = (idxPrimeira >= 0) ? PeUChave.primeiraChave : colunasVisiveis[0];
-
-        const idxUltima = compararChaves(PeUChave.ultimaChave, colunasVisiveis[colunasVisiveis.length - 1]);
-        colSaldFim = (idxUltima <= 0) ? PeUChave.ultimaChave : colunasVisiveis[colunasVisiveis.length - 1];
-
-        if (colunasVisiveis.length > 0) {
-            if(matrizDRE['Caixa Inicial']) matrizDRE['Caixa Inicial'].TOTAL = matrizDRE['Caixa Inicial'][colSaldIni] || 0;
-            if(matrizDRE['Caixa Final']) matrizDRE['Caixa Final'].TOTAL = matrizDRE['Caixa Final'][colSaldFim] || 0;
-        }
-    }
-}
-
 function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) {
     // Garante zeros onde não há dados
     Object.keys(matrizDRE).forEach(classe => {
@@ -818,4 +837,4 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     });
 }
 
-export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes };
+export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes };
