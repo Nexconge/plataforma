@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV04.js';
 import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes} from './processingV11.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV039.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV040.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -99,6 +99,99 @@ function validarFiltros(filtros) {
     return true;
 }
 
+function processarRespostaEstoque(apiResponse) {
+    const matrizEstoque = { '(+) Estoque': {} };
+    if (apiResponse.response && Array.isArray(apiResponse.response.Saldos)) {
+        apiResponse.response.Saldos.forEach(saldo => {
+            if(saldo.Periodo) {
+                matrizEstoque['(+) Estoque'][saldo.Periodo] = (matrizEstoque['(+) Estoque'][saldo.Periodo] || 0) + saldo.Valor;
+            }
+        });
+    }
+    appCache.matrizesPorProjeto.set(apiResponse.projId, matrizEstoque);
+}
+function processarRespostaTitulos(apiResponse) {
+    const { reqContext, response } = apiResponse;
+    const { contaId, anoOuTag } = reqContext;
+    const saldoInicialApi = response && response.saldoInicial ? Number(response.saldoInicial) : 0;
+    const anoAtual = new Date().getFullYear();
+
+    if (appCache.projecao === "arealizar") {
+        // Lógica Específica A REALIZAR (depende do realizado do ano corrente)
+        processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
+    } else {
+        // Lógica Padrão REALIZADO
+        processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
+    }
+}
+function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
+    let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
+    
+    // Listas temporárias para merge
+    let lancamentosDeTitulos = [];
+    let lancamentosManuais = [];
+
+    // 1. Processar Títulos (Fonte: dadosCapitalG)
+    // Passamos 'anoOuTag' para filtrar as baixas apenas deste ano
+    if (response.dadosCapitalG?.length > 2) {
+        try {
+            const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId, anoOuTag);
+            lancamentosDeTitulos = extractedCG.lancamentosProcessados;
+            dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
+        } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
+    }
+
+    // 2. Processar Lançamentos Manuais (Fonte: dadosLancamentos)
+    // Também filtramos pelo ano para garantir consistência
+    if (response.dadosLancamentos?.length > 2) {
+        try {
+            lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId, anoOuTag);
+        } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
+    }
+
+    // 3. Merge: DRE Realizado = Baixas de Títulos (deste ano) + Lançamentos Manuais (deste ano)
+    dadosInput.lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
+
+    // Processamento final
+    const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
+    appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
+}
+function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
+    // 1. Processa "Realizado CY" apenas para calcular saldo acumulado até hoje
+    let valorAcumuladoRealizado = 0;
+    if (response.dadosRealizado?.length > 2) {
+        try {
+            //Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
+            //PORTANDO È NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA INPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
+            const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
+            //console.log('extracted realizado', extractedCY);
+            const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
+            valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
+            
+            // Salva cache do ano atual se não existir (side-effect útil)
+            if (!appCache.dadosPorContaAno.has(`${contaId}|${anoAtual}`)) {
+                appCache.dadosPorContaAno.set(`${contaId}|${anoAtual}`, processedCY);
+            }
+        } catch (e) { console.error(`Erro JSON RealizadoCY conta ${contaId}`, e); }
+    }
+
+    // 2. Calcula novo saldo inicial para projeção
+    const saldoInicioArealizar = saldoInicialApi + valorAcumuladoRealizado;
+
+    // 3. Processa dados A Realizar
+    let dadosInput = { titulos: [] };
+    if (response.dadosArealizar?.length > 2) {
+        try {
+            const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
+            //console.log('extracted arealizar', extracted);
+            dadosInput.titulos = extracted.titulosEmAberto;
+        } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
+    }
+
+    const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioArealizar);
+    appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, processedArealizar);
+}
+
 /**
  * Passo 1: Verifica se temos dados de início/fim para as contas.
  * Se não, busca na API e atualiza o Select de Anos na UI.
@@ -156,7 +249,6 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
     atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo ? elmModo.value : 'mensal', appCache.projecao);
     appCache.flagAnos = false;
 }
-
 /**
  * Passo 2: Identifica o que falta no cache, busca na API e processa os dados crus.
  */
@@ -218,107 +310,9 @@ async function stepCarregarProcessarDados(filtros) {
         }
     }
 }
-
 function verificarCacheProjetos(projetos) {
     return projetos.every(p => appCache.matrizesPorProjeto.has(p));
 }
-
-function processarRespostaEstoque(apiResponse) {
-    const matrizEstoque = { '(+) Estoque': {} };
-    if (apiResponse.response && Array.isArray(apiResponse.response.Saldos)) {
-        apiResponse.response.Saldos.forEach(saldo => {
-            if(saldo.Periodo) {
-                matrizEstoque['(+) Estoque'][saldo.Periodo] = (matrizEstoque['(+) Estoque'][saldo.Periodo] || 0) + saldo.Valor;
-            }
-        });
-    }
-    appCache.matrizesPorProjeto.set(apiResponse.projId, matrizEstoque);
-}
-
-function processarRespostaTitulos(apiResponse) {
-    const { reqContext, response } = apiResponse;
-    const { contaId, anoOuTag } = reqContext;
-    const saldoInicialApi = response && response.saldoInicial ? Number(response.saldoInicial) : 0;
-    const anoAtual = new Date().getFullYear();
-
-    if (appCache.projecao === "arealizar") {
-        // Lógica Específica A REALIZAR (depende do realizado do ano corrente)
-        processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
-    } else {
-        // Lógica Padrão REALIZADO
-        processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
-    }
-}
-
-function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
-    let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
-    
-    // Listas temporárias para merge
-    let lancamentosDeTitulos = [];
-    let lancamentosManuais = [];
-
-    // 1. Processar Títulos (Fonte: dadosCapitalG)
-    // Passamos 'anoOuTag' para filtrar as baixas apenas deste ano
-    if (response.dadosCapitalG?.length > 2) {
-        try {
-            const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId, anoOuTag);
-            lancamentosDeTitulos = extractedCG.lancamentosProcessados;
-            dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
-        } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
-    }
-
-    // 2. Processar Lançamentos Manuais (Fonte: dadosLancamentos)
-    // Também filtramos pelo ano para garantir consistência
-    if (response.dadosLancamentos?.length > 2) {
-        try {
-            lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId, anoOuTag);
-        } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
-    }
-
-    // 3. Merge: DRE Realizado = Baixas de Títulos (deste ano) + Lançamentos Manuais (deste ano)
-    dadosInput.lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
-
-    // Processamento final
-    const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
-    appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
-}
-
-function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
-    // 1. Processa "Realizado CY" apenas para calcular saldo acumulado até hoje
-    let valorAcumuladoRealizado = 0;
-    if (response.dadosRealizado?.length > 2) {
-        try {
-            //Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
-            //PORTANDO È NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA INPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
-            const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
-            //console.log('extracted realizado', extractedCY);
-            const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
-            valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
-            
-            // Salva cache do ano atual se não existir (side-effect útil)
-            if (!appCache.dadosPorContaAno.has(`${contaId}|${anoAtual}`)) {
-                appCache.dadosPorContaAno.set(`${contaId}|${anoAtual}`, processedCY);
-            }
-        } catch (e) { console.error(`Erro JSON RealizadoCY conta ${contaId}`, e); }
-    }
-
-    // 2. Calcula novo saldo inicial para projeção
-    const saldoInicioArealizar = saldoInicialApi + valorAcumuladoRealizado;
-
-    // 3. Processa dados A Realizar
-    let dadosInput = { titulos: [] };
-    if (response.dadosArealizar?.length > 2) {
-        try {
-            const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
-            //console.log('extracted arealizar', extracted);
-            dadosInput.titulos = extracted.titulosEmAberto;
-        } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
-    }
-
-    const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioArealizar);
-    appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, processedArealizar);
-}
-
 /**
  * Passo Especial (A Realizar): Varre o cache de dados já carregados
  * para determinar dinamicamente quais anos devem aparecer no filtro.
@@ -349,7 +343,6 @@ function stepAtualizarAnosPeloCache(contasSelecionadas) {
     atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo.value, appCache.projecao);
     appCache.flagAnos = false;
 }
-
 /**
  * Passo 3: Junta os dados processados de várias contas e atualiza a UI.
  */

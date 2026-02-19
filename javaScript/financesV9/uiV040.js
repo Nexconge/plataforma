@@ -14,19 +14,24 @@ const EstadoData = {
     callbackMudanca: null
 };
 
+// --- Funções de estado ----
+function usarNovoRangePicker(userType) {
+    if (!userType) return false;
+    const tiposAvancados = ['developer', 'admin', 'financeiro_avancado']; 
+    return tiposAvancados.includes(userType.toLowerCase());
+}
+
 // --- Funções Auxiliares de Data para UI ---
 function parseDataStr(str) {
     if (!str) return { m: 1, a: new Date().getFullYear() };
     const [m, a] = str.includes('-') ? str.split('-').map(Number) : [1, Number(str)];
     return { m, a };
 }
-
 function compStrData(a, b) {
     const dA = parseDataStr(a);
     const dB = parseDataStr(b);
     return dA.a !== dB.a ? dA.a - dB.a : dA.m - dB.m;
 }
-
 function gerarColunasPeloIntervalo(inicio, fim, modo) {
     const lista = [];
     const i = parseDataStr(inicio);
@@ -47,27 +52,79 @@ function gerarColunasPeloIntervalo(inicio, fim, modo) {
     }
     return lista;
 }
+function sincronizarEstadoComSelectAntigo(ano, modo) {
+    if (!ano) return;
+    
+    if (modo.toLowerCase() === 'mensal') {
+        EstadoData.selecaoInicio = `01-${ano}`;
+        EstadoData.selecaoFim = `12-${ano}`;
+    } else {
+        // No modo anual antigo, selecionar "2026" significava ver apenas 2026
+        EstadoData.selecaoInicio = `${ano}`;
+        EstadoData.selecaoFim = `${ano}`;
+    }
+}
+function executarValidacaoRangeNovo(minAno, margemFim, modo) {
+    let anoSelInicio = 0;
+    let anoSelFim = 0;
+
+    if (EstadoData.selecaoInicio) {
+        const p = EstadoData.selecaoInicio.split('-');
+        anoSelInicio = parseInt(p.length === 2 ? p[1] : p[0]);
+    }
+    if (EstadoData.selecaoFim) {
+        const p = EstadoData.selecaoFim.split('-');
+        anoSelFim = parseInt(p.length === 2 ? p[1] : p[0]);
+    } else {
+        anoSelFim = anoSelInicio;
+    }
+
+    let mudou = false;
+
+    if (anoSelInicio < minAno) {
+        anoSelInicio = minAno;
+        anoSelFim = Math.max(anoSelFim, minAno);
+        mudou = true;
+    }
+    if (anoSelInicio > margemFim) {
+        anoSelInicio = margemFim;
+        anoSelFim = margemFim;
+        mudou = true;
+    }
+    if (anoSelFim > margemFim) {
+        anoSelFim = margemFim;
+        if (anoSelInicio > anoSelFim) anoSelInicio = anoSelFim;
+        mudou = true;
+    }
+
+    if (mudou) {
+        if (modo.toLowerCase() === 'mensal') {
+            EstadoData.selecaoInicio = `01-${anoSelInicio}`;
+            EstadoData.selecaoFim = `12-${anoSelInicio}`; 
+        } else {
+            EstadoData.selecaoInicio = `${anoSelInicio}`;
+            EstadoData.selecaoFim = `${anoSelFim}`; 
+        }
+    }
+}
+
 // ------ Formatação ------
 function formatarValor(valor, fractionDigits = 0) {
     if (Math.abs(valor) < 0.01) return '-';
     const num = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
     return valor < 0 ? `(${num})` : num;
 }
-
 function formatarPercentual(valor) {
     return (!valor || valor === 0) ? '0,0%' : `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}%`;
 }
-
 function sanitizeId(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\W+/g, '_').replace(/^_+|_+$/g, '');
 }
-
 
 // ------ Utilitários DOM ------
 function getSelectItems(select) {
     return Array.from(select.selectedOptions || []).map(o => o.value);
 }
-
 function toggleLinha(id) {
     const filhos = document.querySelectorAll(`.parent-${id}`);
     if (filhos.length === 0) return;
@@ -89,7 +146,6 @@ function toggleLinha(id) {
         if (btn) btn.textContent = '[-]';
     }
 }
-
 function esconderDescendentes(id) {
     document.querySelectorAll(`.parent-${id}`).forEach(filho => {
         filho.classList.add('hidden');
@@ -102,7 +158,6 @@ function esconderDescendentes(id) {
         if (filho.id) esconderDescendentes(filho.id);
     });
 }
-
 function alternarEstadoCarregamento(carregando) {
     document.body.classList.toggle('app-loading', carregando);
     const ids = ['anoSelect', 'projSelect', 'contaSelect', 'modoSelect', 'btnARealizar', 'btnRealizado', 'inputDataInicial', 'inputDataFinal'];
@@ -131,7 +186,10 @@ function carregarChartJs() {
 
 // ------ Filtros ------
 function configurarFiltros(appCache, anosDisp, callback) {
-    // 1. Configura Limites de Data
+    const { userType } = appCache;
+    const usaNovo = usarNovoRangePicker(userType);
+    
+    // 1. Configura Limites Iniciais
     const anoAtual = new Date().getFullYear();
     EstadoData.minDataDisponivel = `01-${Math.min(...anosDisp.map(Number), anoAtual)}`;
     EstadoData.maxDataDisponivel = `12-${Math.max(...anosDisp.map(Number), anoAtual)}`;
@@ -141,12 +199,21 @@ function configurarFiltros(appCache, anosDisp, callback) {
         proj: document.getElementById('projSelect'),
         conta: document.getElementById('contaSelect'),
         modo: document.getElementById('modoSelect'),
-        // O botão agora já existe no HTML, apenas pegamos ele
-        pickerBtn: document.getElementById('globalDatePickerBtn') 
+        pickerBtn: document.getElementById('globalDatePickerBtn'), // Novo
+        anoSelect: document.getElementById('anoSelect')           // Antigo
     };
 
-    // 2. Lógica de Projeção (Botões A Realizar / Realizado - se existirem na página)
-    // Se esses botões não estiverem nesse bloco HTML, verifique se os IDs batem
+    // --- Lógica de Visibilidade ---
+    if (usaNovo) {
+        if (el.pickerBtn) el.pickerBtn.style.display = 'inline-block';
+        if (el.anoSelect) el.anoSelect.style.display = 'none';
+        // Remove label antiga se estiver solta no HTML (opcional, depende do seu HTML)
+    } else {
+        if (el.pickerBtn) el.pickerBtn.style.display = 'none';
+        if (el.anoSelect) el.anoSelect.style.display = 'inline-block';
+    }
+
+    // 2. Listeners Comuns
     const btnARealizar = document.getElementById('btnARealizar');
     const btnRealizado = document.getElementById('btnRealizado');
 
@@ -160,7 +227,6 @@ function configurarFiltros(appCache, anosDisp, callback) {
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
     
-    // 3. Listeners Básicos
     el.conta.onchange = callback;
     
     el.proj.onchange = () => {
@@ -169,15 +235,37 @@ function configurarFiltros(appCache, anosDisp, callback) {
     };
     
     el.modo.onchange = () => {
-        resetarSelecaoPeloModo(el.modo.value);
-        renderizarComponenteFiltro();
+        // Ao mudar o modo, reseta a seleção para evitar inconsistências
+        resetarSelecaoPeloModo(el.modo.value, usaNovo);
+        
+        if (usaNovo) {
+            renderizarComponenteFiltro();
+        } else {
+            // No modo antigo, mudar Anual/Mensal apenas dispara o callback, 
+            // pois o valor do Select (ex: 2026) serve para os dois modos.
+            // Mas precisamos sincronizar o EstadoData:
+            sincronizarEstadoComSelectAntigo(el.anoSelect.value, el.modo.value);
+        }
         callback();
     };
 
+    // 3. Listener Específico do Filtro Antigo
+    if (!usaNovo && el.anoSelect) {
+        el.anoSelect.onchange = () => {
+            const anoSelecionado = el.anoSelect.value;
+            const modoAtual = el.modo.value;
+            
+            // MAGIA AQUI: Converte "2026" para o formato de range que o sistema novo espera
+            sincronizarEstadoComSelectAntigo(anoSelecionado, modoAtual);
+            
+            callback();
+        };
+    }
+
     // 4. Inicialização
-    resetarSelecaoPeloModo(el.modo.value || 'mensal');
+    resetarSelecaoPeloModo(el.modo.value || 'mensal', usaNovo);
     
-    // Preenche Selects de Projeto
+    // Popula Projetos
     el.proj.innerHTML = '';
     Array.from(appCache.projetosMap.entries())
         .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
@@ -185,98 +273,89 @@ function configurarFiltros(appCache, anosDisp, callback) {
     
     if (el.proj.options.length) el.proj.options[0].selected = true;
     
-    // Dispara a renderização inicial do texto do botão e carrega dados
+    // Atualiza contas e dispara fluxo inicial
     atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
-    renderizarComponenteFiltro(); 
+    
+    // Renderiza UI inicial (Texto do botão OU Opções do Select)
+    // Passamos userType para dentro da função de atualização saber o que fazer
+    EstadoData.userTypeAtual = userType;
+
+    // Se for modo antigo, precisamos popular o select agora
+    if (!usaNovo) {
+        // Popula inicial com ano atual
+        const ano = new Date().getFullYear();
+        atualizarOpcoesAnoSelect(null, ano, ano, el.modo.value, appCache.projecao);
+    } else {
+        renderizarComponenteFiltro(); 
+    }
     
     carregarChartJs();
     configurarAbasGraficos();
     callback();
 }
-
-function resetarSelecaoPeloModo(modo) {
+function resetarSelecaoPeloModo(modo, usaNovo = true) {
     const hoje = new Date();
-    if (modo.toLowerCase() === 'mensal') {
-        EstadoData.selecaoInicio = `01-${hoje.getFullYear()}`;
-        EstadoData.selecaoFim = `12-${hoje.getFullYear()}`;
+    const ano = hoje.getFullYear();
+    
+    if (usaNovo) {
+        if (modo.toLowerCase() === 'mensal') {
+            EstadoData.selecaoInicio = `01-${ano}`;
+            EstadoData.selecaoFim = `12-${ano}`;
+        } else {
+            EstadoData.selecaoInicio = `${ano}`;
+            EstadoData.selecaoFim = `${ano + 5}`;
+        }
     } else {
-        EstadoData.selecaoInicio = `${hoje.getFullYear()}`;
-        EstadoData.selecaoFim = `${hoje.getFullYear() + 5}`;
+        // Modo antigo: Resetar significa apenas garantir que o ano atual está no EstadoData
+        sincronizarEstadoComSelectAntigo(ano, modo);
     }
 }
 
 function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
-    // No Realizado, o limite é estritamente o maxAno com dados.
-    // No A Realizar, damos uma margem de +5 anos.
+    const usaNovo = usarNovoRangePicker(EstadoData.userTypeAtual);
+    
+    // Calcula Margem (igual para ambos)
     const margemFim = projecao === 'arealizar' ? Math.max(maxAno, new Date().getFullYear() + 5) : maxAno;
     
+    // Atualiza limites globais
     EstadoData.minDataDisponivel = `01-${minAno}`;
     EstadoData.maxDataDisponivel = `12-${margemFim}`;
-    
-    // 2. Extração da Seleção Atual
-    let anoSelInicio = 0;
-    let anoSelFim = 0;
 
-    if (EstadoData.selecaoInicio) {
-        const p = EstadoData.selecaoInicio.split('-');
-        anoSelInicio = parseInt(p.length === 2 ? p[1] : p[0]);
-    }
+    if (usaNovo) {
+        // ================= CAMINHO NOVO (Range Picker) =================
+        executarValidacaoRangeNovo(minAno, margemFim, modo);
+        renderizarComponenteFiltro();
 
-    if (EstadoData.selecaoFim) {
-        const p = EstadoData.selecaoFim.split('-');
-        anoSelFim = parseInt(p.length === 2 ? p[1] : p[0]);
     } else {
-        anoSelFim = anoSelInicio;
-    }
+        // ================= CAMINHO ANTIGO (Select Box) =================
+        const select = document.getElementById('anoSelect');
+        if (!select) return;
 
-    // 3. Validação e Correção
-    let mudou = false;
+        // 1. Salva valor atual para tentar manter
+        const valorAtual = select.value;
+        let valorParaManter = valorAtual ? parseInt(valorAtual) : new Date().getFullYear();
 
-    // Cenário 1: O Início está fora dos limites?
-    // Ex: Estava em 2020, mas o dados começam em 2022 -> Move tudo para 2022
-    if (anoSelInicio < minAno) {
-        anoSelInicio = minAno;
-        anoSelFim = Math.max(anoSelFim, minAno); // Garante que fim >= inicio
-        mudou = true;
-    }
-
-    // Cenário 2: O Início está depois do fim dos dados?
-    // Ex: Estava em 2028 (A Realizar), mudei para Realizado (Max 2026) -> Move tudo para 2026
-    if (anoSelInicio > margemFim) {
-        anoSelInicio = margemFim;
-        anoSelFim = margemFim;
-        mudou = true;
-    }
-
-    // Cenário 3 (O SEU CASO): O Início é válido, mas o Fim estoura o limite?
-    // Ex: 2026 a 2031. 2026 ok, mas 2031 > 2026 (Realizado). -> Trunca o fim para 2026.
-    if (anoSelFim > margemFim) {
-        anoSelFim = margemFim;
-        // Se após truncar o fim, ele ficou menor que o início (impossível, mas por segurança), ajusta o início
-        if (anoSelInicio > anoSelFim) {
-            anoSelInicio = anoSelFim;
+        // 2. Limpa e Recria Opções
+        select.innerHTML = '';
+        
+        // Loop do ano mínimo até o máximo permitido
+        for (let y = minAno; y <= margemFim; y++) {
+            const opt = new Option(String(y), String(y));
+            select.appendChild(opt);
         }
-        mudou = true;
-    }
 
-    // 4. Aplicação das Mudanças
-    if (mudou) {
-        if (modo.toLowerCase() === 'mensal') {
-            // Se for mensal e teve que ajustar, geralmente resetamos para o ano "cheio" (Jan-Dez) do ano ajustado
-            // para evitar ficar com meses quebrados de um ano que não existe mais
-            EstadoData.selecaoInicio = `01-${anoSelInicio}`;
-            EstadoData.selecaoFim = `12-${anoSelInicio}`; // Força apenas 1 ano se houve estouro no mensal
-        } else {
-            // Modo Anual: Ajusta apenas os anos
-            EstadoData.selecaoInicio = `${anoSelInicio}`;
-            EstadoData.selecaoFim = `${anoSelFim}`; 
-        }
-    }
+        // 3. Validação: O valor antigo ainda é válido?
+        if (valorParaManter < minAno) valorParaManter = minAno;
+        if (valorParaManter > margemFim) valorParaManter = margemFim;
 
-    // Atualiza o texto do botão visualmente
-    renderizarComponenteFiltro();
+        // 4. Seleciona o valor correto
+        select.value = String(valorParaManter);
+
+        // 5. CRUCIAL: Sincroniza o EstadoData com o valor que acabamos de setar
+        // Isso garante que o 'main.js' pegue o ano correto quando chamar obterFiltrosAtuais()
+        sincronizarEstadoComSelectAntigo(String(valorParaManter), modo);
+    }
 }
-
 function renderizarComponenteFiltro() {
     const btn = document.getElementById('globalDatePickerBtn');
     if (!btn) return;
@@ -331,7 +410,7 @@ function renderizarComponenteFiltro() {
         }
     };
     
-    // --- CORREÇÃO AQUI: Scroll Inteligente ---
+    // --- Scroll Inteligente ---
     const scrollListener = (e) => {
         // Se o dropdown não está visível, não faz nada
         if (drop.style.display !== 'block') return;
@@ -355,7 +434,6 @@ function renderizarComponenteFiltro() {
     // 'true' aqui é importante para capturar o evento de scroll antes dele terminar
     window.addEventListener('scroll', scrollListener, true); 
 }
-
 function montarGridCalendario(container) {
     container.innerHTML = '';
     const modo = document.getElementById('modoSelect').value.toLowerCase();
@@ -392,7 +470,6 @@ function montarGridCalendario(container) {
         container.appendChild(row);
     }
 }
-
 function criarBotaoPeriodo(chave, modo) {
     const btn = document.createElement('div');
     btn.className = 'filtro-mes-btn';
@@ -416,7 +493,6 @@ function criarBotaoPeriodo(chave, modo) {
 
     return btn;
 }
-
 function tratarCliqueData(chave, modo) {
     let i = EstadoData.selecaoInicio;
     let f = EstadoData.selecaoFim;
@@ -493,6 +569,7 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
         Array.from(select.options).forEach(opt => opt.selected = true);
     }
 }
+
 
 // ------ Tabelas (Renderização) ------
 function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
@@ -606,7 +683,6 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
         }
     });
 }
-
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     const idBase = `classe_${sanitizeId(classe)}`;
     
@@ -768,7 +844,6 @@ function renderizarCapitalGiro(matriz, colunas, estoque) {
     });
     rF.insertCell();
 }
-
 function criarLinhaEspacadora(target, colunas) {
     const r = target.insertRow();
     r.dataset.type = 'spacer';
@@ -919,7 +994,6 @@ function renderizarGraficos(dados, colunas) {
         options: common('Mensal (R$)')
     });
 }
-
 function configurarAbasGraficos() {
     const mapa = {'tab-btn-saldo':'graficoSaldoCaixa', 'tab-btn-acumulado':'graficoRecebientoPagamentoAcumulado', 'tab-btn-mensal':'graficoEntradasSaidasMensal'};
     Object.entries(mapa).forEach(([btn, cnv]) => {
@@ -1025,6 +1099,7 @@ function compKeys(a, b) {
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
 }
+
 // ------ Fluxo Diário Resumido -----
 function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
     const tabela = document.getElementById('resumoFluxoCaixa');
