@@ -17,7 +17,7 @@ const EstadoData = {
 // --- Funções de estado ----
 function usarNovoRangePicker(userType) {
     if (!userType) return false;
-    const tiposAvancados = ['developer', 'admin', 'financeiro_avancado']; 
+    const tiposAvancados = ['developer']; 
     return tiposAvancados.includes(userType.toLowerCase());
 }
 
@@ -280,11 +280,12 @@ function configurarFiltros(appCache, anosDisp, callback) {
     // Passamos userType para dentro da função de atualização saber o que fazer
     EstadoData.userTypeAtual = userType;
 
-    // Se for modo antigo, precisamos popular o select agora
     if (!usaNovo) {
-        // Popula inicial com ano atual
+        // Popula inicial com o range real disponível, e não apenas o ano atual
         const ano = new Date().getFullYear();
-        atualizarOpcoesAnoSelect(null, ano, ano, el.modo.value, appCache.projecao);
+        const minDisp = Math.min(...anosDisp.map(Number), ano);
+        const maxDisp = Math.max(...anosDisp.map(Number), ano);
+        atualizarOpcoesAnoSelect(null, minDisp, maxDisp, el.modo.value, appCache.projecao);
     } else {
         renderizarComponenteFiltro(); 
     }
