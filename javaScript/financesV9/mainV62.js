@@ -161,12 +161,22 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     let valorAcumuladoRealizado = 0;
     if (response.dadosRealizado?.length > 2) {
         try {
-            //Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
-            //PORTANDO È NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA INPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
+            // Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
+            // PORTANDO É NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA IMPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
             const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
-            //console.log('extracted realizado', extractedCY);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
-            valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
+            
+            // --- CORREÇÃO AQUI ---
+            // Como os dados agora são segmentados por projeto, precisamos somar o valor total de todos os segmentos
+            if (processedCY.isSegmented && processedCY.segments) {
+                Object.values(processedCY.segments).forEach(segmento => {
+                    if (segmento.realizado && segmento.realizado.valorTotal) {
+                        valorAcumuladoRealizado += segmento.realizado.valorTotal;
+                    }
+                });
+            } else if (processedCY.realizado) { // Fallback para manter compatibilidade
+                valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
+            }
             
             // Salva cache do ano atual se não existir (side-effect útil)
             if (!appCache.dadosPorContaAno.has(`${contaId}|${anoAtual}`)) {
@@ -183,7 +193,6 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     if (response.dadosArealizar?.length > 2) {
         try {
             const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
-            //console.log('extracted arealizar', extracted);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
@@ -324,15 +333,22 @@ function stepAtualizarAnosPeloCache(contasSelecionadas) {
 
     contasSelecionadas.forEach(contaId => {
         const dados = appCache.dadosPorContaAno.get(`${contaId}|AREALIZAR`);
-        if (dados && dados.arealizar && dados.arealizar.chavesComDados) {
-            dados.arealizar.chavesComDados.forEach(chave => {
-                const partes = chave.split('-');
-                if (partes.length === 2) {
-                    const ano = parseInt(partes[1], 10);
-                    if (!isNaN(ano)) {
-                        if (ano < minAno) minAno = ano;
-                        if (ano > maxAno) maxAno = ano;
-                    }
+        
+        // --- CORREÇÃO AQUI ---
+        // Itera sobre os segmentos de projeto para achar os anos
+        if (dados && dados.isSegmented && dados.segments) {
+            Object.values(dados.segments).forEach(segmento => {
+                if (segmento.arealizar && segmento.arealizar.chavesComDados) {
+                    segmento.arealizar.chavesComDados.forEach(chave => {
+                        const partes = chave.split('-');
+                        if (partes.length === 2) {
+                            const ano = parseInt(partes[1], 10);
+                            if (!isNaN(ano)) {
+                                if (ano < minAno) minAno = ano;
+                                if (ano > maxAno) maxAno = ano;
+                            }
+                        }
+                    });
                 }
             });
         }
