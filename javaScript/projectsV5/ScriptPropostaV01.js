@@ -347,7 +347,7 @@ async function gerarProposta(username) {
     doc.text(dados.nomeCliente, 148, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 148, yAtual + 10, { align: 'center' });
 
-    // --- PÁGINA 2: TERMO DE INTENÇÃO ---
+    /* --- PÁGINA 2: TERMO DE INTENÇÃO ---
     doc.addPage();
     try {
         const timbradoBase64 = await carregarTimbrado64();
@@ -382,6 +382,8 @@ async function gerarProposta(username) {
     doc.line(75, yAtual, 135, yAtual);
     doc.text(dados.nomeCliente, 105, yAtual + 5, { align: 'center' });
     doc.text("Cliente", 105, yAtual + 10, { align: 'center' });
+
+    */
 
     // Exportação
     if (/Android|iPhone/i.test(navigator.userAgent)) {

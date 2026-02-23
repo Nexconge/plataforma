@@ -7,6 +7,7 @@ class MapaLotesManager {
         this.selectedIds = new Set();
         this.allLotes = [];
         this.polygons = {}; 
+        this.quadraMarkers = [];
         
         // Controle de "Debounce" para evitar tremedeira
         this.filterDebounceTimer = null;
@@ -83,6 +84,24 @@ class MapaLotesManager {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.map);
 
+        // --- ADIÇÃO: Estilos da Legenda ---
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .info.legend { background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2); font-size: 12px; font-family: sans-serif; }
+            .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
+            .legend-color { width: 18px; height: 18px; margin-right: 8px; border: 1px solid #ccc; opacity: 0.8; }
+        `;
+        document.head.appendChild(style);
+
+        // --- ADIÇÃO: Controle da Legenda ---
+        const legend = L.control({ position: 'topright' });
+        legend.onAdd = () => {
+            this.legendContainer = L.DomUtil.create('div', 'info legend');
+            L.DomEvent.disableClickPropagation(this.legendContainer); // Evita clique no mapa através da legenda
+            return this.legendContainer;
+        };
+        legend.addTo(this.map);
+
         this.map.on('zoom zoomend', () => {
             const z = this.map.getZoom();
             const scale = Math.max(0.45, z / 15);
@@ -97,9 +116,12 @@ class MapaLotesManager {
     }
 
     // --- 3. Renderização ---
-_renderLotes(lotes) {
+    _renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
+
+        this.quadraMarkers.forEach(m => m.remove());
+        this.quadraMarkers = [];
 
         lotes.forEach(lote => {
             if (!lote.Coordenadas) return;
@@ -135,14 +157,33 @@ _renderLotes(lotes) {
 
             // Adiciona o primeiro ponto ao final novamente para fechar o desenho no mapa (opcional no Leaflet, mas bom para garantir)
             finalCoords.push(finalCoords[0]);
-
+            
+            //Se for uma quadra desenha apenas o marcador central com tooltip, sem polígono
             if (lote.Quadra) {
                 const tempPoly = L.polygon(finalCoords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Nome, {
                     permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
                 });
+
+                marker.loteData = lote; 
                 marker.addTo(this.map);
+                this.quadraMarkers.push(marker);
+            
+            // Se o lote for inativo, desenha o poligono sem interatividade
+            } else if (lote.Inativo) {
+                const polygon = L.polygon(finalCoords, {
+                    color: "black",
+                    weight: 0.6,
+                    fillOpacity: 1,
+                    fillColor: "#c7c7c7",
+                    interactive: false
+                });
+
+                polygon.addTo(this.map);
+                this.polygons[lote._id] = polygon;
+
+            // Caso contrário, desenha o polígono normalmente com interatividade
             } else {
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
@@ -244,6 +285,37 @@ _renderLotes(lotes) {
         }, 100); 
     }
 
+    _updateLegenda() {
+        if (!this.legendContainer) return;
+
+        const isZona = this.filters.zonaColorMode;
+        
+        // Definição das categorias e cores (baseado no seu _getLoteColor)
+        const items = isZona ? [
+            { label: "Comercial", color: "#9fbfdf" },
+            { label: "Residencial", color: "#dad2b4" },
+            { label: "Equipamento Público", color: "#f0c9ad" },
+            { label: "Área Verde / APP", color: "#88c4a6" }
+        ] : [
+            { label: "Disponível", color: "lightblue" },
+            { label: "Vendido", color: "ForestGreen" },
+            { label: "Reservado", color: "#f0c9ad" },
+            { label: "Indisponível", color: "#c7c7c7" }
+        ];
+
+        let html = `<h4 style="margin:0 0 8px; font-weight:bold; border-bottom:1px solid #eee; padding-bottom:4px;">${isZona ? "Atividade" : "Situação"}</h4>`;
+        
+        items.forEach(item => {
+            html += `
+                <div class="legend-item">
+                    <i class="legend-color" style="background:${item.color};"></i>
+                    <span>${item.label}</span>
+                </div>`;
+        });
+
+        this.legendContainer.innerHTML = html;
+    }
+
     _executarFiltroReal() {
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
@@ -253,13 +325,11 @@ _renderLotes(lotes) {
             return val.trim();
         };
 
-        // 1. Captura o valor atual do Empreendimento
         const prevEmp = this.filters.empreendimento;
 
         let empVal = getCleanVal("empreendimentoSelect");
         if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
 
-        // 2. Atualiza o objeto de filtros
         const zonaEl = document.getElementById("zona");
         
         this.filters = {
@@ -267,16 +337,12 @@ _renderLotes(lotes) {
             quadra: getCleanVal("selectQuadra"),
             status: getCleanVal("selectStatus"),
             Atividade: getCleanVal("selectAtividade"),
-            // Antes estava procurando '#zona input', o que retornava null
             zonaColorMode: zonaEl ? zonaEl.checked : false 
         };
 
-        console.log("DEBUG: Modo Zona Ativo?", this.filters.zonaColorMode); // Para confirmar no console
-
-        // 3. Atualiza as cores/visibilidade dos polígonos
+        this._updateLegenda();
         this._updateMapVisuals();
         
-        // 4. Verifica se os polígonos selecionados ainda são válidos
         let changed = false;
         this.selectedIds.forEach(id => {
             if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
@@ -297,6 +363,17 @@ _renderLotes(lotes) {
 
     _updateMapVisuals() {
         const hasActiveFilters = !!(this.filters.quadra || this.filters.status || this.filters.Atividade);
+
+        this.quadraMarkers.forEach(marker => {
+            const data = marker.loteData;
+            // Se tem filtro de empreendimento e o da quadra for diferente, remove
+            if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
+                if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
+            } else {
+                // Caso contrário, garante que está no mapa
+                if (!this.map.hasLayer(marker)) this.map.addLayer(marker);
+            }
+        });
 
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
@@ -368,8 +445,7 @@ _renderLotes(lotes) {
             const el = document.getElementById(id);
             if (!el) return;
 
-            if (isComplex) el.value = "null";
-            else el.value = "";
+            el.value = "";
             
             try {
                 el.dispatchEvent(new Event("change"));
@@ -506,21 +582,34 @@ _renderLotes(lotes) {
         if(!poligono) return;
 
         const getVal = id => document.getElementById(id)?.value || "";
-        const unmask = (val) => parseFloat(val.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
         const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
+
+        // CONVERSÃO CORRIGIDA:
+        // Input: "1,200.50" (Vírgula = Milhar, Ponto = Decimal)
+        // Ação: Remove vírgulas -> "1200.50" -> parseFloat
+        const getNum = (id) => {
+            let val = getVal(id);
+            if (!val) return 0;
+            
+            // Remove apenas as vírgulas (milhar) para o JS entender o número corretamente
+            val = val.toString().replace(/,/g, '');
+            
+            return parseFloat(val) || 0;
+        };
 
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
-            Área: unmask(getVal("area2")),
+            Área: getNum("area2"),
             Cliente: cleanStr(getVal("cliente2")),
             Status: cleanStr(getVal("status2")), 
             Atividade: cleanStr(getVal("atividade2")),
-            Frente: unmask(getVal("frente2")),
-            Lateral: unmask(getVal("lateral2")),
-            ValorM2: unmask(getVal("valor_metro2")),
-            Valor: unmask(getVal("valor_total2")),
+            Frente: getNum("frente2"),
+            Lateral: getNum("lateral2"),
+            ValorM2: getNum("valor_metro2"),
+            Valor: getNum("valor_total2"),
             Zoneamento: cleanStr(getVal("zona2"))
         });
+        
         this._updateMapVisuals();
     }
 
