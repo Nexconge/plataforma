@@ -568,18 +568,32 @@ class MapaLotesManager {
         const getVal = id => document.getElementById(id)?.value || "";
         const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
 
+        // CONVERSÃO CORRIGIDA:
+        // Input: "1,200.50" (Vírgula = Milhar, Ponto = Decimal)
+        // Ação: Remove vírgulas -> "1200.50" -> parseFloat
+        const getNum = (id) => {
+            let val = getVal(id);
+            if (!val) return 0;
+            
+            // Remove apenas as vírgulas (milhar) para o JS entender o número corretamente
+            val = val.toString().replace(/,/g, '');
+            
+            return parseFloat(val) || 0;
+        };
+
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
-            Área: (getVal("area2")),
+            Área: getNum("area2"),
             Cliente: cleanStr(getVal("cliente2")),
             Status: cleanStr(getVal("status2")), 
             Atividade: cleanStr(getVal("atividade2")),
-            Frente: (getVal("frente2")),
-            Lateral: (getVal("lateral2")),
-            ValorM2: (getVal("valor_metro2")),
-            Valor: (getVal("valor_total2")),
+            Frente: getNum("frente2"),
+            Lateral: getNum("lateral2"),
+            ValorM2: getNum("valor_metro2"),
+            Valor: getNum("valor_total2"),
             Zoneamento: cleanStr(getVal("zona2"))
         });
+        
         this._updateMapVisuals();
     }
 
