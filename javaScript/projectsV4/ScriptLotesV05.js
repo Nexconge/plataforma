@@ -116,7 +116,7 @@ class MapaLotesManager {
     }
 
     // --- 3. Renderização ---
-_renderLotes(lotes) {
+    _renderLotes(lotes) {
         Object.values(this.polygons).forEach(p => p.remove());
         this.polygons = {};
 
@@ -566,19 +566,18 @@ _renderLotes(lotes) {
         if(!poligono) return;
 
         const getVal = id => document.getElementById(id)?.value || "";
-        const unmask = (val) => parseFloat(val.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
         const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
 
         Object.assign(poligono.loteData, {
             Nome: getVal("quadra_lote2"),
-            Área: unmask(getVal("area2")),
+            Área: (getVal("area2")),
             Cliente: cleanStr(getVal("cliente2")),
             Status: cleanStr(getVal("status2")), 
             Atividade: cleanStr(getVal("atividade2")),
-            Frente: unmask(getVal("frente2")),
-            Lateral: unmask(getVal("lateral2")),
-            ValorM2: unmask(getVal("valor_metro2")),
-            Valor: unmask(getVal("valor_total2")),
+            Frente: (getVal("frente2")),
+            Lateral: (getVal("lateral2")),
+            ValorM2: (getVal("valor_metro2")),
+            Valor: (getVal("valor_total2")),
             Zoneamento: cleanStr(getVal("zona2"))
         });
         this._updateMapVisuals();
