@@ -179,7 +179,8 @@ class MapaLotesManager {
                     fillColor: "#c7c7c7",
                     interactive: false
                 });
-
+                
+                polygon.loteData = lote;
                 polygon.addTo(this.map);
                 this.polygons[lote._id] = polygon;
 
