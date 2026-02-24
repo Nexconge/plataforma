@@ -374,7 +374,7 @@ function renderizarComponenteFiltro() {
         ? EstadoData.selecaoInicio 
         : `${EstadoData.selecaoInicio} até ${EstadoData.selecaoFim}`;
     
-    btn.textContent = `${textoPeriodo} ▼`;
+    btn.textContent = `${textoPeriodo}`;
     
     // Remove dropdown anterior se existir
     const oldDrop = document.getElementById('globalDateDropdown');

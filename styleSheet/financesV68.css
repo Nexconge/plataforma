@@ -517,12 +517,12 @@ body.app-loading::after {
 ========================================================= */
 
 .btn-filtro-data {
-  height: 30px; /* Mesma altura do select vizinho */
-  min-width: 220px;
+  height: 30px;
+  width: 300px;
   border: 1px solid #C7C7C7;
   border-radius: 4px;
   background-color: white;
-  font-family: 'Nunito', sans-serif; /* Ou sua var(--font) */
+  font-family: 'Nunito', sans-serif;
   font-size: 13.33px;
   color: #333;
   text-align: center;
