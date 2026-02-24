@@ -592,6 +592,8 @@ class MapaLotesManager {
             let val = getVal(id);
             if (!val) return 0;
             
+            // Remove o "R$ " se estiver presente
+            val = val.toString().replace("R$ ", '');
             // Remove apenas as vírgulas (milhar) para o JS entender o número corretamente
             val = val.toString().replace(/,/g, '');
             
