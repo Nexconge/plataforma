@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes} from './processingV01.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes} from './processingV02.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV02.js';
 
 // --- Cache da Aplicação ---
@@ -166,7 +166,6 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
             const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             
-            // --- CORREÇÃO AQUI ---
             // Como os dados agora são segmentados por projeto, precisamos somar o valor total de todos os segmentos
             if (processedCY.isSegmented && processedCY.segments) {
                 Object.values(processedCY.segments).forEach(segmento => {
