@@ -61,7 +61,7 @@ window.GerarRelatorioMovimento = async function(contaId, contaDesc, dataInicialS
 
         // 2. Exportação
         // Agora passamos a lista já pronta e o saldo
-        exportarRelatorioFinal(todosLancamentos, contaId, contaDesc, dtInicio, dtFim);
+        exportarRelatorioFinal(todosLancamentos, contaDesc, dtInicio, dtFim);
 
     } catch (error) {
         console.error("Erro fatal ao gerar relatório:", error);
@@ -71,7 +71,7 @@ window.GerarRelatorioMovimento = async function(contaId, contaDesc, dataInicialS
 /**
  * Aplica filtros de data na lista já processada e gera o arquivo Excel.
  */
-function exportarRelatorioFinal(listaBruta, contaId, dtInicio, dtFim) {
+function exportarRelatorioFinal(listaBruta, contaDesc, dtInicio, dtFim) {
     
     // 1. Filtragem (Intervalo de Datas Exato)
     const lancamentosFiltrados = listaBruta.filter(item => {
