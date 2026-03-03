@@ -180,7 +180,7 @@ function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno 
 
 /**
  * Converte a estrutura de TÍTULOS da API em objetos de negócio.
- * CORREÇÃO: 
+ * 
  * - Lançamentos (DRE): Filtrados estritamente pelo ano solicitado.
  * - Capital de Giro: RECEBE TODO O HISTÓRICO (sem filtro), para projetar as curvas de responsabilidade corretamente.
  */

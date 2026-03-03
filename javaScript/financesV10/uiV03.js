@@ -4,7 +4,6 @@
 let graficosAtuais = { saldoCaixa: null, acumulado: null, mensal: null };
 let chartJsPromise = null;
 const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const MAX_MESES_FLUXO = 6;
 
 const EstadoData = {
     minDataDisponivel: null, // 'MM-YYYY'

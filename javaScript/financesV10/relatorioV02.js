@@ -1,10 +1,10 @@
 import { buscarTitulos } from './apiV01.js';
-import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV01.js';
+import { extrairDadosDosTitulos, extrairLancamentosSimples } from './processingV03.js';
 
 /**
  * Realiza a busca por ano, processa imediatamente e dispara a geração do Excel.
  */
-window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFinalStr) {
+window.GerarRelatorioMovimento = async function(contaId, contaDesc, dataInicialStr, dataFinalStr) {
     try {
         const dtInicio = converterParaData(dataInicialStr);
         const dtFim = converterParaData(dataFinalStr);
@@ -61,7 +61,7 @@ window.GerarRelatorioMovimento = async function(contaId, dataInicialStr, dataFin
 
         // 2. Exportação
         // Agora passamos a lista já pronta e o saldo
-        exportarRelatorioFinal(todosLancamentos, contaId, dtInicio, dtFim);
+        exportarRelatorioFinal(todosLancamentos, contaId, contaDesc, dtInicio, dtFim);
 
     } catch (error) {
         console.error("Erro fatal ao gerar relatório:", error);
@@ -99,7 +99,7 @@ function exportarRelatorioFinal(listaBruta, contaId, dtInicio, dtFim) {
         };
     });
 
-    exportarParaXLSX(linhasExcel, contaId, dtFim);
+    exportarParaXLSX(linhasExcel, contaDesc, dtInicio, dtFim);
 }
 
 //----------------------------------------------------------------------------------------------------//
@@ -149,7 +149,7 @@ function formatarMoeda(valor) {
 }
 
 /** Configura e dispara o download do arquivo XLSX */
-function exportarParaXLSX(dados, conta, dataFim) {
+function exportarParaXLSX(dados, contaDesc, dataIni, dataFim) {
     const worksheet = XLSX.utils.json_to_sheet(dados);
     
     // Configura largura das colunas
@@ -158,8 +158,14 @@ function exportarParaXLSX(dados, conta, dataFim) {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Lançamentos');
 
-    const dataArquivo = dataFim.toLocaleDateString('pt-BR').replace(/\//g, "-");
-    const nomeArquivo = `relatorio_movimento_${conta}_ate_${dataArquivo}.xlsx`;
+    const prefixo = (contaDesc || '')
+        .trim()
+        .substring(0, 3)
+        .toUpperCase();
+
+    const dtInicio = dataIni.toLocaleDateString('pt-BR').replace(/\//g, "-");
+    const dtFim = dataFim.toLocaleDateString('pt-BR').replace(/\//g, "-");
+    const nomeArquivo = `${prefixo} Relatório movimento ${dtInicio} a ${dtFim}.xlsx`;
 
     XLSX.writeFile(workbook, nomeArquivo);
     console.log(`Download iniciado: ${nomeArquivo} (${dados.length} linhas)`);
