@@ -692,6 +692,10 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     });
 }
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
+    // Verifica se há algum dado para esta classe dentro das colunas selecionadas
+    const temDadosNoPeriodo = colunas.some(col => dados[col]);
+    if (!temDadosNoPeriodo) return;
+
     const idBase = `classe_${sanitizeId(classe)}`;
     
     // Nível 0: Classe
@@ -705,9 +709,11 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     colunas.forEach(col => { const v = dados[col]?.total || 0; totC += v; rC.insertCell().textContent = formatarValor(v); });
     rC.insertCell().textContent = formatarValor(totC);
 
-    // Constrói árvore
+    // Constrói árvore ignorando períodos fora do filtro selecionado
     const arvore = {};
     Object.keys(dados).forEach(per => {
+        if (!colunas.includes(per)) return; // Bloqueia a criação de linhas para meses não selecionados
+        
         const dpts = dados[per].departamentos;
         for (const dep in dpts) {
             if (!arvore[dep]) arvore[dep] = {};
