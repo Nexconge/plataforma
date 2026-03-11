@@ -1,6 +1,6 @@
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
 import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV02.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV01.js';
 
 // --- Cache Global da Aplicação ---
 let appCache = {
@@ -212,7 +212,7 @@ function processarRespostaTitulos(apiResponse) {
         if (dadosInput.capitalDeGiro.length > 0) {
             processarCapitalDeGiro(dadosInput.capitalDeGiro, buckets, contaId, "realizado");
         }
-        
+
         appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, buckets);
 
     } else {
