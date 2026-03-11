@@ -132,11 +132,20 @@ tr[data-type="saldo"] { background-color: var(--primary); color: white; font-wei
 tr[data-type="saldo"]:hover { background-color: var(--primary); }
 tr[data-type="saldo"] td { border-bottom: none; }
 
+tr[data-indent] td:first-child,
 tr[data-type="header-group"] td:first-child {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 290px;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer;
+}
+
+tr[data-indent] td:first-child:hover,
+tr[data-type="header-group"] td:first-child:hover {
+  white-space: normal !important;
+  overflow: visible !important;
+  word-break: break-word;
 }
 /* =========================================================
    HIERARQUIA VISUAL TABELA DETALHAMENTO COM DRILL DOWN
