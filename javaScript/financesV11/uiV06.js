@@ -377,9 +377,7 @@ export function atualizarVisualizacoes(dadosConsolidados, colunas, colunasPlaceh
     const saldoInicialCaixa = dre['Caixa Inicial']?.[colunas[0]] || 0;
 
     renderizarDRE(dre, colunas, cache.userType);
-
     renderizarDetalhamento(cache.dicionarios.categoriasMap, detalhamento, colunas, entradasSaidas, cache.userType);
-    
     renderizarCapitalGiro(cg, colunas, dadosConsolidados?.dadosEstoque);
     renderizarGraficos(dadosConsolidados, colunas); 
     renderizarFluxoDiario(fluxo, colunas, saldoInicialCaixa, cache.projecao);

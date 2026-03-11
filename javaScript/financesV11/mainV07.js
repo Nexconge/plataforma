@@ -1,6 +1,6 @@
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV02.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV05.js';
+import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV03.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV06.js';
 
 // --- Cache Global da Aplicação ---
 let appCache = {
@@ -176,7 +176,7 @@ function processarRespostaTitulos(apiResponse) {
     const { reqContext, response } = apiResponse;
     const { contaId, anoOuTag, projecao } = reqContext;
     const saldoInicialApi = Number(response?.saldoInicial || 0);
-    const contaMeta = appCache.contasMap.get(contaId);
+    const contaMeta = appCache.contasMap.get(String(contaId));
     const saldoInicialBase = contaMeta ? Number(contaMeta.saldoIni) : saldoInicialApi;
 
     if (projecao === "arealizar") {
@@ -196,47 +196,23 @@ function processarRespostaTitulos(apiResponse) {
                         }
                     }
                 });
-            } catch (e) { console.error("Erro ao fazer parse do Realizado CY:", e); }
-        } else if (Array.isArray(response.movimentosRealizado)) {
-            const dadosCY = { lancamentosProcessados: response.movimentosRealizado };
-            const bucketsCY = processarDadosConta(dadosCY, appCache.dicionarios, contaId, saldoInicialBase);
-            Object.values(bucketsCY).forEach(bucket => {
-                if (bucket && bucket.dre && bucket.dre['Caixa Final']) {
-                    const colunas = Object.keys(bucket.dre['Caixa Final']);
-                    if (colunas.length > 0) {
-                        const ultimaColuna = colunas.sort()[colunas.length - 1]; 
-                        saldoAcumulado += (bucket.dre['Caixa Final'][ultimaColuna] || 0);
-                    }
-                }
-            });
+            } catch (e) { console.error("Erro parse Realizado CY", e); }
         }
 
         let dadosInput = { titulosEmAberto: [], capitalDeGiro: [] };
-        
         if (response.dadosArealizar?.length > 2) {
-            try { 
-                dadosInput.titulosEmAberto = JSON.parse(`[${response.dadosArealizar}]`); 
-            } catch (e) { console.error("Erro ao fazer parse de A Realizar:", e); }
-        } else if (Array.isArray(response.movimentosArealizar)) {
-            dadosInput.titulosEmAberto = response.movimentosArealizar;
-        } else if (Array.isArray(response.movimentos)) {
-            dadosInput.titulosEmAberto = response.movimentos;
+            try { dadosInput.titulosEmAberto = JSON.parse(`[${response.dadosArealizar}]`); } catch (e) {}
         }
         
         const buckets = processarDadosConta(dadosInput, appCache.dicionarios, contaId, saldoAcumulado);
         appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, buckets);
 
     } else {
-        // Modo Realizado Convencional
         let dadosInput = { lancamentosProcessados: [], capitalDeGiro: [] };
         
-        // CORREÇÃO: Mudar de dadosLancamentos para dadosRealizado
-        if (response.dadosRealizado?.length > 2) {
-            try { dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosRealizado}]`); } catch (e) {}
-        } else if (response.dadosLancamentos?.length > 2) { // Fallback de segurança
+        if (response.dadosLancamentos?.length > 2) {
             try { dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosLancamentos}]`); } catch (e) {}
         }
-        
         if (response.dadosCapitalG?.length > 2) {
             try { dadosInput.capitalDeGiro = JSON.parse(`[${response.dadosCapitalG}]`); } catch (e) {}
         }
@@ -363,7 +339,6 @@ function exibirTabelasVazias() {
 
 // --- Inicialização (Entry Point do Bubble) ---
 window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJson, projetosJson) {
-    // Reseta Cache Global
     appCache.userId = id;
     appCache.userType = type;
     appCache.dadosPorContaAno.clear();
@@ -378,7 +353,6 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
     appCache.flagAnos = false;
     
     try {
-        // Parse de Dicionários
         JSON.parse(classesJson).forEach(c => {
             appCache.dicionarios.classesMap.set(String(c.codigo), { classe: c.Classe, categoria: c.Categoria });
             appCache.dicionarios.categoriasMap.set(String(c.codigo), c.Categoria);
@@ -386,8 +360,6 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
         JSON.parse(deptosJson).forEach(d => {
             appCache.dicionarios.departamentosMap.set(String(d.codigo), d.descricao);
         });
-        
-        // Parse de Entidades
         JSON.parse(projetosJson).forEach(p => {
             appCache.projetosMap.set(String(p.codProj), { nome: p.nomeProj, contas: (p.contas || []).map(String) });
         });
@@ -395,7 +367,6 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
             appCache.contasMap.set(String(c.codigo), { descricao: c.descricao, saldoIni: c.saldoIni });
         });
 
-        // Configura e Dispara Filtro Inicial
         configurarFiltros(appCache, [String(new Date().getFullYear())], handleFiltroChange);
     } catch (e) {
         console.error("Erro na inicialização da aplicação:", e);

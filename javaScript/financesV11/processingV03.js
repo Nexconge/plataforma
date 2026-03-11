@@ -68,7 +68,6 @@ const criarEstruturaUI = (saldoInicial = 0) => {
 };
 
 // --- Função Principal de Processamento ---
-
 /**
  * Ponto de entrada. Converte o JSON bruto da API diretamente para a estrutura da UI.
  * Separa tudo por Projeto no nível mais alto para permitir filtros dinâmicos sem reprocessar.
@@ -79,7 +78,6 @@ const criarEstruturaUI = (saldoInicial = 0) => {
  * @returns {Object} Estrutura segmentada por projeto
  */
 export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial = 0) {
-    // O Bucket raiz armazena os dados sem projeto (ou globais)
     const bucketsPorProjeto = {
         'SEM_PROJETO': criarEstruturaUI(saldoInicial)
     };
@@ -87,13 +85,11 @@ export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial
     const obterBucket = (idProjeto) => {
         const chave = (idProjeto && idProjeto !== "0") ? String(idProjeto) : 'SEM_PROJETO';
         if (!bucketsPorProjeto[chave]) {
-            // Apenas o bucket principal leva o saldo inicial real, os outros partem de 0 para o merge não duplicar
             bucketsPorProjeto[chave] = criarEstruturaUI(0);
         }
         return bucketsPorProjeto[chave];
     };
 
-    // 1. Processa Lançamentos Realizados (DRE e Fluxo)
     if (Array.isArray(dadosRaw.lancamentosProcessados)) {
         dadosRaw.lancamentosProcessados.forEach(lancamento => {
             if (String(lancamento.CODContaC) !== String(contaId)) return;
@@ -102,16 +98,14 @@ export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial
         });
     }
 
-    // 2. Processa Títulos A Realizar (DRE Futuro)
     if (Array.isArray(dadosRaw.titulosEmAberto)) {
         dadosRaw.titulosEmAberto.forEach(titulo => {
-            if (String(titulo.CODContaC) !== contaId) return;
+            if (String(titulo.CODContaC) !== String(contaId)) return;
             const bucket = obterBucket(titulo.CODProjeto);
             processarDRE(titulo, bucket, dicionarios);
         });
     }
 
-    // 3. Pós-processamento Local (Cálculo de Totais Horizontais e Verticais por Projeto)
     Object.values(bucketsPorProjeto).forEach(bucket => {
         aplicarRegrasDeTotaisDRE(bucket);
     });
@@ -120,7 +114,6 @@ export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial
 }
 
 // --- Funções Auxiliares de Preenchimento ---
-
 /**
  * Extrai os dados do lançamento e popula a matriz DRE, Entradas/Saídas e Fluxo.
  */
@@ -133,24 +126,21 @@ function processarDRE(item, destino, dicionarios) {
 
     const natureza = normalizarNatureza(item.Natureza);
     let valor = parseFloat(item.ValorLancamento || item.ValorTitulo || 0);
-    if (natureza === 'P') valor = -valor; // Saídas são negativas no processamento
+    if (natureza === 'P') valor = -valor; 
 
     const codCat = String(item.CODCategoria || item.Categoria);
     const classeObj = dicionarios.classesMap.get(codCat);
     const classe = classeObj ? classeObj.classe : 'Outros';
-    const isTransferencia = String(codCat).startsWith("0.01");
+    const isTransferencia = codCat.startsWith("0.01");
 
-    // 1. DRE Principal
     if (!destino.dre[classe]) destino.dre[classe] = {};
     destino.dre[classe][chaveMes] = (destino.dre[classe][chaveMes] || 0) + valor;
 
-    // 2. Entradas e Saídas (Resumo)
     const chaveES = valor < 0 
         ? (isTransferencia ? '(-) Saídas de Transferência' : '(-) Saídas')
         : (isTransferencia ? '(+) Entradas de Transferência' : '(+) Entradas');
     destino.entradasSaidas[chaveES][chaveMes] = (destino.entradasSaidas[chaveES][chaveMes] || 0) + valor;
 
-    // 3. Fluxo Diário (Lista simples para a tabela de fluxo)
     destino.fluxoDiario.push({
         data: dataAlvo,
         valor: valor,
@@ -158,12 +148,10 @@ function processarDRE(item, destino, dicionarios) {
         obs: item.obs || item.obsTitulo || null
     });
 
-    // 4. Detalhamento Hierárquico (Rateio por Departamentos)
     if (ORDEM_DRE.includes(classe) && Array.isArray(item.Departamentos)) {
         popularDetalhamento(item, destino.detalhamento, classe, chaveMes, valor, dicionarios);
     }
 }
-
 /**
  * Constrói a árvore de Drill-down (Classe -> Depto -> Categoria -> Fornecedor)
  */
