@@ -1,6 +1,6 @@
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
 import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV03.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV04.js';
 
 // --- Cache Global da Aplicação ---
 let appCache = {
@@ -181,55 +181,74 @@ function processarRespostaTitulos(apiResponse) {
 
     if (projecao === "arealizar") {
         let saldoAcumulado = saldoInicialBase;
-        const anoAtual = new Date().getFullYear();
 
-        // Para 'A Realizar', precisamos do saldo consolidado do Realizado do ano corrente até a data atual
         if (response.dadosRealizado?.length > 2) {
             try {
                 const dadosCY = { lancamentosProcessados: JSON.parse(`[${response.dadosRealizado}]`) };
                 const bucketsCY = processarDadosConta(dadosCY, appCache.dicionarios, contaId, saldoInicialBase);
                 
-                // Soma os caixas finais de todos os projetos no ano corrente
                 Object.values(bucketsCY).forEach(bucket => {
                     if (bucket && bucket.dre && bucket.dre['Caixa Final']) {
                         const colunas = Object.keys(bucket.dre['Caixa Final']);
                         if (colunas.length > 0) {
-                            // Pegamos o último mês processado para acumular o saldo
                             const ultimaColuna = colunas.sort()[colunas.length - 1]; 
                             saldoAcumulado += (bucket.dre['Caixa Final'][ultimaColuna] || 0);
                         }
                     }
                 });
-            } catch (e) { console.error("Erro parse Realizado CY", e); }
+            } catch (e) { console.error("Erro ao fazer parse do Realizado CY:", e); }
+        } else if (Array.isArray(response.movimentosRealizado)) {
+            const dadosCY = { lancamentosProcessados: response.movimentosRealizado };
+            const bucketsCY = processarDadosConta(dadosCY, appCache.dicionarios, contaId, saldoInicialBase);
+            Object.values(bucketsCY).forEach(bucket => {
+                if (bucket && bucket.dre && bucket.dre['Caixa Final']) {
+                    const colunas = Object.keys(bucket.dre['Caixa Final']);
+                    if (colunas.length > 0) {
+                        const ultimaColuna = colunas.sort()[colunas.length - 1]; 
+                        saldoAcumulado += (bucket.dre['Caixa Final'][ultimaColuna] || 0);
+                    }
+                }
+            });
         }
 
         let dadosInput = { titulosEmAberto: [], capitalDeGiro: [] };
+        
         if (response.dadosArealizar?.length > 2) {
-            try { dadosInput.titulosEmAberto = JSON.parse(`[${response.dadosArealizar}]`); } catch (e) {}
+            try { 
+                dadosInput.titulosEmAberto = JSON.parse(`[${response.dadosArealizar}]`); 
+            } catch (e) { console.error("Erro ao fazer parse de A Realizar:", e); }
+        } else if (Array.isArray(response.movimentosArealizar)) {
+            dadosInput.titulosEmAberto = response.movimentosArealizar;
+        } else if (Array.isArray(response.movimentos)) {
+            dadosInput.titulosEmAberto = response.movimentos;
         }
         
-        const buckets = processarDadosConta(dadosInput, appCache.dicionarios, contaId, saldoInicialBase);
-        if (dadosInput.capitalDeGiro.length > 0) {
-            processarCapitalDeGiro(dadosInput.capitalDeGiro, buckets, contaId, "realizado");
-        }
-
+        const buckets = processarDadosConta(dadosInput, appCache.dicionarios, contaId, saldoAcumulado);
         appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, buckets);
 
     } else {
-        // Modo Realizado Convencional
         let dadosInput = { lancamentosProcessados: [], capitalDeGiro: [] };
         
         if (response.dadosLancamentos?.length > 2) {
-            try { dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosLancamentos}]`); } catch (e) {}
+            try { 
+                dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosLancamentos}]`); 
+            } catch (e) { console.error("Erro ao fazer parse de Lançamentos:", e); }
+        } else if (Array.isArray(response.movimentos)) {
+            dadosInput.lancamentosProcessados = response.movimentos;
         }
+
         if (response.dadosCapitalG?.length > 2) {
-            try { dadosInput.capitalDeGiro = JSON.parse(`[${response.dadosCapitalG}]`); } catch (e) {}
+            try { 
+                dadosInput.capitalDeGiro = JSON.parse(`[${response.dadosCapitalG}]`); 
+            } catch (e) { console.error("Erro ao fazer parse de Capital de Giro:", e); }
+        } else if (Array.isArray(response.capitalGiro)) {
+            dadosInput.capitalDeGiro = response.capitalGiro;
         }
 
         const buckets = processarDadosConta(dadosInput, appCache.dicionarios, contaId, saldoInicialBase);
         
         if (dadosInput.capitalDeGiro.length > 0) {
-            processarCapitalDeGiro(dadosInput.capitalDeGiro, buckets, contaId);
+            processarCapitalDeGiro(dadosInput.capitalDeGiro, buckets, contaId, "realizado");
         }
 
         appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, buckets);

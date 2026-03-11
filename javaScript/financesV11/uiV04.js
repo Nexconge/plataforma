@@ -368,20 +368,19 @@ export function atualizarVisualizacoes(dadosConsolidados, colunas, colunasPlaceh
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
 
-    // Estruturas seguras caso o processing retorne algo vazio
     const dre = dadosConsolidados?.dre || {};
     const detalhamento = dadosConsolidados?.detalhamento || {};
     const entradasSaidas = dadosConsolidados?.entradasSaidas || {};
     const cg = dadosConsolidados?.capitalGiro || {};
     const fluxo = dadosConsolidados?.fluxoDiario || [];
 
-    // O Caixa Inicial global fica na linha 'Caixa Inicial' -> 'TOTAL' da DRE na nova estrutura, 
-    // ou no primeiro período visível.
     const saldoInicialCaixa = dre['Caixa Inicial']?.[colunas[0]] || 0;
 
     renderizarDRE(dre, colunas, cache.userType);
-    renderizarDetalhamento(cache.categoriasMap, detalhamento, colunas, entradasSaidas, cache.userType);
-    renderizarCapitalGiro(cg, colunas, dadosConsolidados?.dadosEstoque); // dadosEstoque se ainda vier do merge
+
+    renderizarDetalhamento(cache.dicionarios.categoriasMap, detalhamento, colunas, entradasSaidas, cache.userType);
+    
+    renderizarCapitalGiro(cg, colunas, dadosConsolidados?.dadosEstoque);
     renderizarGraficos(dadosConsolidados, colunas); 
     renderizarFluxoDiario(fluxo, colunas, saldoInicialCaixa, cache.projecao);
     renderizarFluxoDiarioResumido(dre['Caixa Inicial'] || {}, dre['Caixa Final'] || {}, entradasSaidas, colunas);
