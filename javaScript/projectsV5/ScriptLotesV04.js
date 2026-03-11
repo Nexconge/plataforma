@@ -526,12 +526,15 @@ class MapaLotesManager {
         const empList = cleanList(empSet);
         const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
 
+        const formatarNumPTBR = (num) => {
+            return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
-        setInput("area2", totalArea.toFixed(2));
-        setInput("frente2", this.selectedIds.size === 1 ? totalFrente.toFixed(2) : "-");
-        setInput("lateral2", this.selectedIds.size === 1 ? totalLateral.toFixed(2) : "-");
-        setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
-        setInput("valor_total2", totalValor.toFixed(2));
+        setInput("area2", formatarNumPTBR(totalArea));
+        setInput("frente2", this.selectedIds.size === 1 ? formatarNumPTBR(totalFrente) : "-");
+        setInput("lateral2", this.selectedIds.size === 1 ? formatarNumPTBR(totalLateral) : "-");
+        setInput("valor_metro2", totalArea > 0 ? formatarNumPTBR(totalValor / totalArea) : "0,00");
+        setInput("valor_total2", formatarNumPTBR(totalValor));
         setInput("cliente2", clienteValor, isMulti);
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
@@ -593,9 +596,11 @@ class MapaLotesManager {
             if (!val) return 0;
             
             // Remove o "R$ " se estiver presente
-            val = val.toString().replace("R$ ", '');
-            // Remove apenas as vírgulas (milhar) para o JS entender o número corretamente
-            val = val.toString().replace(/,/g, '');
+            val = val.toString().replace("R$ ", '').trim();
+            // Remove os pontos (separador de milhar do PT-BR)
+            val = val.replace(/\./g, '');
+            // Substitui a vírgula (separador decimal do PT-BR) por ponto para o JS entender
+            val = val.replace(',', '.');
             
             return parseFloat(val) || 0;
         };
