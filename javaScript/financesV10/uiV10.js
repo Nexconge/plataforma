@@ -631,8 +631,10 @@ function renderizarDRE(matriz, colunas, userType) {
         row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
 
         // Lógica de Estilo via Data Attributes
-        if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe) || classe.includes('Transferência')) {
+        if (['(=) Receita Líquida', 'Outros'].includes(classe) || classe.includes('Transferência')) {
             row.dataset.type = 'total';
+        } else if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
+            row.dataset.type = 'total-negrito';
         } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
             row.dataset.type = 'saldo';
         } else {
