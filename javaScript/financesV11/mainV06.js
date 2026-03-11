@@ -1,6 +1,6 @@
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV04.js';
+import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV02.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV05.js';
 
 // --- Cache Global da Aplicação ---
 let appCache = {
@@ -227,22 +227,18 @@ function processarRespostaTitulos(apiResponse) {
         appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, buckets);
 
     } else {
+        // Modo Realizado Convencional
         let dadosInput = { lancamentosProcessados: [], capitalDeGiro: [] };
         
-        if (response.dadosLancamentos?.length > 2) {
-            try { 
-                dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosLancamentos}]`); 
-            } catch (e) { console.error("Erro ao fazer parse de Lançamentos:", e); }
-        } else if (Array.isArray(response.movimentos)) {
-            dadosInput.lancamentosProcessados = response.movimentos;
+        // CORREÇÃO: Mudar de dadosLancamentos para dadosRealizado
+        if (response.dadosRealizado?.length > 2) {
+            try { dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosRealizado}]`); } catch (e) {}
+        } else if (response.dadosLancamentos?.length > 2) { // Fallback de segurança
+            try { dadosInput.lancamentosProcessados = JSON.parse(`[${response.dadosLancamentos}]`); } catch (e) {}
         }
-
+        
         if (response.dadosCapitalG?.length > 2) {
-            try { 
-                dadosInput.capitalDeGiro = JSON.parse(`[${response.dadosCapitalG}]`); 
-            } catch (e) { console.error("Erro ao fazer parse de Capital de Giro:", e); }
-        } else if (Array.isArray(response.capitalGiro)) {
-            dadosInput.capitalDeGiro = response.capitalGiro;
+            try { dadosInput.capitalDeGiro = JSON.parse(`[${response.dadosCapitalG}]`); } catch (e) {}
         }
 
         const buckets = processarDadosConta(dadosInput, appCache.dicionarios, contaId, saldoInicialBase);
@@ -384,8 +380,8 @@ window.IniciarDoZero = async function(deptosJson, id, type, contasJson, classesJ
     try {
         // Parse de Dicionários
         JSON.parse(classesJson).forEach(c => {
-            appCache.dicionarios.classesMap.set(c.codigo, { classe: c.Classe, categoria: c.Categoria });
-            appCache.dicionarios.categoriasMap.set(c.codigo, c.Categoria);
+            appCache.dicionarios.classesMap.set(String(c.codigo), { classe: c.Classe, categoria: c.Categoria });
+            appCache.dicionarios.categoriasMap.set(String(c.codigo), c.Categoria);
         });
         JSON.parse(deptosJson).forEach(d => {
             appCache.dicionarios.departamentosMap.set(String(d.codigo), d.descricao);

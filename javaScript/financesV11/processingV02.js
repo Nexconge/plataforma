@@ -96,7 +96,7 @@ export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial
     // 1. Processa Lançamentos Realizados (DRE e Fluxo)
     if (Array.isArray(dadosRaw.lancamentosProcessados)) {
         dadosRaw.lancamentosProcessados.forEach(lancamento => {
-            if (String(lancamento.CODContaC) !== contaId) return;
+            if (String(lancamento.CODContaC) !== String(contaId)) return;
             const bucket = obterBucket(lancamento.CODProjeto);
             processarDRE(lancamento, bucket, dicionarios);
         });
@@ -135,7 +135,7 @@ function processarDRE(item, destino, dicionarios) {
     let valor = parseFloat(item.ValorLancamento || item.ValorTitulo || 0);
     if (natureza === 'P') valor = -valor; // Saídas são negativas no processamento
 
-    const codCat = item.CODCategoria || item.Categoria;
+    const codCat = String(item.CODCategoria || item.Categoria);
     const classeObj = dicionarios.classesMap.get(codCat);
     const classe = classeObj ? classeObj.classe : 'Outros';
     const isTransferencia = String(codCat).startsWith("0.01");
