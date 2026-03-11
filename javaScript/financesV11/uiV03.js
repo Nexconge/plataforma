@@ -43,11 +43,11 @@ export function formatarValor(valor, fractionDigits = 0) {
     const num = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
     return valor < 0 ? `(${num})` : num;
 }
-
 export function formatarPercentual(valor) {
     return (!valor || valor === 0) ? '0,0%' : `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}%`;
 }
 
+// ------ Gerenciamento de Datas e Filtros ------
 export function alternarEstadoCarregamento(carregando) {
     document.body.classList.toggle('app-loading', carregando);
     ['anoSelect', 'projSelect', 'contaSelect', 'modoSelect', 'btnARealizar', 'btnRealizado', 'inputDataInicial', 'inputDataFinal'].forEach(id => {
@@ -55,8 +55,6 @@ export function alternarEstadoCarregamento(carregando) {
         if (el) { el.disabled = carregando; el.style.opacity = carregando ? '0.6' : '1'; }
     });
 }
-
-// ------ Gerenciamento de Datas e Filtros ------
 
 export function gerarColunasPeloIntervalo(inicio, fim, modo) {
     const lista = [];
@@ -394,9 +392,6 @@ export function atualizarVisualizacoes(dadosConsolidados, colunas, colunasPlaceh
 }
 
 // --- Utilitários de Tabela ---
-function formatarPercentual(valor) {
-    return (!valor || valor === 0) ? '0,0%' : `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}%`;
-}
 function criarLinhaEspacadora(target, colunas) {
     const r = target.insertRow();
     r.dataset.type = 'spacer';
