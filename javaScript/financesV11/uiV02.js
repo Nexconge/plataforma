@@ -394,11 +394,6 @@ export function atualizarVisualizacoes(dadosConsolidados, colunas, colunasPlaceh
 }
 
 // --- Utilitários de Tabela ---
-function formatarValor(valor, fractionDigits = 0) {
-    if (Math.abs(valor) < 0.01) return '-';
-    const num = Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
-    return valor < 0 ? `(${num})` : num;
-}
 function formatarPercentual(valor) {
     return (!valor || valor === 0) ? '0,0%' : `${valor.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}%`;
 }
