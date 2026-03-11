@@ -45,6 +45,15 @@ table:not(#tabelaFluxoDiario) {
   border-collapse: separate; 
   border-spacing: 0; 
   font-size: 14px;
+  table-layout: fixed;
+}
+
+/* Aplica truncamento de texto com reticências para todas as células, exceto a primeira e a última */
+table:not(#tabelaFluxoDiario) td:not(:first-child):not(:nth-child(14)), 
+table:not(#tabelaFluxoDiario) th:not(:first-child):not(:nth-child(14)) { 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- CONFIGURAÇÃO DAS CÉLULAS (Geral) --- */
