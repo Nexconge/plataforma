@@ -1,4 +1,4 @@
-// processingV01.js
+// processingV04.js
 
 // --- Constantes Globais ---
 const ORDEM_DRE = [
@@ -13,8 +13,6 @@ const LINHAS_CALCULADAS_DRE = [
 ];
 
 // --- Funções Auxiliares Básicas ---
-
-/** Garante o formato MM-AAAA */
 const formatarChaveMesAno = (dataString) => {
     if (!dataString) return null;
     const partes = dataString.split('/');
@@ -22,44 +20,28 @@ const formatarChaveMesAno = (dataString) => {
     return `${partes[1].padStart(2, '0')}-${partes[2]}`;
 };
 
-/** Padroniza R (Receita) e P (Pagamento) */
 const normalizarNatureza = (nat) => (nat === 'D' || nat === 'P') ? 'P' : 'R';
 
 // --- Criação de Estrutura Base ---
-
-/** * Cria o esqueleto vazio pronto para receber dados e ser lido pela UI.
- * Facilita o merge pois todas as chaves já existem.
- */
 const criarEstruturaUI = (saldoInicial = 0) => {
     const estrutura = {
         saldoInicialBase: Number(saldoInicial),
         chavesEncontradas: new Set(),
-        
-        // Matriz pronta para a tabela DRE (Linha -> Coluna -> Valor)
         dre: {}, 
-        
-        // Matriz de Entradas e Saídas simples
         entradasSaidas: {
             '(+) Entradas': {}, '(-) Saídas': {},
             '(+) Entradas de Transferência': {}, '(-) Saídas de Transferência': {}
         },
-        
-        // Dados para a tabela de Capital de Giro
         capitalGiro: {
             '(+) Caixa': {},
             '(+) Clientes a Receber': {}, 'Curto Prazo AR': {}, 'Longo Prazo AR': {},
             '(-) Fornecedores a Pagar': {}, 'Curto Prazo AP': {}, 'Longo Prazo AP': {},
             'Curto Prazo TT': {}, 'Longo Prazo TT': {}, 'Capital Liquido': {}
         },
-        
-        // Arrays simples
         fluxoDiario: [],
-        
-        // Objeto hierárquico para o drill-down (Classe -> Depto -> Categoria -> Fornecedor)
         detalhamento: {}
     };
 
-    // Pré-popula as linhas do DRE para garantir a ordem na UI
     [...ORDEM_DRE, ...LINHAS_CALCULADAS_DRE, 'Entrada de Transferência', 'Saída de Transferência'].forEach(linha => {
         estrutura.dre[linha] = {};
     });
@@ -67,16 +49,96 @@ const criarEstruturaUI = (saldoInicial = 0) => {
     return estrutura;
 };
 
-// --- Função Principal de Processamento ---
+// --- EXTRAÇÃO DE DADOS (A CORREÇÃO DO PROBLEMA DE DADOS VAZIOS) ---
+
 /**
- * Ponto de entrada. Converte o JSON bruto da API diretamente para a estrutura da UI.
- * Separa tudo por Projeto no nível mais alto para permitir filtros dinâmicos sem reprocessar.
- * * @param {Object} dadosRaw - Resposta bruta da API { lancamentosProcessados, titulosEmAberto, capitalDeGiro }
- * @param {Object} dicionarios - Mapas cacheados { classesMap, categoriasMap, departamentosMap }
- * @param {String} contaId - ID da conta atual sendo processada
- * @param {Number} saldoInicial - Saldo inicial da conta
- * @returns {Object} Estrutura segmentada por projeto
+ * Normaliza a estrutura aninhada da API em arrays 1D simples.
+ * Extrai baixas filhas e calcula saldos de títulos A Realizar.
  */
+function extrairDadosAninhados(rawArray, contaId) {
+    const lancamentos = [];
+    const titulosAbertos = [];
+    const capitalGiro = [];
+
+    if (!Array.isArray(rawArray)) return { lancamentos, titulosAbertos, capitalGiro };
+
+    rawArray.forEach(item => {
+        if (!item) return;
+        const natureza = normalizarNatureza(item.Natureza);
+        let valorTotalPago = 0;
+
+        // 1. Extração de Baixas (Lançamentos Filhos)
+        if (Array.isArray(item.Lancamentos)) {
+            item.Lancamentos.forEach(lanc => {
+                if (!lanc.DataLancamento || !lanc.CODContaC || typeof lanc.ValorLancamento === 'undefined') return;
+                
+                valorTotalPago += (lanc.ValorBaixado || 0);
+
+                // Apenas insere na DRE se o pagamento for na conta corrente selecionada
+                if (String(lanc.CODContaC) === String(contaId)) {
+                    lancamentos.push({
+                        DataLancamento: lanc.DataLancamento,
+                        ValorLancamento: lanc.ValorLancamento,
+                        Natureza: natureza,
+                        CODCategoria: item.Categoria || item.CODCategoria,
+                        Cliente: item.Cliente,
+                        Departamentos: item.Departamentos || [],
+                        CODProjeto: item.CODProjeto,
+                        obs: lanc.obs || item.obsTitulo || null
+                    });
+                }
+
+                // Insere sempre no Capital de Giro para manter histórico
+                capitalGiro.push({
+                    Natureza: natureza,
+                    DataPagamento: lanc.DataLancamento,
+                    DataVencimento: item.DataVencimento || null,
+                    DataEmissao: item.DataEmissao || null,
+                    ValorTitulo: lanc.ValorLancamento,
+                    CODContaEmissao: item.CODContaC || null,
+                    CODContaPagamento: lanc.CODContaC || null,
+                    CODProjeto: item.CODProjeto || null
+                });
+            });
+        }
+
+        // 2. Extração de Saldos Restantes (A Realizar)
+        if (typeof item.ValorTitulo !== 'undefined') {
+            const valorFaltante = item.ValorTitulo - valorTotalPago;
+            
+            if (valorFaltante >= 0.01 && item.ValorTitulo !== 0) {
+                if (String(item.CODContaC) === String(contaId)) {
+                    titulosAbertos.push({
+                        DataLancamento: item.DataVencimento, // Usa vencimento no A Realizar
+                        ValorLancamento: valorFaltante,
+                        Natureza: natureza,
+                        CODCategoria: item.Categoria || item.CODCategoria,
+                        Cliente: item.Cliente || "Cliente",
+                        Departamentos: item.Departamentos || [],
+                        CODProjeto: item.CODProjeto,
+                        obs: item.obsTitulo || null
+                    });
+                }
+
+                capitalGiro.push({
+                    Natureza: natureza,
+                    DataPagamento: null,
+                    DataVencimento: item.DataVencimento || null,
+                    DataEmissao: item.DataEmissao || null,
+                    ValorTitulo: valorFaltante,
+                    CODContaEmissao: item.CODContaC || null,
+                    CODContaPagamento: null,
+                    CODProjeto: item.CODProjeto || null
+                });
+            }
+        }
+    });
+
+    return { lancamentos, titulosAbertos, capitalGiro };
+}
+
+// --- Funções Principais de Processamento ---
+
 export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial = 0) {
     const bucketsPorProjeto = {
         'SEM_PROJETO': criarEstruturaUI(saldoInicial)
@@ -90,21 +152,29 @@ export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial
         return bucketsPorProjeto[chave];
     };
 
+    // 1. Extrai e Planifica os Dados
+    const dadosLimpados = { lancamentos: [], titulos: [] };
+
     if (Array.isArray(dadosRaw.lancamentosProcessados)) {
-        dadosRaw.lancamentosProcessados.forEach(lancamento => {
-            if (String(lancamento.CODContaC) !== String(contaId)) return;
-            const bucket = obterBucket(lancamento.CODProjeto);
-            processarDRE(lancamento, bucket, dicionarios);
-        });
+        const extraido = extrairDadosAninhados(dadosRaw.lancamentosProcessados, contaId);
+        dadosLimpados.lancamentos.push(...extraido.lancamentos);
+    }
+    if (Array.isArray(dadosRaw.titulosEmAberto)) {
+        const extraido = extrairDadosAninhados(dadosRaw.titulosEmAberto, contaId);
+        dadosLimpados.titulos.push(...extraido.titulosAbertos);
     }
 
-    if (Array.isArray(dadosRaw.titulosEmAberto)) {
-        dadosRaw.titulosEmAberto.forEach(titulo => {
-            if (String(titulo.CODContaC) !== String(contaId)) return;
-            const bucket = obterBucket(titulo.CODProjeto);
-            processarDRE(titulo, bucket, dicionarios);
-        });
-    }
+    // 2. Processa Lançamentos Realizados
+    dadosLimpados.lancamentos.forEach(lancamento => {
+        const bucket = obterBucket(lancamento.CODProjeto);
+        processarDRE(lancamento, bucket, dicionarios);
+    });
+
+    // 3. Processa Títulos A Realizar
+    dadosLimpados.titulos.forEach(titulo => {
+        const bucket = obterBucket(titulo.CODProjeto);
+        processarDRE(titulo, bucket, dicionarios);
+    });
 
     Object.values(bucketsPorProjeto).forEach(bucket => {
         aplicarRegrasDeTotaisDRE(bucket);
@@ -113,22 +183,17 @@ export function processarDadosConta(dadosRaw, dicionarios, contaId, saldoInicial
     return bucketsPorProjeto;
 }
 
-// --- Funções Auxiliares de Preenchimento ---
-/**
- * Extrai os dados do lançamento e popula a matriz DRE, Entradas/Saídas e Fluxo.
- */
 function processarDRE(item, destino, dicionarios) {
-    const dataAlvo = item.DataLancamento || item.DataVencimento;
+    const dataAlvo = item.DataLancamento;
     if (!dataAlvo) return;
 
     const chaveMes = formatarChaveMesAno(dataAlvo);
     destino.chavesEncontradas.add(chaveMes);
 
-    const natureza = normalizarNatureza(item.Natureza);
-    let valor = parseFloat(item.ValorLancamento || item.ValorTitulo || 0);
-    if (natureza === 'P') valor = -valor; 
+    let valor = parseFloat(item.ValorLancamento || 0);
+    if (item.Natureza === 'P') valor = -valor; 
 
-    const codCat = String(item.CODCategoria || item.Categoria);
+    const codCat = String(item.CODCategoria);
     const classeObj = dicionarios.classesMap.get(codCat);
     const classe = classeObj ? classeObj.classe : 'Outros';
     const isTransferencia = codCat.startsWith("0.01");
@@ -145,31 +210,30 @@ function processarDRE(item, destino, dicionarios) {
         data: dataAlvo,
         valor: valor,
         descricao: isTransferencia ? 'Transferência Entre Contas' : `${dicionarios.categoriasMap.get(codCat) || 'S/ Categoria'} - ${item.Cliente || ''}`,
-        obs: item.obs || item.obsTitulo || null
+        obs: item.obs || null
     });
 
     if (ORDEM_DRE.includes(classe) && Array.isArray(item.Departamentos)) {
-        popularDetalhamento(item, destino.detalhamento, classe, chaveMes, valor, dicionarios);
+        popularDetalhamento(item, destino.detalhamento, classe, chaveMes, Math.abs(item.ValorLancamento), dicionarios);
     }
 }
-/**
- * Constrói a árvore de Drill-down (Classe -> Depto -> Categoria -> Fornecedor)
- */
-function popularDetalhamento(item, detalhamentoBase, classe, chaveMes, valorTotal, dicionarios) {
+
+function popularDetalhamento(item, detalhamentoBase, classe, chaveMes, valorTotalAbs, dicionarios) {
     const fornecedor = item.Cliente || "Não informado";
-    const chavePrimaria = `${classe}|${chaveMes}`; // A UI agrupa por esta chave
+    const chavePrimaria = `${classe}|${chaveMes}`;
     
     if (!detalhamentoBase[chavePrimaria]) detalhamentoBase[chavePrimaria] = { total: 0, departamentos: {} };
     const noRaiz = detalhamentoBase[chavePrimaria];
 
-    // Se não houver departamentos definidos, joga 100% para o departamento "0"
     const deptos = item.Departamentos.length > 0 ? item.Departamentos : [{ CodDpto: "0", PercDepto: 100 }];
 
     deptos.forEach(d => {
         const percentual = (d.PercDepto ?? 100) / 100;
-        const valorRateado = valorTotal * percentual;
+        let valorRateado = valorTotalAbs * percentual;
+        if (item.Natureza === 'P') valorRateado = -valorRateado;
+
         const nomeDepto = dicionarios.departamentosMap.get(String(d.CodDpto)) || 'Outros Departamentos';
-        const codCat = item.CODCategoria || item.Categoria;
+        const codCat = String(item.CODCategoria);
 
         noRaiz.total += valorRateado;
 
@@ -188,15 +252,8 @@ function popularDetalhamento(item, detalhamentoBase, classe, chaveMes, valorTota
 
 // --- Pós Processamento Matemático ---
 
-/**
- * Calcula as linhas de fechamento (Receita Líquida, Caixa Final, etc) 
- * e adiciona a coluna "TOTAL" para todas as linhas.
- * Pode ser chamado no processamento individual e também APÓS o merge global.
- */
 export function aplicarRegrasDeTotaisDRE(estrutura, arrayColunasOrdenadas = null) {
     const dre = estrutura.dre;
-    
-    // Se não informaram as colunas (processamento inicial), usamos as que foram encontradas
     const colunas = arrayColunasOrdenadas || Array.from(estrutura.chavesEncontradas).sort((a, b) => {
         const [mA, aA] = a.split('-').map(Number);
         const [mB, aB] = b.split('-').map(Number);
@@ -206,63 +263,45 @@ export function aplicarRegrasDeTotaisDRE(estrutura, arrayColunasOrdenadas = null
     let saldoAcumulado = estrutura.saldoInicialBase || 0;
 
     colunas.forEach(col => {
-        // Função auxiliar para pegar valor seguro (0 se nulo)
         const v = (linha) => dre[linha]?.[col] || 0;
 
-        // 1. Receita Líquida
         const recLiq = v('(+) Receita Bruta') + v('(-) Deduções');
         dre['(=) Receita Líquida'][col] = recLiq;
 
-        // 2. Geração de Caixa Operacional
         const gerCaixa = recLiq + v('(-) Custos') + v('(-) Despesas') + v('(+/-) IRPJ/CSLL');
         dre['(+/-) Geração de Caixa Operacional'][col] = gerCaixa;
 
-        // 3. Movimentação Mensal
         const movNaoOp = v('(+/-) Resultado Financeiro') + v('(+/-) Aportes/Retiradas') + 
                          v('(+/-) Investimentos') + v('(+/-) Empréstimos/Consórcios');
         const movMensal = gerCaixa + movNaoOp;
         dre['(=) Movimentação de Caixa Mensal'][col] = movMensal;
 
-        // 4. Fechamento de Caixa
         dre['Caixa Inicial'][col] = saldoAcumulado;
         
-        // Aplica transferências e não classificados para o saldo final real
         const fechamentoMes = movMensal + v('Entrada de Transferência') + v('Saída de Transferência') + v('Outros');
         saldoAcumulado += fechamentoMes;
         
         dre['Caixa Final'][col] = saldoAcumulado;
     });
 
-    // 5. Cálculo da Coluna "TOTAL" Horizontal
     Object.keys(dre).forEach(linha => {
-        if (linha === 'Caixa Inicial') {
-            // O Total do Caixa Inicial é o valor do primeiro período
-            dre[linha]['TOTAL'] = dre[linha][colunas[0]] || 0;
-        } else if (linha === 'Caixa Final') {
-            // O Total do Caixa Final é o valor do último período
-            dre[linha]['TOTAL'] = dre[linha][colunas[colunas.length - 1]] || 0;
-        } else {
-            // Demais linhas são a soma convencional
-            dre[linha]['TOTAL'] = colunas.reduce((acc, col) => acc + (dre[linha][col] || 0), 0);
-        }
+        if (linha === 'Caixa Inicial') dre[linha]['TOTAL'] = dre[linha][colunas[0]] || 0;
+        else if (linha === 'Caixa Final') dre[linha]['TOTAL'] = dre[linha][colunas[colunas.length - 1]] || 0;
+        else dre[linha]['TOTAL'] = colunas.reduce((acc, col) => acc + (dre[linha][col] || 0), 0);
     });
 
-    // Faz o mesmo para Entradas e Saídas
     Object.keys(estrutura.entradasSaidas).forEach(linha => {
         estrutura.entradasSaidas[linha]['TOTAL'] = colunas.reduce((acc, col) => acc + (estrutura.entradasSaidas[linha][col] || 0), 0);
     });
 }
 
 // --- Funções Auxiliares de Data ---
-
-/** Incrementa um mês no formato MM-AAAA */
 export const incrementarMes = (chave) => {
     if (!chave) return null;
     let [m, a] = chave.split('-').map(Number);
     return m === 12 ? `01-${a + 1}` : `${String(m + 1).padStart(2, '0')}-${a}`;
 };
 
-/** Compara duas chaves MM-AAAA. Retorna < 0 se a < b, 0 se iguais, > 0 se a > b */
 export const compararChaves = (a, b) => {
     const [ma, aa] = a.split('-').map(Number);
     const [mb, ab] = b.split('-').map(Number);
@@ -271,28 +310,26 @@ export const compararChaves = (a, b) => {
 
 // --- Processamento de Capital de Giro ---
 
-/**
- * Processa as projeções de Contas a Pagar e a Receber para a matriz de Capital de Giro.
- * @param {Array} dadosCapitalGiro - Array de objetos (titulos) retornados pela API
- * @param {Object} bucketsPorProjeto - Os buckets já instanciados pela processarDadosConta
- * @param {String} contaId - ID da conta atual
- */
-export function processarCapitalDeGiro(dadosCapitalGiro, bucketsPorProjeto, contaId, projecao) {
-    if (!Array.isArray(dadosCapitalGiro)) return;
+export function processarCapitalDeGiro(dadosCapitalGiroRaw, bucketsPorProjeto, contaId, projecao) {
+    if (!Array.isArray(dadosCapitalGiroRaw)) return;
+
+    // Desaninha os dados brutos da API para termos as Emissões e Pagamentos planificados
+    const extracao = extrairDadosAninhados(dadosCapitalGiroRaw, contaId);
+    const capitalGiro = extracao.capitalGiro;
 
     const hoje = new Date();
     const chaveMesAtual = `${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
 
-    dadosCapitalGiro.forEach(cg => {
+    capitalGiro.forEach(cg => {
         if (!cg || typeof cg.ValorTitulo === 'undefined') return;
         
         const codProjeto = (cg.CODProjeto && cg.CODProjeto !== "0") ? String(cg.CODProjeto) : 'SEM_PROJETO';
         const bucket = bucketsPorProjeto[codProjeto] || bucketsPorProjeto['SEM_PROJETO'];
         const destinoCG = bucket.capitalGiro;
 
-        const valor = normalizarNatureza(cg.Natureza) === 'P' ? -cg.ValorTitulo : cg.ValorTitulo;
+        const valor = cg.Natureza === 'P' ? -cg.ValorTitulo : cg.ValorTitulo;
 
-        if (cg.DataEmissao && cg.DataVencimento && String(cg.CODContaEmissao) === contaId) {
+        if (cg.DataEmissao && cg.DataVencimento && String(cg.CODContaEmissao) === String(contaId)) {
             const chaveE = formatarChaveMesAno(cg.DataEmissao);
             const chaveV = formatarChaveMesAno(cg.DataVencimento);
             
@@ -305,7 +342,6 @@ export function processarCapitalDeGiro(dadosCapitalGiro, bucketsPorProjeto, cont
                 let chaveAtual = chaveE;
 
                 while (chaveAtual && compararChaves(chaveAtual, chaveFinal) <= 0) {
-                    // Correção: Aplica a trava de data apenas se for modo "realizado"
                     if (projecao === "realizado" && compararChaves(chaveAtual, chaveMesAtual) >= 0) break;
 
                     const isUltimoMes = compararChaves(chaveAtual, chaveFinal) === 0;
@@ -313,18 +349,12 @@ export function processarCapitalDeGiro(dadosCapitalGiro, bucketsPorProjeto, cont
 
                     if (valor < 0) {
                         destinoCG['(-) Fornecedores a Pagar'][chaveAtual] = (destinoCG['(-) Fornecedores a Pagar'][chaveAtual] || 0) + valor;
-                        if (isUltimoMes) {
-                            destinoCG['Curto Prazo AP'][chaveAtual] = (destinoCG['Curto Prazo AP'][chaveAtual] || 0) + valor;
-                        } else {
-                            destinoCG['Longo Prazo AP'][chaveAtual] = (destinoCG['Longo Prazo AP'][chaveAtual] || 0) + valor;
-                        }
+                        if (isUltimoMes) destinoCG['Curto Prazo AP'][chaveAtual] = (destinoCG['Curto Prazo AP'][chaveAtual] || 0) + valor;
+                        else destinoCG['Longo Prazo AP'][chaveAtual] = (destinoCG['Longo Prazo AP'][chaveAtual] || 0) + valor;
                     } else {
                         destinoCG['(+) Clientes a Receber'][chaveAtual] = (destinoCG['(+) Clientes a Receber'][chaveAtual] || 0) + valor;
-                        if (isUltimoMes) {
-                            destinoCG['Curto Prazo AR'][chaveAtual] = (destinoCG['Curto Prazo AR'][chaveAtual] || 0) + valor;
-                        } else {
-                            destinoCG['Longo Prazo AR'][chaveAtual] = (destinoCG['Longo Prazo AR'][chaveAtual] || 0) + valor;
-                        }
+                        if (isUltimoMes) destinoCG['Curto Prazo AR'][chaveAtual] = (destinoCG['Curto Prazo AR'][chaveAtual] || 0) + valor;
+                        else destinoCG['Longo Prazo AR'][chaveAtual] = (destinoCG['Longo Prazo AR'][chaveAtual] || 0) + valor;
                     }
 
                     if (isUltimoMes) break;
@@ -336,21 +366,13 @@ export function processarCapitalDeGiro(dadosCapitalGiro, bucketsPorProjeto, cont
 }
 
 // --- Pós Processamento Matemático do CG ---
-
-/**
- * Calcula os totais do Capital de Giro (Líquido, Curto/Longo Prazo TT).
- * Esta função deve ser chamada APÓS o merge global ou na renderização final,
- * pois depende do saldo de caixa alimentado pela DRE.
- */
 export function aplicarRegrasDeTotaisCG(estrutura, arrayColunasOrdenadas = null) {
     const cg = estrutura.capitalGiro;
     const colunas = arrayColunasOrdenadas || Array.from(estrutura.chavesEncontradas).sort(compararChaves);
     
-    // O saldo base do caixa é o saldo inicial da estrutura
     let saldoCaixaAcumulado = estrutura.saldoInicialBase || 0;
 
     colunas.forEach(col => {
-        // 1. Somatórias de Prazos
         const cpAP = cg['Curto Prazo AP'][col] || 0;
         const cpAR = cg['Curto Prazo AR'][col] || 0;
         const lpAP = cg['Longo Prazo AP'][col] || 0;
@@ -362,7 +384,6 @@ export function aplicarRegrasDeTotaisCG(estrutura, arrayColunasOrdenadas = null)
         cg['Curto Prazo TT'][col] = curtoPrazo;
         cg['Longo Prazo TT'][col] = longoPrazo;
 
-        // 2. Sincronização de Caixa (Fluxo DRE)
         const entradas = estrutura.entradasSaidas['(+) Entradas']?.[col] || 0;
         const saidas = estrutura.entradasSaidas['(-) Saídas']?.[col] || 0; 
         const entTransf = estrutura.entradasSaidas['(+) Entradas de Transferência']?.[col] || 0;
@@ -370,18 +391,12 @@ export function aplicarRegrasDeTotaisCG(estrutura, arrayColunasOrdenadas = null)
 
         saldoCaixaAcumulado += (entradas + saidas + entTransf + saiTransf);
 
-        // 3. Fechamento do Capital Líquido
         cg['(+) Caixa'][col] = saldoCaixaAcumulado;
         cg['Capital Liquido'][col] = curtoPrazo + longoPrazo + saldoCaixaAcumulado;
     });
 }
 
 // --- Funções de Merge (Mensal e Anual) ---
-
-/**
- * Cria uma estrutura vazia para o merge. 
- * Reutiliza a mesma lógica de criação para garantir compatibilidade.
- */
 const criarEstruturaVaziaParaMerge = () => {
     const est = {
         saldoInicialBase: 0,
@@ -390,16 +405,12 @@ const criarEstruturaVaziaParaMerge = () => {
         fluxoDiario: [], detalhamento: {}
     };
     
-    // Inicializa as matrizes para evitar erros de undefined durante o merge
     ['(+) Entradas', '(-) Saídas', '(+) Entradas de Transferência', '(-) Saídas de Transferência'].forEach(l => est.entradasSaidas[l] = {});
     ['(+) Caixa', '(+) Clientes a Receber', 'Curto Prazo AR', 'Longo Prazo AR', '(-) Fornecedores a Pagar', 'Curto Prazo AP', 'Longo Prazo AP', 'Curto Prazo TT', 'Longo Prazo TT', 'Capital Liquido'].forEach(l => est.capitalGiro[l] = {});
     
     return est;
 };
 
-/**
- * Mescla dicionários numéricos simples (1 nível de profundidade)
- */
 const mergeDicionario = (origem, destino) => {
     for (const linha in origem) {
         if (!destino[linha]) destino[linha] = {};
@@ -409,9 +420,6 @@ const mergeDicionario = (origem, destino) => {
     }
 };
 
-/**
- * Merge profundo para a árvore de detalhamento (Drill-down)
- */
 const mergeDetalhamento = (origem, destino) => {
     for (const chave in origem) {
         if (!destino[chave]) {
@@ -423,9 +431,6 @@ const mergeDetalhamento = (origem, destino) => {
     }
 };
 
-/**
- * Função recursiva auxiliar para o detalhamento
- */
 const mergeNiveis = (destino, origem) => {
     for (const key in origem) {
         if (!destino[key]) {
@@ -439,16 +444,11 @@ const mergeNiveis = (destino, origem) => {
     }
 };
 
-/**
- * Agrupa os dados mensais em anos.
- * Aplica as regras de saldo inicial (pega o 1º valor) e saldo final (pega o último valor).
- */
 const converterParaAnual = (estruturaMensal) => {
     const anual = criarEstruturaVaziaParaMerge();
     anual.saldoInicialBase = estruturaMensal.saldoInicialBase;
-    anual.fluxoDiario = estruturaMensal.fluxoDiario; // Fluxo diário não muda a granularidade
+    anual.fluxoDiario = estruturaMensal.fluxoDiario; 
     
-    // Mapeia quais meses pertencem a quais anos, em ordem cronológica
     const mapaAnos = {};
     const colunasOrdenadas = Array.from(estruturaMensal.chavesEncontradas).sort((a, b) => {
         const [mA, aA] = a.split('-').map(Number);
@@ -463,12 +463,10 @@ const converterParaAnual = (estruturaMensal) => {
         anual.chavesEncontradas.add(ano);
     });
 
-    // Função interna para agrupar matrizes baseada em regras de tempo
     const agruparMatriz = (matrizMensal, matrizAnual, linhasPrimeiroValor = [], linhasUltimoValor = []) => {
         for (const linha in matrizMensal) {
             matrizAnual[linha] = {};
             const isPrimeiro = linhasPrimeiroValor.includes(linha);
-            // O '*' atua como coringa para forçar todas as linhas daquela matriz a pegarem o último valor
             const isUltimo = linhasUltimoValor.includes(linha) || linhasUltimoValor.includes('*');
 
             for (const ano in mapaAnos) {
@@ -476,38 +474,28 @@ const converterParaAnual = (estruturaMensal) => {
                 if (!mesesDoAno || mesesDoAno.length === 0) continue;
 
                 if (isPrimeiro) {
-                    // Ex: Caixa Inicial pega o valor do 1º mês disponível do ano
                     const mesIni = mesesDoAno.find(m => matrizMensal[linha][m] != null);
                     matrizAnual[linha][ano] = mesIni ? matrizMensal[linha][mesIni] : 0;
                 } else if (isUltimo) {
-                    // Ex: Capital de Giro e Caixa Final pegam o valor do último mês disponível do ano
                     const mesFim = [...mesesDoAno].reverse().find(m => matrizMensal[linha][m] != null);
                     matrizAnual[linha][ano] = mesFim ? matrizMensal[linha][mesFim] : 0;
                 } else {
-                    // Demais linhas de DRE e Entradas/Saídas somam os valores de todos os meses
                     matrizAnual[linha][ano] = mesesDoAno.reduce((acc, mes) => acc + (matrizMensal[linha][mes] || 0), 0);
                 }
             }
         }
     };
 
-    // Agrupa DRE e Entradas/Saídas
     agruparMatriz(estruturaMensal.dre, anual.dre, ['Caixa Inicial'], ['Caixa Final']);
     agruparMatriz(estruturaMensal.entradasSaidas, anual.entradasSaidas);
-    
-    // Agrupa Capital de Giro (todas as linhas representam uma "foto" e pegam o último valor)
     agruparMatriz(estruturaMensal.capitalGiro, anual.capitalGiro, [], ['*']);
 
-    // Agrupa Detalhamento (Drill-down) convertendo a chave 'Classe|MM-AAAA' para 'Classe|AAAA'
     for (const chave in estruturaMensal.detalhamento) {
         const [classe, mesAno] = chave.split('|');
         const ano = mesAno.split('-')[1];
         const novaChave = `${classe}|${ano}`;
 
-        if (!anual.detalhamento[novaChave]) {
-            anual.detalhamento[novaChave] = { total: 0, departamentos: {} };
-        }
-        
+        if (!anual.detalhamento[novaChave]) anual.detalhamento[novaChave] = { total: 0, departamentos: {} };
         anual.detalhamento[novaChave].total += estruturaMensal.detalhamento[chave].total;
         mergeNiveis(anual.detalhamento[novaChave].departamentos, estruturaMensal.detalhamento[chave].departamentos);
     }
@@ -515,51 +503,32 @@ const converterParaAnual = (estruturaMensal) => {
     return anual;
 };
 
-/**
- * Função principal a ser chamada pelo main.js após recuperar os dados.
- * Recebe a lista de buckets já processados e os une em uma única estrutura final.
- * * @param {Array} estruturasProcessadas - Array de objetos gerados pelo processarDadosConta
- * @param {String} modo - 'mensal' ou 'anual'
- * @param {Array} colunasVisiveis - Colunas que a UI precisa renderizar
- * @returns {Object} Estrutura consolidada e pronta para a UI
- */
 export function mergeMatrizes(estruturasProcessadas, modo, colunasVisiveis) {
     let consolidadoMensal = criarEstruturaVaziaParaMerge();
 
-    // 1. Merge de todas as estruturas em uma única base MENSAL
     estruturasProcessadas.forEach(est => {
         if (!est) return;
 
         consolidadoMensal.saldoInicialBase += (est.saldoInicialBase || 0);
-        
         est.chavesEncontradas.forEach(c => consolidadoMensal.chavesEncontradas.add(c));
         
         mergeDicionario(est.dre, consolidadoMensal.dre);
         mergeDicionario(est.entradasSaidas, consolidadoMensal.entradasSaidas);
         mergeDicionario(est.capitalGiro, consolidadoMensal.capitalGiro);
         
-        if (est.fluxoDiario && est.fluxoDiario.length > 0) {
-            consolidadoMensal.fluxoDiario.push(...est.fluxoDiario);
-        }
+        if (est.fluxoDiario && est.fluxoDiario.length > 0) consolidadoMensal.fluxoDiario.push(...est.fluxoDiario);
         
         mergeDetalhamento(est.detalhamento, consolidadoMensal.detalhamento);
     });
 
-    // Ordena o fluxo de caixa consolidado cronologicamente
     consolidadoMensal.fluxoDiario.sort((a, b) => {
         const [dA, mA, yA] = a.data.split('/');
         const [dB, mB, yB] = b.data.split('/');
         return new Date(yA, mA - 1, dA) - new Date(yB, mB - 1, dB);
     });
 
-    // 2. Converte para Anual se necessário (com base no input da UI)
-    let resultadoFinal = modo.toLowerCase() === 'anual' 
-        ? converterParaAnual(consolidadoMensal) 
-        : consolidadoMensal;
+    let resultadoFinal = modo.toLowerCase() === 'anual' ? converterParaAnual(consolidadoMensal) : consolidadoMensal;
 
-    // 3. Aplica os totais e recalcula saldos com base nas colunas visíveis finais
-    // Chamadas para as funções previamente criadas no passo anterior.
-    // Isso garante que cálculos que dependem de acúmulo (como Caixa Final) estejam alinhados ao Merge.
     if (typeof aplicarRegrasDeTotaisDRE === 'function') aplicarRegrasDeTotaisDRE(resultadoFinal, colunasVisiveis);
     if (typeof aplicarRegrasDeTotaisCG === 'function') aplicarRegrasDeTotaisCG(resultadoFinal, colunasVisiveis);
 

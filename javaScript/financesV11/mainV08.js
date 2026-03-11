@@ -1,5 +1,5 @@
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV01.js';
-import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV03.js';
+import { processarDadosConta, processarCapitalDeGiro, mergeMatrizes, incrementarMes } from './processingV04.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV06.js';
 
 // --- Cache Global da Aplicação ---
