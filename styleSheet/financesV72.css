@@ -233,7 +233,7 @@ tr[data-type="spacer"]:hover { background-color: transparent; cursor: default; }
 tr[data-type="saldo"]:hover { background-color: var(--primary); cursor: default; }
 tr[data-type="total-negrito"] {
   font-weight: 800;
-  color: var(--primary-dark);
+  color: var(--text);
 }
 
 /* =========================================================
