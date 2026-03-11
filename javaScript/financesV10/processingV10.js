@@ -197,9 +197,6 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
     
     titulosRaw.forEach(titulo => {
 
-        if (titulo.Cliente && titulo.Cliente.includes("TIKI WEB")) {
-            console.log("Processando título TIKI WEB:", titulo);
-        }
         if (!titulo || !titulo.Categoria) return;
 
         const natureza = converteNatureza(titulo.Natureza)
@@ -289,7 +286,6 @@ function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
         }
     });
 
-    console.log(titulosEmAberto);
 
     return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
 }

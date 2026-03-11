@@ -1,4 +1,3 @@
-// uiV09.js Refatorado
 
 // ------ Estado Global ------
 let graficosAtuais = { saldoCaixa: null, acumulado: null, mensal: null };
