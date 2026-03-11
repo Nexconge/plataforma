@@ -132,6 +132,12 @@ tr[data-type="saldo"] { background-color: var(--primary); color: white; font-wei
 tr[data-type="saldo"]:hover { background-color: var(--primary); }
 tr[data-type="saldo"] td { border-bottom: none; }
 
+tr[data-type="header-group"] td:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 290px;
+}
 /* =========================================================
    HIERARQUIA VISUAL TABELA DETALHAMENTO COM DRILL DOWN
 ========================================================= */

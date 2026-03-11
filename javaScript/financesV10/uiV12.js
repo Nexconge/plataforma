@@ -693,7 +693,6 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     });
 }
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
-    // Verifica se há algum dado para esta classe dentro das colunas selecionadas
     const temDadosNoPeriodo = colunas.some(col => dados[col]);
     if (!temDadosNoPeriodo) return;
 
@@ -704,16 +703,18 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     rC.dataset.type = 'header-group';
     rC.id = idBase;
     rC.onclick = () => toggleLinha(idBase);
-    rC.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+    
+    const cellC = rC.insertCell();
+    cellC.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+    cellC.title = classe;
     
     let totC = 0;
     colunas.forEach(col => { const v = dados[col]?.total || 0; totC += v; rC.insertCell().textContent = formatarValor(v); });
     rC.insertCell().textContent = formatarValor(totC);
 
-    // Constrói árvore ignorando períodos fora do filtro selecionado
     const arvore = {};
     Object.keys(dados).forEach(per => {
-        if (!colunas.includes(per)) return; // Bloqueia a criação de linhas para meses não selecionados
+        if (!colunas.includes(per)) return; 
         
         const dpts = dados[per].departamentos;
         for (const dep in dpts) {
@@ -725,16 +726,19 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
         }
     });
 
-    // Renderiza Níveis
     Object.keys(arvore).sort().forEach(dep => {
         const idDep = `${idBase}_dp_${sanitizeId(dep)}`;
         const rD = tbody.insertRow();
         rD.className = `parent-${idBase} hidden`;
         rD.dataset.indent = '1';
         rD.id = idDep;
-        rD.onclick = () => toggleLinha(idDep);
-        rD.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${dep}`;
 
+        rD.onclick = () => toggleLinha(idDep);
+        
+        const cellD = rD.insertCell();
+        cellD.innerHTML = `<span class="expand-btn">[+]</span> ${dep}`;
+        cellD.title = dep;
+        
         let totD = 0;
         colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.total || 0; totD += v; rD.insertCell().textContent = formatarValor(v); });
         rD.insertCell().textContent = formatarValor(totD);
@@ -746,7 +750,11 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
             rCat.dataset.indent = '2';
             rCat.id = idCat;
             rCat.onclick = (e) => { e.stopPropagation(); toggleLinha(idCat); };
-            rCat.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${catMap.get(cat) || 'Desconhecida'}`;
+            
+            const cellCat = rCat.insertCell();
+            const nomeCat = catMap.get(cat) || 'Desconhecida';
+            cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${nomeCat}`;
+            cellCat.title = nomeCat;
 
             let totCat = 0;
             colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.total || 0; totCat += v; rCat.insertCell().textContent = formatarValor(v); });
@@ -756,7 +764,10 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
                 const rF = tbody.insertRow();
                 rF.className = `parent-${idCat} hidden`;
                 rF.dataset.indent = 'lancamento';
-                rF.insertCell().textContent = forn;
+                
+                const cellF = rF.insertCell();
+                cellF.textContent = forn;
+                cellF.title = forn;
                 
                 let totF = 0;
                 colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.fornecedores[forn]?.total || 0; totF += v; rF.insertCell().textContent = formatarValor(v); });
