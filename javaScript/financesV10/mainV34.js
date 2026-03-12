@@ -101,16 +101,42 @@ function validarFiltros(filtros) {
 // Contorna strings JSON malformadas (comuns no Bubble)
 function parseJSONFlexivel(stringDados) {
     if (!stringDados || stringDados.trim() === "") return [];
+    
+    // Remove quebras de linha e retornos de carro que quebram o parser
+    let stringLimpa = stringDados.trim().replace(/\n|\r/g, ' ');
+
+    // 1. Corrige a falta de vírgula entre objetos (muito comum em listas do Bubble formatadas como texto): } { -> }, {
+    stringLimpa = stringLimpa.replace(/}\s*{/g, '},{');
+
+    // 2. Adiciona aspas em chaves não demarcadas: { chave: "valor" } -> { "chave": "valor" }
+    stringLimpa = stringLimpa.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+
+    // 3. Remove vírgulas sobrando antes do fechamento (trailing commas)
+    stringLimpa = stringLimpa.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+
     try {
-        return JSON.parse(`[${stringDados}]`);
+        return JSON.parse(`[${stringLimpa}]`);
     } catch (e) {
-        try {
-            // Fallback: avalia a string como um objeto JavaScript nativo
-            return (new Function(`return [${stringDados}];`))();
-        } catch (err) {
-            console.error("Falha ao processar os dados:", err);
-            return [];
+        console.warn("Falha no JSON.parse após limpeza global. Iniciando fallback de extração bloco a bloco.", e);
+        
+        // Fallback: tenta recuperar os objetos individualmente usando Regex
+        const regexObjeto = /{[^{}]+}/g;
+        const objetosExtraidos = stringDados.match(regexObjeto);
+        const resultado = [];
+        
+        if (objetosExtraidos) {
+            for (let objStr of objetosExtraidos) {
+                try {
+                    let objLimpo = objStr
+                        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
+                        .replace(/,\s*}/g, '}');
+                    resultado.push(JSON.parse(objLimpo));
+                } catch(errItem) {
+                    // Ignora o item corrompido e salva os demais
+                }
+            }
         }
+        return resultado;
     }
 }
 
