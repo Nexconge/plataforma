@@ -98,6 +98,21 @@ function validarFiltros(filtros) {
     }
     return true;
 }
+// Contorna strings JSON malformadas (comuns no Bubble)
+function parseJSONFlexivel(stringDados) {
+    if (!stringDados || stringDados.trim() === "") return [];
+    try {
+        return JSON.parse(`[${stringDados}]`);
+    } catch (e) {
+        try {
+            // Fallback: avalia a string como um objeto JavaScript nativo
+            return (new Function(`return [${stringDados}];`))();
+        } catch (err) {
+            console.error("Falha ao processar os dados:", err);
+            return [];
+        }
+    }
+}
 
 function processarRespostaEstoque(apiResponse) {
     const matrizEstoque = { '(+) Estoque': {} };
@@ -127,57 +142,49 @@ function processarRespostaTitulos(apiResponse) {
 function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
     
-    // Listas temporárias para merge
     let lancamentosDeTitulos = [];
     let lancamentosManuais = [];
 
     // 1. Processar Títulos (Fonte: dadosCapitalG)
-    // Passamos 'anoOuTag' para filtrar as baixas apenas deste ano
     if (response.dadosCapitalG?.length > 2) {
         try {
-            const extractedCG = extrairDadosDosTitulos(JSON.parse(`[${response.dadosCapitalG}]`), contaId, anoOuTag);
+            const extractedCG = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosCapitalG), contaId, anoOuTag);
             lancamentosDeTitulos = extractedCG.lancamentosProcessados;
             dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
         } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
     }
 
     // 2. Processar Lançamentos Manuais (Fonte: dadosLancamentos)
-    // Também filtramos pelo ano para garantir consistência
     if (response.dadosLancamentos?.length > 2) {
         try {
-            lancamentosManuais = extrairLancamentosSimples(JSON.parse(`[${response.dadosLancamentos}]`), contaId, anoOuTag);
+            lancamentosManuais = extrairLancamentosSimples(parseJSONFlexivel(response.dadosLancamentos), contaId, anoOuTag);
         } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
     }
 
-    // 3. Merge: DRE Realizado = Baixas de Títulos (deste ano) + Lançamentos Manuais (deste ano)
     dadosInput.lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
 
-    // Processamento final
     const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
     appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
 }
+
 function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     // 1. Processa "Realizado CY" apenas para calcular saldo acumulado até hoje
     let valorAcumuladoRealizado = 0;
     if (response.dadosRealizado?.length > 2) {
         try {
-            // Este processamento serve apenas para calcular o saldo final do realizado e usar como saldo inicial do a realizar
-            // PORTANDO É NECESSÁRIO PASSAR O ANO ATUAL COMO FILTRO PARA IMPEDIR QUE BAIXAS DE OUTROS ANOS INFLUENCIEM NO CÁLCULO
-            const extractedCY = extrairDadosDosTitulos(JSON.parse(`[${response.dadosRealizado}]`), contaId, anoAtual);
+            const extractedCY = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosRealizado), contaId, anoAtual);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             
-            // Como os dados agora são segmentados por projeto, precisamos somar o valor total de todos os segmentos
             if (processedCY.isSegmented && processedCY.segments) {
                 Object.values(processedCY.segments).forEach(segmento => {
                     if (segmento.realizado && segmento.realizado.valorTotal) {
                         valorAcumuladoRealizado += segmento.realizado.valorTotal;
                     }
                 });
-            } else if (processedCY.realizado) { // Fallback para manter compatibilidade
+            } else if (processedCY.realizado) { 
                 valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
             }
             
-            // Salva cache do ano atual se não existir (side-effect útil)
             if (!appCache.dadosPorContaAno.has(`${contaId}|${anoAtual}`)) {
                 appCache.dadosPorContaAno.set(`${contaId}|${anoAtual}`, processedCY);
             }
@@ -191,7 +198,7 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     let dadosInput = { titulos: [] };
     if (response.dadosArealizar?.length > 2) {
         try {
-            const extracted = extrairDadosDosTitulos(JSON.parse(`[${response.dadosArealizar}]`), contaId);
+            const extracted = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosArealizar), contaId);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
