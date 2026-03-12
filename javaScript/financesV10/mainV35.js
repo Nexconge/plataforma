@@ -102,16 +102,13 @@ function validarFiltros(filtros) {
 function parseJSONFlexivel(stringDados) {
     if (!stringDados || stringDados.trim() === "") return [];
     
-    // Remove quebras de linha e retornos de carro que quebram o parser
     let stringLimpa = stringDados.trim().replace(/\n|\r/g, ' ');
 
-    // 1. Corrige a falta de vírgula entre objetos (muito comum em listas do Bubble formatadas como texto): } { -> }, {
+    // Corrige decimais com vírgula para ponto (ex: 25,07 -> 25.07)
+    stringLimpa = stringLimpa.replace(/:\s*(-?\d+),(\d+)/g, ':$1.$2');
+
     stringLimpa = stringLimpa.replace(/}\s*{/g, '},{');
-
-    // 2. Adiciona aspas em chaves não demarcadas: { chave: "valor" } -> { "chave": "valor" }
     stringLimpa = stringLimpa.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
-
-    // 3. Remove vírgulas sobrando antes do fechamento (trailing commas)
     stringLimpa = stringLimpa.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
 
     try {
@@ -119,7 +116,6 @@ function parseJSONFlexivel(stringDados) {
     } catch (e) {
         console.warn("Falha no JSON.parse após limpeza global. Iniciando fallback de extração bloco a bloco.", e);
         
-        // Fallback: tenta recuperar os objetos individualmente usando Regex
         const regexObjeto = /{[^{}]+}/g;
         const objetosExtraidos = stringDados.match(regexObjeto);
         const resultado = [];
@@ -128,11 +124,11 @@ function parseJSONFlexivel(stringDados) {
             for (let objStr of objetosExtraidos) {
                 try {
                     let objLimpo = objStr
+                        .replace(/:\s*(-?\d+),(\d+)/g, ':$1.$2')
                         .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
                         .replace(/,\s*}/g, '}');
                     resultado.push(JSON.parse(objLimpo));
                 } catch(errItem) {
-                    // Ignora o item corrompido e salva os demais
                 }
             }
         }
