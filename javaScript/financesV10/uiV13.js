@@ -677,7 +677,7 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     const render = (c) => renderDrillDown(c, dadosOrg[c], tbody, catMap, colunas);
     
     prioridade.forEach(c => { if(dadosOrg[c]) render(c); });
-    Object.keys(dadosOrg).filter(c => !prioridade.includes(c)).forEach(render);
+    Object.keys(dadosOrg).filter(c => !prioridade.includes(c)).sort((a, b) => a.localeCompare(b)).forEach(render);
 
     criarLinhaEspacadora(tbody, colunas);
 
@@ -692,6 +692,7 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
         }
     });
 }
+
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     const temDadosNoPeriodo = colunas.some(col => dados[col]);
     if (!temDadosNoPeriodo) return;
@@ -726,7 +727,7 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
         }
     });
 
-    Object.keys(arvore).sort().forEach(dep => {
+    Object.keys(arvore).sort((a, b) => a.localeCompare(b)).forEach(dep => {
         const idDep = `${idBase}_dp_${sanitizeId(dep)}`;
         const rD = tbody.insertRow();
         rD.className = `parent-${idBase} hidden`;
@@ -743,7 +744,11 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
         colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.total || 0; totD += v; rD.insertCell().textContent = formatarValor(v); });
         rD.insertCell().textContent = formatarValor(totD);
 
-        Object.keys(arvore[dep]).sort().forEach(cat => {
+        Object.keys(arvore[dep]).sort((a, b) => {
+            const nomeA = catMap.get(a) || 'Desconhecida';
+            const nomeB = catMap.get(b) || 'Desconhecida';
+            return nomeA.localeCompare(nomeB);
+        }).forEach(cat => {
             const idCat = `${idDep}_cat_${sanitizeId(cat)}`;
             const rCat = tbody.insertRow();
             rCat.className = `parent-${idDep} hidden`;
@@ -760,7 +765,7 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
             colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.total || 0; totCat += v; rCat.insertCell().textContent = formatarValor(v); });
             rCat.insertCell().textContent = formatarValor(totCat);
 
-            Array.from(arvore[dep][cat]).sort().forEach(forn => {
+            Array.from(arvore[dep][cat]).sort((a, b) => a.localeCompare(b)).forEach(forn => {
                 const rF = tbody.insertRow();
                 rF.className = `parent-${idCat} hidden`;
                 rF.dataset.indent = 'lancamento';
