@@ -190,16 +190,52 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 }
 
 function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
+    let valorAcumuladoRealizado = 0;
+    
+    const isArrayOrValidString = (dados) => {
+        if (!dados) return false;
+        if (Array.isArray(dados)) return dados.length > 0;
+        return typeof dados === 'string' && dados.length > 2;
+    };
+
+    const parseSeguro = (dados) => {
+        if (Array.isArray(dados)) return dados;
+        return parseJSONFlexivel(dados);
+    };
+
+    if (isArrayOrValidString(response.dadosRealizado)) {
+        try {
+            const extractedCY = extrairDadosDosTitulos(parseSeguro(response.dadosRealizado), contaId, anoAtual);
+            const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
+            
+            if (processedCY.isSegmented && processedCY.segments) {
+                Object.values(processedCY.segments).forEach(segmento => {
+                    if (segmento.realizado && segmento.realizado.valorTotal) {
+                        valorAcumuladoRealizado += segmento.realizado.valorTotal;
+                    }
+                });
+            } else if (processedCY.realizado) { 
+                valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
+            }
+            
+            if (!appCache.dadosPorContaAno.has(`${contaId}|${anoAtual}`)) {
+                appCache.dadosPorContaAno.set(`${contaId}|${anoAtual}`, processedCY);
+            }
+        } catch (e) { console.error(`Erro JSON RealizadoCY conta ${contaId}`, e); }
+    }
+
+    const saldoInicioArealizar = saldoInicialApi + valorAcumuladoRealizado;
+
     let dadosInput = { titulos: [] };
     
-    if (response.dadosArealizar?.length > 2) {
+    if (isArrayOrValidString(response.dadosArealizar)) {
         try {
-            const extracted = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosArealizar), contaId);
+            const extracted = extrairDadosDosTitulos(parseSeguro(response.dadosArealizar), contaId);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
 
-    const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
+    const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioArealizar);
     appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, processedArealizar);
 }
 
