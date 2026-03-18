@@ -276,7 +276,8 @@ async function stepCarregarProcessarDados(filtros) {
                         contaId, 
                         anoOuTag: ano, 
                         filtrosApi: {
-                            periodo: `[${ano}-01-01T00:00:00.000Z, ${ano}-12-31T23:59:59.999Z]`,
+                            // CORREÇÃO: Agora é um Array real do JS (duas strings)
+                            periodo: [`${ano}-01-01T00:00:00.000Z`, `${ano}-12-31T23:59:59.999Z`],
                             arealizar: false
                         } 
                     });
@@ -294,7 +295,8 @@ async function stepCarregarProcessarDados(filtros) {
                     contaId, 
                     anoOuTag: tagCache, 
                     filtrosApi: {
-                        periodo: `[${anoAtual}-01-01T00:00:00.000Z, ${anoAtual + 10}-12-31T23:59:59.999Z]`, 
+                        // CORREÇÃO: Agora é um Array real do JS (duas strings)
+                        periodo: [`${anoAtual}-01-01T00:00:00.000Z`, `${anoAtual + 10}-12-31T23:59:59.999Z`], 
                         arealizar: true
                     } 
                 });
