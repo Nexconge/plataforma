@@ -28,13 +28,10 @@ let appCache = {
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
     
-    alternarEstadoCarregamento(true); //Exibe o visual de loading
+    alternarEstadoCarregamento(true);
     try {
-
-        //Obtem os filtros atuais da UI (contas, anos, modo, colunas, projetos)
         let filtrosAtuais = obterFiltrosAtuais();
         
-        //Se não houver filtros válidos, exibe tabelas vazias e encerra o processo (evitando chamadas desnecessárias à API)
         if (!filtrosAtuais) {
             alternarEstadoCarregamento(false);
             return; 
@@ -45,40 +42,27 @@ async function handleFiltroChange() {
         }
 
         if (appCache.projecao === 'arealizar') {
-            // Antes de carregar, forçamos uma validação de datas.
-            // Se o usuário estava em um ano passado em realizado e mudar para arealizar atualiza o filtro de anos
             const anoAtual = new Date().getFullYear();
             appCache.flagAnos = true;
 
-            // Define um range seguro inicial (Ano Atual + 5) para garantir que saia do passado
-            atualizarOpcoesAnoSelect(null, anoAtual, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
+            // Libera o filtro para 10 anos no passado para buscar atrasados
+            atualizarOpcoesAnoSelect(null, anoAtual - 10, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
             appCache.flagAnos = false;
 
-            // Atualiza filtrosAtuais para obter o periodo atualizado acima
             filtrosAtuais = obterFiltrosAtuais();
 
-            // 1. Carrega os dados com o filtro já corrigido
             await stepCarregarProcessarDados(filtrosAtuais);
 
-            // 2. Analisa os dados em cache da conta selecionada para identificar quais anos realmente existem e atualizar o filtro de anos novamente
             stepAtualizarAnosPeloCache(filtrosAtuais.contas);
 
-            // 3. Atualiza filtrosAtuais novamente
             filtrosAtuais = obterFiltrosAtuais();
 
         } else {
-            // MODO REALIZADO:
-            // 1. Pergunta à API quais anos existem (metadados) e ajusta o filtro se necessário
             await stepGerenciarPeriodos(filtrosAtuais.contas);
-            
-            // 2. Atualiza filtros, pois stepGerenciarPeriodos pode ter mudado o ano (ex: de 2030 p/ 2024)
             filtrosAtuais = obterFiltrosAtuais();
-            
-            // 3. Carrega os dados do ano específico correto
             await stepCarregarProcessarDados(filtrosAtuais);
         }
 
-        // ETAPA FINAL: Renderização
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
