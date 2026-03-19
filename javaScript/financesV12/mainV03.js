@@ -51,7 +51,7 @@ async function handleFiltroChange() {
             appCache.flagAnos = true;
 
             // Define um range seguro inicial (Ano Atual + 5) para garantir que saia do passado
-            atualizarOpcoesAnoSelect(null, anoAtual, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
+            atualizarOpcoesAnoSelect(null, anoAtual - 5, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
             appCache.flagAnos = false;
 
             // Atualiza filtrosAtuais para obter o periodo atualizado acima
