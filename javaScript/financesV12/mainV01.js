@@ -28,10 +28,13 @@ let appCache = {
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
     
-    alternarEstadoCarregamento(true);
+    alternarEstadoCarregamento(true); //Exibe o visual de loading
     try {
+
+        //Obtem os filtros atuais da UI (contas, anos, modo, colunas, projetos)
         let filtrosAtuais = obterFiltrosAtuais();
         
+        //Se não houver filtros válidos, exibe tabelas vazias e encerra o processo (evitando chamadas desnecessárias à API)
         if (!filtrosAtuais) {
             alternarEstadoCarregamento(false);
             return; 
@@ -42,27 +45,40 @@ async function handleFiltroChange() {
         }
 
         if (appCache.projecao === 'arealizar') {
+            // Antes de carregar, forçamos uma validação de datas.
+            // Se o usuário estava em um ano passado em realizado e mudar para arealizar atualiza o filtro de anos
             const anoAtual = new Date().getFullYear();
             appCache.flagAnos = true;
 
-            // Libera o filtro para 10 anos no passado para buscar atrasados
-            atualizarOpcoesAnoSelect(null, anoAtual - 10, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
+            // Define um range seguro inicial (Ano Atual + 5) para garantir que saia do passado
+            atualizarOpcoesAnoSelect(null, anoAtual, anoAtual + 5, filtrosAtuais.modo, 'arealizar');
             appCache.flagAnos = false;
 
+            // Atualiza filtrosAtuais para obter o periodo atualizado acima
             filtrosAtuais = obterFiltrosAtuais();
 
+            // 1. Carrega os dados com o filtro já corrigido
             await stepCarregarProcessarDados(filtrosAtuais);
 
+            // 2. Analisa os dados em cache da conta selecionada para identificar quais anos realmente existem e atualizar o filtro de anos novamente
             stepAtualizarAnosPeloCache(filtrosAtuais.contas);
 
+            // 3. Atualiza filtrosAtuais novamente
             filtrosAtuais = obterFiltrosAtuais();
 
         } else {
+            // MODO REALIZADO:
+            // 1. Pergunta à API quais anos existem (metadados) e ajusta o filtro se necessário
             await stepGerenciarPeriodos(filtrosAtuais.contas);
+            
+            // 2. Atualiza filtros, pois stepGerenciarPeriodos pode ter mudado o ano (ex: de 2030 p/ 2024)
             filtrosAtuais = obterFiltrosAtuais();
+            
+            // 3. Carrega os dados do ano específico correto
             await stepCarregarProcessarDados(filtrosAtuais);
         }
 
+        // ETAPA FINAL: Renderização
         stepConsolidarExibir(filtrosAtuais);
 
     } catch (erroFatal) {
@@ -174,22 +190,11 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
 }
 
 function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
+    // 1. Processa "Realizado CY" apenas para calcular saldo acumulado até hoje
     let valorAcumuladoRealizado = 0;
-    
-    const isArrayOrValidString = (dados) => {
-        if (!dados) return false;
-        if (Array.isArray(dados)) return dados.length > 0;
-        return typeof dados === 'string' && dados.length > 2;
-    };
-
-    const parseSeguro = (dados) => {
-        if (Array.isArray(dados)) return dados;
-        return parseJSONFlexivel(dados);
-    };
-
-    if (isArrayOrValidString(response.dadosRealizado)) {
+    if (response.dadosRealizado?.length > 2) {
         try {
-            const extractedCY = extrairDadosDosTitulos(parseSeguro(response.dadosRealizado), contaId, anoAtual);
+            const extractedCY = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosRealizado), contaId, anoAtual);
             const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
             
             if (processedCY.isSegmented && processedCY.segments) {
@@ -208,13 +213,14 @@ function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
         } catch (e) { console.error(`Erro JSON RealizadoCY conta ${contaId}`, e); }
     }
 
+    // 2. Calcula novo saldo inicial para projeção
     const saldoInicioArealizar = saldoInicialApi + valorAcumuladoRealizado;
 
+    // 3. Processa dados A Realizar
     let dadosInput = { titulos: [] };
-    
-    if (isArrayOrValidString(response.dadosArealizar)) {
+    if (response.dadosArealizar?.length > 2) {
         try {
-            const extracted = extrairDadosDosTitulos(parseSeguro(response.dadosArealizar), contaId);
+            const extracted = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosArealizar), contaId);
             dadosInput.titulos = extracted.titulosEmAberto;
         } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
     }
@@ -283,9 +289,11 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
 /**
  * Passo 2: Identifica o que falta no cache, busca na API e processa os dados crus.
  */
+// mainV36.js
 async function stepCarregarProcessarDados(filtros) {
     const { contas, anos, projetos } = filtros;
     const requisicoesNecessarias = [];
+    const anoAtual = new Date().getFullYear();
 
     if (appCache.projecao === "realizado") {
         contas.forEach(contaId => {
@@ -295,10 +303,8 @@ async function stepCarregarProcessarDados(filtros) {
                     requisicoesNecessarias.push({ 
                         contaId, 
                         anoOuTag: ano, 
-                        filtrosApi: {
-                            periodo: [`01/01/${ano} 12:00 am`, `12/31/${ano} 11:59 pm`],
-                            arealizar: false
-                        } 
+                        periodo: [`01/01/${ano} 12:00 am`, `12/31/${ano} 11:59 pm`],
+                        arealizar: false
                     });
                     appCache.dadosPorContaAno.set(chaveCache, null);
                 }
@@ -306,17 +312,14 @@ async function stepCarregarProcessarDados(filtros) {
         });
     } else {
         const tagCache = "AREALIZAR";
-        const anoAtual = new Date().getFullYear();
         contas.forEach(contaId => {
             const chaveCache = `${contaId}|${tagCache}`;
             if (!appCache.dadosPorContaAno.has(chaveCache)) {
                 requisicoesNecessarias.push({ 
                     contaId, 
                     anoOuTag: tagCache, 
-                    filtrosApi: {
-                        periodo: [`01/01/${anoAtual} 12:00 am`, `12/31/${anoAtual + 10} 11:59 pm`], 
-                        arealizar: true
-                    } 
+                    periodo: [`01/01/${anoAtual} 12:00 am`, `12/31/${anoAtual} 11:59 pm`],
+                    arealizar: true
                 });
                 appCache.dadosPorContaAno.set(chaveCache, null); 
             }
@@ -328,9 +331,10 @@ async function stepCarregarProcessarDados(filtros) {
     const promises = requisicoesNecessarias.map(req => 
         buscarTitulos({ 
             conta: req.contaId, 
-            periodo: req.filtrosApi.periodo,
-            arealizar: req.filtrosApi.arealizar
-        }).then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
+            periodo: req.periodo,
+            arealizar: req.arealizar
+        })
+            .then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
     );
 
     const projetosParaProcessar = projetos.filter(p => !appCache.matrizesPorProjeto.has(p));

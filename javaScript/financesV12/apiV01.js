@@ -41,10 +41,6 @@ async function realizarPost(endpoint, payload, nomeFuncao) {
 
 // --- Funções Exportadas ---
 
-/**
- * Busca os títulos financeiros com base nos filtros.
- * @param {object} filtros - { conta: [""], ano: [""]}
- */
 async function buscarTitulos(filtros) {
     const payload = {
         conta: String(filtros.conta),
