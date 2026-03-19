@@ -49,7 +49,7 @@ async function buscarTitulos(filtros) {
     };
 
     try {
-        return await realizarPost('buscarmovimentos', payload, 'buscarTitulos');
+        return await realizarPost('buscarmovimentos2', payload, 'buscarTitulos');
     } catch (error) {
         return { response: { movimentos: [], saldoInicial: 0 } };
     }
