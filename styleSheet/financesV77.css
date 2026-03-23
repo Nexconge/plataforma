@@ -254,30 +254,21 @@ tr[data-type="total-negrito"] {
 /* =========================================================
    TABELA FLUXO DIÁRIO
 ========================================================= */
-.container-scroll {
-  max-height: 500px;
-  overflow-y: auto;
-}
 #tabelaFluxoDiario {
-  width: 100%; 
-  border-collapse: separate; /* Essencial para o position: sticky funcionar bem com bordas */
-  border-spacing: 0; 
-  font-size: 14px; 
-  margin-top: 0px; 
-  background: #fff;
+  width: 100%; border-collapse: separate; border-spacing: 0; 
+  font-size: 14px; margin-top: 0px; background: #fff;
+  max-height: 500px; overflow-y: auto; display: block;
+  max-width: 100%;
 }
+
+/* Cabeçalho */
 #tabelaFluxoDiario thead th {
-  background-color: #0066cc; 
-  color: white; 
-  font-weight: bold; 
-  text-align: right;
-  padding: 10px 16px; 
-  border-bottom: 2px solid var(--primary-dark);
+  background-color: #0066cc; color: white; font-weight: bold; text-align: right;
+  padding: 10px 16px; border-bottom: 2px solid var(--primary-dark);
   position: sticky;
   top: 0;
   z-index: 1;
 }
-
 #tabelaFluxoDiario thead th:first-child { border-top-left-radius: 8px; width: 100px; }
 #tabelaFluxoDiario thead th:last-child { border-top-right-radius: 8px; }
 #tabelaFluxoDiario thead th:nth-child(2) { text-align: center; width: 60%; }
