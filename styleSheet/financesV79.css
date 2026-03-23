@@ -254,6 +254,12 @@ tr[data-type="total-negrito"] {
 /* =========================================================
    TABELA FLUXO DIÁRIO
 ========================================================= */
+.tabela-container {
+  width: 100%;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
 #tabelaFluxoDiario {
   width: 100%; 
   border-collapse: separate; 
@@ -261,14 +267,19 @@ tr[data-type="total-negrito"] {
   font-size: 14px; 
   margin-top: 0px; 
   background: #fff;
-  max-height: 500px; 
-  overflow-y: auto; 
-  display: block; 
+  display: table; 
 }
-#tabelaFluxoDiario thead, 
-#tabelaFluxoDiario tbody {
-  display: table;
-  width: 100%;
+
+#tabelaFluxoDiario thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #0066cc; 
+  color: white; 
+  font-weight: bold; 
+  text-align: right;
+  padding: 10px 16px; 
+  border-bottom: 2px solid var(--primary-dark);
 }
 
 /* Cabeçalho */
