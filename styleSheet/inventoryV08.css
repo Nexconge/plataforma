@@ -161,7 +161,7 @@ tbody tr:hover {
   align-items: center;
   padding: 5px;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 4px;
   min-height: 40px;
   font-family: sans-serif;
 }
@@ -186,7 +186,7 @@ tbody tr:hover {
 .tag {
   background-color: #e0e0e0;
   padding: 5px 10px;
-  border-radius: 15px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   font-size: 13px;

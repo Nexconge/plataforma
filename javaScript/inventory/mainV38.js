@@ -167,7 +167,7 @@ function renderizarDashboards(dados) {
         dados.recomendacaoCompra
     );
 
-    aplicarFiltrosExistentes();
+    aplicarLogicaDeFiltro();
 }
 
 // --- FUNÇÕES VISUAIS ---
