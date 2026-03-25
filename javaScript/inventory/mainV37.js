@@ -10,7 +10,7 @@ const EstadoApp = {
     filialSelecionada: null,
     cacheDatas: {}, 
     cacheRelatorios: {},
-    tagsExclusao: []
+    filtrosAtivos: []
 };
 
 // --- FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ---
@@ -80,18 +80,16 @@ function configurarListeners() {
     });
 
     // --- Listener das Tags de Exclusão ---
-    if (elTagInput) {
-        elTagInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                const valor = elTagInput.value.trim();
-                if (valor && !EstadoApp.tagsExclusao.includes(valor)) {
-                    adicionarTagExclusao(valor);
-                    elTagInput.value = "";
-                }
+    elTagInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const rawValue = elTagInput.value.trim();
+            if (rawValue) {
+                processarNovaTag(rawValue);
+                elTagInput.value = "";
             }
-        });
-    }
+        }
+    });
 }
 
 // --- LÓGICA DE DADOS E CACHE ---
@@ -202,43 +200,71 @@ function limparTabelas() {
 
 // --- NOVAS FUNÇÕES DE GESTÃO DE TAGS (Filtro de Exclusão) ---
 
-function adicionarTagExclusao(texto) {
-    EstadoApp.tagsExclusao.push(texto);
-    
+function processarNovaTag(textoRaw) {
+    let tipo = 'inc'; // MUDANÇA: O padrão agora é inclusão (inc)
+    let termo = textoRaw;
+
+    if (textoRaw.startsWith('inc:')) {
+        tipo = 'inc';
+        termo = textoRaw.replace('inc:', '');
+    } else if (textoRaw.startsWith('exc:')) {
+        tipo = 'exc';
+        termo = textoRaw.replace('exc:', '');
+    } 
+    // Se não cair nos 'if' acima, o 'tipo' continua 'inc' e o 'termo' é o próprio 'textoRaw'
+
+    if (!termo || termo.trim() === "") return;
+
+    // Evita duplicados (mesmo termo com mesmo tipo)
+    if (EstadoApp.filtrosAtivos.some(f => f.termo.toLowerCase() === termo.toLowerCase() && f.tipo === tipo)) return;
+
+    EstadoApp.filtrosAtivos.push({ tipo, termo: termo.trim() });
+    renderizarTagNoHTML(tipo, termo.trim());
+    aplicarLogicaDeFiltro();
+}
+
+function renderizarTagNoHTML(tipo, termo) {
     const container = document.getElementById("tag-container");
     const input = document.getElementById("tag-input");
     
     const tag = document.createElement("div");
-    tag.className = "tag";
-    tag.innerHTML = `${texto} <span class="remove-btn">&times;</span>`;
+    // Adicionamos uma classe CSS diferente para inclusão e exclusão se quiser colorir
+    tag.className = `tag ${tipo === 'inc' ? 'tag-inc' : 'tag-exc'}`;
+    tag.innerHTML = `<b>${tipo}:</b>${termo} <span class="remove-btn">&times;</span>`;
     
     tag.querySelector(".remove-btn").onclick = () => {
-        EstadoApp.tagsExclusao = EstadoApp.tagsExclusao.filter(t => t !== texto);
+        EstadoApp.filtrosAtivos = EstadoApp.filtrosAtivos.filter(f => !(f.termo === termo && f.tipo === tipo));
         tag.remove();
-        gerenciarVisibilidadeLinha(texto, true); // Mostra de volta
+        aplicarLogicaDeFiltro();
     };
     
     container.insertBefore(tag, input);
-    gerenciarVisibilidadeLinha(texto, false); // Esconde a linha
 }
 
-function gerenciarVisibilidadeLinha(texto, mostrar) {
-    // Alvo: apenas a tabela de recomendação
+function aplicarLogicaDeFiltro() {
     const tabela = document.getElementById("tabelaRecomendacaoCompra");
     if (!tabela) return;
 
     const linhas = tabela.querySelectorAll("tbody tr");
-    linhas.forEach(linha => {
-        const nomeProduto = linha.cells[0]?.innerText || "";
-        // Filtro parcial (se o texto digitado estiver contido no nome do produto)
-        if (nomeProduto.toLowerCase().includes(texto.toLowerCase())) {
-            linha.style.display = mostrar ? "" : "none";
-        }
-    });
-}
+    const filtrosInc = EstadoApp.filtrosAtivos.filter(f => f.tipo === 'inc');
+    const filtrosExc = EstadoApp.filtrosAtivos.filter(f => f.tipo === 'exc');
 
-function aplicarFiltrosExistentes() {
-    EstadoApp.tagsExclusao.forEach(tag => {
-        gerenciarVisibilidadeLinha(tag, false);
+    linhas.forEach(linha => {
+        const nomeProduto = linha.cells[0]?.innerText.toLowerCase() || "";
+        let deveExibir = true;
+
+        // 1. Se houver filtros de INCLUSÃO, o item DEVE atender a pelo menos um deles (Lógica OR)
+        // Se preferir que atenda a TODOS, mude .some para .every
+        if (filtrosInc.length > 0) {
+            deveExibir = filtrosInc.some(f => nomeProduto.includes(f.termo.toLowerCase()));
+        }
+
+        // 2. Se houver filtros de EXCLUSÃO, o item NÃO PODE atender a nenhum deles
+        if (filtrosExc.length > 0) {
+            const matchesExc = filtrosExc.some(f => nomeProduto.includes(f.termo.toLowerCase()));
+            if (matchesExc) deveExibir = false;
+        }
+
+        linha.style.display = deveExibir ? "" : "none";
     });
 }
