@@ -153,6 +153,58 @@ tbody tr:hover {
     font-style: italic;
 }
 
+/* CONTROLE DE TAGS (INPUT + TAGS DENTRO) */
+
+.tag-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  min-height: 40px;
+  font-family: sans-serif;
+}
+
+#tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 100%;
+}
+
+/* Estilo do input invisível lá dentro */
+#tag-input {
+  border: none;
+  outline: none;
+  flex-grow: 1;
+  padding: 5px;
+  font-size: 14px;
+}
+
+/* Estilo da Tag (o "item") */
+.tag {
+  background-color: #e0e0e0;
+  padding: 5px 10px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #333;
+}
+
+/* O botão 'X' de fechar */
+.tag .remove-btn {
+  margin-left: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #888;
+}
+
+.tag .remove-btn:hover {
+  color: #ff4d4d;
+}
+
 /* =========================================================
    LOADING - VERSÃO CORRIGIDA E COM OVERLAY
 ========================================================= */

@@ -9,7 +9,8 @@ const EstadoApp = {
     empresaSelecionada: null,
     filialSelecionada: null,
     cacheDatas: {}, 
-    cacheRelatorios: {} 
+    cacheRelatorios: {},
+    tagsExclusao: []
 };
 
 // --- FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ---
@@ -43,6 +44,7 @@ function configurarListeners() {
     const elEmpresa = document.getElementById("empresaSelect");
     const elFilial = document.getElementById("filialSelect");
     const elData = document.getElementById("dataSelect");
+    const elTagInput = document.getElementById("tag-input");
 
     elEmpresa.addEventListener("change", async (e) => {
         const idEmpresa = e.target.value;
@@ -76,6 +78,20 @@ function configurarListeners() {
             await carregarRelatorioFinal(EstadoApp.empresaSelecionada, dataSelecionada);
         }
     });
+
+    // --- Listener das Tags de Exclusão ---
+    if (elTagInput) {
+        elTagInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const valor = elTagInput.value.trim();
+                if (valor && !EstadoApp.tagsExclusao.includes(valor)) {
+                    adicionarTagExclusao(valor);
+                    elTagInput.value = "";
+                }
+            }
+        });
+    }
 }
 
 // --- LÓGICA DE DADOS E CACHE ---
@@ -152,6 +168,8 @@ function renderizarDashboards(dados) {
         "tabelaRecomendacaoCompra", 
         dados.recomendacaoCompra
     );
+
+    aplicarFiltrosExistentes();
 }
 
 // --- FUNÇÕES VISUAIS ---
@@ -180,4 +198,47 @@ function renderizarPlaceholders() {
 
 function limparTabelas() {
     renderizarPlaceholders();
+}
+
+// --- NOVAS FUNÇÕES DE GESTÃO DE TAGS (Filtro de Exclusão) ---
+
+function adicionarTagExclusao(texto) {
+    EstadoApp.tagsExclusao.push(texto);
+    
+    const container = document.getElementById("tag-container");
+    const input = document.getElementById("tag-input");
+    
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.innerHTML = `${texto} <span class="remove-btn">&times;</span>`;
+    
+    tag.querySelector(".remove-btn").onclick = () => {
+        EstadoApp.tagsExclusao = EstadoApp.tagsExclusao.filter(t => t !== texto);
+        tag.remove();
+        gerenciarVisibilidadeLinha(texto, true); // Mostra de volta
+    };
+    
+    container.insertBefore(tag, input);
+    gerenciarVisibilidadeLinha(texto, false); // Esconde a linha
+}
+
+function gerenciarVisibilidadeLinha(texto, mostrar) {
+    // Alvo: apenas a tabela de recomendação
+    const tabela = document.getElementById("tabelaRecomendacaoCompra");
+    if (!tabela) return;
+
+    const linhas = tabela.querySelectorAll("tbody tr");
+    linhas.forEach(linha => {
+        const nomeProduto = linha.cells[0]?.innerText || "";
+        // Filtro parcial (se o texto digitado estiver contido no nome do produto)
+        if (nomeProduto.toLowerCase().includes(texto.toLowerCase())) {
+            linha.style.display = mostrar ? "" : "none";
+        }
+    });
+}
+
+function aplicarFiltrosExistentes() {
+    EstadoApp.tagsExclusao.forEach(tag => {
+        gerenciarVisibilidadeLinha(tag, false);
+    });
 }
