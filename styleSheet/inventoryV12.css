@@ -232,6 +232,7 @@ tbody tr:hover {
     outline: none;
     min-width: 150px;
     /* Largura mínima para o usuário ver o que digita */
+    field-sizing: content;
     flex-shrink: 0;
     /* Impede o input de "esmagar" */
     padding: 8px 0;
