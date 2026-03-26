@@ -24,7 +24,7 @@ export function preencherSelect(idElemento, dados, placeholder = "Selecione...")
 
 // Formatadores
 const fmtMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const fmtNumero = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+const fmtNumero = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // --- TABELA DETALHADA (Compatível com dados antigos) ---
 export function gerarTabelaDetalhada(idTabela, titulo, dados, msgVazia = "Sem dados para exibir.") {
