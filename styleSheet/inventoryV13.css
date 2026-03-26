@@ -56,15 +56,13 @@ label[for="filialSelect"] {
 table {
     width: 100%;
     border-collapse: separate;
-    /* Necessário para border-radius funcionar no thead */
     border-spacing: 0;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-family: var(--font);
     font-size: 14px;
     color: #000;
     background-color: #fff;
     margin-bottom: 25px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    /* Sutil sombra para destacar */
 }
 
 /* --- CABEÇALHO (THEAD) --- */
@@ -97,7 +95,7 @@ thead tr:nth-child(2) th {
     font-size: 13px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.50px;
 }
 
 /* --- ESTILO ESPECÍFICO: Tabela de Recomendação (Vermelha) --- */
@@ -126,15 +124,14 @@ tbody tr:nth-child(odd) {
 /* Efeito Hover */
 tbody tr:hover {
     background-color: #e6f0ff;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.20s ease;
 }
 
 /* --- UTILITÁRIOS DE CÉLULA --- */
 .text-right {
     text-align: right;
-    font-family: monospace;
-    /* Para alinhar números */
-    font-size: 1.1em;
+    font-family: var(--font);
+    font-size: 1.10em;
 }
 
 .text-center {
@@ -304,9 +301,8 @@ body.app-loading::before {
     left: 50%;
     width: 24px;
     height: 24px;
-    /* Translate mantido aqui para fallback */
     transform: translate(-95px, -50%);
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(255, 255, 255, 0.30);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -322,7 +318,6 @@ body.app-loading::after {
     transform: translate(-50%, -50%);
 
     background: var(--primary-dark, #333);
-    /* Fallback caso a var não carregue */
     color: white;
 
     padding: 15px 25px 15px 55px;
@@ -331,10 +326,9 @@ body.app-loading::after {
     z-index: 10000;
     font-weight: bold;
 
-    /* Overlay via Box-Shadow */
     box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.2),
-        0 0 0 100vmax rgba(0, 0, 0, 0.5);
+        0 4px 12px rgba(0, 0, 0, 0.20),
+        0 0 0 100vmax rgba(0, 0, 0, 0.50);
 }
 
 /* ANIMAÇÃO CORRIGIDA (Mantém a posição) */
