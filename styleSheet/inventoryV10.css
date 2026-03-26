@@ -196,7 +196,7 @@ tbody tr:hover {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 5px 10px;
-    min-height: 40px;
+    min-height: 38px;
     background: white;
 
     /* Mágica do Scroll Horizontal */
@@ -223,7 +223,7 @@ tbody tr:hover {
     flex-wrap: nowrap;
     /* Garante que o container interno também não quebre */
     align-items: center;
-    gap: 5px;
+    gap: 10px;
 }
 
 /* Estilo do input invisível lá dentro */
@@ -235,7 +235,7 @@ tbody tr:hover {
     flex-shrink: 0;
     /* Impede o input de "esmagar" */
     padding: 8px 0;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 /* Estilo da Tag (o "item") */
@@ -246,7 +246,7 @@ tbody tr:hover {
     /* Impede o texto da tag de quebrar linha */
     background-color: #e0e0e0;
     padding: 5px 12px;
-    border-radius: 15px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
 }
