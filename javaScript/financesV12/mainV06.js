@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao} from './processingV03.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao} from './processingV04.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV02.js';
 
 // --- Cache da Aplicação ---
@@ -147,6 +147,7 @@ function processarRespostaEstoque(apiResponse) {
     }
     appCache.matrizesPorProjeto.set(apiResponse.projId, matrizEstoque);
 }
+
 function processarRespostaTitulos(apiResponse) {
     const { reqContext, response } = apiResponse;
     const { contaId, anoOuTag } = reqContext;
@@ -161,19 +162,16 @@ function processarRespostaTitulos(apiResponse) {
         processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
     }
 }
+
 function processarModoCompetencia(contaId, anoOuTag, response) {
     let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
     
-    // Supondo que a API retorna os dados na mesma chave ou em uma específica para emissão
-    const dadosApi = response.dadosPorEmissao || response.dadosCapitalG || [];
-    
-    if (dadosApi.length > 2) {
+    if (response.dadosCompetencia?.length > 2) {
         try {
-            dadosInput.lancamentos = extrairDadosPorEmissao(parseJSONFlexivel(dadosApi), contaId, anoOuTag);
+            dadosInput.lancamentos = extrairDadosPorEmissao(parseJSONFlexivel(response.dadosCompetencia), contaId, anoOuTag);
         } catch (e) { console.error(`Erro JSON Competencia conta ${contaId}`, e); }
     }
 
-    // Saldo inicial zerado pois não faz sentido na visão de competência isolada
     const processed = processarDadosDaConta(appCache, dadosInput, contaId, 0);
     appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
 }
@@ -304,7 +302,7 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
 /**
  * Passo 2: Identifica o que falta no cache, busca na API e processa os dados crus.
  */
-// mainV36.js
+
 async function stepCarregarProcessarDados(filtros) {
     const { contas, anos, projetos } = filtros;
     const requisicoesNecessarias = [];
@@ -313,7 +311,6 @@ async function stepCarregarProcessarDados(filtros) {
     const isCompetencia = appCache.projecao === "competencia";
     const isRealizado = appCache.projecao === "realizado";
 
-    // O arealizar busca a projeção inteira de uma vez, então usamos apenas uma tag no loop
     const iteradores = isARealizar ? ["AREALIZAR"] : anos;
     const anoAtual = new Date().getFullYear();
 
@@ -322,7 +319,6 @@ async function stepCarregarProcessarDados(filtros) {
             const chaveCache = `${contaId}|${anoOuTag}`;
             
             if (!appCache.dadosPorContaAno.has(chaveCache)) {
-                // Mantém um período válido no payload para evitar problemas de validação na API
                 const anoParaPeriodo = isARealizar ? anoAtual : anoOuTag;
 
                 requisicoesNecessarias.push({ 

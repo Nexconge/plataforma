@@ -350,7 +350,6 @@ function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
         if (!titulo || !titulo.Categoria) return;
         
         const natureza = converteNatureza(titulo.Natureza);
-        // Prioriza a data de emissão, com fallback
         const dataUsar = titulo.DataEmissao || titulo.DataVencimento || titulo.DataLancamento; 
 
         if (!dataUsar) return;
@@ -361,7 +360,6 @@ function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
         }
 
         if (String(titulo.CODContaC) === contaId) {
-            // Pega o valor base do título ao invés de baixas
             const valor = typeof titulo.ValorTitulo !== 'undefined' ? titulo.ValorTitulo : titulo.ValorLancamento;
             if (typeof valor === 'undefined') return;
 
@@ -369,7 +367,7 @@ function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
             
             lancamentosProcessados.push({
                 Natureza: natureza,
-                DataLancamento: dataUsar, // Força a data de emissão como "lançamento" na DRE
+                DataLancamento: dataUsar, 
                 CODContaC: titulo.CODContaC,
                 CODProjeto: titulo.CODProjeto || null,
                 ValorLancamento: valor,
@@ -384,6 +382,8 @@ function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
 
     return lancamentosProcessados;
 }
+
+export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao };
 
 
 /**
