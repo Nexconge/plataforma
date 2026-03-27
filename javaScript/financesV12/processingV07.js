@@ -341,42 +341,76 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
 
     return lancamentosProcessados;
 }
-function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
+function extrairDadosPorEmissao(dadosRaw, contaId, anoFiltro = null) {
     const lancamentosProcessados = [];
     
-    if (!Array.isArray(titulosRaw)) return lancamentosProcessados;
+    if (!Array.isArray(dadosRaw)) return lancamentosProcessados;
 
-    titulosRaw.forEach(titulo => {
-        if (!titulo || !titulo.Categoria) return;
+    dadosRaw.forEach(item => {
+        if (!item) return;
         
-        const natureza = converteNatureza(titulo.Natureza);
-        const dataUsar = titulo.DataEmissao || titulo.DataVencimento || titulo.DataLancamento; 
+        const natureza = converteNatureza(item.Natureza);
 
-        if (!dataUsar) return;
+        // Se o JSON possuir o array interno de Lancamentos (mesmo formato que o dadosLancamentos)
+        if (Array.isArray(item.Lancamentos)) {
+            item.Lancamentos.forEach(lancamento => {
+                // Tenta pegar a DataEmissao do item principal, se não houver pega a do lançamento
+                const dataUsar = item.DataEmissao || lancamento.DataLancamento;
+                
+                if (!dataUsar || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
 
-        if (anoFiltro) {
-            const parts = dataUsar.split('/');
-            if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
-        }
+                if (anoFiltro) {
+                    const parts = dataUsar.split('/');
+                    if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
+                }
 
-        if (String(titulo.CODContaC) === contaId) {
-            const valor = typeof titulo.ValorTitulo !== 'undefined' ? titulo.ValorTitulo : titulo.ValorLancamento;
-            if (typeof valor === 'undefined') return;
-
-            const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, valor);
-            
-            lancamentosProcessados.push({
-                Natureza: natureza,
-                DataLancamento: dataUsar, 
-                CODContaC: titulo.CODContaC,
-                CODProjeto: titulo.CODProjeto || null,
-                ValorLancamento: valor,
-                CODCategoria: titulo.Categoria,
-                Cliente: titulo.Cliente || "Cliente",
-                Departamentos: deptosRateio,
-                obs: titulo.obsTitulo || titulo.obs || null,
-                NUMDoc: titulo.NF || null
+                if (String(lancamento.CODContaC) === contaId) {
+                    const deptosRateio = gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento);
+                    
+                    lancamentosProcessados.push({
+                        Natureza: natureza,
+                        DataLancamento: dataUsar, // Salva como "DataLancamento" para a DRE ler corretamente
+                        CODContaC: lancamento.CODContaC,
+                        CODProjeto: item.CODProjeto || null,
+                        ValorLancamento: lancamento.ValorLancamento,
+                        CODCategoria: item.Categoria,
+                        Cliente: item.Cliente || "Cliente",
+                        Departamentos: deptosRateio,
+                        obs: lancamento.obs || item.obsTitulo || null,
+                        NUMDoc: item.NF || null
+                    });
+                }
             });
+        } else {
+            // Fallback (se por acaso a API mandar em formato plano de Titulos)
+            const dataUsar = item.DataEmissao || item.DataVencimento || item.DataLancamento;
+            
+            if (!dataUsar || !item.Categoria) return;
+
+            if (anoFiltro) {
+                const parts = dataUsar.split('/');
+                if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
+            }
+
+            if (String(item.CODContaC) === contaId) {
+                const valor = typeof item.ValorTitulo !== 'undefined' ? item.ValorTitulo : item.ValorLancamento;
+                if (typeof valor === 'undefined') return;
+
+                const deptosRateio = gerarDepartamentosObj(item.Departamentos, valor);
+                
+                lancamentosProcessados.push({
+                    Natureza: natureza,
+                    DataLancamento: dataUsar, 
+                    CODContaC: item.CODContaC,
+                    CODProjeto: item.CODProjeto || null,
+                    ValorLancamento: valor,
+                    CODCategoria: item.Categoria,
+                    Cliente: item.Cliente || "Cliente",
+                    Departamentos: deptosRateio,
+                    obs: item.obsTitulo || item.obs || null,
+                    NUMDoc: item.NF || null
+                });
+            }
         }
     });
 
