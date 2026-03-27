@@ -341,7 +341,51 @@ function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
 
     return lancamentosProcessados;
 }
+function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
+    const lancamentosProcessados = [];
+    
+    if (!Array.isArray(titulosRaw)) return lancamentosProcessados;
 
+    titulosRaw.forEach(titulo => {
+        if (!titulo || !titulo.Categoria) return;
+        
+        const natureza = converteNatureza(titulo.Natureza);
+        // Prioriza a data de emissão, com fallback
+        const dataUsar = titulo.DataEmissao || titulo.DataVencimento || titulo.DataLancamento; 
+
+        if (!dataUsar) return;
+
+        if (anoFiltro) {
+            const parts = dataUsar.split('/');
+            if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
+        }
+
+        if (String(titulo.CODContaC) === contaId) {
+            // Pega o valor base do título ao invés de baixas
+            const valor = typeof titulo.ValorTitulo !== 'undefined' ? titulo.ValorTitulo : titulo.ValorLancamento;
+            if (typeof valor === 'undefined') return;
+
+            const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, valor);
+            
+            lancamentosProcessados.push({
+                Natureza: natureza,
+                DataLancamento: dataUsar, // Força a data de emissão como "lançamento" na DRE
+                CODContaC: titulo.CODContaC,
+                CODProjeto: titulo.CODProjeto || null,
+                ValorLancamento: valor,
+                CODCategoria: titulo.Categoria,
+                Cliente: titulo.Cliente || "Cliente",
+                Departamentos: deptosRateio,
+                obs: titulo.obsTitulo || titulo.obs || null,
+                NUMDoc: titulo.NF || null
+            });
+        }
+    });
+
+    return lancamentosProcessados;
+}
+
+export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao };
 /**
  * Processa uma lista de lançamentos para gerar Matriz DRE e Detalhamento.
  * Usado tanto para Realizado quanto A Realizar.

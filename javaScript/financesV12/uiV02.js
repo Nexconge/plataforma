@@ -214,16 +214,20 @@ function configurarFiltros(appCache, anosDisp, callback) {
     // 2. Listeners Comuns
     const btnARealizar = document.getElementById('btnARealizar');
     const btnRealizado = document.getElementById('btnRealizado');
+    const btnPorCompetencia = document.getElementById('btnPorCompetencia');
 
     const setProj = (t) => {
         appCache.projecao = t;
         const divCG = document.getElementById('groupCapitalGiro');
-        if(divCG) divCG.style.display = (t === "arealizar") ? "none" : "";
+        const hideExtras = (t === "arealizar" || t === "competencia");
+        
+        if(divCG) divCG.style.display = hideExtras ? "none" : "";
         callback();
     };
 
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
+    if(btnPorCompetencia) btnPorCompetencia.onclick = () => setProj("competencia");
     
     el.conta.onchange = callback;
     
@@ -580,21 +584,28 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
 
 // ------ Tabelas (Renderização) ------
 function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
+    const isCompetencia = cache.projecao === 'competencia';
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
 
     renderizarDRE(dados.matrizDRE, colunas, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
-    renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
     
-    renderizarGraficos(dados, colunas);
-    renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
-    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+    if (!isCompetencia) {
+        renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
+        renderizarGraficos(dados, colunas);
+        renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
+        renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+    } else {
+        ['graficos-content', 'tabelaFluxoDiario', 'resumoFluxoCaixa', 'tabelaCapitalGiro'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none'; // Alternativamente a limpar, para não quebrar layout
+        });
+    }
 
-    // Adiciona as colunas vazias nas tabelas que possuem estrutura de colunas temporais
     if (colunasPlaceholder && colunasPlaceholder.length > 0) {
-        renderizarColunasPlaceholder(colunasPlaceholder, idsTabelas);
+        renderizarColunasPlaceholder(colunasPlaceholder, isCompetencia ? ['tabelaMatriz', 'tabelaCustos'] : idsTabelas);
     }
 }
 

@@ -1,8 +1,8 @@
 // mainV25.js
 
-import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV02.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes} from './processingV01.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV01.js';
+import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao} from './processingV02.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV02.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -154,12 +154,28 @@ function processarRespostaTitulos(apiResponse) {
     const anoAtual = new Date().getFullYear();
 
     if (appCache.projecao === "arealizar") {
-        // Lógica Específica A REALIZAR (depende do realizado do ano corrente)
         processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
+    } else if (appCache.projecao === "competencia") {
+        processarModoCompetencia(contaId, anoOuTag, response);
     } else {
-        // Lógica Padrão REALIZADO
         processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
     }
+}
+function processarModoCompetencia(contaId, anoOuTag, response) {
+    let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
+    
+    // Supondo que a API retorna os dados na mesma chave ou em uma específica para emissão
+    const dadosApi = response.dadosPorEmissao || response.dadosCapitalG || [];
+    
+    if (dadosApi.length > 2) {
+        try {
+            dadosInput.lancamentos = extrairDadosPorEmissao(parseJSONFlexivel(dadosApi), contaId, anoOuTag);
+        } catch (e) { console.error(`Erro JSON Competencia conta ${contaId}`, e); }
+    }
+
+    // Saldo inicial zerado pois não faz sentido na visão de competência isolada
+    const processed = processarDadosDaConta(appCache, dadosInput, contaId, 0);
+    appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
 }
 function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
@@ -188,7 +204,6 @@ function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
     appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
 }
-
 function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
     // 1. Processa "Realizado CY" apenas para calcular saldo acumulado até hoje
     let valorAcumuladoRealizado = 0;
@@ -293,38 +308,35 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
 async function stepCarregarProcessarDados(filtros) {
     const { contas, anos, projetos } = filtros;
     const requisicoesNecessarias = [];
+
+    const isARealizar = appCache.projecao === "arealizar";
+    const isCompetencia = appCache.projecao === "competencia";
+    const isRealizado = appCache.projecao === "realizado";
+
+    // O arealizar busca a projeção inteira de uma vez, então usamos apenas uma tag no loop
+    const iteradores = isARealizar ? ["AREALIZAR"] : anos;
     const anoAtual = new Date().getFullYear();
 
-    if (appCache.projecao === "realizado") {
-        contas.forEach(contaId => {
-            anos.forEach(ano => {
-                const chaveCache = `${contaId}|${ano}`;
-                if (!appCache.dadosPorContaAno.has(chaveCache)) {
-                    requisicoesNecessarias.push({ 
-                        contaId, 
-                        anoOuTag: ano, 
-                        periodo: [`01/01/${ano} 12:00 am`, `12/31/${ano} 11:59 pm`],
-                        arealizar: false
-                    });
-                    appCache.dadosPorContaAno.set(chaveCache, null);
-                }
-            });
-        });
-    } else {
-        const tagCache = "AREALIZAR";
-        contas.forEach(contaId => {
-            const chaveCache = `${contaId}|${tagCache}`;
+    contas.forEach(contaId => {
+        iteradores.forEach(anoOuTag => {
+            const chaveCache = `${contaId}|${anoOuTag}`;
+            
             if (!appCache.dadosPorContaAno.has(chaveCache)) {
+                // Mantém um período válido no payload para evitar problemas de validação na API
+                const anoParaPeriodo = isARealizar ? anoAtual : anoOuTag;
+
                 requisicoesNecessarias.push({ 
                     contaId, 
-                    anoOuTag: tagCache, 
-                    periodo: [`01/01/${anoAtual} 12:00 am`, `12/31/${anoAtual} 11:59 pm`],
-                    arealizar: true
+                    anoOuTag, 
+                    periodo: [`01/01/${anoParaPeriodo} 12:00 am`, `12/31/${anoParaPeriodo} 11:59 pm`],
+                    realizado: isRealizado,
+                    arealizar: isARealizar,
+                    poremissao: isCompetencia
                 });
-                appCache.dadosPorContaAno.set(chaveCache, null); 
+                appCache.dadosPorContaAno.set(chaveCache, null);
             }
         });
-    }
+    });
 
     if (requisicoesNecessarias.length === 0 && verificarCacheProjetos(projetos)) return;
 
@@ -332,7 +344,9 @@ async function stepCarregarProcessarDados(filtros) {
         buscarTitulos({ 
             conta: req.contaId, 
             periodo: req.periodo,
-            arealizar: req.arealizar
+            realizado: req.realizado,
+            arealizar: req.arealizar,
+            poremissao: req.poremissao
         })
             .then(resultado => ({ ...resultado, reqContext: req, tipo: 'TITULOS' })) 
     );
@@ -405,7 +419,7 @@ function stepConsolidarExibir(filtros) {
 
     const { contas, anos, modo, colunas, projetos } = filtros;
 
-    if (appCache.projecao === "realizado") {
+    if (appCache.projecao === "realizado" || appCache.projecao === "competencia") {
         const anosVisiveis = anos.sort();
         const primeiroAno = anosVisiveis[0];
         contas.forEach(contaId => {
