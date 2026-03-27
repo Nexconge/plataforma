@@ -655,6 +655,9 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     const dadosParaMerge = [];
     let saldoInicialAcumulado = 0;
 
+    // CORREÇÃO: Como competência usa a pipeline de lançamentos, os dados estão na chave 'realizado'
+    const chaveLeitura = projecao.toLowerCase() === 'competencia' ? 'realizado' : projecao.toLowerCase();
+
     dadosProcessados.forEach(conta => {
         if (!conta) return;
         
@@ -665,7 +668,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
                 const deveIncluir = (projKey === 'SEM_PROJETO') || setProjetosPermitidos.has(projKey);
 
                 if (deveIncluir) {
-                    const projData = dadosProj[projecao.toLowerCase()];
+                    const projData = dadosProj[chaveLeitura]; // Alterado aqui
                     if (projData) {
                         if (dadosProj.capitalDeGiro) {
                             projData.matrizCapitalGiro = dadosProj.capitalDeGiro.matrizCapitalGiro;
@@ -675,7 +678,7 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
                 }
             });
         } else {
-            const projData = conta[projecao.toLowerCase()];
+            const projData = conta[chaveLeitura]; // Alterado aqui
             if (projData) {
                 if (conta.capitalDeGiro) projData.matrizCapitalGiro = conta.capitalDeGiro.matrizCapitalGiro;
                 dadosParaMerge.push(projData);
@@ -706,7 +709,6 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
     
     calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicialFinal);
     
-    // --- Nova lógica unificada para calcular a coluna TOTAL ---
     const mapaTotal = { 'TOTAL': colunasVisiveis };
     agregarMatrizPorGrupo(matrizDRE, mapaTotal, ['Caixa Inicial'], ['Caixa Final'], true);
     agregarMatrizPorGrupo(dadosParaExibir.entradasESaidas, mapaTotal, [], [], true);
@@ -805,8 +807,9 @@ function agregarDadosParaAnual(monthlyData, projecao) {
         if (!mapaAnos[ano]) mapaAnos[ano] = [];
         mapaAnos[ano].push(c);
 
-        // Mapa separado para os saldos finais, que corta meses futuros no modo realizado
-        if (projecao.toLowerCase() === "realizado" && parseInt(ano, 10) === anoAtual && mes > mesAtual) {
+        // CORREÇÃO: Aplicar regra de corte de futuro também para competência
+        const isProjPassado = projecao.toLowerCase() === "realizado" || projecao.toLowerCase() === "competencia";
+        if (isProjPassado && parseInt(ano, 10) === anoAtual && mes > mesAtual) {
             return;
         }
         if (!mapaAnosSaldos[ano]) mapaAnosSaldos[ano] = [];
