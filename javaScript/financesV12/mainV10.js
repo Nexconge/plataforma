@@ -173,7 +173,8 @@ function processarModoCompetencia(contaId, anoOuTag, response) {
     }
 
     const processed = processarDadosDaConta(appCache, dadosInput, contaId, 0);
-    appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
+    // Salva com o prefixo exclusivo de competência
+    appCache.dadosPorContaAno.set(`${contaId}|COMP_${anoOuTag}`, processed);
 }
 function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
     let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
@@ -299,9 +300,6 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
     atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo ? elmModo.value : 'mensal', appCache.projecao);
     appCache.flagAnos = false;
 }
-/**
- * Passo 2: Identifica o que falta no cache, busca na API e processa os dados crus.
- */
 
 async function stepCarregarProcessarDados(filtros) {
     const { contas, anos, projetos } = filtros;
@@ -316,7 +314,9 @@ async function stepCarregarProcessarDados(filtros) {
 
     contas.forEach(contaId => {
         iteradores.forEach(anoOuTag => {
-            const chaveCache = `${contaId}|${anoOuTag}`;
+            // Adiciona prefixo COMP_ se for competência para separar o cache
+            const prefixoCache = isCompetencia ? "COMP_" : "";
+            const chaveCache = isARealizar ? `${contaId}|AREALIZAR` : `${contaId}|${prefixoCache}${anoOuTag}`;
             
             if (!appCache.dadosPorContaAno.has(chaveCache)) {
                 const anoParaPeriodo = isARealizar ? anoAtual : anoOuTag;
@@ -416,11 +416,16 @@ function stepConsolidarExibir(filtros) {
     const { contas, anos, modo, colunas, projetos } = filtros;
 
     if (appCache.projecao === "realizado" || appCache.projecao === "competencia") {
+        const isCompetencia = appCache.projecao === "competencia";
+        const prefixoCache = isCompetencia ? "COMP_" : "";
+        
         const anosVisiveis = anos.sort();
         const primeiroAno = anosVisiveis[0];
+        
         contas.forEach(contaId => {
             anosVisiveis.forEach(ano => {
-                const dados = appCache.dadosPorContaAno.get(`${contaId}|${ano}`);
+                // Busca no cache considerando o prefixo
+                const dados = appCache.dadosPorContaAno.get(`${contaId}|${prefixoCache}${ano}`);
                 if (dados) {
                     dadosParaJuntar.push(dados);
                     if (ano === primeiroAno) saldoInicialConsolidado += (dados.saldoInicialBase || 0);
