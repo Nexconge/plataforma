@@ -385,7 +385,7 @@ function extrairDadosPorEmissao(titulosRaw, contaId, anoFiltro = null) {
     return lancamentosProcessados;
 }
 
-export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao };
+
 /**
  * Processa uma lista de lançamentos para gerar Matriz DRE e Detalhamento.
  * Usado tanto para Realizado quanto A Realizar.
@@ -883,4 +883,4 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     });
 }
 
-export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes };
+export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao };
