@@ -1,8 +1,8 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
-import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao} from './processingV08.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV02.js';
+import { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao} from './processingV09.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV03.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -152,15 +152,48 @@ function processarRespostaTitulos(apiResponse) {
     const { reqContext, response } = apiResponse;
     const { contaId, anoOuTag } = reqContext;
     const saldoInicialApi = response && response.saldoInicial ? Number(response.saldoInicial) : 0;
-    const anoAtual = new Date().getFullYear();
+    const projecao = appCache.projecao;
 
-    if (appCache.projecao === "arealizar") {
-        processarModoARealizar(contaId, anoAtual, response, saldoInicialApi);
-    } else if (appCache.projecao === "competencia") {
-        processarModoCompetencia(contaId, anoOuTag, response);
-    } else {
-        processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi);
+    let tipoData = 'lancamento';
+    if (projecao === 'arealizar') tipoData = 'vencimento';
+    if (projecao === 'competencia') tipoData = 'emissao';
+
+    let dadosBrutos = [];
+    if (response) {
+        ['dadosCapitalG', 'dadosLancamentos', 'dadosCompetencia', 'dadosRealizado', 'dadosArealizar'].forEach(chave => {
+            if (response[chave]?.length > 2) {
+                dadosBrutos = dadosBrutos.concat(parseJSONFlexivel(response[chave]));
+            }
+        });
     }
+
+    const anoFiltro = projecao === 'arealizar' ? null : anoOuTag;
+    const extracted = extrairDadosUnificados(dadosBrutos, contaId, anoFiltro, tipoData);
+
+    let saldoInicioCalculado = saldoInicialApi;
+    
+    if (projecao === 'arealizar' && response && response.dadosRealizado?.length > 2) {
+        const anoAtual = new Date().getFullYear();
+        const extractedCY = extrairDadosUnificados(parseJSONFlexivel(response.dadosRealizado), contaId, anoAtual, 'lancamento');
+        const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
+        
+        if (processedCY.isSegmented && processedCY.segments) {
+            Object.values(processedCY.segments).forEach(segmento => {
+                if (segmento.realizado && segmento.realizado.valorTotal) saldoInicioCalculado += segmento.realizado.valorTotal;
+            });
+        } else if (processedCY.realizado) {
+            saldoInicioCalculado += (processedCY.realizado.valorTotal || 0);
+        }
+    }
+
+    const dadosInput = {
+        lancamentos: projecao === 'arealizar' ? [] : extracted.lancamentosProcessados,
+        titulos: projecao === 'arealizar' ? extracted.titulosEmAberto : [],
+        capitalDeGiro: projecao === 'competencia' ? [] : extracted.capitalDeGiro
+    };
+
+    const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioCalculado);
+    appCache.dadosPorContaAno.set(`${contaId}|${projecao}|${anoOuTag}`, processed);
 }
 
 function processarModoCompetencia(contaId, anoOuTag, response) {
@@ -314,13 +347,10 @@ async function stepCarregarProcessarDados(filtros) {
 
     contas.forEach(contaId => {
         iteradores.forEach(anoOuTag => {
-            // Adiciona prefixo COMP_ se for competência para separar o cache
-            const prefixoCache = isCompetencia ? "COMP_" : "";
-            const chaveCache = isARealizar ? `${contaId}|AREALIZAR` : `${contaId}|${prefixoCache}${anoOuTag}`;
+            const chaveCache = `${contaId}|${appCache.projecao}|${anoOuTag}`;
             
             if (!appCache.dadosPorContaAno.has(chaveCache)) {
                 const anoParaPeriodo = isARealizar ? anoAtual : anoOuTag;
-
                 requisicoesNecessarias.push({ 
                     contaId, 
                     anoOuTag, 
@@ -379,7 +409,7 @@ function stepAtualizarAnosPeloCache(contasSelecionadas) {
     let maxAno = anoAtual;
 
     contasSelecionadas.forEach(contaId => {
-        const dados = appCache.dadosPorContaAno.get(`${contaId}|AREALIZAR`);
+        const dados = appCache.dadosPorContaAno.get(`${contaId}|arealizar|AREALIZAR`);
         
         // --- CORREÇÃO AQUI ---
         // Itera sobre os segmentos de projeto para achar os anos
@@ -412,35 +442,20 @@ function stepAtualizarAnosPeloCache(contasSelecionadas) {
 function stepConsolidarExibir(filtros) {
     const dadosParaJuntar = [];
     let saldoInicialConsolidado = 0;
-
     const { contas, anos, modo, colunas, projetos } = filtros;
 
-    if (appCache.projecao === "realizado" || appCache.projecao === "competencia") {
-        const isCompetencia = appCache.projecao === "competencia";
-        const prefixoCache = isCompetencia ? "COMP_" : "";
-        
-        const anosVisiveis = anos.sort();
-        const primeiroAno = anosVisiveis[0];
-        
-        contas.forEach(contaId => {
-            anosVisiveis.forEach(ano => {
-                // Busca no cache considerando o prefixo
-                const dados = appCache.dadosPorContaAno.get(`${contaId}|${prefixoCache}${ano}`);
-                if (dados) {
-                    dadosParaJuntar.push(dados);
-                    if (ano === primeiroAno) saldoInicialConsolidado += (dados.saldoInicialBase || 0);
-                }
-            });
-        });
-    } else {
-        contas.forEach(contaId => {
-            const dados = appCache.dadosPorContaAno.get(`${contaId}|AREALIZAR`);
+    const iteradores = appCache.projecao === "arealizar" ? ["AREALIZAR"] : anos.sort();
+    const primeiroAno = iteradores[0];
+
+    contas.forEach(contaId => {
+        iteradores.forEach(ano => {
+            const dados = appCache.dadosPorContaAno.get(`${contaId}|${appCache.projecao}|${ano}`);
             if (dados) {
                 dadosParaJuntar.push(dados);
-                saldoInicialConsolidado += (dados.saldoInicialBase || 0);
+                if (ano === primeiroAno) saldoInicialConsolidado += (dados.saldoInicialBase || 0);
             }
         });
-    }
+    });
 
     const dadosEstoque = projetos.map(id => appCache.matrizesPorProjeto.get(id)).filter(Boolean);
 

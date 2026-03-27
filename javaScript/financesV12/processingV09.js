@@ -178,6 +178,123 @@ function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno 
     };
 }
 
+function extrairDadosUnificados(dadosRaw, contaId, anoFiltro = null, tipoData = 'lancamento') {
+    const lancamentosProcessados = [];
+    const titulosEmAberto = [];
+    const capitalDeGiro = [];
+
+    if (!Array.isArray(dadosRaw)) return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
+
+    dadosRaw.forEach(item => {
+        if (!item) return;
+        const natureza = converteNatureza(item.Natureza);
+        let valorTotalPago = 0;
+
+        if (Array.isArray(item.Lancamentos)) {
+            item.Lancamentos.forEach(lancamento => {
+                let dataUsar = lancamento.DataLancamento;
+                if (tipoData === 'emissao') dataUsar = item.DataEmissao || lancamento.DataLancamento;
+                if (tipoData === 'vencimento') dataUsar = item.DataVencimento || lancamento.DataLancamento;
+
+                if (!dataUsar || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
+                valorTotalPago += (lancamento.ValorBaixado || 0);
+
+                let pertenceAoPeriodoDRE = true;
+                if (anoFiltro) {
+                    const parts = dataUsar.split('/');
+                    if (parts.length === 3 && parts[2] !== String(anoFiltro)) pertenceAoPeriodoDRE = false;
+                }
+
+                if (String(lancamento.CODContaC) === String(contaId) && pertenceAoPeriodoDRE) {
+                    lancamentosProcessados.push({
+                        Natureza: natureza,
+                        DataLancamento: dataUsar,
+                        CODContaC: lancamento.CODContaC,
+                        CODProjeto: item.CODProjeto || null,
+                        ValorLancamento: lancamento.ValorLancamento,
+                        CODCategoria: item.Categoria,
+                        Cliente: item.Cliente || "Cliente",
+                        Departamentos: gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento),
+                        obs: lancamento.obs || item.obsTitulo || null,
+                        NUMDoc: item.NF || null
+                    });
+                }
+
+                capitalDeGiro.push({
+                    Natureza: natureza,
+                    DataPagamento: lancamento.DataLancamento,
+                    DataVencimento: item.DataVencimento || null,
+                    DataEmissao: item.DataEmissao || null,
+                    ValorTitulo: lancamento.ValorLancamento,
+                    CODContaEmissao: item.CODContaC || null,
+                    CODContaPagamento: lancamento.CODContaC || null,
+                    CODProjeto: item.CODProjeto || null
+                });
+            });
+        } else {
+            let dataUsar = item.DataPagamento || item.DataLancamento;
+            if (tipoData === 'emissao') dataUsar = item.DataEmissao || item.DataVencimento || item.DataLancamento;
+            if (tipoData === 'vencimento') dataUsar = item.DataVencimento || item.DataLancamento;
+
+            if (!dataUsar || !item.Categoria) return;
+
+            let pertenceAoPeriodoDRE = true;
+            if (anoFiltro) {
+                const parts = dataUsar.split('/');
+                if (parts.length === 3 && parts[2] !== String(anoFiltro)) pertenceAoPeriodoDRE = false;
+            }
+
+            if (String(item.CODContaC) === String(contaId) && pertenceAoPeriodoDRE) {
+                const valor = typeof item.ValorTitulo !== 'undefined' ? item.ValorTitulo : item.ValorLancamento;
+                if (typeof valor !== 'undefined') {
+                    lancamentosProcessados.push({
+                        Natureza: natureza,
+                        DataLancamento: dataUsar,
+                        CODContaC: item.CODContaC,
+                        CODProjeto: item.CODProjeto || null,
+                        ValorLancamento: valor,
+                        CODCategoria: item.Categoria,
+                        Cliente: item.Cliente || "Cliente",
+                        Departamentos: gerarDepartamentosObj(item.Departamentos, valor),
+                        obs: item.obsTitulo || item.obs || null,
+                        NUMDoc: item.NF || null
+                    });
+                }
+            }
+        }
+
+        const valorFaltante = ((item.ValorTitulo || 0) - valorTotalPago);
+        if (valorFaltante >= 0.01 && item.ValorTitulo !== 0) {
+            titulosEmAberto.push({
+                Natureza: natureza,
+                DataLancamento: item.DataVencimento,
+                CODContaC: item.CODContaC,
+                CODProjeto: item.CODProjeto || null,
+                ValorLancamento: valorFaltante,
+                CODCategoria: item.Categoria,
+                Cliente: item.Cliente || "Cliente",
+                Departamentos: gerarDepartamentosObj(item.Departamentos, valorFaltante),
+                obs: item.obsTitulo || null,
+                NUMDoc: item.NF || null
+            });
+            
+            capitalDeGiro.push({
+                Natureza: natureza,
+                DataPagamento: null,
+                DataVencimento: item.DataVencimento || null,
+                DataEmissao: item.DataEmissao || null,
+                ValorTitulo: valorFaltante,
+                CODContaEmissao: item.CODContaC || null,
+                CODContaPagamento: null,
+                CODProjeto: item.CODProjeto || null
+            });
+        }
+    });
+
+    return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
+}
+
+// Atualize as exportações no final do arquivo:
 /**
  * Converte a estrutura de TÍTULOS da API em objetos de negócio.
  * 
@@ -296,6 +413,7 @@ function converteNatureza(naturezaOG){
 
     return natureza;
 }
+
 /**
  * Converte a estrutura de LANÇAMENTOS AVULSOS (manuais).
  * Estes são puramente DRE, então aplicamos o filtro de ano rigorosamente.
@@ -917,4 +1035,4 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
     });
 }
 
-export { processarDadosDaConta, extrairDadosDosTitulos, extrairLancamentosSimples, mergeMatrizes, incrementarMes, extrairDadosPorEmissao };
+export { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, incrementarMes };

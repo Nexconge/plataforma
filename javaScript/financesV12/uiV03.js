@@ -584,7 +584,7 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
 
 // ------ Tabelas (Renderização) ------
 function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
-    const isCompetencia = cache.projecao === 'competencia';
+    const projecao = cache.projecao;
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
@@ -592,20 +592,26 @@ function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
     renderizarDRE(dados.matrizDRE, colunas, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
     
-    if (!isCompetencia) {
-        renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
+    const mostrarCapitalGiro = projecao === 'realizado';
+    const mostrarFluxoDiario = projecao === 'realizado' || projecao === 'arealizar';
+    
+    const styleDisplay = (id, show) => { const el = document.getElementById(id); if(el) el.style.display = show ? '' : 'none'; };
+
+    styleDisplay('tabelaCapitalGiro', mostrarCapitalGiro);
+    if (mostrarCapitalGiro) renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
+
+    styleDisplay('graficos-content', mostrarFluxoDiario);
+    styleDisplay('tabelaFluxoDiario', mostrarFluxoDiario);
+    styleDisplay('resumoFluxoCaixa', mostrarFluxoDiario);
+
+    if (mostrarFluxoDiario) {
         renderizarGraficos(dados, colunas);
-        renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
+        renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, projecao);
         renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
-    } else {
-        ['graficos-content', 'tabelaFluxoDiario', 'resumoFluxoCaixa', 'tabelaCapitalGiro'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none'; // Alternativamente a limpar, para não quebrar layout
-        });
     }
 
     if (colunasPlaceholder && colunasPlaceholder.length > 0) {
-        renderizarColunasPlaceholder(colunasPlaceholder, isCompetencia ? ['tabelaMatriz', 'tabelaCustos'] : idsTabelas);
+        renderizarColunasPlaceholder(colunasPlaceholder, !mostrarFluxoDiario ? ['tabelaMatriz', 'tabelaCustos'] : idsTabelas);
     }
 }
 
