@@ -1,8 +1,8 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
-import { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, incrementarMes} from './processingV09.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV03.js';
+import { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, incrementarMes} from './processingV10.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV04.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -23,7 +23,6 @@ let appCache = {
     projecao: "realizado",
     flagAnos: false
 };
-
 // --- Função Principal de Controle ---
 async function handleFiltroChange() {
     if (appCache.flagAnos) return; 
@@ -88,7 +87,6 @@ async function handleFiltroChange() {
         alternarEstadoCarregamento(false);
     }
 }
-
 // --- Funções Auxiliares do Workflow (Steps) ---
 function validarFiltros(filtros) {
     //Se não houver contas selecionadas, não faz sentido continuar. Exibe tabelas vazias e encerra o processo.
@@ -135,7 +133,6 @@ function parseJSONFlexivel(stringDados) {
         return resultado;
     }
 }
-
 function processarRespostaEstoque(apiResponse) {
     const matrizEstoque = { '(+) Estoque': {} };
     if (apiResponse.response && Array.isArray(apiResponse.response.Saldos)) {
@@ -147,7 +144,6 @@ function processarRespostaEstoque(apiResponse) {
     }
     appCache.matrizesPorProjeto.set(apiResponse.projId, matrizEstoque);
 }
-
 function processarRespostaTitulos(apiResponse) {
     const { reqContext, response } = apiResponse;
     const { contaId, anoOuTag } = reqContext;
@@ -194,86 +190,6 @@ function processarRespostaTitulos(apiResponse) {
 
     const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioCalculado);
     appCache.dadosPorContaAno.set(`${contaId}|${projecao}|${anoOuTag}`, processed);
-}
-
-function processarModoCompetencia(contaId, anoOuTag, response) {
-    let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
-    
-    if (response.dadosCompetencia?.length > 2) {
-        try {
-            dadosInput.lancamentos = extrairDadosPorEmissao(parseJSONFlexivel(response.dadosCompetencia), contaId, anoOuTag);
-        } catch (e) { console.error(`Erro JSON Competencia conta ${contaId}`, e); }
-    }
-
-    const processed = processarDadosDaConta(appCache, dadosInput, contaId, 0);
-    // Salva com o prefixo exclusivo de competência
-    appCache.dadosPorContaAno.set(`${contaId}|COMP_${anoOuTag}`, processed);
-}
-function processarModoRealizado(contaId, anoOuTag, response, saldoInicialApi) {
-    let dadosInput = { lancamentos: [], titulos: [], capitalDeGiro: [] };
-    
-    let lancamentosDeTitulos = [];
-    let lancamentosManuais = [];
-
-    // 1. Processar Títulos (Fonte: dadosCapitalG)
-    if (response.dadosCapitalG?.length > 2) {
-        try {
-            const extractedCG = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosCapitalG), contaId, anoOuTag);
-            lancamentosDeTitulos = extractedCG.lancamentosProcessados;
-            dadosInput.capitalDeGiro = extractedCG.capitalDeGiro;
-        } catch (e) { console.error(`Erro JSON CapitalG conta ${contaId}`, e); }
-    }
-
-    // 2. Processar Lançamentos Manuais (Fonte: dadosLancamentos)
-    if (response.dadosLancamentos?.length > 2) {
-        try {
-            lancamentosManuais = extrairLancamentosSimples(parseJSONFlexivel(response.dadosLancamentos), contaId, anoOuTag);
-        } catch (e) { console.error(`Erro JSON LancamentosManuais conta ${contaId}`, e); }
-    }
-
-    dadosInput.lancamentos = [...lancamentosDeTitulos, ...lancamentosManuais];
-
-    const processed = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicialApi);
-    appCache.dadosPorContaAno.set(`${contaId}|${anoOuTag}`, processed);
-}
-function processarModoARealizar(contaId, anoAtual, response, saldoInicialApi) {
-    // 1. Processa "Realizado CY" apenas para calcular saldo acumulado até hoje
-    let valorAcumuladoRealizado = 0;
-    if (response.dadosRealizado?.length > 2) {
-        try {
-            const extractedCY = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosRealizado), contaId, anoAtual);
-            const processedCY = processarDadosDaConta(appCache, extractedCY, contaId, saldoInicialApi);
-            
-            if (processedCY.isSegmented && processedCY.segments) {
-                Object.values(processedCY.segments).forEach(segmento => {
-                    if (segmento.realizado && segmento.realizado.valorTotal) {
-                        valorAcumuladoRealizado += segmento.realizado.valorTotal;
-                    }
-                });
-            } else if (processedCY.realizado) { 
-                valorAcumuladoRealizado = processedCY.realizado.valorTotal || 0;
-            }
-            
-            if (!appCache.dadosPorContaAno.has(`${contaId}|${anoAtual}`)) {
-                appCache.dadosPorContaAno.set(`${contaId}|${anoAtual}`, processedCY);
-            }
-        } catch (e) { console.error(`Erro JSON RealizadoCY conta ${contaId}`, e); }
-    }
-
-    // 2. Calcula novo saldo inicial para projeção
-    const saldoInicioArealizar = saldoInicialApi + valorAcumuladoRealizado;
-
-    // 3. Processa dados A Realizar
-    let dadosInput = { titulos: [] };
-    if (response.dadosArealizar?.length > 2) {
-        try {
-            const extracted = extrairDadosDosTitulos(parseJSONFlexivel(response.dadosArealizar), contaId);
-            dadosInput.titulos = extracted.titulosEmAberto;
-        } catch (e) { console.error(`Erro JSON Arealizar conta ${contaId}`, e); }
-    }
-
-    const processedArealizar = processarDadosDaConta(appCache, dadosInput, contaId, saldoInicioArealizar);
-    appCache.dadosPorContaAno.set(`${contaId}|AREALIZAR`, processedArealizar);
 }
 
 /**
@@ -333,7 +249,6 @@ async function stepGerenciarPeriodos(contasSelecionadas) {
     atualizarOpcoesAnoSelect(null, minAno, maxAno, elmModo ? elmModo.value : 'mensal', appCache.projecao);
     appCache.flagAnos = false;
 }
-
 async function stepCarregarProcessarDados(filtros) {
     const { contas, anos, projetos } = filtros;
     const requisicoesNecessarias = [];
@@ -395,7 +310,6 @@ async function stepCarregarProcessarDados(filtros) {
         }
     }
 }
-
 function verificarCacheProjetos(projetos) {
     return projetos.every(p => appCache.matrizesPorProjeto.has(p));
 }

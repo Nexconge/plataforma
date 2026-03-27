@@ -12,7 +12,6 @@ const CLASSES_PARA_DETALHAR = new Set(ORDEM_DRE);
 CLASSES_PARA_DETALHAR.add('Outros');
 
 // --- Funções Utilitárias de Data e Chave ---
-
 function parseDate(dateString) {
     if (!dateString || typeof dateString !== 'string') return null;
     const parts = dateString.split('/');
@@ -36,14 +35,12 @@ function incrementarMes(chave) {
     }
     return `${mes.toString().padStart(2, '0')}-${ano}`;
 }
-
 function compararChaves(a, b) {
     const [mesA, anoA] = a.split('-').map(Number);
     const [mesB, anoB] = b.split('-').map(Number);
     if (anoA !== anoB) return anoA - anoB;
     return mesA - mesB;
 }
-
 function getChavesDeControle(chavesSet, modo) {
     let primeiraChave = null, ultimaChave = null;
     
@@ -62,7 +59,6 @@ function getChavesDeControle(chavesSet, modo) {
     }
     return { primeiraChave, ultimaChave };
 }
-
 function gerarPeriodosEntre(primeiraChave, ultimaChave, modo = "mensal") {
     const resultado = [];
     if (!primeiraChave || !ultimaChave) return resultado;
@@ -101,6 +97,7 @@ function segmentarDadosPorProjeto(lista) {
 
     return buckets;
 }
+
 // --- Lógica de Negócio Auxiliar ---
 function gerarDepartamentosObj(departamentos, valorTotalLancamento) {
     if (Array.isArray(departamentos) && departamentos.length > 0) {
@@ -116,12 +113,7 @@ function gerarDepartamentosObj(departamentos, valorTotalLancamento) {
     return [{ CodDpto: "0", ValorDepto: valorTotalLancamento }];
 }
 
-function somaValor(destino, chave, valor) {
-    destino[chave] = (destino[chave] || 0) + valor;
-}
-
 // --- Funções Principais de Processamento ---
-
 /**
  * Função principal que coordena o processamento de uma conta.
  * Processa Realizado, A Realizar e Capital de Giro.
@@ -177,7 +169,6 @@ function processarDadosDaConta(AppCache, dadosApi, contaId, saldoInicialExterno 
         saldoInicialBase: saldoIniCC 
     };
 }
-
 function extrairDadosUnificados(dadosRaw, contaId, anoFiltro = null, tipoData = 'lancamento') {
     const lancamentosProcessados = [];
     const titulosEmAberto = [];
@@ -293,248 +284,12 @@ function extrairDadosUnificados(dadosRaw, contaId, anoFiltro = null, tipoData = 
 
     return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
 }
-
-// Atualize as exportações no final do arquivo:
-/**
- * Converte a estrutura de TÍTULOS da API em objetos de negócio.
- * 
- * - Lançamentos (DRE): Filtrados estritamente pelo ano solicitado.
- * - Capital de Giro: RECEBE TODO O HISTÓRICO (sem filtro), para projetar as curvas de responsabilidade corretamente.
- */
-function extrairDadosDosTitulos(titulosRaw, contaId, anoFiltro = null) {
-    const lancamentosProcessados = [];
-    const titulosEmAberto = [];
-    const capitalDeGiro = [];
-
-
-    if (!Array.isArray(titulosRaw)) {
-        console.error("extrairDadosDosTitulos: Entrada inválida.", titulosRaw);
-        return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
-    }
-    
-    titulosRaw.forEach(titulo => {
-
-        if (!titulo || !titulo.Categoria) return;
-
-        const natureza = converteNatureza(titulo.Natureza)
-        let valorTotalPago = 0;
-        
-        // --- PARTE 1: Processamento de Baixas ---
-        if (Array.isArray(titulo.Lancamentos)) {
-            titulo.Lancamentos.forEach(lancamento => {
-                if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
-
-                // Acumula o valor pago TOTAL (independente do ano) para cálculo de saldo
-                valorTotalPago += (lancamento.ValorBaixado || 0);
-
-                // Verifica filtro de ano APENAS para a DRE
-                let pertenceAoPeriodoDRE = true;
-                if (anoFiltro) {
-                    const parts = lancamento.DataLancamento.split('/');
-                    if (parts.length === 3 && parts[2] !== String(anoFiltro)) {
-                        pertenceAoPeriodoDRE = false;
-                    }
-                }
-                
-                const obs = titulo.obsTitulo ?? lancamento.obs ?? null;
-
-                // A. Adiciona à DRE (Apenas se for do ano selecionado)
-                if (String(lancamento.CODContaC) === contaId && pertenceAoPeriodoDRE) {
-                    const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, lancamento.ValorLancamento);
-                    
-                    lancamentosProcessados.push({
-                        Natureza: natureza,
-                        DataLancamento: lancamento.DataLancamento,
-                        CODContaC: lancamento.CODContaC,
-                        CODProjeto: titulo.CODProjeto || null,
-                        ValorLancamento: lancamento.ValorLancamento,
-                        CODCategoria: titulo.Categoria,
-                        Cliente: titulo.Cliente,
-                        Departamentos: deptosRateio,
-                        obs: obs || null,
-                        NUMDoc: titulo.NF || null
-                    });
-                }
-
-                // B. Adiciona ao Capital de Giro (SEMPRE, para manter histórico de liquidação)
-                capitalDeGiro.push({
-                    Natureza: natureza,
-                    DataPagamento: lancamento.DataLancamento,
-                    DataVencimento: titulo.DataVencimento || null,
-                    DataEmissao: titulo.DataEmissao || null,
-                    ValorTitulo: lancamento.ValorLancamento,
-                    CODContaEmissao: titulo.CODContaC || null,
-                    CODContaPagamento: lancamento.CODContaC || null,
-                    CODProjeto: titulo.CODProjeto || null
-                });
-            });
-        }
-
-        // --- PARTE 2: Processamento de Saldos (A Realizar) ---
-        const valorFaltante = (titulo.ValorTitulo - valorTotalPago);
-        
-        // Se houver saldo, adiciona projeção futura (sempre adicionou sem filtro, mantido)
-        if (valorFaltante >= 0.01 && titulo.ValorTitulo !== 0) {
-            const deptosRateio = gerarDepartamentosObj(titulo.Departamentos, valorFaltante);
-            
-            titulosEmAberto.push({
-                Natureza: natureza,
-                DataLancamento: titulo.DataVencimento,
-                CODContaC: titulo.CODContaC,
-                CODProjeto: titulo.CODProjeto || null,
-                ValorLancamento: valorFaltante,
-                CODCategoria: titulo.Categoria,
-                Cliente: titulo.Cliente || "Cliente",
-                Departamentos: deptosRateio,
-                obs: titulo.obsTitulo || null,
-                NUMDoc: titulo.NF || null
-            });
-            
-            capitalDeGiro.push({
-                Natureza: natureza,
-                DataPagamento: null,
-                DataVencimento: titulo.DataVencimento || null,
-                DataEmissao: titulo.DataEmissao || null,
-                ValorTitulo: valorFaltante,
-                CODContaEmissao: titulo.CODContaC || null,
-                CODContaPagamento: null,
-                CODProjeto: titulo.CODProjeto || null
-            });
-        }
-    });
-
-
-    return { lancamentosProcessados, titulosEmAberto, capitalDeGiro };
-}
-
 function converteNatureza(naturezaOG){
     let natureza = 'R'
     if(naturezaOG === 'D' || naturezaOG === 'P') natureza = 'P'
 
     return natureza;
 }
-
-/**
- * Converte a estrutura de LANÇAMENTOS AVULSOS (manuais).
- * Estes são puramente DRE, então aplicamos o filtro de ano rigorosamente.
- */
-function extrairLancamentosSimples(lancamentosRaw, contaId, anoFiltro = null) {
-    const lancamentosProcessados = [];
-
-    if (!Array.isArray(lancamentosRaw)) {
-        return lancamentosProcessados;
-    }
-
-    lancamentosRaw.forEach(item => {
-        if (!item || !Array.isArray(item.Lancamentos)) return;
-        const natureza = converteNatureza(item.Natureza) //Natureza pertence ao item não ao lançamento
-
-        item.Lancamentos.forEach(lancamento => {
-            if (!lancamento.DataLancamento || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
-           
-            // Filtro de Ano (Obrigatório para DRE)
-            if (anoFiltro) {
-                const parts = lancamento.DataLancamento.split('/');
-                if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
-            }
-
-            if (String(lancamento.CODContaC) === contaId) {
-                const deptosRateio = gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento);
-                
-                lancamentosProcessados.push({
-                    Natureza: natureza,
-                    DataLancamento: lancamento.DataLancamento,
-                    CODContaC: lancamento.CODContaC,
-                    CODProjeto: item.CODProjeto || null,
-                    ValorLancamento: lancamento.ValorLancamento,
-                    CODCategoria: item.Categoria,
-                    Cliente: item.Cliente,
-                    Departamentos: deptosRateio,
-                    obs: lancamento.obs || null,
-                    NUMDoc: item.NF || null
-                });
-            }
-        });
-    });
-
-    return lancamentosProcessados;
-}
-function extrairDadosPorEmissao(dadosRaw, contaId, anoFiltro = null) {
-    const lancamentosProcessados = [];
-    
-    if (!Array.isArray(dadosRaw)) return lancamentosProcessados;
-
-    dadosRaw.forEach(item => {
-        if (!item) return;
-        
-        const natureza = converteNatureza(item.Natureza);
-
-        // Se o JSON possuir o array interno de Lancamentos (mesmo formato que o dadosLancamentos)
-        if (Array.isArray(item.Lancamentos)) {
-            item.Lancamentos.forEach(lancamento => {
-                // Tenta pegar a DataEmissao do item principal, se não houver pega a do lançamento
-                const dataUsar = item.DataEmissao || lancamento.DataLancamento;
-                
-                if (!dataUsar || !lancamento.CODContaC || typeof lancamento.ValorLancamento === 'undefined') return;
-
-                if (anoFiltro) {
-                    const parts = dataUsar.split('/');
-                    if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
-                }
-
-                if (String(lancamento.CODContaC) === contaId) {
-                    const deptosRateio = gerarDepartamentosObj(item.Departamentos, lancamento.ValorLancamento);
-                    
-                    lancamentosProcessados.push({
-                        Natureza: natureza,
-                        DataLancamento: dataUsar, // Salva como "DataLancamento" para a DRE ler corretamente
-                        CODContaC: lancamento.CODContaC,
-                        CODProjeto: item.CODProjeto || null,
-                        ValorLancamento: lancamento.ValorLancamento,
-                        CODCategoria: item.Categoria,
-                        Cliente: item.Cliente || "Cliente",
-                        Departamentos: deptosRateio,
-                        obs: lancamento.obs || item.obsTitulo || null,
-                        NUMDoc: item.NF || null
-                    });
-                }
-            });
-        } else {
-            // Fallback (se por acaso a API mandar em formato plano de Titulos)
-            const dataUsar = item.DataEmissao || item.DataVencimento || item.DataLancamento;
-            
-            if (!dataUsar || !item.Categoria) return;
-
-            if (anoFiltro) {
-                const parts = dataUsar.split('/');
-                if (parts.length === 3 && parts[2] !== String(anoFiltro)) return;
-            }
-
-            if (String(item.CODContaC) === contaId) {
-                const valor = typeof item.ValorTitulo !== 'undefined' ? item.ValorTitulo : item.ValorLancamento;
-                if (typeof valor === 'undefined') return;
-
-                const deptosRateio = gerarDepartamentosObj(item.Departamentos, valor);
-                
-                lancamentosProcessados.push({
-                    Natureza: natureza,
-                    DataLancamento: dataUsar, 
-                    CODContaC: item.CODContaC,
-                    CODProjeto: item.CODProjeto || null,
-                    ValorLancamento: valor,
-                    CODCategoria: item.Categoria,
-                    Cliente: item.Cliente || "Cliente",
-                    Departamentos: deptosRateio,
-                    obs: item.obsTitulo || item.obs || null,
-                    NUMDoc: item.NF || null
-                });
-            }
-        }
-    });
-
-    return lancamentosProcessados;
-}
-
 /**
  * Processa uma lista de lançamentos para gerar Matriz DRE e Detalhamento.
  * Usado tanto para Realizado quanto A Realizar.
@@ -765,7 +520,6 @@ function processarCapitalDeGiro(dadosBase, capitalDeGiro, contaId, saldoInicialP
 }
 
 // --- Função de Consolidação (Merge) ---
-
 function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosEstoque, saldoInicialExterno = null, projetosFiltro = []) {
     
     const setProjetosPermitidos = new Set((projetosFiltro || []).map(String));
@@ -835,7 +589,6 @@ function mergeMatrizes(dadosProcessados, modo, colunasVisiveis, projecao, dadosE
 }
 
 // --- Funções Auxiliares de Merge ---
-
 function mergeDadosMensais(listaDeDadosProcessados, projecao, dadosEstoque) {
     const monthlyMerged = { 
         matrizDRE: {}, matrizDetalhamento: {},
@@ -877,7 +630,6 @@ function mergeDadosMensais(listaDeDadosProcessados, projecao, dadosEstoque) {
 
     return { monthlyMerged, todasChaves };
 }
-
 function mergeGenericoMensal(origem, destino) {
     for (const chave in origem) {
         if (!destino[chave]) destino[chave] = {};
@@ -886,7 +638,6 @@ function mergeGenericoMensal(origem, destino) {
         }
     }
 }
-
 function mergeDetalhamentoNivel(destino, origem) {
     for (const key in origem) {
         if (!destino[key]) destino[key] = JSON.parse(JSON.stringify(origem[key]));
@@ -898,7 +649,6 @@ function mergeDetalhamentoNivel(destino, origem) {
         }
     }
 }
-
 function agregarDadosParaAnual(monthlyData, projecao) {
     const annualData = { 
         matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {},
