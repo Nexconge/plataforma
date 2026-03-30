@@ -216,6 +216,11 @@ function configurarFiltros(appCache, anosDisp, callback) {
     const btnRealizado = document.getElementById('btnRealizado');
     const btnPorCompetencia = document.getElementById('btnPorCompetencia');
 
+    const setProj = (t) => {
+        appCache.projecao = t;
+        callback();
+    };
+
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
     if(btnPorCompetencia) btnPorCompetencia.onclick = () => setProj("competencia");
@@ -248,7 +253,7 @@ function configurarFiltros(appCache, anosDisp, callback) {
             const anoSelecionado = el.anoSelect.value;
             const modoAtual = el.modo.value;
             
-            // MAGIA AQUI: Converte "2026" para o formato de range que o sistema novo espera
+            //Converte "2026" para o formato de range que o sistema novo espera
             sincronizarEstadoComSelectAntigo(anoSelecionado, modoAtual);
             
             callback();
