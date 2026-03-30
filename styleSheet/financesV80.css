@@ -300,14 +300,34 @@ tr[data-type="total-negrito"] {
 #tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: var(--font); }
 
 /* Filtro */
-#fd-periodo-container { display: flex; align-items: center; gap: 5px; }
-#fd-periodo-label {
-  font-size: 0.9em; cursor: pointer; white-space: nowrap;
-  background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;
+.th-filtro-fluxo {
+    padding: 8px 12px;
+    background-color: transparent;
+    border-bottom: none;
+    text-align: left;
 }
-#fd-periodo-label:hover { background: rgba(255,255,255,0.3); }
 
-.linha-sem-dados td { height: 350px; vertical-align: top; padding-top: 40px; color: #666; text-align: center; }
+.input-filtro-tabela {
+    width: 100%;
+    max-width: 350px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease-in-out;
+    background-color: #ffffff;
+    color: #374151;
+}
+
+.input-filtro-tabela::placeholder {
+    color: #9ca3af;
+}
+
+.input-filtro-tabela:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
 
 /* =========================================================
    DROPDOWN

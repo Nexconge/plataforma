@@ -649,6 +649,7 @@ function renderizarDRE(matriz, colunas, userType) {
         }
     });
 }
+
 // Detalhamento
 function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     const tabela = document.getElementById('tabelaCustos');
@@ -782,6 +783,7 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
         });
     });
 }
+
 // Capital de Giro
 function renderizarCapitalGiro(matriz, colunas, estoque) {
     const t = document.getElementById('tabelaCapitalGiro');
@@ -880,6 +882,7 @@ function criarLinhaEspacadora(target, colunas) {
     r.dataset.type = 'spacer';
     r.innerHTML = `<td colspan="${colunas.length + 2}"></td>`;
 }
+
 // ------ Gráficos ------
 function renderizarGraficos(dados, colunas) {
     if (!dados?.matrizDRE || !window.Chart) {
@@ -1036,6 +1039,7 @@ function configurarAbasGraficos() {
         };
     });
 }
+
 // ------ Fluxo Diário ------
 function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const tb = document.getElementById('tabelaFluxoDiario');
@@ -1044,25 +1048,16 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     
     if (!colunas || !colunas.length) return;
 
-    // 1. Detecta se estamos no modo Anual (strings de 4 dígitos)
     const isAnual = colunas[0].length === 4;
-
     const dados = [];
     const colSet = new Set(colunas);
     
-    // 2. Filtragem dos dados
     fluxo.forEach(x => {
-        // Extrai partes da data do lançamento (DD/MM/AAAA)
         const parts = x.data.split('/');
         const mes = parts[1];
         const ano = parts[2];
-        
-        // Chave usada para ordenação e display (sempre MM-AAAA)
         const k = `${mes}-${ano}`;
         
-        // Lógica de inclusão:
-        // Se for Anual: Verifica se o ANO (2026) está nas colunas
-        // Se for Mensal: Verifica se a chave completa (05-2026) está nas colunas
         if (isAnual) {
             if (colSet.has(ano)) dados.push({...x, k});
         } else {
@@ -1070,12 +1065,18 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
         }
     });
 
-    const tbody = tb.createTBody();
-    
-    // 3. Cabeçalho
     const thead = tb.createTHead();
-    const trH = thead.insertRow();
+
+    // 1. Linha do input de busca (Filtro)
+    const trFiltro = thead.insertRow();
+    const thFiltro = document.createElement('th');
+    thFiltro.colSpan = 4;
+    thFiltro.className = 'th-filtro-fluxo';
+    thFiltro.innerHTML = `<input type="text" id="inputFiltroFluxo" class="input-filtro-tabela" placeholder="Buscar lançamento...">`;
+    trFiltro.appendChild(thFiltro);
     
+    // 2. Cabeçalho das colunas
+    const trH = thead.insertRow();
     const thData = document.createElement('th');
     thData.innerHTML = `Data`;
     trH.appendChild(thData);
@@ -1084,21 +1085,28 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
         const th = document.createElement('th'); th.textContent = t; trH.appendChild(th);
     });
 
-    // 4. Definição dos Limites Visuais (Para a função renderFD funcionar corretamente)
-    // A função renderFD exige o formato MM-AAAA para calcular a ordem cronológica.
-    let iniVis, fimVis;
+    const tbody = tb.createTBody();
 
-    if (isAnual) {
-        // Se é 2026 a 2028, transformamos em "01-2026" a "12-2028"
-        iniVis = `01-${colunas[0]}`;
-        fimVis = `12-${colunas[colunas.length - 1]}`;
-    } else {
-        iniVis = colunas[0];
-        fimVis = colunas[colunas.length - 1];
-    }
+    let iniVis = isAnual ? `01-${colunas[0]}` : colunas[0];
+    let fimVis = isAnual ? `12-${colunas[colunas.length - 1]}` : colunas[colunas.length - 1];
 
-    // Renderiza passando os limites convertidos
     renderFD(tbody, dados, saldoIni, iniVis, fimVis);
+
+    // 3. Evento de digitação para filtrar as linhas
+    const inputFiltro = document.getElementById('inputFiltroFluxo');
+    if (inputFiltro) {
+        inputFiltro.addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const linhas = tbody.querySelectorAll('tr');
+            linhas.forEach(linha => {
+                // Ignora linhas de colspan (sem dados) ou a linha de Saldo Inicial
+                if (linha.querySelector('td')?.colSpan > 1 || linha.textContent.includes('Saldo Inicial')) return;
+                
+                const textoLinha = linha.textContent.toLowerCase();
+                linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+            });
+        });
+    }
 }
 function renderFD(tbody, itens, baseSaldo, ini, fim) {
     tbody.innerHTML = '';
@@ -1128,7 +1136,8 @@ function compKeys(a, b) {
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
 }
-// ------ Fluxo Diário Resumido -----
+
+// ------ DRE Resumido -----
 function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
     const tabela = document.getElementById('resumoFluxoCaixa');
     if (!tabela) return;
