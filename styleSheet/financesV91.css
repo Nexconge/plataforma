@@ -353,7 +353,6 @@ tr[data-type="total-negrito"] {
   bottom: 0;
   background-color: var(--primary);
   color: white;
-  padding-right: 90px;
   z-index: 10;
   font-weight: bold;
   border-bottom-left-radius: 10px;

@@ -1101,9 +1101,9 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     if (!tfoot) tfoot = tb.createTFoot();
     tfoot.innerHTML = `
         <tr class="tabela-FD-footer">
-            <td colspan="4" id="containerTotalFiltro" style="text-align: right; padding-right: 16px;">
-                &nbsp;
-            </td>
+            <td colspan="2" id="labelTotalFiltro" style="text-align: right; padding-right: 16px;"></td>
+            <td id="containerTotalFiltro" style="text-align: right; padding-right: 16px;"></td>
+            <td></td>
         </tr>
     `;
 
@@ -1114,7 +1114,8 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
             const linhas = tbody.querySelectorAll('tr');
             let total = 0;
             const temFiltro = termo.length > 0;
-
+            
+            
             linhas.forEach(linha => {
                 if (linha.querySelector('td')?.colSpan > 1 || linha.textContent.includes('Saldo Inicial')) return;
                 
@@ -1130,10 +1131,14 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
             });
             atualizarZebrado(tbody);
             const containerTotal = document.getElementById('containerTotalFiltro');
+            const labelTotal = document.getElementById('labelTotalFiltro');
+
             if (temFiltro) {
-                containerTotal.innerHTML = `TOTAL FILTRADO: <strong class="valor-total-filtro">${formatarValor(total, 2)}</strong>`;
+                labelTotal.innerHTML = 'TOTAL FILTRADO:';
+                containerTotal.innerHTML = `<strong class="valor-total-filtro">${formatarValor(total, 2)}</strong>`;
             } else {
-                containerTotal.innerHTML = '&nbsp;';
+                labelTotal.innerHTML = '';
+                containerTotal.innerHTML = '';
             }
         });
     }
