@@ -300,6 +300,13 @@ tr[data-type="total-negrito"] {
 #tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: var(--font); }
 
 /* Filtro */
+.filtro-fluxo-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
 .th-filtro-fluxo {
     padding: 8px 12px;
     background-color: #ffffff; 
@@ -321,6 +328,7 @@ tr[data-type="total-negrito"] {
     transition: all 0.2s ease-in-out;
     background-color: #ffffff;
     color: #374151;
+    margin-left: auto;
 }
 
 .input-filtro-tabela::placeholder {
@@ -332,11 +340,10 @@ tr[data-type="total-negrito"] {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-/* Correção da borda do cabeçalho para encaixe com o filtro */
 #tabelaFluxoDiario thead tr:nth-child(2) th {
     border-radius: 0 !important;
     position: sticky;
-    top: 56px; /* Ajuste este valor conforme a altura exata do filtro */
+    top: 56px; 
     z-index: 19;
 }
 

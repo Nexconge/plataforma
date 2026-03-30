@@ -1067,12 +1067,18 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
 
     const thead = tb.createTHead();
 
-    // 1. Linha do input de busca (Filtro)
     const trFiltro = thead.insertRow();
     const thFiltro = document.createElement('th');
     thFiltro.colSpan = 4;
     thFiltro.className = 'th-filtro-fluxo';
-    thFiltro.innerHTML = `<input type="text" id="inputFiltroFluxo" class="input-filtro-tabela" placeholder="Buscar lançamento...">`;
+    thFiltro.innerHTML = `
+        <div class="filtro-fluxo-container">
+            <div id="containerTotalFiltro" style="display: none; font-size: 14px; font-weight: normal;">
+                Total Filtrado: <strong id="valorTotalFiltro" style="font-size: 15px;">0,00</strong>
+            </div>
+            <input type="text" id="inputFiltroFluxo" class="input-filtro-tabela" placeholder="Buscar lançamento...">
+        </div>
+    `;
     trFiltro.appendChild(thFiltro);
     
     // 2. Cabeçalho das colunas
@@ -1102,6 +1108,7 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
         </tr>
     `;
 
+    // 3. Evento de digitação para filtrar as linhas e somar
     const inputFiltro = document.getElementById('inputFiltroFluxo');
     if (inputFiltro) {
         inputFiltro.addEventListener('input', (e) => {
@@ -1124,15 +1131,15 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
                 }
             });
 
-            const linhaTotal = document.getElementById('linhaTotalFiltro');
+            const containerTotal = document.getElementById('containerTotalFiltro');
             const celulaValorTotal = document.getElementById('valorTotalFiltro');
             
             if (temFiltro) {
-                linhaTotal.style.display = '';
+                containerTotal.style.display = 'block';
                 celulaValorTotal.textContent = formatarValor(total, 2);
                 celulaValorTotal.className = total >= 0 ? 'texto-verde' : 'texto-vermelho';
             } else {
-                linhaTotal.style.display = 'none';
+                containerTotal.style.display = 'none';
             }
         });
     }
