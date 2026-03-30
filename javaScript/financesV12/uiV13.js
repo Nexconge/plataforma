@@ -1137,8 +1137,8 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
                 labelTotal.innerHTML = 'TOTAL FILTRADO:';
                 containerTotal.innerHTML = `<strong class="valor-total-filtro">${formatarValor(total, 2)}</strong>`;
             } else {
-                labelTotal.innerHTML = '';
-                containerTotal.innerHTML = '';
+                labelTotal.innerHTML = '&nbsp;';
+                containerTotal.innerHTML = '&nbsp;';
             }
         });
     }
