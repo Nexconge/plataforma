@@ -1068,21 +1068,19 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const thead = tb.createTHead();
 
     const trFiltro = thead.insertRow();
+    trFiltro.className = 'tabela-FD-header-filtros';
     const thFiltro = document.createElement('th');
     thFiltro.colSpan = 4;
     thFiltro.className = 'th-filtro-fluxo';
     thFiltro.innerHTML = `
         <div class="filtro-fluxo-container">
-            <div id="containerTotalFiltro" class="container-total-filtro" style="display: none;">
-                TOTAL FILTRADO: <strong id="valorTotalFiltro" class="valor-total-filtro">0,00</strong>
-            </div>
             <input type="text" id="inputFiltroFluxo" class="input-filtro-tabela" placeholder="Buscar lançamento...">
         </div>
     `;
     trFiltro.appendChild(thFiltro);
     
-    // 2. Cabeçalho das colunas
     const trH = thead.insertRow();
+    trH.className = 'tabela-FD-header-dados';
     const thData = document.createElement('th');
     thData.innerHTML = `Data`;
     trH.appendChild(thData);
@@ -1101,14 +1099,13 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     let tfoot = tb.querySelector('tfoot');
     if (!tfoot) tfoot = tb.createTFoot();
     tfoot.innerHTML = `
-        <tr id="linhaTotalFiltro" style="display: none; background-color: #f3f4f6; font-weight: bold;">
-            <td colspan="2" style="text-align: right;">Total Filtrado:</td>
-            <td id="valorTotalFiltro" style="text-align: right; color: #374151;">0,00</td>
-            <td></td>
+        <tr class="tabela-FD-footer">
+            <td colspan="4" id="containerTotalFiltro" style="text-align: right; padding-right: 16px;">
+                &nbsp;
+            </td>
         </tr>
     `;
 
-    // 3. Evento de digitação para filtrar as linhas e somar
     const inputFiltro = document.getElementById('inputFiltroFluxo');
     if (inputFiltro) {
         inputFiltro.addEventListener('input', (e) => {
@@ -1132,14 +1129,11 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
             });
 
             const containerTotal = document.getElementById('containerTotalFiltro');
-            const celulaValorTotal = document.getElementById('valorTotalFiltro');
             
             if (temFiltro) {
-                containerTotal.style.display = 'block';
-                celulaValorTotal.textContent = formatarValor(total, 2);
-                celulaValorTotal.className = 'valor-total-filtro'; 
+                containerTotal.innerHTML = `TOTAL FILTRADO: <strong class="valor-total-filtro">${formatarValor(total, 2)}</strong>`;
             } else {
-                containerTotal.style.display = 'none';
+                containerTotal.innerHTML = '&nbsp;';
             }
         });
     }
