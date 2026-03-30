@@ -302,9 +302,12 @@ tr[data-type="total-negrito"] {
 /* Filtro */
 .th-filtro-fluxo {
     padding: 8px 12px;
-    background-color: transparent;
+    background-color: #ffffff; 
     border-bottom: none;
     text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
 .input-filtro-tabela {
@@ -332,6 +335,9 @@ tr[data-type="total-negrito"] {
 /* Correção da borda do cabeçalho para encaixe com o filtro */
 #tabelaFluxoDiario thead tr:nth-child(2) th {
     border-radius: 0 !important;
+    position: sticky;
+    top: 56px; /* Ajuste este valor conforme a altura exata do filtro */
+    z-index: 19;
 }
 
 #tabelaFluxoDiario thead tr:nth-child(2) th:first-child {
