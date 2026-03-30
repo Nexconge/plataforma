@@ -7,7 +7,6 @@
   --bg-light: #F7F7F7;
   --text: #333;
   --font: 'Nunito', sans-serif;
-  --border: 1px solid #C7C7C7;
 }
 
 html { overflow-y: scroll; }
@@ -23,7 +22,7 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 
 .custom-select {
   width: 300px; height: 30px;
-  border: var(--border); border-radius: 4px;
+  border: 1px solid #C7C7C7; border-radius: 4px;
   background-color: white;
   text-align: center; font-family: var(--font);
   appearance: none; -webkit-appearance: none;
@@ -33,7 +32,7 @@ label[for="modoSelect"], label[for="anoSelect"] { width: 100px; display: inline-
 
 .multiSelectCustom {
   width: 300px; height: 85px;
-  border: var(--border); border-radius: 4px; background: white;
+  border: 1px solid #C7C7C7; border-radius: 4px; background: white;
   overflow-y: auto;
 }
 .multiSelectCustom option { padding: 5px; font-family: var(--font); }
@@ -62,7 +61,7 @@ table:not(#tabelaFluxoDiario) tbody td {
   vertical-align: middle; 
   text-align: right; 
   padding-right: 10px; 
-  border-bottom: var(--border);
+  border-bottom: 1px solid var(--bg-light);
   height: 30px; /* Garante altura mínima para alinhamento */
 }
 
@@ -155,7 +154,7 @@ tr[data-type="header-group"] td:first-child:hover {
 /* --- Nível 0: Grupo/Classe Principal --- */
 tr[data-type="header-group"] {
   background-color: #EBF5FC; /* Azul muito suave (Baseado no Primary) */
-  border-bottom: var(--border);
+  border-bottom: 2px solid #fff;
 }
 tr[data-type="header-group"] td:first-child {
   color: var(--primary-dark);
@@ -224,7 +223,7 @@ tr[data-indent="lancamento"] td:first-child::before {
   position: absolute;
   left: 60px; top: 50%; 
   width: 8px; height: 1px;
-  border-bottom: var(--border) dashed;
+  border-bottom: 1px dotted #999;
 }
 
 /* Botão de Expandir */
@@ -280,7 +279,7 @@ tr[data-type="total-negrito"] {
 #tabelaFluxoDiario thead th:first-child { width: 100px; }
 #tabelaFluxoDiario thead th:nth-child(2) { text-align: center; width: 60%; }
 
-#tabelaFluxoDiario td { padding: 8px 16px; border-bottom: var(--border); }
+#tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid #ddd; }
 #tabelaFluxoDiario tbody tr:nth-child(even) { background-color: #f5f5f5; }
 #tabelaFluxoDiario tbody tr:hover { background-color: #e6f0ff; }
 #tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: var(--font); }
@@ -302,7 +301,7 @@ tr[data-type="total-negrito"] {
     width: 100%;
     max-width: 350px;
     padding: 10px 14px;
-    border: var(--border);
+    border: 1px solid #d1d5db;
     border-radius: 6px;
     font-size: 14px;
     outline: none;
@@ -343,7 +342,7 @@ tr[data-type="total-negrito"] {
 .tabela-FD-header-dados th {
   background-color: white;
   color: black;
-  border-bottom: var(--border);
+  border-bottom: 1px solid #d1d5db;
   position: sticky;
   top: 56px; 
   z-index: 19;
