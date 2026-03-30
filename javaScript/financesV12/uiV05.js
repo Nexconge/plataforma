@@ -216,15 +216,6 @@ function configurarFiltros(appCache, anosDisp, callback) {
     const btnRealizado = document.getElementById('btnRealizado');
     const btnPorCompetencia = document.getElementById('btnPorCompetencia');
 
-    const setProj = (t) => {
-        appCache.projecao = t;
-        const divCG = document.getElementById('groupCapitalGiro');
-        const hideExtras = (t === "arealizar" || t === "competencia");
-        
-        if(divCG) divCG.style.display = hideExtras ? "none" : "";
-        callback();
-    };
-
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
     if(btnPorCompetencia) btnPorCompetencia.onclick = () => setProj("competencia");
