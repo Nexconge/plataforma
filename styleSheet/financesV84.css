@@ -355,6 +355,18 @@ tr[data-type="total-negrito"] {
     border-top-right-radius: 0 !important;
 }
 
+.container-total-filtro {
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #000000;
+}
+
+.valor-total-filtro {
+    font-size: 18px;
+    color: #000000;
+}
+
 /* =========================================================
    DROPDOWN
 ========================================================= */

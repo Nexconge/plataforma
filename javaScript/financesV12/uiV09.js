@@ -1073,8 +1073,8 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     thFiltro.className = 'th-filtro-fluxo';
     thFiltro.innerHTML = `
         <div class="filtro-fluxo-container">
-            <div id="containerTotalFiltro" style="display: none; font-size: 14px; font-weight: normal;">
-                Total Filtrado: <strong id="valorTotalFiltro" style="font-size: 15px;">0,00</strong>
+            <div id="containerTotalFiltro" class="container-total-filtro" style="display: none;">
+                TOTAL FILTRADO: <strong id="valorTotalFiltro" class="valor-total-filtro">0,00</strong>
             </div>
             <input type="text" id="inputFiltroFluxo" class="input-filtro-tabela" placeholder="Buscar lançamento...">
         </div>
@@ -1137,7 +1137,7 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
             if (temFiltro) {
                 containerTotal.style.display = 'block';
                 celulaValorTotal.textContent = formatarValor(total, 2);
-                celulaValorTotal.className = total >= 0 ? 'texto-verde' : 'texto-vermelho';
+                celulaValorTotal.className = 'valor-total-filtro'; 
             } else {
                 containerTotal.style.display = 'none';
             }
