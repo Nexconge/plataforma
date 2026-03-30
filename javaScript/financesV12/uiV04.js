@@ -214,16 +214,20 @@ function configurarFiltros(appCache, anosDisp, callback) {
     // 2. Listeners Comuns
     const btnARealizar = document.getElementById('btnARealizar');
     const btnRealizado = document.getElementById('btnRealizado');
+    const btnPorCompetencia = document.getElementById('btnPorCompetencia');
 
     const setProj = (t) => {
         appCache.projecao = t;
         const divCG = document.getElementById('groupCapitalGiro');
-        if(divCG) divCG.style.display = (t === "arealizar") ? "none" : "";
+        const hideExtras = (t === "arealizar" || t === "competencia");
+        
+        if(divCG) divCG.style.display = hideExtras ? "none" : "";
         callback();
     };
 
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
+    if(btnPorCompetencia) btnPorCompetencia.onclick = () => setProj("competencia");
     
     el.conta.onchange = callback;
     
@@ -309,7 +313,6 @@ function resetarSelecaoPeloModo(modo, usaNovo = true) {
         sincronizarEstadoComSelectAntigo(ano, modo);
     }
 }
-
 function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
     const usaNovo = usarNovoRangePicker(EstadoData.userTypeAtual);
     
@@ -534,7 +537,6 @@ function tratarCliqueData(chave, modo) {
     const drop = document.getElementById('globalDateDropdown');
     if (drop.style.display === 'block') montarGridCalendario(drop);
 }
-
 function obterFiltrosAtuais() {
     const el = { modo: document.getElementById('modoSelect'), proj: document.getElementById('projSelect'), conta: document.getElementById('contaSelect') };
     
@@ -563,7 +565,6 @@ function obterFiltrosAtuais() {
         colunas 
     };
 }
-
 function atualizarFiltroContas(select, pMap, cMap, pSel) {
     const permitidas = new Set();
     pSel.forEach(id => pMap.get(String(id))?.contas.forEach(c => permitidas.add(c)));
@@ -577,28 +578,39 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
     }
 }
 
-
-// ------ Tabelas (Renderização) ------
+// ------ Renderização ------
 function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
+    const projecao = cache.projecao;
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
 
     renderizarDRE(dados.matrizDRE, colunas, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
-    renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
     
-    renderizarGraficos(dados, colunas);
-    renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
-    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+    const mostrarCapitalGiro = projecao === 'realizado';
+    const mostrarFluxoDiario = projecao === 'realizado' || projecao === 'arealizar';
+    
+    const styleDisplay = (id, show) => { const el = document.getElementById(id); if(el) el.style.display = show ? '' : 'none'; };
 
-    // Adiciona as colunas vazias nas tabelas que possuem estrutura de colunas temporais
+    styleDisplay('tabelaCapitalGiro', mostrarCapitalGiro);
+    if (mostrarCapitalGiro) renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
+
+    styleDisplay('graficos-content', mostrarFluxoDiario);
+    styleDisplay('tabelaFluxoDiario', mostrarFluxoDiario);
+    styleDisplay('resumoFluxoCaixa', mostrarFluxoDiario);
+
+    if (mostrarFluxoDiario) {
+        renderizarGraficos(dados, colunas);
+        renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, projecao);
+        renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+    }
+
     if (colunasPlaceholder && colunasPlaceholder.length > 0) {
-        renderizarColunasPlaceholder(colunasPlaceholder, idsTabelas);
+        renderizarColunasPlaceholder(colunasPlaceholder, !mostrarFluxoDiario ? ['tabelaMatriz', 'tabelaCustos'] : idsTabelas);
     }
 }
-
-// 1. DRE
+// DRE
 function renderizarDRE(matriz, colunas, userType) {
     const tabela = document.getElementById('tabelaMatriz');
 
@@ -646,8 +658,7 @@ function renderizarDRE(matriz, colunas, userType) {
         }
     });
 }
-
-// 2. Detalhamento
+// Detalhamento
 function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     const tabela = document.getElementById('tabelaCustos');
 
@@ -692,7 +703,6 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
         }
     });
 }
-
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     const temDadosNoPeriodo = colunas.some(col => dados[col]);
     if (!temDadosNoPeriodo) return;
@@ -781,8 +791,7 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
         });
     });
 }
-
-// 3. Capital de Giro
+// Capital de Giro
 function renderizarCapitalGiro(matriz, colunas, estoque) {
     const t = document.getElementById('tabelaCapitalGiro');
     // Verifica se os elementos necessários existem antes de continuar
@@ -880,7 +889,6 @@ function criarLinhaEspacadora(target, colunas) {
     r.dataset.type = 'spacer';
     r.innerHTML = `<td colspan="${colunas.length + 2}"></td>`;
 }
-
 // ------ Gráficos ------
 function renderizarGraficos(dados, colunas) {
     if (!dados?.matrizDRE || !window.Chart) {
@@ -1037,7 +1045,6 @@ function configurarAbasGraficos() {
         };
     });
 }
-
 // ------ Fluxo Diário ------
 function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     const tb = document.getElementById('tabelaFluxoDiario');
@@ -1130,7 +1137,6 @@ function compKeys(a, b) {
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
 }
-
 // ------ Fluxo Diário Resumido -----
 function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
     const tabela = document.getElementById('resumoFluxoCaixa');
@@ -1217,7 +1223,6 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
 
     tabela.innerHTML = htmlHeader + htmlBody;
 }
-
 // ------ Placeholders para colunas sem dados ------
 /**
  * Insere colunas vazias antes da coluna TOTAL, mantendo a formatação visual.

@@ -45,7 +45,9 @@ async function buscarTitulos(filtros) {
     const payload = {
         conta: String(filtros.conta),
         periodo: filtros.periodo,
-        Arealizar: filtros.arealizar
+        realizado: filtros.realizado,
+        arealizar: filtros.arealizar,
+        poremissao: filtros.poremissao
     };
 
     try {
