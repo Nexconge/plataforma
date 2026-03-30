@@ -1092,22 +1092,52 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
 
     renderFD(tbody, dados, saldoIni, iniVis, fimVis);
 
-    // 3. Evento de digitação para filtrar as linhas
+    let tfoot = tb.querySelector('tfoot');
+    if (!tfoot) tfoot = tb.createTFoot();
+    tfoot.innerHTML = `
+        <tr id="linhaTotalFiltro" style="display: none; background-color: #f3f4f6; font-weight: bold;">
+            <td colspan="2" style="text-align: right;">Total Filtrado:</td>
+            <td id="valorTotalFiltro" style="text-align: right; color: #374151;">0,00</td>
+            <td></td>
+        </tr>
+    `;
+
     const inputFiltro = document.getElementById('inputFiltroFluxo');
     if (inputFiltro) {
         inputFiltro.addEventListener('input', (e) => {
             const termo = e.target.value.toLowerCase();
             const linhas = tbody.querySelectorAll('tr');
+            let total = 0;
+            const temFiltro = termo.length > 0;
+
             linhas.forEach(linha => {
-                // Ignora linhas de colspan (sem dados) ou a linha de Saldo Inicial
                 if (linha.querySelector('td')?.colSpan > 1 || linha.textContent.includes('Saldo Inicial')) return;
                 
                 const textoLinha = linha.textContent.toLowerCase();
-                linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+                if (textoLinha.includes(termo)) {
+                    linha.style.display = '';
+                    if (temFiltro && linha.dataset.valor) {
+                        total += parseFloat(linha.dataset.valor);
+                    }
+                } else {
+                    linha.style.display = 'none';
+                }
             });
+
+            const linhaTotal = document.getElementById('linhaTotalFiltro');
+            const celulaValorTotal = document.getElementById('valorTotalFiltro');
+            
+            if (temFiltro) {
+                linhaTotal.style.display = '';
+                celulaValorTotal.textContent = formatarValor(total, 2);
+                celulaValorTotal.className = total >= 0 ? 'texto-verde' : 'texto-vermelho';
+            } else {
+                linhaTotal.style.display = 'none';
+            }
         });
     }
 }
+
 function renderFD(tbody, itens, baseSaldo, ini, fim) {
     tbody.innerHTML = '';
     if (!ini || !fim || !itens.length) return tbody.insertRow().innerHTML = `<td colspan="4" class="linha-sem-dados">Nenhum lançamento.</td>`;
@@ -1122,15 +1152,17 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
     itens.forEach(x => { if(compKeys(x.k, ini) < 0) s += x.valor; });
 
     const rS = tbody.insertRow();
-    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(s, 2)}</b></td>`;
+    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td style="text-align:right"><b>${formatarValor(s, 2)}</b></td>`;
 
     visiveis.forEach(i => {
         s += i.valor;
         const r = tbody.insertRow();
+        r.dataset.valor = i.valor; 
         const obs = i.obs ? ` <span class="tooltip-target" data-tooltip="${i.obs}">ℹ️</span>` : '';
         r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor, 2)}</td><td style="text-align:right">${formatarValor(s, 2)}</td>`;
     });
 }
+
 function compKeys(a, b) {
     if(!a||!b) return 0;
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
