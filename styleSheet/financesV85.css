@@ -359,12 +359,12 @@ tr[data-type="total-negrito"] {
     font-size: 16px;
     font-weight: bold;
     text-transform: uppercase;
-    color: #000000;
+    color: #ffffff;
 }
 
 .valor-total-filtro {
-    font-size: 18px;
-    color: #000000;
+    font-size: 14px;
+    color: #ffffff;
 }
 
 /* =========================================================
