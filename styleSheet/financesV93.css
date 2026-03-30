@@ -276,7 +276,10 @@ tr[data-type="total-negrito"] {
   text-align: right;
 }
 
-#tabelaFluxoDiario thead th:first-child { width: 100px; }
+#tabelaFluxoDiario thead th:first-child { 
+  width: 100px; 
+  text-align: left; 
+}
 #tabelaFluxoDiario thead th:nth-child(2) { text-align: center; width: 60%; }
 
 #tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid #ddd; }
