@@ -1,0 +1,504 @@
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultoria Tributária | Diagnóstico · Planejamento · Recuperação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../styleSheet/homepageV01.css">
+</head>
+
+<body>
+ 
+    <!-- ═══════════ NAV ═══════════ -->
+    <nav id="nav">
+    <div class="nav-inner">
+        <a href="#" class="logo">
+        <div class="logo-box">T</div>
+        Tributária<span>Expert</span>
+        </a>
+        <ul class="nav-links">
+        <li><a href="#servicos">Serviços</a></li>
+        <li><a href="#como-funciona">Como funciona</a></li>
+        <li><a href="#especialistas">Sobre nós</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#cta">Seja parceiro</a></li>
+        </ul>
+        <div class="nav-end">
+        <a href="#cta" class="btn btn-ghost">Seja parceiro</a>
+        <a href="#cta" class="btn btn-gold">Fale conosco →</a>
+        <div class="hamburger" onclick="toggleMenu()" id="hbg">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </div>
+    <!-- mobile menu -->
+    <div id="mob-menu" style="display:none; padding:0 0 20px; border-top:1px solid rgba(255,255,255,.07)">
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:0">
+        <li><a href="#servicos" style="display:block;padding:14px 20px;font-size:15px;color:rgba(255,255,255,.7);" onclick="toggleMenu()">Serviços</a></li>
+        <li><a href="#como-funciona" style="display:block;padding:14px 20px;font-size:15px;color:rgba(255,255,255,.7);" onclick="toggleMenu()">Como funciona</a></li>
+        <li><a href="#especialistas" style="display:block;padding:14px 20px;font-size:15px;color:rgba(255,255,255,.7);" onclick="toggleMenu()">Sobre nós</a></li>
+        <li><a href="#faq" style="display:block;padding:14px 20px;font-size:15px;color:rgba(255,255,255,.7);" onclick="toggleMenu()">FAQ</a></li>
+        <li style="padding:8px 20px 0"><a href="#cta" class="btn btn-gold" style="width:100%;justify-content:center;" onclick="toggleMenu()">Fale conosco →</a></li>
+        </ul>
+    </div>
+    </nav>
+    
+    <!-- ═══════════ HERO ═══════════ -->
+    <section id="hero">
+    <div class="hero-blob hero-blob-1"></div>
+    <div class="hero-blob hero-blob-2"></div>
+    <div class="wrap">
+        <div class="hero-grid">
+        <div>
+            <div class="hero-eyebrow">Gestão Tributária Especializada</div>
+            <h1 class="hero-title">Sua transformação <em>tributária,</em> segura e estratégica</h1>
+            <p class="hero-desc">Aliamos técnica jurídica, contábil e fiscal para elaborar diagnósticos detalhados e entregar soluções sólidas para regularização fiscal e planejamento tributário eficiente.</p>
+            <div class="hero-btns">
+            <a href="#cta" class="btn btn-gold">Fale com um especialista →</a>
+            <a href="#servicos" class="btn btn-ghost">Ver nossos serviços</a>
+            </div>
+            <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="stat-n">R$50M+</div>
+                <div class="stat-l">Recuperados para clientes</div>
+            </div>
+            <div class="hero-stat">
+                <div class="stat-n">500+</div>
+                <div class="stat-l">Empresas atendidas</div>
+            </div>
+            <div class="hero-stat">
+                <div class="stat-n">98%</div>
+                <div class="stat-l">Taxa de aprovação</div>
+            </div>
+            </div>
+        </div>
+    
+        <div class="hero-card">
+            <div class="hero-card-ttl">Por que fazer uma revisão tributária?</div>
+            <ul class="checklist">
+            <li><span class="check-ico">✓</span>Identificação de créditos fiscais não aproveitados em PIS, COFINS, ICMS e IPI</li>
+            <li><span class="check-ico">✓</span>Correção de erros na apuração que podem gerar autuações e multas</li>
+            <li><span class="check-ico">✓</span>Recuperação de valores pagos indevidamente nos últimos 5 anos</li>
+            <li><span class="check-ico">✓</span>Regularização de parcelamentos e débitos em dívida ativa com descontos</li>
+            <li><span class="check-ico">✓</span>Planejamento fiscal preventivo alinhado à legislação vigente</li>
+            </ul>
+            <div class="hero-card-foot">
+            <div class="trust-note"><strong>Diagnóstico gratuito</strong> · Sigilo total garantido</div>
+            <a href="#cta" class="btn btn-gold" style="padding:10px 20px;font-size:13px;">Iniciar →</a>
+            </div>
+        </div>
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ BAND ═══════════ -->
+    <div id="band">
+    <div class="wrap">
+        <div class="band-inner">
+        <div class="band-item">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5M2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            SPED · EFD
+        </div>
+        <div class="band-item">
+            <svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            PIS · COFINS
+        </div>
+        <div class="band-item">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4" stroke-linecap="round"/></svg>
+            ICMS · IPI
+        </div>
+        <div class="band-item">
+            <svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ECF · ECD
+        </div>
+        <div class="band-item">
+            <svg viewBox="0 0 24 24"><path d="M3 6l3 1m0 0l-3 9a5 5 0 006 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5 5 0 006 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            PGFN · Parcelamento
+        </div>
+        <div class="band-item">
+            <svg viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"/></svg>
+            PER · DCOMP
+        </div>
+        </div>
+    </div>
+    </div>
+    
+    <!-- ═══════════ SERVICES ═══════════ -->
+    <section class="sec" id="servicos">
+    <div class="wrap">
+        <div class="sec-head reveal">
+        <div class="tag">Especialidades</div>
+        <h2 class="h2">Nossos <em>serviços</em></h2>
+        <p class="sub">Soluções estratégicas que unem experiência jurídica e visão empresarial. Nosso objetivo é simplificar a gestão fiscal, identificar oportunidades de economia e garantir conformidade total com a legislação vigente.</p>
+        </div>
+        <div class="cards-grid">
+    
+        <div class="svc-card reveal">
+            <div class="svc-img"><span class="svc-ico">🔍</span></div>
+            <div class="svc-body">
+            <h3>Revisão de Apuração de Tributos e Obrigações Acessórias</h3>
+            <p>Análise dos impostos pagos pela empresa para corrigir erros, recuperar valores e evitar autuações, usando cruzamento de dados das obrigações fiscais acessórias (SPED, EFD, ECF).</p>
+            <span class="svc-more">Saiba mais →</span>
+            </div>
+        </div>
+    
+        <div class="svc-card reveal">
+            <div class="svc-img"><span class="svc-ico">💰</span></div>
+            <div class="svc-body">
+            <h3>Pedidos de Restituição, Ressarcimento e Compensação</h3>
+            <p>Elaboração de pedidos para recuperar tributos pagos indevidamente ou compensar créditos fiscais, com base na lei e decisões judiciais, garantindo segurança e eficácia no processo.</p>
+            <span class="svc-more">Saiba mais →</span>
+            </div>
+        </div>
+    
+        <div class="svc-card reveal">
+            <div class="svc-img"><span class="svc-ico">🤝</span></div>
+            <div class="svc-body">
+            <h3>Transação de Débitos Inscritos em Dívida Ativa da União</h3>
+            <p>A transação tributária permite regularizar débitos federais com descontos, prazos estendidos e uso de créditos fiscais, com atuação estratégica e técnica junto à PGFN.</p>
+            <span class="svc-more">Saiba mais →</span>
+            </div>
+        </div>
+    
+        <div class="svc-card reveal">
+            <div class="svc-img"><span class="svc-ico">⚖️</span></div>
+            <div class="svc-body">
+            <h3>Negócio Jurídico Processual</h3>
+            <p>Permite ao contribuinte inadimplente e em processo judicial negociar condições mais favoráveis que o parcelamento convencional, diretamente com a Procuradoria-Geral da Fazenda Nacional.</p>
+            <span class="svc-more">Saiba mais →</span>
+            </div>
+        </div>
+    
+        <div class="svc-card reveal">
+            <div class="svc-img"><span class="svc-ico">🛡️</span></div>
+            <div class="svc-body">
+            <h3>Defesa em Autos de Infração Fiscal</h3>
+            <p>Defesa técnica e especializada contra autos de infração, analisando vícios no lançamento tributário e elaborando recursos administrativos no CARF ou judiciais quando necessário.</p>
+            <span class="svc-more">Saiba mais →</span>
+            </div>
+        </div>
+    
+        <div class="svc-card reveal">
+            <div class="svc-img"><span class="svc-ico">📊</span></div>
+            <div class="svc-body">
+            <h3>Planejamento Tributário Estratégico</h3>
+            <p>Estruturação fiscal preventiva para reduzir legalmente a carga tributária, com análise de regime, operações e aproveitamento de todas as oportunidades de crédito e benefício fiscal disponíveis.</p>
+            <span class="svc-more">Saiba mais →</span>
+            </div>
+        </div>
+    
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ HOW IT WORKS ═══════════ -->
+    <section class="sec" id="como-funciona" style="background:var(--navy)">
+    <div class="wrap">
+        <div class="reveal" style="max-width:580px;margin-bottom:80px">
+        <div class="tag" style="color:var(--gold-lt)">Processo</div>
+        <h2 class="h2 h2-wht">Como <em>funciona</em></h2>
+        <p class="sub sub-wht">Do primeiro contato à recuperação do crédito, atuamos de forma transparente, técnica e orientada a resultados concretos.</p>
+        </div>
+        <div class="steps-grid">
+        <div class="step reveal">
+            <div class="step-num"><span>1</span></div>
+            <h3>Diagnóstico Inicial</h3>
+            <p>Levantamento completo da situação fiscal e tributária da empresa, sem custo e com total sigilo profissional garantido.</p>
+        </div>
+        <div class="step reveal">
+            <div class="step-num"><span>2</span></div>
+            <h3>Análise Técnica</h3>
+            <p>Cruzamento de dados das obrigações acessórias (SPED, EFD, ECF, ECD) com a legislação para identificar oportunidades e riscos.</p>
+        </div>
+        <div class="step reveal">
+            <div class="step-num"><span>3</span></div>
+            <h3>Elaboração da Solução</h3>
+            <p>Desenvolvimento da estratégia mais adequada: compensação, restituição, parcelamento ou transação tributária.</p>
+        </div>
+        <div class="step reveal">
+            <div class="step-num"><span>4</span></div>
+            <h3>Execução e Resultado</h3>
+            <p>Acompanhamento junto à Receita Federal ou PGFN até a efetiva recuperação dos valores ou regularização do passivo.</p>
+        </div>
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ DIFFERENTIALS ═══════════ -->
+    <section class="sec" id="diferenciais">
+    <div class="wrap">
+        <div class="diff-grid">
+        <div class="reveal" style="position:relative;padding-bottom:28px">
+            <div class="metrics-panel">
+            <div class="metrics-label">Resultados comprovados</div>
+            <div class="metric">
+                <div class="metric-head"><span class="metric-name">PIS/COFINS recuperado</span><span class="metric-val">R$ 22M+</span></div>
+                <div class="metric-bar"><div class="metric-fill" style="--w:88%"></div></div>
+            </div>
+            <div class="metric">
+                <div class="metric-head"><span class="metric-name">Débitos renegociados — PGFN</span><span class="metric-val">R$ 18M+</span></div>
+                <div class="metric-bar"><div class="metric-fill" style="--w:73%"></div></div>
+            </div>
+            <div class="metric">
+                <div class="metric-head"><span class="metric-name">Empresas regularizadas</span><span class="metric-val">500+</span></div>
+                <div class="metric-bar"><div class="metric-fill" style="--w:95%"></div></div>
+            </div>
+            <div class="metric">
+                <div class="metric-head"><span class="metric-name">Taxa de aprovação — Receita Federal</span><span class="metric-val">98%</span></div>
+                <div class="metric-bar"><div class="metric-fill" style="--w:98%"></div></div>
+            </div>
+            </div>
+            <div class="float-badge">
+            <strong>+R$50M</strong>
+            recuperados para clientes nos últimos 5 anos
+            </div>
+        </div>
+    
+        <div class="reveal">
+            <div class="tag">Diferenciais</div>
+            <h2 class="h2">Por que nos <em>escolher?</em></h2>
+            <p class="sub">Uma equipe multidisciplinar de advogados, contadores e especialistas em SPED trabalhando para maximizar seus resultados.</p>
+            <ul class="diff-list">
+            <li class="diff-item">
+                <div class="diff-ico">🔬</div>
+                <div>
+                <h4>Análise baseada em dados reais do SPED</h4>
+                <p>Cruzamos todas as obrigações acessórias para identificar inconsistências que a maioria dos contadores não detecta.</p>
+                </div>
+            </li>
+            <li class="diff-item">
+                <div class="diff-ico">⚡</div>
+                <div>
+                <h4>Resultado sem risco — honorários de êxito</h4>
+                <p>Só cobramos após a efetiva recuperação ou redução do tributo. Diagnóstico e análise sempre sem custo.</p>
+                </div>
+            </li>
+            <li class="diff-item">
+                <div class="diff-ico">🛡️</div>
+                <div>
+                <h4>Segurança jurídica em todas as etapas</h4>
+                <p>Cada solução embasada em legislação, jurisprudência consolidada e precedentes do CARF e dos tribunais superiores.</p>
+                </div>
+            </li>
+            <li class="diff-item">
+                <div class="diff-ico">📡</div>
+                <div>
+                <h4>Acompanhamento transparente e em tempo real</h4>
+                <p>Relatórios periódicos sobre o andamento de cada processo, com acesso a toda documentação enviada às autoridades fiscais.</p>
+                </div>
+            </li>
+            </ul>
+        </div>
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ TEAM ═══════════ -->
+    <section class="sec" id="especialistas" style="background:var(--navy)">
+    <div class="wrap">
+        <div class="sec-head reveal" style="color:var(--white)">
+        <div class="tag" style="color:var(--gold-lt)">Nossa equipe</div>
+        <h2 class="h2 h2-wht">Os <em>especialistas</em> por trás dos resultados</h2>
+        <p class="sub sub-wht">Profissionais com formação multidisciplinar em direito tributário, contabilidade e auditoria fiscal.</p>
+        </div>
+        <div class="team-grid">
+        <div class="team-card reveal">
+            <div class="team-avatar">A</div>
+            <h3>Dr. Alexandre Souza</h3>
+            <div class="team-role">Sócio Fundador · OAB/SP</div>
+            <p>Advogado tributarista com mais de 18 anos de atuação em contencioso administrativo e judicial. Especialista em transações com PGFN e defesa perante o CARF.</p>
+        </div>
+        <div class="team-card reveal">
+            <div class="team-avatar">C</div>
+            <h3>Dra. Carla Mendes</h3>
+            <div class="team-role">Especialista em SPED · CRC</div>
+            <p>Contadora especializada em análise de obrigações acessórias e recuperação de créditos de PIS, COFINS e ICMS. Mais de 500 revisões fiscais realizadas.</p>
+        </div>
+        <div class="team-card reveal">
+            <div class="team-avatar">R</div>
+            <h3>Rafael Costa</h3>
+            <div class="team-role">Consultor Tributário Sênior</div>
+            <p>Especialista em planejamento tributário para empresas do Lucro Real. Atuação em diagnósticos de carga tributária e estruturação de operações para eficiência fiscal.</p>
+        </div>
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ FAQ ═══════════ -->
+    <section class="sec" id="faq" style="background:var(--offwhite)">
+    <div class="wrap">
+        <div class="sec-head reveal">
+        <div class="tag">Dúvidas frequentes</div>
+        <h2 class="h2">Perguntas <em>frequentes</em></h2>
+        <p class="sub">Esclarecemos as principais dúvidas sobre o processo de revisão e recuperação tributária.</p>
+        </div>
+        <div class="faq-grid reveal">
+        <div class="faq-item">
+            <button class="faq-q" onclick="faq(this)">
+            Quanto tempo leva para recuperar os créditos tributários?
+            <div class="faq-btn">+</div>
+            </button>
+            <div class="faq-a">O prazo varia conforme o tipo de crédito e o volume. Pedidos de compensação na Receita Federal costumam ser analisados em 60 a 360 dias. Restituições em espécie podem levar de 6 meses a 2 anos. Acompanhamos todo o processo e notificamos a cada etapa.</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="faq(this)">
+            Quais documentos são necessários para iniciar a análise?
+            <div class="faq-btn">+</div>
+            </button>
+            <div class="faq-a">Para o diagnóstico inicial precisamos dos arquivos SPED (EFD-ICMS, EFD-Contribuições, ECD e ECF) dos últimos 5 anos, além de guias de recolhimento (DARF, GARE, GNRE) e acesso ao e-CAC. Toda documentação é tratada com sigilo absoluto.</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="faq(this)">
+            A revisão tributária pode gerar riscos de autuação?
+            <div class="faq-btn">+</div>
+            </button>
+            <div class="faq-a">Não, quando conduzida corretamente. Todos os pedidos são fundamentados em legislação vigente e jurisprudência consolidada. Antes de protocolar qualquer pedido, avaliamos os riscos e comunicamos ao cliente. Trabalhamos apenas com teses juridicamente seguras.</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="faq(this)">
+            É possível recuperar créditos de exercícios anteriores?
+            <div class="faq-btn">+</div>
+            </button>
+            <div class="faq-a">Sim. O prazo decadencial é de 5 anos, o que permite revisar e recuperar tributos pagos indevidamente desde 2020. Para compensações de PIS/COFINS e ICMS, o prazo é contado a partir do pagamento ou da entrega da obrigação acessória, dependendo do tipo de crédito.</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="faq(this)">
+            O serviço atende empresas de qualquer porte e setor?
+            <div class="faq-btn">+</div>
+            </button>
+            <div class="faq-a">Sim, atendemos empresas de todos os portes no Lucro Real, Lucro Presumido ou Simples Nacional, em qualquer setor. Quanto maior o volume de operações, maior o potencial de créditos — especialmente em transportes, indústria, agronegócio e comércio.</div>
+        </div>
+        <div class="faq-item">
+            <button class="faq-q" onclick="faq(this)">
+            Como funciona a remuneração da consultoria?
+            <div class="faq-btn">+</div>
+            </button>
+            <div class="faq-a">Trabalhamos com honorários de êxito: um percentual sobre o valor efetivamente recuperado ou sobre a redução comprovada do passivo fiscal. O diagnóstico inicial é sempre gratuito. Os percentuais são definidos em contrato antes do início dos trabalhos.</div>
+        </div>
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ CTA ═══════════ -->
+    <section id="cta">
+    <div class="wrap">
+        <div class="cta-inner">
+        <div>
+            <h2 class="cta-h">Pronto para recuperar o que é seu por direito?</h2>
+            <p class="cta-sub">Agende uma conversa com nossos especialistas. O diagnóstico inicial é gratuito e sem compromisso.</p>
+        </div>
+        <div class="cta-btns">
+            <a href="https://wa.me/5500000000000" class="btn btn-navy" style="gap:10px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+            </a>
+            <a href="mailto:contato@seusite.com.br" class="btn btn-navy">Enviar e-mail →</a>
+            <div class="cta-note">Resposta em até 24h · Sigilo absoluto</div>
+        </div>
+        </div>
+    </div>
+    </section>
+    
+    <!-- ═══════════ FOOTER ═══════════ -->
+    <footer>
+    <div class="wrap">
+        <div class="ft-grid">
+        <div class="ft-brand">
+            <a href="#" class="logo">
+            <div class="logo-box">T</div>
+            Tributária<span>Expert</span>
+            </a>
+            <p>Soluções estratégicas em gestão tributária, recuperação de créditos e regularização fiscal para empresas de todos os portes e segmentos.</p>
+        </div>
+        <div class="ft-col">
+            <h4>Serviços</h4>
+            <ul>
+            <li><a href="#">Revisão Tributária</a></li>
+            <li><a href="#">Recuperação de Créditos</a></li>
+            <li><a href="#">Transação PGFN</a></li>
+            <li><a href="#">Planejamento Fiscal</a></li>
+            <li><a href="#">Defesa Fiscal</a></li>
+            </ul>
+        </div>
+        <div class="ft-col">
+            <h4>Institucional</h4>
+            <ul>
+            <li><a href="#">Como funciona</a></li>
+            <li><a href="#">Sobre nós</a></li>
+            <li><a href="#">Seja parceiro</a></li>
+            <li><a href="#">Blog tributário</a></li>
+            <li><a href="#">Contato</a></li>
+            </ul>
+        </div>
+        <div class="ft-col">
+            <h4>Contato</h4>
+            <ul>
+            <li><a href="mailto:contato@seusite.com.br">contato@seusite.com.br</a></li>
+            <li><a href="tel:+5500000000000">(00) 00000-0000</a></li>
+            <li><a href="#">LinkedIn</a></li>
+            <li><a href="#">Instagram</a></li>
+            </ul>
+        </div>
+        </div>
+        <div class="ft-bottom">
+        <p>© 2025 TributáriaExpert Consultoria. Todos os direitos reservados.</p>
+        <div class="ft-badges">
+            <div class="badge">OAB</div>
+            <div class="badge">CRC</div>
+            <div class="badge">LGPD</div>
+        </div>
+        </div>
+    </div>
+    </footer>
+</body>
+
+<script>
+    /* ── FAQ ── */
+    function faq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+    }
+    
+    /* ── MOBILE MENU ── */
+    function toggleMenu() {
+    const m = document.getElementById('mob-menu');
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    /* ── SCROLL REVEAL ── */
+    const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('in'), i * 90);
+        io.unobserve(e.target);
+        }
+    });
+    }, { threshold: 0.1, rootMargin: '0px 0px -36px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+    
+    /* ── METRIC BARS ON SCROLL ── */
+    const barIO = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+        e.target.querySelectorAll('.metric-fill').forEach(b => b.classList.add('animated'));
+        barIO.unobserve(e.target);
+        }
+    });
+    }, { threshold: 0.4 });
+    document.querySelectorAll('.metrics-panel').forEach(el => barIO.observe(el));
+    
+    /* ── SMOOTH SCROLL ── */
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+        const t = document.querySelector(a.getAttribute('href'));
+        if (t) { e.preventDefault(); window.scrollTo({ top: t.offsetTop - 74, behavior: 'smooth' }); }
+    });
+    });
+</script>
+
+</html>
