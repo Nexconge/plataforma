@@ -1095,6 +1095,7 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     let fimVis = isAnual ? `12-${colunas[colunas.length - 1]}` : colunas[colunas.length - 1];
 
     renderFD(tbody, dados, saldoIni, iniVis, fimVis);
+    atualizarZebrado(tbody);
 
     let tfoot = tb.querySelector('tfoot');
     if (!tfoot) tfoot = tb.createTFoot();
@@ -1127,9 +1128,8 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
                     linha.style.display = 'none';
                 }
             });
-
+            atualizarZebrado(tbody);
             const containerTotal = document.getElementById('containerTotalFiltro');
-            
             if (temFiltro) {
                 containerTotal.innerHTML = `TOTAL FILTRADO: <strong class="valor-total-filtro">${formatarValor(total, 2)}</strong>`;
             } else {
@@ -1163,11 +1163,26 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
         r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor, 2)}</td><td style="text-align:right">${formatarValor(s, 2)}</td>`;
     });
 }
-
 function compKeys(a, b) {
     if(!a||!b) return 0;
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
+}
+function atualizarZebrado(tbody) {
+    let indexVisivel = 0;
+    const linhas = tbody.querySelectorAll('tr');
+    
+    linhas.forEach(linha => {
+        if (linha.style.display !== 'none') {
+            // indexVisivel % 2 === 0 garante que a PRIMEIRA linha visível (0) receba a cor cinza
+            if (indexVisivel % 2 === 0) {
+                linha.classList.add('linha-zebrada');
+            } else {
+                linha.classList.remove('linha-zebrada');
+            }
+            indexVisivel++;
+        }
+    });
 }
 
 // ------ DRE Resumido -----

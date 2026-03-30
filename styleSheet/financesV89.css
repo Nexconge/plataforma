@@ -280,9 +280,9 @@ tr[data-type="total-negrito"] {
 #tabelaFluxoDiario thead th:nth-child(2) { text-align: center; width: 60%; }
 
 #tabelaFluxoDiario td { padding: 8px 16px; border-bottom: 1px solid #ddd; }
-#tabelaFluxoDiario tbody tr:nth-child(even) { background-color: #f5f5f5; }
 #tabelaFluxoDiario tbody tr:hover { background-color: #e6f0ff; }
 #tabelaFluxoDiario td:nth-child(3), #tabelaFluxoDiario td:nth-child(4) { width: 120px; text-align: right; font-family: var(--font); }
+#tabelaFluxoDiario tbody tr.linha-zebrada { background-color: #f5f5f5; }
 
 .filtro-fluxo-container {
     display: flex;
