@@ -181,7 +181,9 @@ function extrairDadosUnificados(dadosRaw, contaId, anoFiltro = null, tipoData = 
         const natureza = converteNatureza(item.Natureza);
         let valorTotalPago = 0;
 
-        if (Array.isArray(item.Lancamentos)) {
+        // Modificação: Se for por emissão (competência), ignoramos os lançamentos fracionados 
+        // e deixamos o fluxo cair no 'else' para computar o ValorTitulo integral na DataEmissao.
+        if (Array.isArray(item.Lancamentos) && tipoData !== 'emissao') {
             item.Lancamentos.forEach(lancamento => {
                 let dataUsar = lancamento.DataLancamento;
                 if (tipoData === 'emissao') dataUsar = item.DataEmissao || lancamento.DataLancamento;
