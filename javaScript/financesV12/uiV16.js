@@ -639,7 +639,9 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
         
     ordem.forEach(classe => {
         const row = tbody.insertRow();
-        row.insertCell().textContent = classe;
+        const classeText = classe === 'Rodape' ? '' : classe;
+
+        row.insertCell().textContent = classeText;
         colunas.forEach(c => row.insertCell().textContent = formatarValor(matriz[classe]?.[c] || 0));
         row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
 
