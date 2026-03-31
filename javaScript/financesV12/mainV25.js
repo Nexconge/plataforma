@@ -2,7 +2,7 @@
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
 import { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, incrementarMes} from './processingV11.js';
-import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV14.js';
+import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais, atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV15.js';
 
 // --- Cache da Aplicação ---
 let appCache = {
@@ -325,7 +325,6 @@ function stepAtualizarAnosPeloCache(contasSelecionadas) {
     contasSelecionadas.forEach(contaId => {
         const dados = appCache.dadosPorContaAno.get(`${contaId}|arealizar|AREALIZAR`);
         
-        // --- CORREÇÃO AQUI ---
         // Itera sobre os segmentos de projeto para achar os anos
         if (dados && dados.isSegmented && dados.segments) {
             Object.values(dados.segments).forEach(segmento => {

@@ -581,7 +581,7 @@ function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
 
-    renderizarDRE(dados.matrizDRE, colunas, cache.userType);
+    renderizarDRE(dados.matrizDRE, colunas, projecao, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
     
     const mostrarCapitalGiro = projecao === 'realizado';
@@ -607,7 +607,7 @@ function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
     }
 }
 // DRE
-function renderizarDRE(matriz, colunas, userType) {
+function renderizarDRE(matriz, colunas, projecao, userType) {
     const tabela = document.getElementById('tabelaMatriz');
 
     if (!tabela) {
@@ -630,8 +630,13 @@ function renderizarDRE(matriz, colunas, userType) {
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
     if (userType?.toLowerCase() === 'developer') ordem.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
-    ordem.push('Caixa Inicial', 'Caixa Final');
-
+    
+    if (projecao !== 'competencia'){
+        ordem.push('Caixa Inicial', 'Caixa Final');
+    } else {
+        ordem.push('Rodape')
+    }
+        
     ordem.forEach(classe => {
         const row = tbody.insertRow();
         row.insertCell().textContent = classe;
@@ -643,7 +648,7 @@ function renderizarDRE(matriz, colunas, userType) {
             row.dataset.type = 'total';
         } else if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.dataset.type = 'total-negrito';
-        } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
+        } else if (['Caixa Inicial', 'Caixa Final', 'Rodape'].includes(classe)) {
             row.dataset.type = 'saldo';
         } else {
             row.dataset.indent = '1';
