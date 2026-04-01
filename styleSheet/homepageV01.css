@@ -123,8 +123,22 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 64px 12px;
     max-width: 1440px;
+    height: calc(100vh - var(--headerHeight));
+    margin: 0 auto;
+    background: var(--white);
+}
+
+/* -------------------------------------------------- 
+2.3.  SERVIÇOS SECTION 
+-------------------------------------------------- */
+
+#servicos-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1440px;
+    height: calc(100vh - var(--headerHeight));
     margin: 0 auto;
     background: var(--white);
 }
