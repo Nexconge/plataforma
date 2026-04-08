@@ -417,7 +417,7 @@ class MapaLotesManager {
                 poly.bringToFront(); 
             } else {
                 // Lote FORA do filtro (Quase invisível / Apagado)
-                poly.setStyle({ weight: 0.5, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.35 });
+                poly.setStyle({ weight: 0.6, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.55 });
             }
 
             const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
