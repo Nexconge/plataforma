@@ -8,23 +8,28 @@ class MapaLotesManager {
         this.allLotes = [];
         this.polygons = {}; 
         this.quadraMarkers = [];
-        
+        this.empreendimentosLista = []; // Adicione esta linha
         // Controle de "Debounce" para evitar tremedeira
         this.filterDebounceTimer = null;
 
         this.filters = {
-            empreendimento: "",
-            quadra: "",
-            status: "",
-            Atividade: "",
+            empreendimentos: [],
+            quadras: [],
+            status: [],
+            Atividades: [],
             zonaColorMode: false
         };
-
         this._handleFilterChange = this._handleFilterChange.bind(this);
         this._handlePolygonClick = this._handlePolygonClick.bind(this);
     }
 
     async init(empreendimentosJSON) {
+        try {
+            this.empreendimentosLista = JSON.parse(empreendimentosJSON || "[]");
+        } catch (e) {
+            console.error("Erro no parse do JSON:", e);
+        }
+
         this._initMap();
         this._setupEventListeners();
         
@@ -312,22 +317,18 @@ class MapaLotesManager {
             return val ? [val] : [];
         };
 
-        const prevEmp = this.filters.empreendimento;
+        const prevEmpStr = this.filters.empreendimentos ? this.filters.empreendimentos.join() : "";
 
-        let empVal = getCleanVal("empreendimentoSelect");
-        if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
+        const idsEmpreendimentos = getMultiVal("empreendimentoSelect");
         
-        // Fallback do empreendimento
-        if (!empVal) {
-            const primeiroValido = this.allLotes.find(l => l.Empreendimento && l.Empreendimento.trim() !== "");
-            empVal = primeiroValido ? primeiroValido.Empreendimento : ""; 
-        }
+        const nomesEmpreendimentos = this.empreendimentosLista
+            .filter(emp => idsEmpreendimentos.includes(emp.id))
+            .map(emp => emp.nome);
 
         const zonaEl = document.getElementById("zona");
         
-        // Agora salvamos os filtros como Listas (Arrays)
         this.filters = {
-            empreendimento: empVal,
+            empreendimentos: nomesEmpreendimentos,
             quadras: getMultiVal("selectQuadra"),
             status: getMultiVal("selectStatus"),
             Atividades: getMultiVal("selectAtividade"),
@@ -348,7 +349,7 @@ class MapaLotesManager {
         if (changed) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
 
-        if (prevEmp !== empVal) {
+        if (prevEmpStr !== this.filters.empreendimentos.join()) {
             this._centralizeView();
         }
 
@@ -361,7 +362,7 @@ class MapaLotesManager {
 
         this.quadraMarkers.forEach(marker => {
             const data = marker.loteData;
-            if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
+            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
                 if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
             } else {
                 if (!this.map.hasLayer(marker)) this.map.addLayer(marker);
@@ -371,7 +372,7 @@ class MapaLotesManager {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            if (this.filters.empreendimento && data.Empreendimento !== this.filters.empreendimento) {
+            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
             } else {
