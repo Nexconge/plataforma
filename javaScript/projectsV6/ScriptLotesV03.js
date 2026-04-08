@@ -208,9 +208,19 @@ class MapaLotesManager {
     // --- 4. Filtros ---
     _setupEventListeners() {
         const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade"];
+        
         ids.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.addEventListener("change", this._handleFilterChange);
+            if (!el) return;
+
+            if (el.tagName === "DIV") {
+                const observer = new MutationObserver(() => {
+                    this._handleFilterChange();
+                });
+                observer.observe(el, { childList: true, subtree: true, characterData: true });
+            } else {
+                el.addEventListener("change", this._handleFilterChange);
+            }
         });
 
         document.getElementById("buttonAlterar")?.addEventListener('click', () => {
@@ -221,19 +231,12 @@ class MapaLotesManager {
 
         const checkExist = setInterval(() => {
             const zonaCheck = document.getElementById("zona");
-            
             if (zonaCheck) {
-                // Remove listeners antigos (hack para evitar duplicação se o script rodar 2x)
                 const novoElemento = zonaCheck.cloneNode(true);
                 zonaCheck.parentNode.replaceChild(novoElemento, zonaCheck);
-                
-                // Adiciona o evento Change (mais confiável que click para checkboxes)
                 novoElemento.addEventListener('change', (e) => {
-                    console.log("DEBUG: Switch clicado via JS. Estado:", e.target.checked);
                     this._handleFilterChange();
                 });
-                
-                // Para de procurar
                 clearInterval(checkExist);
             }
         }, 500); 
