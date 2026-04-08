@@ -684,22 +684,43 @@ class MapaLotesManager {
     aplicarAlteracaoEmMassa() {
         if (this.selectedIds.size === 0) return;
 
-        const cleanStr = (val) => val ? val.replace(/"/g, '').trim() : "";
+        // Função aprimorada para ignorar placeholders do Bubble e capturar o texto real formatado
+        const getValSeguro = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return "";
 
-        const valAtividade = document.getElementById("dropAltMassaAtv")?.value;
-        const valStatus = document.getElementById("dropAltMassaStat")?.value;
-        const valZona = document.getElementById("dropAltMassaZon")?.value;
+            // Se for um dropdown (select), pega o texto visível ao invés do valor interno/slug (ex: evita "dispon_vel")
+            if (el.tagName === "SELECT" && el.selectedIndex >= 0) {
+                let text = el.options[el.selectedIndex].text;
+                // Se o texto for o padrão de campo vazio do Bubble, ignora
+                if (!text || text.includes("Choose") || text.includes("Escolha") || text.trim() === "") {
+                    return "";
+                }
+                return text.trim();
+            }
 
-        const newAtv = cleanStr(valAtividade);
-        const newStat = cleanStr(valStatus);
-        const newZon = cleanStr(valZona);
+            // Fallback para inputs normais (removendo aspas residuais)
+            let val = el.value ? el.value.replace(/"/g, '').trim() : "";
+            
+            // Impede que os placeholders do Bubble sobrescrevam dados reais
+            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER") || val === "null" || val === "undefined") {
+                return "";
+            }
+            
+            return val;
+        };
+
+        const newAtv = getValSeguro("dropAltMassaAtv");
+        const newStat = getValSeguro("dropAltMassaStat");
+        const newZon = getValSeguro("dropAltMassaZon");
 
         this.selectedIds.forEach(id => {
             const poligono = this.polygons[id];
             if (poligono && poligono.loteData) {
-                if (newAtv && newAtv !== "null") poligono.loteData.Atividade = newAtv;
-                if (newStat && newStat !== "null") poligono.loteData.Status = newStat;
-                if (newZon && newZon !== "null") poligono.loteData.Zoneamento = newZon;
+                // Só altera se a string resultante for válida (não for vazia)
+                if (newAtv !== "") poligono.loteData.Atividade = newAtv;
+                if (newStat !== "") poligono.loteData.Status = newStat;
+                if (newZon !== "") poligono.loteData.Zoneamento = newZon;
             }
         });
 
