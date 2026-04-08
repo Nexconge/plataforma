@@ -405,15 +405,19 @@ class MapaLotesManager {
             const isSelected = this.selectedIds.has(data._id);
 
             if (isSelected) {
-                poly.setStyle({ weight: 2, color: "blue", fillColor: "blue", fillOpacity: 0.6 });
+                // Lote clicado/selecionado no momento (Prioridade máxima)
+                poly.setStyle({ weight: 3, color: "blue", fillColor: "blue", fillOpacity: 0.7 });
                 poly.bringToFront();
             } else if (!hasActiveFilters) {
-                poly.setStyle({ weight: 0.6, color: "black", fillColor: theme.fill, fillOpacity: 1 });
+                // Mapa no estado normal (sem nenhum filtro ativo)
+                poly.setStyle({ weight: 0.8, color: "black", fillColor: theme.fill, fillOpacity: 1 });
             } else if (isMatch) {
-                poly.setStyle({ weight: 2.5, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
+                // Lote que ESTÁ no filtro (Destaque total)
+                poly.setStyle({ weight: 3, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
                 poly.bringToFront(); 
             } else {
-                poly.setStyle({ weight: 0.5, color: "#ccc", fillColor: theme.fill, fillOpacity: 0.65 });
+                // Lote FORA do filtro (Quase invisível / Apagado)
+                poly.setStyle({ weight: 0.5, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.2 });
             }
 
             const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
