@@ -681,6 +681,32 @@ class MapaLotesManager {
         return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
     }
 
+    aplicarAlteracaoEmMassa() {
+        if (this.selectedIds.size === 0) return;
+
+        const cleanStr = (val) => val ? val.replace(/"/g, '').trim() : "";
+
+        const valAtividade = document.getElementById("dropAltMassaAtv")?.value;
+        const valStatus = document.getElementById("dropAltMassaStat")?.value;
+        const valZona = document.getElementById("dropAltMassaZon")?.value;
+
+        const newAtv = cleanStr(valAtividade);
+        const newStat = cleanStr(valStatus);
+        const newZon = cleanStr(valZona);
+
+        this.selectedIds.forEach(id => {
+            const poligono = this.polygons[id];
+            if (poligono && poligono.loteData) {
+                if (newAtv && newAtv !== "null") poligono.loteData.Atividade = newAtv;
+                if (newStat && newStat !== "null") poligono.loteData.Status = newStat;
+                if (newZon && newZon !== "null") poligono.loteData.Zoneamento = newZon;
+            }
+        });
+
+        this._updateMapVisuals();
+        this._fillForm(); 
+    }
+
     getSelectedLotesData() {
         return Array.from(this.selectedIds).map(id => this.polygons[id].loteData);
     }
