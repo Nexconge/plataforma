@@ -320,28 +320,35 @@ class MapaLotesManager {
         // 1. Captura os valores brutos do multiDropdown
         let valoresBrutos = getMultiVal("empreendimentoSelect");
         
-        // 2. Limpa possível LOOKUP injetado pelo Bubble
-        const valoresLimpos = valoresBrutos.map(v => v.replace(/LOOKUP_?/ig, "").trim());
-        
-        // 3. Mapeamento Inteligente: Busca tanto por ID quanto pelo Nome
-        const nomesEmpreendimentos = [];
-        this.empreendimentosLista.forEach(emp => {
-            if (valoresLimpos.includes(emp.id) || valoresLimpos.includes(emp.nome)) {
-                nomesEmpreendimentos.push(emp.nome);
+        // 2. Lógica Original Restaurada: Extrai o ID usando split caso tenha __LOOKUP__
+        let valoresLimpos = valoresBrutos.map(v => {
+            if (v.includes('__LOOKUP__')) {
+                return v.split('__LOOKUP__')[1].trim(); 
             }
+            return v.trim();
         });
 
-        // Fallback: Se o select entregar o Nome, mas ele não bater exato com o JSON, força a entrada dele no filtro
+        // 3. Mapeamento Inteligente: Garante que o filtro armazene sempre o ID
+        const idsFiltro = [];
         valoresLimpos.forEach(val => {
-            if (!nomesEmpreendimentos.includes(val) && val !== "") {
-                nomesEmpreendimentos.push(val);
+            if (!val) return;
+            
+            // Procura no JSON pelo ID ou pelo Nome
+            const emp = this.empreendimentosLista.find(e => e.id === val || e.nome === val);
+            
+            if (emp) {
+                // Se achou no JSON, pega o ID limpo com certeza
+                idsFiltro.push(emp.id); 
+            } else {
+                // Fallback: Se não achou no JSON, usa o valor capturado (pode ser um ID válido que faltou no JSON)
+                idsFiltro.push(val); 
             }
         });
 
         const zonaEl = document.getElementById("zona");
         
         this.filters = {
-            empreendimentos: nomesEmpreendimentos,
+            empreendimentos: [...new Set(idsFiltro)], // Salva a lista de IDs limpos sem duplicatas
             quadras: getMultiVal("selectQuadra"),
             status: getMultiVal("selectStatus"),
             Atividades: getMultiVal("selectAtividade"),
