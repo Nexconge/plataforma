@@ -401,18 +401,19 @@ class MapaLotesManager {
                 }
             }
 
-            const baseColor = this._getLoteColor(data);
+            const theme = this._getLoteColor(data);
             const isSelected = this.selectedIds.has(data._id);
 
             if (isSelected) {
                 poly.setStyle({ weight: 2, color: "blue", fillColor: "blue", fillOpacity: 0.6 });
                 poly.bringToFront();
             } else if (!hasActiveFilters) {
-                poly.setStyle({ weight: 0.6, color: "black", fillColor: baseColor, fillOpacity: 1 });
+                poly.setStyle({ weight: 0.6, color: "black", fillColor: theme.fill, fillOpacity: 1 });
             } else if (isMatch) {
-                poly.setStyle({ weight: 2, color: "#1772CB", fillColor: baseColor, fillOpacity: 1 });
+                poly.setStyle({ weight: 2.5, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
+                poly.bringToFront(); 
             } else {
-                poly.setStyle({ weight: 0.5, color: "#ccc", fillColor: baseColor, fillOpacity: 0.65 });
+                poly.setStyle({ weight: 0.5, color: "#ccc", fillColor: theme.fill, fillOpacity: 0.65 });
             }
 
             const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
@@ -422,12 +423,20 @@ class MapaLotesManager {
 
     _getLoteColor(lote) {
         const mode = this.filters.zonaColorMode ? lote.Atividade?.toLowerCase() : lote.Status?.toLowerCase();
-        const colors = {
-            "comercial": "#9fbfdf", "residencial": "#dad2b4", "equipamento público": "#f0c9ad",
-            "app": "#88c4a6", "área verde": "#88c4a6",
-            "disponível": "lightblue", "vendido": "ForestGreen", "reservado": "#f0c9ad", "indisponível": "#c7c7c7"
+        
+        const themes = {
+            "comercial": { fill: "#9fbfdf", stroke: "#6e9bc7" },
+            "residencial": { fill: "#dad2b4", stroke: "#b8ae86" },
+            "equipamento público": { fill: "#f0c9ad", stroke: "#d4a482" },
+            "app": { fill: "#88c4a6", stroke: "#5ca47f" },
+            "área verde": { fill: "#88c4a6", stroke: "#5ca47f" },
+            "disponível": { fill: "lightblue", stroke: "#6b9eaf" }, 
+            "vendido": { fill: "ForestGreen", stroke: "#155e15" },
+            "reservado": { fill: "#f0c9ad", stroke: "#d4a482" },
+            "indisponível": { fill: "#c7c7c7", stroke: "#999999" }
         };
-        return colors[mode] || "#c7c7c7";
+        
+        return themes[mode] || { fill: "#c7c7c7", stroke: "#999999" };
     }
 
     _handlePolygonClick(polygon) {
