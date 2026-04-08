@@ -300,7 +300,6 @@ class MapaLotesManager {
             return val.trim();
         };
 
-        // Voltamos para a SUA versão original que funcionava perfeitamente com os DIVs do Bubble
         const getMultiVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return [];
@@ -319,17 +318,25 @@ class MapaLotesManager {
         const prevEmpStr = this.filters.empreendimentos ? this.filters.empreendimentos.join() : "";
 
         // 1. Captura os valores brutos do multiDropdown
-        let idsEmpreendimentosBrutos = getMultiVal("empreendimentoSelect");
+        let valoresBrutos = getMultiVal("empreendimentoSelect");
         
-        // 2. LÓGICA DO LOOKUP: Limpa a palavra LOOKUP (e possíveis espaços) que o Bubble injeta nos IDs
-        const idsEmpreendimentos = idsEmpreendimentosBrutos.map(id => {
-            return id.replace(/LOOKUP_?/ig, "").trim(); 
+        // 2. Limpa possível LOOKUP injetado pelo Bubble
+        const valoresLimpos = valoresBrutos.map(v => v.replace(/LOOKUP_?/ig, "").trim());
+        
+        // 3. Mapeamento Inteligente: Busca tanto por ID quanto pelo Nome
+        const nomesEmpreendimentos = [];
+        this.empreendimentosLista.forEach(emp => {
+            if (valoresLimpos.includes(emp.id) || valoresLimpos.includes(emp.nome)) {
+                nomesEmpreendimentos.push(emp.nome);
+            }
         });
-        
-        // 3. Mapeamento correto: Cruza os IDs limpos com o JSON para extrair os Nomes
-        const nomesEmpreendimentos = this.empreendimentosLista
-            .filter(emp => idsEmpreendimentos.includes(emp.id))
-            .map(emp => emp.nome);
+
+        // Fallback: Se o select entregar o Nome, mas ele não bater exato com o JSON, força a entrada dele no filtro
+        valoresLimpos.forEach(val => {
+            if (!nomesEmpreendimentos.includes(val) && val !== "") {
+                nomesEmpreendimentos.push(val);
+            }
+        });
 
         const zonaEl = document.getElementById("zona");
         
@@ -355,11 +362,10 @@ class MapaLotesManager {
         if (changed) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
 
-        // A correção da centralização de câmera foi mantida, pois era o motivo do mapa 
-        // iniciar "perdido" no meio do oceano antes de você clicar em algum filtro
+        // Centraliza na primeira carga ou quando o filtro principal de empreendimento muda
         if (!this.hasLoadedOnce || prevEmpStr !== this.filters.empreendimentos.join()) {
             this._centralizeView();
-            this.hasLoadedOnce = true; 
+            this.hasLoadedOnce = true;
         }
 
         document.body.classList.remove('app-loading');
@@ -473,13 +479,17 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (!el) return;
 
-            el.value = "";
+            // CORREÇÃO: Dropdowns do Bubble (isComplex) quebram com "". Precisam de "null" (que é um JSON válido).
+            if (isComplex) {
+                el.value = "null";
+            } else {
+                el.value = "";
+            }
             
             try {
                 el.dispatchEvent(new Event("change"));
             } catch (e) {
-                // Silencia o erro "undefined is not valid JSON" pois o campo já está visualmente limpo
-                // console.warn("Bubble JSON error ignorado ao limpar:", id); 
+                // Silencia avisos residuais do Bubble
             }
         };
 
