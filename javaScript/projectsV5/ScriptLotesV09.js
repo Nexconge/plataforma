@@ -329,8 +329,14 @@ class MapaLotesManager {
         const prevEmp = this.filters.empreendimento;
 
         let empVal = getCleanVal("empreendimentoSelect");
-        if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
-
+        if (empVal && empVal.includes('__LOOKUP__')) {
+            empVal = empVal.split('__LOOKUP__')[1];
+        }
+        // Fallback caso o filtro venha vazio ou inválido
+        if (!empVal) {
+            const primeiroValido = this.allLotes.find(l => l.Empreendimento && l.Empreendimento.trim() !== "");
+            empVal = primeiroValido ? primeiroValido.Empreendimento : ""; 
+        }
         const zonaEl = document.getElementById("zona");
         
         this.filters = {
