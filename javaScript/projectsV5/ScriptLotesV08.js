@@ -461,13 +461,6 @@ class MapaLotesManager {
 
         textIds.forEach(id => resetEl(id, false));
         complexIds.forEach(id => resetEl(id, true));
-
-        // Reseta o botão Alterar
-        const btnAlterar = document.getElementById("buttonAlterar");
-        if (btnAlterar) {
-            btnAlterar.style.opacity = "1";
-            btnAlterar.style.cursor = "pointer";
-        }
     }
 
     _fillForm() {
@@ -498,6 +491,7 @@ class MapaLotesManager {
             return;
         }
         const isMulti = this.selectedIds.size > 1;
+        const isEmpty = this.selectedIds.size === 0;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
         let nomes = [], listaClientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
@@ -547,12 +541,6 @@ class MapaLotesManager {
         } else {
              setInput("empreendimento2", empList.length === 1 ? empList[0] : "");
         }
-
-        const btnAlterar = document.getElementById("buttonAlterar");
-        if (btnAlterar) {
-            btnAlterar.style.opacity = isMulti ? "0.5" : "1";
-            btnAlterar.style.cursor = isMulti ? "not-allowed" : "pointer";
-        }
     }
 
     _centralizeView() {
@@ -576,7 +564,6 @@ class MapaLotesManager {
 
     _atualizarPoligonoSelecionado() {
         if (this.selectedIds.size > 1) {
-            alert("Não é possível alterar múltiplos lotes ao mesmo tempo.");
             return;
         }
         if (this.selectedIds.size !== 1) return;
