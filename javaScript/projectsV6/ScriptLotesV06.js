@@ -413,11 +413,11 @@ class MapaLotesManager {
                 poly.setStyle({ weight: 0.8, color: "black", fillColor: theme.fill, fillOpacity: 1 });
             } else if (isMatch) {
                 // Lote que ESTÁ no filtro (Destaque total)
-                poly.setStyle({ weight: 3, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
+                poly.setStyle({ weight: 1.8, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
                 poly.bringToFront(); 
             } else {
                 // Lote FORA do filtro (Quase invisível / Apagado)
-                poly.setStyle({ weight: 0.5, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.2 });
+                poly.setStyle({ weight: 0.5, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.35 });
             }
 
             const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
