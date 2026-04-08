@@ -37,7 +37,6 @@ class MapaLotesManager {
         }
 
         this._renderLotes(this.allLotes);
-        this._populateAuxiliaryFilters(); 
         
         // Chama o filtro inicial
         this._handleFilterChange();
@@ -238,39 +237,6 @@ class MapaLotesManager {
                 clearInterval(checkExist);
             }
         }, 500); 
-    }
-
-    _populateAuxiliaryFilters() {
-        if (document.getElementById("selectQuadra")?.options.length > 1) return;
-
-        const quadras = new Set();
-        const status = new Set();
-        const zonas = new Set();
-
-        this.allLotes.forEach(l => {
-            if (l.Quadra) return; 
-            const matchQ = l.Nome && l.Nome.match(/^(Q\d+)/); 
-            if(matchQ) quadras.add(matchQ[1]); 
-            if(l.Status) status.add(l.Status);
-            if(l.Atividade) zonas.add(l.Atividade);
-        });
-
-        const sortAndPopulate = (setId, values) => {
-            const select = document.getElementById(setId);
-            if(!select) return;
-            select.innerHTML = '<option value="">Todos</option>';
-            Array.from(values).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(val => {
-                if(!val) return;
-                const opt = document.createElement("option");
-                opt.value = val;
-                opt.textContent = val;
-                select.appendChild(opt);
-            });
-        };
-
-        sortAndPopulate("selectQuadra", quadras);
-        sortAndPopulate("selectStatus", status);
-        sortAndPopulate("selectAtividade", zonas);
     }
 
     _handleFilterChange() {
