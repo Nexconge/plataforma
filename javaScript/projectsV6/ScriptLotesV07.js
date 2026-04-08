@@ -413,7 +413,7 @@ class MapaLotesManager {
                 poly.setStyle({ weight: 0.8, color: "black", fillColor: theme.fill, fillOpacity: 1 });
             } else if (isMatch) {
                 // Lote que ESTÁ no filtro (Destaque total)
-                poly.setStyle({ weight: 1.8, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
+                poly.setStyle({ weight: 1.2, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
                 poly.bringToFront(); 
             } else {
                 // Lote FORA do filtro (Quase invisível / Apagado)
@@ -428,19 +428,20 @@ class MapaLotesManager {
     _getLoteColor(lote) {
         const mode = this.filters.zonaColorMode ? lote.Atividade?.toLowerCase() : lote.Status?.toLowerCase();
         
+        // Cores atualizadas: preenchimentos mantidos suaves, bordas bem mais escuras
         const themes = {
-            "comercial": { fill: "#9fbfdf", stroke: "#6e9bc7" },
-            "residencial": { fill: "#dad2b4", stroke: "#b8ae86" },
-            "equipamento público": { fill: "#f0c9ad", stroke: "#d4a482" },
-            "app": { fill: "#88c4a6", stroke: "#5ca47f" },
-            "área verde": { fill: "#88c4a6", stroke: "#5ca47f" },
-            "disponível": { fill: "lightblue", stroke: "#6b9eaf" }, 
-            "vendido": { fill: "ForestGreen", stroke: "#155e15" },
-            "reservado": { fill: "#f0c9ad", stroke: "#d4a482" },
-            "indisponível": { fill: "#c7c7c7", stroke: "#999999" }
+            "comercial": { fill: "#9fbfdf", stroke: "#3b6b9e" },
+            "residencial": { fill: "#dad2b4", stroke: "#8c8052" },
+            "equipamento público": { fill: "#f0c9ad", stroke: "#a86c42" },
+            "app": { fill: "#88c4a6", stroke: "#3d7a5b" },
+            "área verde": { fill: "#88c4a6", stroke: "#3d7a5b" },
+            "disponível": { fill: "lightblue", stroke: "#3a7387" }, 
+            "vendido": { fill: "ForestGreen", stroke: "#0a3d0a" },
+            "reservado": { fill: "#f0c9ad", stroke: "#a86c42" },
+            "indisponível": { fill: "#c7c7c7", stroke: "#666666" }
         };
         
-        return themes[mode] || { fill: "#c7c7c7", stroke: "#999999" };
+        return themes[mode] || { fill: "#c7c7c7", stroke: "#666666" };
     }
 
     _handlePolygonClick(polygon) {
