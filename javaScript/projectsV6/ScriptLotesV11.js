@@ -300,7 +300,7 @@ class MapaLotesManager {
             return val.trim();
         };
 
-        // Nova função para capturar os arrays do MultiDropdown
+        // Voltamos para a SUA versão original que funcionava perfeitamente com os DIVs do Bubble
         const getMultiVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return [];
@@ -312,15 +312,21 @@ class MapaLotesManager {
                     .map(linha => linha.substring(1).trim());
             }
             
-            // Fallback caso algum ainda seja select normal
             const val = getCleanVal(id);
             return val ? [val] : [];
         };
 
         const prevEmpStr = this.filters.empreendimentos ? this.filters.empreendimentos.join() : "";
 
-        const idsEmpreendimentos = getMultiVal("empreendimentoSelect");
+        // 1. Captura os valores brutos do multiDropdown
+        let idsEmpreendimentosBrutos = getMultiVal("empreendimentoSelect");
         
+        // 2. LÓGICA DO LOOKUP: Limpa a palavra LOOKUP (e possíveis espaços) que o Bubble injeta nos IDs
+        const idsEmpreendimentos = idsEmpreendimentosBrutos.map(id => {
+            return id.replace(/LOOKUP_?/ig, "").trim(); 
+        });
+        
+        // 3. Mapeamento correto: Cruza os IDs limpos com o JSON para extrair os Nomes
         const nomesEmpreendimentos = this.empreendimentosLista
             .filter(emp => idsEmpreendimentos.includes(emp.id))
             .map(emp => emp.nome);
@@ -349,8 +355,11 @@ class MapaLotesManager {
         if (changed) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
 
-        if (prevEmpStr !== this.filters.empreendimentos.join()) {
+        // A correção da centralização de câmera foi mantida, pois era o motivo do mapa 
+        // iniciar "perdido" no meio do oceano antes de você clicar em algum filtro
+        if (!this.hasLoadedOnce || prevEmpStr !== this.filters.empreendimentos.join()) {
             this._centralizeView();
+            this.hasLoadedOnce = true; 
         }
 
         document.body.classList.remove('app-loading');
