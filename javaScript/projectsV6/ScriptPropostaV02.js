@@ -125,13 +125,19 @@ function extrairQuadraNome(nomeLote) {
 
 // --- LÓGICA DE NEGÓCIO ---
 export async function abrirEPreencherModalProposta(mapaManager, username) {
-    // --- MUDANÇA: Usa a nova função getSelectedLotesData ---
     if (!mapaManager || mapaManager.selectedIds.size === 0) {
         alert("Por favor, selecione ao menos um lote no mapa!");
         return;
     }
 
     const lotesSelecionados = mapaManager.getSelectedLotesData();
+
+    // --- NOVA VALIDAÇÃO: Verifica se há mais de um empreendimento ---
+    const empreendimentosUnicos = new Set(lotesSelecionados.map(l => l.Empreendimento));
+    if (empreendimentosUnicos.size > 1) {
+        alert("Não é possível gerar uma proposta com lotes de empreendimentos diferentes. Selecione lotes de apenas um empreendimento.");
+        return;
+    }
 
     // Verificação de Status (todos devem estar disponíveis)
     const indisponiveis = lotesSelecionados.filter(l => l.Status !== "Disponível");
