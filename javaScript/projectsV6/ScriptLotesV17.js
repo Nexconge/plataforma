@@ -155,7 +155,7 @@ class MapaLotesManager {
             const isClean = this._isSimplePolygon(cleanCoords);
 
             if (!isClean) {
-                // console.log(`Corrigindo lote quebrado: ${lote.Nome}`);
+                // console.log(`Corrigindo lote quebrado: ${lote.Lote}`);
                 finalCoords = this._organizarPontosRadialmente(cleanCoords);
             }
 
@@ -163,10 +163,10 @@ class MapaLotesManager {
             finalCoords.push(finalCoords[0]);
             
             //Se for uma quadra desenha apenas o marcador central com tooltip, sem polígono
-            if (lote.Quadra) {
+            if (lote.isQuadra) {
                 const tempPoly = L.polygon(finalCoords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
-                marker.bindTooltip(lote.Nome, {
+                marker.bindTooltip(lote.Lote, {
                     permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
                 });
 
@@ -197,7 +197,7 @@ class MapaLotesManager {
                     fillColor: "#c7c7c7"
                 });
 
-                polygon.bindTooltip(`${lote.Nome} - ${lote.Status || "Desconhecido"}`, { permanent: false });
+                polygon.bindTooltip(`${lote.Lote} - ${lote.Status || "Desconhecido"}`, { permanent: false });
                 polygon.loteData = lote; 
                 
                 polygon.on('click', (e) => {
@@ -407,7 +407,7 @@ class MapaLotesManager {
                 if (this.filters.quadras.length > 0) {
                     // Extrai apenas os números do filtro e do lote para comparar corretamente
                     const filterQs = this.filters.quadras.map(q => q.replace(/\D/g, ''));
-                    const matchQ = data.Nome.match(/Q(\d+)/i);
+                    const matchQ = data.Lote.match(/Q(\d+)/i);
                     const lotQ = matchQ ? matchQ[1] : "";
                     
                     if (!filterQs.includes(lotQ)) isMatch = false;
@@ -444,7 +444,7 @@ class MapaLotesManager {
             }
 
             const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
-            poly.getTooltip()?.setContent(`${data.Nome} - ${txtStatus}`);
+            poly.getTooltip()?.setContent(`${data.Lote} - ${txtStatus}`);
         });
     }
 
@@ -546,7 +546,7 @@ class MapaLotesManager {
             if (lote.Cliente && typeof lote.Cliente === 'string' && lote.Cliente.trim() !== "") {
                 listaClientes.push(lote.Cliente);
             }
-            nomes.push(lote.Nome);
+            nomes.push(lote.Lote);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);
             zonaSet.add(lote.Zoneamento);
@@ -634,7 +634,7 @@ class MapaLotesManager {
         };
 
         Object.assign(poligono.loteData, {
-            Nome: getVal("quadra_lote2"),
+            Lote: getVal("quadra_lote2"),
             Área: getNum("area2"),
             Cliente: cleanStr(getVal("cliente2")),
             Status: cleanStr(getVal("status2")), 
