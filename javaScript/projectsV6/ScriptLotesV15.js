@@ -497,8 +497,8 @@ class MapaLotesManager {
             } catch (e) {}
         };
 
-        // Adicionado o 'idsLotes2' nos textIds e removido 'empreendimento2' dos complexIds
-        const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2"];
+        // Adicionado o 'selectedCount2' na lista de inputs de texto
+        const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2", "selectedCount2"];
         const complexIds = ["atividade2", "status2", "zona2"];
 
         textIds.forEach(id => resetEl(id, false));
@@ -562,8 +562,10 @@ class MapaLotesManager {
             return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
-        // Extrai todos os IDs únicos dos lotes selecionados e transforma em uma string separada por vírgula
         const idsLotesString = Array.from(this.selectedIds).join(",");
+        
+        // Captura a quantidade exata de lotes selecionados
+        const qtdSelecionada = this.selectedIds.size;
 
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
         setInput("area2", formatarNumPTBR(totalArea));
@@ -573,8 +575,9 @@ class MapaLotesManager {
         setInput("valor_total2", formatarNumPTBR(totalValor));
         setInput("cliente2", clienteValor, isMulti);
         
-        // Atribui a string de IDs ao novo input
         setInput("idsLotes2", idsLotesString);
+        // Preenche o input novo com a quantidade
+        setInput("selectedCount2", qtdSelecionada);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
