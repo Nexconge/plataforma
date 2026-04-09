@@ -142,7 +142,7 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
     // Verificação de Status (todos devem estar disponíveis)
     const indisponiveis = lotesSelecionados.filter(l => l.Status !== "Disponível");
     if (indisponiveis.length > 0) {
-        alert(`Os seguintes lotes não estão disponíveis: ${indisponiveis.map(l=>l.Nome).join(", ")}`);
+        alert(`Os seguintes lotes não estão disponíveis: ${indisponiveis.map(l=>l.Lote).join(", ")}`);
         return;
     }
 
@@ -156,10 +156,10 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     // Formatação de Nomes (Agrupa Quadras se possível)
     // Ex: "Quadra 10 Lotes 01, 02" ou "Q10 L01, Q11 L02"
-    const nomesList = lotesSelecionados.map(l => l.Nome).join(", ");
+    const nomesList = lotesSelecionados.map(l => l.Lote).join(", ");
     const quadrasLista = [...new Set(
     lotesSelecionados
-        .map(l => extrairQuadraNome(l.Nome))
+        .map(l => extrairQuadraNome(l.Lote))
         .filter(Boolean) // remove null
     )].join(", ");
 

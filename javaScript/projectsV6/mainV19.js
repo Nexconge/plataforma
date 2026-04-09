@@ -1,5 +1,5 @@
 import { iniciarMapa } from './ScriptLotesV17.js';
-import { abrirEPreencherModalProposta } from './ScriptPropostaV02.js';
+import { abrirEPreencherModalProposta } from './ScriptPropostaV03.js';
 
 function inicializarApp(empreendimentosJSON, projectsUrl, username) {
     const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl);
