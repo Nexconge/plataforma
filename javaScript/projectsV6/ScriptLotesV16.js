@@ -712,29 +712,36 @@ class MapaLotesManager {
     aplicarAlteracaoEmMassa() {
         if (this.selectedIds.size === 0) return;
 
-        // Função aprimorada para ignorar placeholders do Bubble e capturar o texto real formatado
         const getValSeguro = (id) => {
             const el = document.getElementById(id);
             if (!el) return "";
 
-            // Se for um dropdown (select), pega o texto visível ao invés do valor interno/slug (ex: evita "dispon_vel")
-            if (el.tagName === "SELECT" && el.selectedIndex >= 0) {
-                let text = el.options[el.selectedIndex].text;
-                // Se o texto for o padrão de campo vazio do Bubble, ignora
-                if (!text || text.includes("Choose") || text.includes("Escolha") || text.trim() === "") {
-                    return "";
-                }
-                return text.trim();
-            }
-
-            // Fallback para inputs normais (removendo aspas residuais)
+            // Verifica se a propriedade value bruta já indica vazio
             let val = el.value ? el.value.replace(/"/g, '').trim() : "";
             
-            // Impede que os placeholders do Bubble sobrescrevam dados reais
-            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER") || val === "null" || val === "undefined") {
+            if (!val || val === "null" || val === "undefined" || val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) {
                 return "";
             }
-            
+
+            // Tratamento especial para Dropdowns (<select>)
+            if (el.tagName === "SELECT" && el.selectedIndex >= 0) {
+                let text = el.options[el.selectedIndex].text.trim();
+                
+                // Bloqueia placeholders visuais comuns que passariam como texto válido
+                if (
+                    !text ||
+                    text.toUpperCase().includes("CHOOSE") ||
+                    text.toUpperCase().includes("ESCOLHA") ||
+                    text.toUpperCase().includes("SELECIONE") ||
+                    text === "..." ||
+                    text === "-"
+                ) {
+                    return "";
+                }
+                
+                return text;
+            }
+
             return val;
         };
 
@@ -745,7 +752,7 @@ class MapaLotesManager {
         this.selectedIds.forEach(id => {
             const poligono = this.polygons[id];
             if (poligono && poligono.loteData) {
-                // Só altera se a string resultante for válida (não for vazia)
+                // Altera APENAS se a variável não estiver vazia
                 if (newAtv !== "") poligono.loteData.Atividade = newAtv;
                 if (newStat !== "") poligono.loteData.Status = newStat;
                 if (newZon !== "") poligono.loteData.Zoneamento = newZon;
