@@ -486,7 +486,6 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (!el) return;
 
-            // CORREÇÃO: Dropdowns do Bubble (isComplex) quebram com "". Precisam de "null" (que é um JSON válido).
             if (isComplex) {
                 el.value = "null";
             } else {
@@ -495,13 +494,12 @@ class MapaLotesManager {
             
             try {
                 el.dispatchEvent(new Event("change"));
-            } catch (e) {
-                // Silencia avisos residuais do Bubble
-            }
+            } catch (e) {}
         };
 
-        const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2"];
-        const complexIds = ["atividade2", "status2", "empreendimento2", "zona2"];
+        // Adicionado o 'idsLotes2' nos textIds e removido 'empreendimento2' dos complexIds
+        const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2"];
+        const complexIds = ["atividade2", "status2", "zona2"];
 
         textIds.forEach(id => resetEl(id, false));
         complexIds.forEach(id => resetEl(id, true));
@@ -511,7 +509,6 @@ class MapaLotesManager {
         const setInput = (id, val, disable = false) => {
             const el = document.getElementById(id);
             if (el) { 
-                // Proteção contra undefined/null sendo escritos como texto
                 el.value = (val === undefined || val === null) ? "" : val; 
                 el.dispatchEvent(new Event("change")); 
             }
@@ -535,10 +532,9 @@ class MapaLotesManager {
             return;
         }
         const isMulti = this.selectedIds.size > 1;
-        const isEmpty = this.selectedIds.size === 0;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        let nomes = [], listaClientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
+        let nomes = [], listaClientes = [], statusSet = new Set(), attSet = new Set(), zonaSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
@@ -546,14 +542,13 @@ class MapaLotesManager {
             totalFrente += (lote.Frente || 0);
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
-            // Verificação robusta para cliente
+            
             if (lote.Cliente && typeof lote.Cliente === 'string' && lote.Cliente.trim() !== "") {
                 listaClientes.push(lote.Cliente);
             }
             nomes.push(lote.Nome);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);
-            empSet.add(lote.Empreendimento);
             zonaSet.add(lote.Zoneamento);
         });
 
@@ -561,12 +556,15 @@ class MapaLotesManager {
         const statusList = cleanList(statusSet);
         const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
-        const empList = cleanList(empSet);
         const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
 
         const formatarNumPTBR = (num) => {
             return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
+
+        // Extrai todos os IDs únicos dos lotes selecionados e transforma em uma string separada por vírgula
+        const idsLotesString = Array.from(this.selectedIds).join(",");
+
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
         setInput("area2", formatarNumPTBR(totalArea));
         setInput("frente2", this.selectedIds.size === 1 ? formatarNumPTBR(totalFrente) : "-");
@@ -574,17 +572,13 @@ class MapaLotesManager {
         setInput("valor_metro2", totalArea > 0 ? formatarNumPTBR(totalValor / totalArea) : "0,00");
         setInput("valor_total2", formatarNumPTBR(totalValor));
         setInput("cliente2", clienteValor, isMulti);
+        
+        // Atribui a string de IDs ao novo input
+        setInput("idsLotes2", idsLotesString);
+
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
-
-        // Tratamento especial para Empreendimento (pode ser select ou input)
-        const elEmp = document.getElementById("empreendimento2");
-        if(elEmp && elEmp.tagName === "SELECT") {
-             setBubbleDropdown("empreendimento2", empList.length === 1 ? empList[0] : "");
-        } else {
-             setInput("empreendimento2", empList.length === 1 ? empList[0] : "");
-        }
     }
 
     _centralizeView() {
