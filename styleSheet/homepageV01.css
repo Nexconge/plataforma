@@ -1,6 +1,6 @@
-* {
+/* * {
     outline: 1px solid red !important;
-}
+} */
 
 /* --------------------------------------------------
 1.1.  VARIÁVEIS GLOBAIS e CONFIGURAÇÕES MACRO
@@ -14,22 +14,43 @@
 
     /* CORES */
     --azulPrincipal: #1772cb;
+    --azulClaro: #b0cbe0;
     --azulEscuro: #06498d;
     --cinzaClaro: #f7f7f7;
+    --cinzaMedio: #cccccc;
     --cinzaEscuro: grey;
     --white: #ffffff;
 
 }
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background: var(--cinzaEscuro);
     font-family: Nunito, sans-serif;
+    margin: 0;
+    padding: 0;
     padding-top: var(--headerHeight);
+    background: var(--cinzaMedio);
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+    background-size: 128px 128px;
 }
 
 /* --------------------------------------------------
 1.2.  CONFIGURAÇÕES CLASSES
 -------------------------------------------------- */
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - var(--headerHeight));
+    max-width: 1440px;
+    margin: 0 auto;
+}
 
 .btn-blue {
     cursor: pointer;
@@ -55,6 +76,35 @@ body {
     font-size: 14px;
 }
 
+/* .eyebrow {
+    color: var(--azulPrincipal);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+} */
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    /* background: var(--azulClaro); */
+    /* border: 1px solid var(--azulEscuro); */
+    color: var(--azulEscuro);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 100px;
+    animation: fadeDown .7s var(--ease) both;
+}
+
+.eyebrow::before {
+    content: '◆';
+    font-size: 7px;
+}
+
 
 /* -------------------------------------------------- 
 2.1.  HEADER SECTION
@@ -70,7 +120,7 @@ body {
     justify-content: center;
     z-index: 1000;
     background: var(--white);
-    border-bottom: 2px solid var(--azulPrincipal);
+    border-bottom: 1px solid var(--azulPrincipal);
 }
 
 #nav {
@@ -111,8 +161,9 @@ body {
 #nav-links a {
     text-decoration: none;
     color: var(--azulEscuro);
-    font-weight: 600;
-    font-size: 16px;
+    text-transform: uppercase;
+    font-weight: 400;
+    font-size: 10px;
 }
 
 /* -------------------------------------------------- 
@@ -120,12 +171,35 @@ body {
 -------------------------------------------------- */
 
 #hero-container {
+    padding: 32px 32px;
+    gap: 64px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    height: 600px;
     max-width: 1440px;
-    height: calc(100vh - var(--headerHeight));
     margin: 0 auto;
+}
+
+#hero-esquerda {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: 540px;
+    height: 100%;
+    padding: 12px 12px;
+    border-radius: calc(var(--borderRadiusPadrao) * 3);
+    background: var(--white);
+}
+
+#hero-direita {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 540px;
+    height: 100%;
+    padding: 12px 12px;
+    border-radius: calc(var(--borderRadiusPadrao) * 3);
     background: var(--white);
 }
 
@@ -133,7 +207,7 @@ body {
 2.3.  SERVIÇOS SECTION 
 -------------------------------------------------- */
 
-#servicos-container {
+/* #servicos-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -141,4 +215,4 @@ body {
     height: calc(100vh - var(--headerHeight));
     margin: 0 auto;
     background: var(--white);
-}
+} */
