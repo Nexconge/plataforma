@@ -216,6 +216,11 @@ function configurarFiltros(appCache, anosDisp, callback) {
     const btnRealizado = document.getElementById('btnRealizado');
     const btnPorCompetencia = document.getElementById('btnPorCompetencia');
 
+    const setProj = (t) => {
+        appCache.projecao = t;
+        callback();
+    };
+
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
     if(btnPorCompetencia) btnPorCompetencia.onclick = () => setProj("competencia");
@@ -248,7 +253,7 @@ function configurarFiltros(appCache, anosDisp, callback) {
             const anoSelecionado = el.anoSelect.value;
             const modoAtual = el.modo.value;
             
-            // MAGIA AQUI: Converte "2026" para o formato de range que o sistema novo espera
+            //Converte "2026" para o formato de range que o sistema novo espera
             sincronizarEstadoComSelectAntigo(anoSelecionado, modoAtual);
             
             callback();
@@ -576,7 +581,7 @@ function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
 
-    renderizarDRE(dados.matrizDRE, colunas, cache.userType);
+    renderizarDRE(dados.matrizDRE, colunas, projecao, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
     
     const mostrarCapitalGiro = projecao === 'realizado';
@@ -602,7 +607,7 @@ function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
     }
 }
 // DRE
-function renderizarDRE(matriz, colunas, userType) {
+function renderizarDRE(matriz, colunas, projecao, userType) {
     const tabela = document.getElementById('tabelaMatriz');
 
     if (!tabela) {
@@ -625,11 +630,18 @@ function renderizarDRE(matriz, colunas, userType) {
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
     if (userType?.toLowerCase() === 'developer') ordem.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
-    ordem.push('Caixa Inicial', 'Caixa Final');
-
+    
+    if (projecao !== 'competencia'){
+        ordem.push('Caixa Inicial', 'Caixa Final');
+    } else {
+        ordem.push('Rodape')
+    }
+        
     ordem.forEach(classe => {
         const row = tbody.insertRow();
-        row.insertCell().textContent = classe;
+        const classeText = classe === 'Rodape' ? '' : classe;
+
+        row.insertCell().textContent = classeText;
         colunas.forEach(c => row.insertCell().textContent = formatarValor(matriz[classe]?.[c] || 0));
         row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
 
@@ -638,7 +650,7 @@ function renderizarDRE(matriz, colunas, userType) {
             row.dataset.type = 'total';
         } else if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
             row.dataset.type = 'total-negrito';
-        } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
+        } else if (['Caixa Inicial', 'Caixa Final', 'Rodape'].includes(classe)) {
             row.dataset.type = 'saldo';
         } else {
             row.dataset.indent = '1';

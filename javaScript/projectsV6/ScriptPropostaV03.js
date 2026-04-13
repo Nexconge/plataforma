@@ -125,7 +125,6 @@ function extrairQuadraNome(nomeLote) {
 
 // --- LÓGICA DE NEGÓCIO ---
 export async function abrirEPreencherModalProposta(mapaManager, username) {
-    // --- MUDANÇA: Usa a nova função getSelectedLotesData ---
     if (!mapaManager || mapaManager.selectedIds.size === 0) {
         alert("Por favor, selecione ao menos um lote no mapa!");
         return;
@@ -133,10 +132,17 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     const lotesSelecionados = mapaManager.getSelectedLotesData();
 
+    // --- NOVA VALIDAÇÃO: Verifica se há mais de um empreendimento ---
+    const empreendimentosUnicos = new Set(lotesSelecionados.map(l => l.Empreendimento));
+    if (empreendimentosUnicos.size > 1) {
+        alert("Não é possível gerar uma proposta com lotes de empreendimentos diferentes. Selecione lotes de apenas um empreendimento.");
+        return;
+    }
+
     // Verificação de Status (todos devem estar disponíveis)
     const indisponiveis = lotesSelecionados.filter(l => l.Status !== "Disponível");
     if (indisponiveis.length > 0) {
-        alert(`Os seguintes lotes não estão disponíveis: ${indisponiveis.map(l=>l.Nome).join(", ")}`);
+        alert(`Os seguintes lotes não estão disponíveis: ${indisponiveis.map(l=>l.Lote).join(", ")}`);
         return;
     }
 
@@ -150,10 +156,10 @@ export async function abrirEPreencherModalProposta(mapaManager, username) {
 
     // Formatação de Nomes (Agrupa Quadras se possível)
     // Ex: "Quadra 10 Lotes 01, 02" ou "Q10 L01, Q11 L02"
-    const nomesList = lotesSelecionados.map(l => l.Nome).join(", ");
+    const nomesList = lotesSelecionados.map(l => l.Lote).join(", ");
     const quadrasLista = [...new Set(
     lotesSelecionados
-        .map(l => extrairQuadraNome(l.Nome))
+        .map(l => extrairQuadraNome(l.Lote))
         .filter(Boolean) // remove null
     )].join(", ");
 

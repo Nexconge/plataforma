@@ -157,7 +157,8 @@ class MapaLotesManager {
 
             // Adiciona o primeiro ponto ao final novamente para fechar o desenho no mapa (opcional no Leaflet, mas bom para garantir)
             finalCoords.push(finalCoords[0]);
-
+            
+            //Se for uma quadra desenha apenas o marcador central com tooltip, sem polígono
             if (lote.Quadra) {
                 const tempPoly = L.polygon(finalCoords);
                 const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
@@ -168,6 +169,22 @@ class MapaLotesManager {
                 marker.loteData = lote; 
                 marker.addTo(this.map);
                 this.quadraMarkers.push(marker);
+            
+            // Se o lote for inativo, desenha o poligono sem interatividade
+            } else if (lote.Inativo) {
+                const polygon = L.polygon(finalCoords, {
+                    color: "black",
+                    weight: 0.6,
+                    fillOpacity: 1,
+                    fillColor: "#c7c7c7",
+                    interactive: false
+                });
+                
+                polygon.loteData = lote;
+                polygon.addTo(this.map);
+                this.polygons[lote._id] = polygon;
+
+            // Caso contrário, desenha o polígono normalmente com interatividade
             } else {
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
@@ -312,8 +329,14 @@ class MapaLotesManager {
         const prevEmp = this.filters.empreendimento;
 
         let empVal = getCleanVal("empreendimentoSelect");
-        if (empVal.includes('__LOOKUP__')) empVal = empVal.split('__LOOKUP__')[1];
-
+        if (empVal && empVal.includes('__LOOKUP__')) {
+            empVal = empVal.split('__LOOKUP__')[1];
+        }
+        // Fallback caso o filtro venha vazio ou inválido
+        if (!empVal) {
+            const primeiroValido = this.allLotes.find(l => l.Empreendimento && l.Empreendimento.trim() !== "");
+            empVal = primeiroValido ? primeiroValido.Empreendimento : ""; 
+        }
         const zonaEl = document.getElementById("zona");
         
         this.filters = {
@@ -444,13 +467,6 @@ class MapaLotesManager {
 
         textIds.forEach(id => resetEl(id, false));
         complexIds.forEach(id => resetEl(id, true));
-
-        // Reseta o botão Alterar
-        const btnAlterar = document.getElementById("buttonAlterar");
-        if (btnAlterar) {
-            btnAlterar.style.opacity = "1";
-            btnAlterar.style.cursor = "pointer";
-        }
     }
 
     _fillForm() {
@@ -481,6 +497,7 @@ class MapaLotesManager {
             return;
         }
         const isMulti = this.selectedIds.size > 1;
+        const isEmpty = this.selectedIds.size === 0;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
         let nomes = [], listaClientes = [], statusSet = new Set(), attSet = new Set(), empSet = new Set(), zonaSet = new Set();
@@ -509,12 +526,15 @@ class MapaLotesManager {
         const empList = cleanList(empSet);
         const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
 
+        const formatarNumPTBR = (num) => {
+            return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
-        setInput("area2", totalArea.toFixed(2));
-        setInput("frente2", this.selectedIds.size === 1 ? totalFrente.toFixed(2) : "-");
-        setInput("lateral2", this.selectedIds.size === 1 ? totalLateral.toFixed(2) : "-");
-        setInput("valor_metro2", totalArea > 0 ? (totalValor / totalArea).toFixed(2) : "0.00");
-        setInput("valor_total2", totalValor.toFixed(2));
+        setInput("area2", formatarNumPTBR(totalArea));
+        setInput("frente2", this.selectedIds.size === 1 ? formatarNumPTBR(totalFrente) : "-");
+        setInput("lateral2", this.selectedIds.size === 1 ? formatarNumPTBR(totalLateral) : "-");
+        setInput("valor_metro2", totalArea > 0 ? formatarNumPTBR(totalValor / totalArea) : "0,00");
+        setInput("valor_total2", formatarNumPTBR(totalValor));
         setInput("cliente2", clienteValor, isMulti);
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
@@ -526,12 +546,6 @@ class MapaLotesManager {
              setBubbleDropdown("empreendimento2", empList.length === 1 ? empList[0] : "");
         } else {
              setInput("empreendimento2", empList.length === 1 ? empList[0] : "");
-        }
-
-        const btnAlterar = document.getElementById("buttonAlterar");
-        if (btnAlterar) {
-            btnAlterar.style.opacity = isMulti ? "0.5" : "1";
-            btnAlterar.style.cursor = isMulti ? "not-allowed" : "pointer";
         }
     }
 
@@ -556,7 +570,6 @@ class MapaLotesManager {
 
     _atualizarPoligonoSelecionado() {
         if (this.selectedIds.size > 1) {
-            alert("Não é possível alterar múltiplos lotes ao mesmo tempo.");
             return;
         }
         if (this.selectedIds.size !== 1) return;
@@ -575,8 +588,12 @@ class MapaLotesManager {
             let val = getVal(id);
             if (!val) return 0;
             
-            // Remove apenas as vírgulas (milhar) para o JS entender o número corretamente
-            val = val.toString().replace(/,/g, '');
+            // Remove o "R$ " se estiver presente
+            val = val.toString().replace("R$ ", '').trim();
+            // Remove os pontos (separador de milhar do PT-BR)
+            val = val.replace(/\./g, '');
+            // Substitui a vírgula (separador decimal do PT-BR) por ponto para o JS entender
+            val = val.replace(',', '.');
             
             return parseFloat(val) || 0;
         };
@@ -655,6 +672,53 @@ class MapaLotesManager {
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
         return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
+    }
+
+    aplicarAlteracaoEmMassa() {
+        if (this.selectedIds.size === 0) return;
+
+        // Função aprimorada para ignorar placeholders do Bubble e capturar o texto real formatado
+        const getValSeguro = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return "";
+
+            // Se for um dropdown (select), pega o texto visível ao invés do valor interno/slug (ex: evita "dispon_vel")
+            if (el.tagName === "SELECT" && el.selectedIndex >= 0) {
+                let text = el.options[el.selectedIndex].text;
+                // Se o texto for o padrão de campo vazio do Bubble, ignora
+                if (!text || text.includes("Choose") || text.includes("Escolha") || text.trim() === "") {
+                    return "";
+                }
+                return text.trim();
+            }
+
+            // Fallback para inputs normais (removendo aspas residuais)
+            let val = el.value ? el.value.replace(/"/g, '').trim() : "";
+            
+            // Impede que os placeholders do Bubble sobrescrevam dados reais
+            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER") || val === "null" || val === "undefined") {
+                return "";
+            }
+            
+            return val;
+        };
+
+        const newAtv = getValSeguro("dropAltMassaAtv");
+        const newStat = getValSeguro("dropAltMassaStat");
+        const newZon = getValSeguro("dropAltMassaZon");
+
+        this.selectedIds.forEach(id => {
+            const poligono = this.polygons[id];
+            if (poligono && poligono.loteData) {
+                // Só altera se a string resultante for válida (não for vazia)
+                if (newAtv !== "") poligono.loteData.Atividade = newAtv;
+                if (newStat !== "") poligono.loteData.Status = newStat;
+                if (newZon !== "") poligono.loteData.Zoneamento = newZon;
+            }
+        });
+
+        this._updateMapVisuals();
+        this._fillForm(); 
     }
 
     getSelectedLotesData() {
