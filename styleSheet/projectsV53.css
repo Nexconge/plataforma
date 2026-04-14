@@ -83,81 +83,87 @@ label {
    Checkbox estilo Interruptor
 ========================================================= */
 
+/* A caixinha que envolve tudo */
 .switch-container {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px; /* Espaçamento interno criando a caixa */
+  justify-content: space-between; /* Empurra o texto para a esquerda e o botão para a direita */
+  padding: 8px 14px;
   background-color: #ffffff;
-  border: 1px solid #cccccc; /* Mesma cor da borda dos seus inputs */
-  border-radius: 4px; /* Mesmo arredondamento dos inputs */
-  cursor: pointer; /* Mouse vira 'mãozinha' na caixa toda */
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
   width: 100%;
   box-sizing: border-box;
+  min-height: 54px; /* Garante um bom espaço para as duas linhas de texto */
 }
 
-/* Efeito ao passar o mouse */
 .switch-container:hover {
   background-color: #f9f9f9;
   border-color: #b3b3b3;
-}
-
-/* O interruptor em si */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 46px;
-  height: 26px;
-  flex-shrink: 0; /* Impede que o botão encolha se o texto for grande */
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-/* Fundo do interruptor */
-.slider {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #e0e0e0;
-  transition: 0.3s;
-  border-radius: 4px;
-}
-
-/* O "quadradinho" branco que desliza */
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-
-/* Cor quando ativado (ajustado para um azul que combina com o seu tema) */
-.switch input:checked + .slider {
-  background-color: #2e71c6; 
-}
-
-/* Movimento do quadradinho */
-.switch input:checked + .slider:before {
-  transform: translateX(20px);
 }
 
 /* Estilo do texto */
 .switch-label {
   font-family: var(--font_default), sans-serif;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 600; /* Deixa o texto em Negrito */
+  line-height: 1.3; /* Espaçamento agradável entre as duas linhas */
   color: #3d3d3d;
-  user-select: none; /* Impede que o usuário selecione o texto como texto normal */
+  user-select: none;
+}
+
+/* O interruptor (Agora maior) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 56px; /* Mais largo */
+  height: 32px; /* Mais alto */
+  flex-shrink: 0;
+}
+
+/* Esconde o checkbox nativo que pode estar causando o bug de alinhamento */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+}
+
+/* Fundo do interruptor (Formato pílula redondinha) */
+.slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #e0e0e0;
+  transition: 0.3s;
+  border-radius: 32px; 
+}
+
+/* O "botão" branco que desliza (Agora é uma bolinha) */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Cor quando ativado */
+.switch input:checked + .slider {
+  background-color: #2e71c6; 
+}
+
+/* Movimento do botão para a direita */
+.switch input:checked + .slider:before {
+  transform: translateX(24px);
 }
 
 /* =========================================================
