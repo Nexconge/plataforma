@@ -87,14 +87,29 @@ label {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 5px 0;
+  padding: 10px 14px; /* Espaçamento interno criando a caixa */
+  background-color: #ffffff;
+  border: 1px solid #cccccc; /* Mesma cor da borda dos seus inputs */
+  border-radius: 4px; /* Mesmo arredondamento dos inputs */
+  cursor: pointer; /* Mouse vira 'mãozinha' na caixa toda */
+  transition: background-color 0.2s, border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* Efeito ao passar o mouse */
+.switch-container:hover {
+  background-color: #f9f9f9;
+  border-color: #b3b3b3;
+}
+
+/* O interruptor em si */
 .switch {
   position: relative;
   display: inline-block;
-  width: 54px;
-  height: 32px;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0; /* Impede que o botão encolha se o texto for grande */
 }
 
 .switch input {
@@ -103,45 +118,46 @@ label {
   height: 0;
 }
 
+/* Fundo do interruptor */
 .slider {
   position: absolute;
-  cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
   background-color: #e0e0e0;
   transition: 0.3s;
   border-radius: 4px;
-  border: 1px solid #cccccc;
 }
 
+/* O "quadradinho" branco que desliza */
 .slider:before {
   position: absolute;
   content: "";
-  height: 24px;
-  width: 24px;
-  left: 3px;
-  bottom: 3px;
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
   background-color: white;
   transition: 0.3s;
   border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
+/* Cor quando ativado (ajustado para um azul que combina com o seu tema) */
 .switch input:checked + .slider {
-  background-color: #8faad4; 
-  border-color: #8faad4;
+  background-color: #2e71c6; 
 }
 
+/* Movimento do quadradinho */
 .switch input:checked + .slider:before {
-  transform: translateX(22px);
+  transform: translateX(20px);
 }
 
+/* Estilo do texto */
 .switch-label {
   font-family: var(--font_default), sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #3d3d3d;
-  cursor: pointer;
-  user-select: none;
+  user-select: none; /* Impede que o usuário selecione o texto como texto normal */
 }
 
 /* =========================================================
