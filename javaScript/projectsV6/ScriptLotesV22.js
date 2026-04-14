@@ -255,34 +255,34 @@ class MapaLotesManager {
             if (!val) return 0;
             // Remove tudo que não for número, vírgula, ponto ou sinal negativo
             let v = val.toString().replace(/[^\d,.-]/g, ''); 
-            v = v.replace(/\./g, ''); // Remove o ponto de milhar caso o Bubble tenha colocado visualmente
-            v = v.replace(',', '.');  // Troca a vírgula por ponto exclusivamente para o Javascript conseguir calcular
+            v = v.replace(/\./g, ''); 
+            v = v.replace(',', '.');  
             return parseFloat(v) || 0;
         };
 
-        const formatNum = (num) => {
-            return num.toFixed(2).replace('.', ',');
-        };
+        const formatNum = (num) => num.toFixed(2).replace('.', ',');
 
-        const triggerUpdate = (el, val) => {
+        const triggerUpdate = (el, val, isFinal) => {
             if (!el) return;
-            const formatado = formatNum(val);
+            const currentVal = parseNum(el.value);
             
-            // Só altera se o valor formatado não estiver contido no texto atual (evita loop infinito)
-            if (!el.value.includes(formatado)) {
-                el.value = formatado;
-                
-                // Dispara o evento nativo
-                el.dispatchEvent(new Event("change"));
-                
-                // FORÇA O RECONHECIMENTO NO BUBBLE (jQuery trigger)
-                if (window.jQuery) {
-                    window.jQuery(el).trigger('change');
-                }
+            // Só altera visualmente se o valor real matemático for diferente
+            if (Math.abs(currentVal - val) > 0.001) {
+                el.value = formatNum(val);
+                // Dispara apenas o 'input' para o plugin de máscara do Bubble formatar (colocar R$, etc), 
+                // SEM alertar o motor principal de dados do Bubble ainda.
+                el.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            
+            // Só dispara o 'change' para salvar no banco de dados quando o usuário TIRA O FOCO do campo.
+            // Isso impede que o Bubble reinicie o formulário enquanto você ainda está digitando.
+            if (isFinal) {
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+                if (window.jQuery) window.jQuery(el).trigger('change');
             }
         };
 
-        // Fica vigiando o campo a cada 50ms APENAS enquanto ele estiver clicado.
+        // Polling por Foco: Vigia o campo apenas enquanto o usuário está dentro dele
         const attachCalcEvent = (el, callback) => {
             if (!el) return;
             let pollTimer = null;
@@ -293,7 +293,7 @@ class MapaLotesManager {
                 pollTimer = setInterval(() => {
                     if (el.value !== lastValue) {
                         lastValue = el.value;
-                        callback();
+                        callback(false); // false = ainda está digitando (apenas atualiza visual)
                     }
                 }, 50);
             });
@@ -302,30 +302,30 @@ class MapaLotesManager {
                 if (pollTimer) clearInterval(pollTimer);
                 if (el.value !== lastValue) {
                     lastValue = el.value;
-                    callback();
                 }
+                callback(true); // true = saiu do campo (pode avisar o Bubble para salvar)
             });
         };
 
-        // Regra 1: Alterar Área -> Atualiza M2 (Baseado no Valor Total atual)
-        attachCalcEvent(areaEl, () => {
+        // Regra 1: Alterar Área -> Atualiza M2 
+        attachCalcEvent(areaEl, (isFinal) => {
             const a = parseNum(areaEl.value);
             const t = parseNum(valorTotalEl?.value);
-            if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
+            if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a, isFinal);
         });
 
-        // Regra 2: Alterar Valor Total -> Atualiza M2 (Baseado na Área atual)
-        attachCalcEvent(valorTotalEl, () => {
+        // Regra 2: Alterar Valor Total -> Atualiza M2 
+        attachCalcEvent(valorTotalEl, (isFinal) => {
             const a = parseNum(areaEl?.value);
             const t = parseNum(valorTotalEl.value);
-            if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
+            if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a, isFinal);
         });
 
-        // Regra 3: Alterar Valor M2 -> Atualiza Valor Total (Baseado na Área atual)
-        attachCalcEvent(valorM2El, () => {
+        // Regra 3: Alterar Valor M2 -> Atualiza Valor Total 
+        attachCalcEvent(valorM2El, (isFinal) => {
             const a = parseNum(areaEl?.value);
             const m2 = parseNum(valorM2El.value);
-            if (a > 0 && valorTotalEl) triggerUpdate(valorTotalEl, a * m2);
+            if (a > 0 && valorTotalEl) triggerUpdate(valorTotalEl, a * m2, isFinal);
         });
     }
 
