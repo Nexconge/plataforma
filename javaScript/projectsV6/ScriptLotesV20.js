@@ -247,47 +247,83 @@ class MapaLotesManager {
             }
         }, 500); 
 
-        // --- LÓGICA DE CÁLCULO AUTOMÁTICO CORRIGIDA ---
         const areaEl = document.getElementById("area2");
         const valorTotalEl = document.getElementById("valor_total2");
         const valorM2El = document.getElementById("valor_metro2");
 
         const parseNum = (val) => {
             if (!val) return 0;
-            let v = val.toString().replace("R$ ", '').trim();
-            v = v.replace(/\./g, '');
-            v = v.replace(',', '.');
+            // Remove tudo que não for número, vírgula ou ponto (ignora 'R$', 'm²', espaços, etc)
+            let v = val.toString().replace(/[^\d,.]/g, ''); 
+            v = v.replace(/\./g, ''); // Remove separador de milhar
+            v = v.replace(',', '.');  // Troca vírgula decimal por ponto para o Javascript
             return parseFloat(v) || 0;
         };
 
         const formatNum = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         const triggerUpdate = (el, val) => {
-            if (el) {
-                el.value = formatNum(val);
-                // Dispara apenas o 'change' para o Bubble registrar a alteração no banco.
-                // Como não estamos disparando 'input', não corremos risco de loop infinito.
+            if (!el) return;
+            const formatado = formatNum(val);
+            
+            // Só altera se o valor formatado não estiver contido no texto atual (evita loop infinito)
+            if (!el.value.includes(formatado)) {
+                el.value = formatado;
+                
+                // Dispara o evento nativo
                 el.dispatchEvent(new Event("change"));
+                
+                // FORÇA O RECONHECIMENTO NO BUBBLE (jQuery trigger)
+                if (window.jQuery) {
+                    window.jQuery(el).trigger('change');
+                }
             }
         };
 
-        // Usamos 'input' porque ele só detecta quando o usuário digita (evita bugar quando clica no lote)
-        if (areaEl) areaEl.addEventListener('input', () => {
+        // Fica vigiando o campo a cada 50ms APENAS enquanto ele estiver clicado.
+        const attachCalcEvent = (el, callback) => {
+            if (!el) return;
+            let pollTimer = null;
+            let lastValue = el.value;
+
+            el.addEventListener('focus', () => {
+                lastValue = el.value;
+                pollTimer = setInterval(() => {
+                    if (el.value !== lastValue) {
+                        lastValue = el.value;
+                        callback();
+                    }
+                }, 50);
+            });
+
+            el.addEventListener('blur', () => {
+                if (pollTimer) clearInterval(pollTimer);
+                if (el.value !== lastValue) {
+                    lastValue = el.value;
+                    callback();
+                }
+            });
+        };
+
+        // Regra 1: Alterar Área -> Atualiza M2 (Baseado no Valor Total atual)
+        attachCalcEvent(areaEl, () => {
             const a = parseNum(areaEl.value);
             const t = parseNum(valorTotalEl?.value);
             if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
         });
 
-        if (valorTotalEl) valorTotalEl.addEventListener('input', () => {
+        // Regra 2: Alterar Valor Total -> Atualiza M2 (Baseado na Área atual)
+        attachCalcEvent(valorTotalEl, () => {
             const a = parseNum(areaEl?.value);
             const t = parseNum(valorTotalEl.value);
             if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
         });
 
-        if (valorM2El) valorM2El.addEventListener('input', () => {
+        // Regra 3: Alterar Valor M2 -> Atualiza Valor Total (Baseado na Área atual)
+        attachCalcEvent(valorM2El, () => {
             const a = parseNum(areaEl?.value);
             const m2 = parseNum(valorM2El.value);
-            if (valorTotalEl) triggerUpdate(valorTotalEl, a * m2);
+            if (a > 0 && valorTotalEl) triggerUpdate(valorTotalEl, a * m2);
         });
     }
 
