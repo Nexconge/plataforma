@@ -253,14 +253,16 @@ class MapaLotesManager {
 
         const parseNum = (val) => {
             if (!val) return 0;
-            // Remove tudo que não for número, vírgula ou ponto (ignora 'R$', 'm²', espaços, etc)
-            let v = val.toString().replace(/[^\d,.]/g, ''); 
-            v = v.replace(/\./g, ''); // Remove separador de milhar
-            v = v.replace(',', '.');  // Troca vírgula decimal por ponto para o Javascript
+            // Remove tudo que não for número, vírgula, ponto ou sinal negativo
+            let v = val.toString().replace(/[^\d,.-]/g, ''); 
+            v = v.replace(/\./g, ''); // Remove o ponto de milhar caso o Bubble tenha colocado visualmente
+            v = v.replace(',', '.');  // Troca a vírgula por ponto exclusivamente para o Javascript conseguir calcular
             return parseFloat(v) || 0;
         };
 
-        const formatNum = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatNum = (num) => {
+            return num.toFixed(2).replace('.', ',');
+        };
 
         const triggerUpdate = (el, val) => {
             if (!el) return;
