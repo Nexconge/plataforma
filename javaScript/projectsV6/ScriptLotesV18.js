@@ -17,6 +17,7 @@ class MapaLotesManager {
             quadras: [],
             status: [],
             Atividades: [],
+            zoneamentos: [],
             zonaColorMode: false
         };
         this._handleFilterChange = this._handleFilterChange.bind(this);
@@ -212,7 +213,7 @@ class MapaLotesManager {
 
     // --- 4. Filtros ---
     _setupEventListeners() {
-        const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade"];
+        const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade", "selectZoneamento"];
         
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -245,6 +246,56 @@ class MapaLotesManager {
                 clearInterval(checkExist);
             }
         }, 500); 
+
+        // Lógica de cálculo automático para Área, Valor Total e Valor M2
+        const areaEl = document.getElementById("area2");
+        const valorTotalEl = document.getElementById("valor_total2");
+        const valorM2El = document.getElementById("valor_metro2");
+
+        const parseNum = (val) => {
+            if (!val) return 0;
+            let v = val.toString().replace("R$ ", '').trim();
+            v = v.replace(/\./g, '');
+            v = v.replace(',', '.');
+            return parseFloat(v) || 0;
+        };
+
+        const formatNum = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        let isUpdatingCalc = false;
+        const triggerUpdate = (el, val) => {
+            if (el) {
+                el.value = formatNum(val);
+                el.dispatchEvent(new Event("change"));
+            }
+        };
+
+        if (areaEl) areaEl.addEventListener('change', () => {
+            if (isUpdatingCalc) return;
+            isUpdatingCalc = true;
+            const a = parseNum(areaEl.value);
+            const t = parseNum(valorTotalEl?.value);
+            if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
+            isUpdatingCalc = false;
+        });
+
+        if (valorTotalEl) valorTotalEl.addEventListener('change', () => {
+            if (isUpdatingCalc) return;
+            isUpdatingCalc = true;
+            const a = parseNum(areaEl?.value);
+            const t = parseNum(valorTotalEl.value);
+            if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
+            isUpdatingCalc = false;
+        });
+
+        if (valorM2El) valorM2El.addEventListener('change', () => {
+            if (isUpdatingCalc) return;
+            isUpdatingCalc = true;
+            const a = parseNum(areaEl?.value);
+            const m2 = parseNum(valorM2El.value);
+            if (valorTotalEl) triggerUpdate(valorTotalEl, a * m2);
+            isUpdatingCalc = false;
+        });
     }
 
     _handleFilterChange() {
@@ -348,10 +399,11 @@ class MapaLotesManager {
         const zonaEl = document.getElementById("zona");
         
         this.filters = {
-            empreendimentos: [...new Set(idsFiltro)], // Salva a lista de IDs limpos sem duplicatas
+            empreendimentos: [...new Set(idsFiltro)],
             quadras: getMultiVal("selectQuadra"),
             status: getMultiVal("selectStatus"),
             Atividades: getMultiVal("selectAtividade"),
+            zoneamentos: getMultiVal("selectZoneamento"),
             zonaColorMode: zonaEl ? zonaEl.checked : false 
         };
 
@@ -379,8 +431,7 @@ class MapaLotesManager {
     }
 
     _updateMapVisuals() {
-        // Verifica se há pelo menos um item em qualquer uma das listas de filtro
-        const hasActiveFilters = !!(this.filters.quadras.length > 0 || this.filters.status.length > 0 || this.filters.Atividades.length > 0);
+        const hasActiveFilters = !!(this.filters.quadras.length > 0 || this.filters.status.length > 0 || this.filters.Atividades.length > 0 || this.filters.zoneamentos.length > 0);
 
         this.quadraMarkers.forEach(marker => {
             const data = marker.loteData;
@@ -403,24 +454,20 @@ class MapaLotesManager {
 
             let isMatch = true;
             if (hasActiveFilters) {
-                // Filtragem MultiQuadra
                 if (this.filters.quadras.length > 0) {
-                    // Extrai apenas os números do filtro e do lote para comparar corretamente
                     const filterQs = this.filters.quadras.map(q => q.replace(/\D/g, ''));
                     const matchQ = data.Lote.match(/Q(\d+)/i);
                     const lotQ = matchQ ? matchQ[1] : "";
-                    
                     if (!filterQs.includes(lotQ)) isMatch = false;
                 }
-                
-                // Filtragem MultiStatus
                 if (this.filters.status.length > 0) {
                     if (!this.filters.status.includes(data.Status)) isMatch = false;
                 }
-                
-                // Filtragem MultiAtividade
                 if (this.filters.Atividades.length > 0) {
                     if (!this.filters.Atividades.includes(data.Atividade)) isMatch = false;
+                }
+                if (this.filters.zoneamentos.length > 0) {
+                    if (!this.filters.zoneamentos.includes(data.Zoneamento)) isMatch = false;
                 }
             }
 
@@ -428,18 +475,14 @@ class MapaLotesManager {
             const isSelected = this.selectedIds.has(data._id);
 
             if (isSelected) {
-                // Lote clicado/selecionado no momento (Prioridade máxima)
                 poly.setStyle({ weight: 3, color: "blue", fillColor: "blue", fillOpacity: 0.7 });
                 poly.bringToFront();
             } else if (!hasActiveFilters) {
-                // Mapa no estado normal (sem nenhum filtro ativo)
                 poly.setStyle({ weight: 0.8, color: "black", fillColor: theme.fill, fillOpacity: 1 });
             } else if (isMatch) {
-                // Lote que ESTÁ no filtro (Destaque total)
                 poly.setStyle({ weight: 1.8, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
                 poly.bringToFront(); 
             } else {
-                // Lote FORA do filtro (Quase invisível / Apagado)
                 poly.setStyle({ weight: 0.6, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.55 });
             }
 
@@ -765,6 +808,21 @@ class MapaLotesManager {
 
     getSelectedLotesData() {
         return Array.from(this.selectedIds).map(id => this.polygons[id].loteData);
+    }
+
+    excluirLotesSelecionados() {
+        if (this.selectedIds.size === 0) return;
+
+        this.selectedIds.forEach(id => {
+            const poligono = this.polygons[id];
+            if (poligono) {
+                if (this.map.hasLayer(poligono)) this.map.removeLayer(poligono);
+                delete this.polygons[id];
+            }
+        });
+
+        this.allLotes = this.allLotes.filter(l => !this.selectedIds.has(l._id));
+        this._clearForm();
     }
 }
 
