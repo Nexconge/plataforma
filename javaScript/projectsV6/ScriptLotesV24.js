@@ -250,51 +250,78 @@ class MapaLotesManager {
         const areaEl = document.getElementById("area2");
         const valorTotalEl = document.getElementById("valor_total2");
         const valorM2El = document.getElementById("valor_metro2");
+        const frenteEl = document.getElementById("frente2");
+        const lateralEl = document.getElementById("lateral2");
 
+        // Função universal para extrair apenas os centavos/decimais matemáticos
         const parseNum = (val) => {
-            if (!val) return 0;
-            // Limpa formatações para o JS calcular (mantém apenas números, ponto e vírgula)
-            let v = val.toString().replace(/[^\d,.-]/g, ''); 
-            v = v.replace(/\./g, ''); 
-            v = v.replace(',', '.');  
-            return parseFloat(v) || 0;
+            if (!val || val === "-") return 0;
+            let digits = val.toString().replace(/\D/g, ''); // Pega SÓ números
+            return (parseInt(digits, 10) / 100) || 0; // Transforma em decimal (ex: 1234 -> 12.34)
         };
 
-        const formatNum = (num) => num.toFixed(2).replace('.', ',');
+        // Formatadores com sufixos/prefixos
+        const formatters = {
+            area: (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²",
+            money: (num) => "R$ " + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            meters: (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m"
+        };
 
-        const updateField = (el, val) => {
+        // Aplica a máscara e devolve o valor numérico
+        const applyMask = (el, type) => {
+            if (!el) return 0;
+            let digits = el.value.replace(/\D/g, '');
+            if (!digits) { 
+                el.value = ''; 
+                return 0; 
+            }
+            let num = (parseInt(digits, 10) / 100);
+            el.value = formatters[type](num);
+            return num;
+        };
+
+        // Avisa o Bubble apenas quando a digitação terminar
+        const notifyBubble = (el) => {
             if (!el) return;
-            el.value = formatNum(val);
-            // Avisa o Bubble para rodar a máscara e salvar no banco
             el.dispatchEvent(new Event("change", { bubbles: true }));
             if (window.jQuery) window.jQuery(el).trigger('change');
         };
 
-        // Regra 1: Quando o usuário SAIR da Área -> Atualiza M2
+        // Regra para Frente e Lateral (Só máscara, sem cálculos)
+        [frenteEl, lateralEl].forEach(el => {
+            if (!el) return;
+            el.addEventListener('input', () => applyMask(el, 'meters'));
+            el.addEventListener('blur', () => notifyBubble(el));
+        });
+
+        // Regra 1: Alterar Área -> Máscara Área + Atualiza M2 (visualmente)
         if (areaEl) {
-            areaEl.addEventListener('blur', () => {
-                const a = parseNum(areaEl.value);
+            areaEl.addEventListener('input', () => {
+                const a = applyMask(areaEl, 'area');
                 const t = parseNum(valorTotalEl?.value);
-                if (a > 0 && valorM2El) updateField(valorM2El, t / a);
+                if (a > 0 && valorM2El) valorM2El.value = formatters.money(t / a);
             });
+            areaEl.addEventListener('blur', () => { notifyBubble(areaEl); notifyBubble(valorM2El); });
         }
 
-        // Regra 2: Quando o usuário SAIR do Valor Total -> Atualiza M2
+        // Regra 2: Alterar Valor Total -> Máscara Dinheiro + Atualiza M2 (visualmente)
         if (valorTotalEl) {
-            valorTotalEl.addEventListener('blur', () => {
+            valorTotalEl.addEventListener('input', () => {
+                const t = applyMask(valorTotalEl, 'money');
                 const a = parseNum(areaEl?.value);
-                const t = parseNum(valorTotalEl.value);
-                if (a > 0 && valorM2El) updateField(valorM2El, t / a);
+                if (a > 0 && valorM2El) valorM2El.value = formatters.money(t / a);
             });
+            valorTotalEl.addEventListener('blur', () => { notifyBubble(valorTotalEl); notifyBubble(valorM2El); });
         }
 
-        // Regra 3: Quando o usuário SAIR do Valor M2 -> Atualiza Valor Total
+        // Regra 3: Alterar Valor M2 -> Máscara Dinheiro + Atualiza Valor Total (visualmente)
         if (valorM2El) {
-            valorM2El.addEventListener('blur', () => {
+            valorM2El.addEventListener('input', () => {
+                const m2 = applyMask(valorM2El, 'money');
                 const a = parseNum(areaEl?.value);
-                const m2 = parseNum(valorM2El.value);
-                if (a > 0 && valorTotalEl) updateField(valorTotalEl, a * m2);
+                if (a > 0 && valorTotalEl) valorTotalEl.value = formatters.money(a * m2);
             });
+            valorM2El.addEventListener('blur', () => { notifyBubble(valorM2El); notifyBubble(valorTotalEl); });
         }
     }
 
@@ -605,21 +632,22 @@ class MapaLotesManager {
             return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
+        const formatArea = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²";
+        const formatMoney = (num) => "R$ " + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatMeters = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m";
+
         const idsLotesString = Array.from(this.selectedIds).join(",");
-        
-        // Captura a quantidade exata de lotes selecionados
         const qtdSelecionada = this.selectedIds.size;
 
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
-        setInput("area2", formatarNumPTBR(totalArea));
-        setInput("frente2", this.selectedIds.size === 1 ? formatarNumPTBR(totalFrente) : "-");
-        setInput("lateral2", this.selectedIds.size === 1 ? formatarNumPTBR(totalLateral) : "-");
-        setInput("valor_metro2", totalArea > 0 ? formatarNumPTBR(totalValor / totalArea) : "0,00");
-        setInput("valor_total2", formatarNumPTBR(totalValor));
+        setInput("area2", totalArea > 0 ? formatArea(totalArea) : "");
+        setInput("frente2", this.selectedIds.size === 1 && totalFrente > 0 ? formatMeters(totalFrente) : (isMulti ? "-" : ""));
+        setInput("lateral2", this.selectedIds.size === 1 && totalLateral > 0 ? formatMeters(totalLateral) : (isMulti ? "-" : ""));
+        setInput("valor_metro2", totalArea > 0 ? formatMoney(totalValor / totalArea) : formatMoney(0));
+        setInput("valor_total2", totalValor > 0 ? formatMoney(totalValor) : "");
         setInput("cliente2", clienteValor, isMulti);
         
         setInput("idsLotes2", idsLotesString);
-        // Preenche o input novo com a quantidade
         setInput("selectedCount2", qtdSelecionada);
 
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
@@ -647,9 +675,6 @@ class MapaLotesManager {
     }
 
     _atualizarPoligonoSelecionado() {
-        if (this.selectedIds.size > 1) {
-            return;
-        }
         if (this.selectedIds.size !== 1) return;
 
         const [id] = this.selectedIds;
@@ -659,21 +684,12 @@ class MapaLotesManager {
         const getVal = id => document.getElementById(id)?.value || "";
         const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
 
-        // CONVERSÃO CORRIGIDA:
-        // Input: "1,200.50" (Vírgula = Milhar, Ponto = Decimal)
-        // Ação: Remove vírgulas -> "1200.50" -> parseFloat
+        // Pega qualquer string com máscara e converte para decimal puro
         const getNum = (id) => {
             let val = getVal(id);
-            if (!val) return 0;
-            
-            // Remove o "R$ " se estiver presente
-            val = val.toString().replace("R$ ", '').trim();
-            // Remove os pontos (separador de milhar do PT-BR)
-            val = val.replace(/\./g, '');
-            // Substitui a vírgula (separador decimal do PT-BR) por ponto para o JS entender
-            val = val.replace(',', '.');
-            
-            return parseFloat(val) || 0;
+            if (!val || val === "-") return 0;
+            let digits = val.toString().replace(/\D/g, ''); 
+            return (parseInt(digits, 10) / 100) || 0;
         };
 
         Object.assign(poligono.loteData, {
