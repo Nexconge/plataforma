@@ -247,7 +247,7 @@ class MapaLotesManager {
             }
         }, 500); 
 
-        // Lógica de cálculo automático para Área, Valor Total e Valor M2
+        // --- LÓGICA DE CÁLCULO AUTOMÁTICO CORRIGIDA ---
         const areaEl = document.getElementById("area2");
         const valorTotalEl = document.getElementById("valor_total2");
         const valorM2El = document.getElementById("valor_metro2");
@@ -262,39 +262,32 @@ class MapaLotesManager {
 
         const formatNum = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        let isUpdatingCalc = false;
         const triggerUpdate = (el, val) => {
             if (el) {
                 el.value = formatNum(val);
+                // Dispara apenas o 'change' para o Bubble registrar a alteração no banco.
+                // Como não estamos disparando 'input', não corremos risco de loop infinito.
                 el.dispatchEvent(new Event("change"));
             }
         };
 
-        if (areaEl) areaEl.addEventListener('change', () => {
-            if (isUpdatingCalc) return;
-            isUpdatingCalc = true;
+        // Usamos 'input' porque ele só detecta quando o usuário digita (evita bugar quando clica no lote)
+        if (areaEl) areaEl.addEventListener('input', () => {
             const a = parseNum(areaEl.value);
             const t = parseNum(valorTotalEl?.value);
             if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
-            isUpdatingCalc = false;
         });
 
-        if (valorTotalEl) valorTotalEl.addEventListener('change', () => {
-            if (isUpdatingCalc) return;
-            isUpdatingCalc = true;
+        if (valorTotalEl) valorTotalEl.addEventListener('input', () => {
             const a = parseNum(areaEl?.value);
             const t = parseNum(valorTotalEl.value);
             if (a > 0 && valorM2El) triggerUpdate(valorM2El, t / a);
-            isUpdatingCalc = false;
         });
 
-        if (valorM2El) valorM2El.addEventListener('change', () => {
-            if (isUpdatingCalc) return;
-            isUpdatingCalc = true;
+        if (valorM2El) valorM2El.addEventListener('input', () => {
             const a = parseNum(areaEl?.value);
             const m2 = parseNum(valorM2El.value);
             if (valorTotalEl) triggerUpdate(valorTotalEl, a * m2);
-            isUpdatingCalc = false;
         });
     }
 
