@@ -556,18 +556,29 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (!el) return;
 
-            if (isComplex) {
+            if (isComplex && el.tagName === "SELECT") {
+                // Nova Lógica: Busca especificamente a opção vazia (BLANK) do Bubble
+                let blankSet = false;
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value.includes("BLANK") || el.options[i].text.trim() === "") {
+                        el.value = el.options[i].value;
+                        blankSet = true;
+                        break;
+                    }
+                }
+                if (!blankSet) el.value = "null";
+            } else if (isComplex) {
                 el.value = "null";
             } else {
                 el.value = "";
             }
             
             try {
-                el.dispatchEvent(new Event("change"));
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+                if (window.jQuery) window.jQuery(el).trigger('change');
             } catch (e) {}
         };
 
-        // Adicionado o 'selectedCount2' na lista de inputs de texto
         const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2", "selectedCount2"];
         const complexIds = ["atividade2", "status2", "zona2"];
 
@@ -580,7 +591,8 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (el) { 
                 el.value = (val === undefined || val === null) ? "" : val; 
-                el.dispatchEvent(new Event("change")); 
+                el.dispatchEvent(new Event("change", { bubbles: true })); 
+                if (window.jQuery) window.jQuery(el).trigger('change');
             }
         };
         
@@ -591,10 +603,25 @@ class MapaLotesManager {
             if (val === undefined || val === null || val === "undefined" || val === "") {
                 el.value = "null"; 
             } else {
-                el.value = JSON.stringify(val); 
+                // Nova Lógica para Option Sets: Compara pelo texto de exibição e não pelo ID interno
+                let optionFound = false;
+                for (let i = 0; i < el.options.length; i++) {
+                    // Ignora diferenças de maiúsculas/minúsculas para evitar erros de digitação no BD
+                    if (el.options[i].text.trim().toLowerCase() === val.toString().trim().toLowerCase()) {
+                        el.value = el.options[i].value; // Injeta o slug/ID correto que o Bubble quer
+                        optionFound = true;
+                        break;
+                    }
+                }
+                
+                // Fallback de segurança caso seja "Vários" ou texto customizado
+                if (!optionFound) {
+                    el.value = JSON.stringify(val); 
+                }
             }
             
-            el.dispatchEvent(new Event("change"));
+            el.dispatchEvent(new Event("change", { bubbles: true }));
+            if (window.jQuery) window.jQuery(el).trigger('change');
         };
 
         if (this.selectedIds.size === 0) {
@@ -627,10 +654,6 @@ class MapaLotesManager {
         const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
         const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
-
-        const formatarNumPTBR = (num) => {
-            return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        };
 
         const formatArea = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²";
         const formatMoney = (num) => "R$ " + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
