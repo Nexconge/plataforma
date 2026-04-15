@@ -705,9 +705,20 @@ class MapaLotesManager {
         if(!poligono) return;
 
         const getVal = id => document.getElementById(id)?.value || "";
-        const cleanStr = (val) => val ? val.replace(/"/g, '') : "";
+        
+        // Função para capturar o texto e formatar (Garante acentos e Maiúscula)
+        const getLabelFormatado = id => {
+            const el = document.getElementById(id);
+            if (!el || el.tagName !== "SELECT" || el.selectedIndex < 0) return "";
+            const text = el.options[el.selectedIndex].text.trim();
+            
+            // Ignora placeholders
+            if (!text || text.includes("...") || text.toLowerCase().includes("selecione")) return "";
+            
+            // Força Primeira letra Maiúscula e restante Minúscula
+            return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+        };
 
-        // Pega qualquer string com máscara e converte para decimal puro
         const getNum = (id) => {
             let val = getVal(id);
             if (!val || val === "-") return 0;
@@ -718,18 +729,19 @@ class MapaLotesManager {
         Object.assign(poligono.loteData, {
             Lote: getVal("quadra_lote2"),
             Área: getNum("area2"),
-            Cliente: cleanStr(getVal("cliente2")),
-            Status: cleanStr(getVal("status2")), 
-            Atividade: cleanStr(getVal("atividade2")),
+            Cliente: getVal("cliente2")?.replace(/"/g, '').trim() || "",
+            Status: getLabelFormatado("status2"), 
+            Atividade: getLabelFormatado("atividade2"),
             Frente: getNum("frente2"),
             Lateral: getNum("lateral2"),
             ValorM2: getNum("valor_metro2"),
             Valor: getNum("valor_total2"),
-            Zoneamento: cleanStr(getVal("zona2"))
+            Zoneamento: getLabelFormatado("zona2")
         });
         
         this._updateMapVisuals();
     }
+
 
     // Verifica se o polígono é "Simples" (não tem linhas se cruzando)
     _isSimplePolygon(coords) {
@@ -798,32 +810,19 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (!el) return "";
 
-            // Verifica se a propriedade value bruta já indica vazio
-            let val = el.value ? el.value.replace(/"/g, '').trim() : "";
-            
-            if (!val || val === "null" || val === "undefined" || val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) {
-                return "";
-            }
-
-            // Tratamento especial para Dropdowns (<select>)
+            // Se for Dropdown (Option Set), pega o texto visível para evitar o bug de ID/acentuação
             if (el.tagName === "SELECT" && el.selectedIndex >= 0) {
                 let text = el.options[el.selectedIndex].text.trim();
+                if (!text || text.includes("...") || text.toLowerCase().includes("selecione")) return "";
                 
-                // Bloqueia placeholders visuais comuns que passariam como texto válido
-                if (
-                    !text ||
-                    text.toUpperCase().includes("CHOOSE") ||
-                    text.toUpperCase().includes("ESCOLHA") ||
-                    text.toUpperCase().includes("SELECIONE") ||
-                    text === "..." ||
-                    text === "-"
-                ) {
-                    return "";
-                }
-                
-                return text;
+                // Formatação: Primeira Maiúscula
+                return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
             }
 
+            let val = el.value ? el.value.replace(/"/g, '').trim() : "";
+            if (!val || val === "null" || val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) {
+                return "";
+            }
             return val;
         };
 
@@ -834,7 +833,6 @@ class MapaLotesManager {
         this.selectedIds.forEach(id => {
             const poligono = this.polygons[id];
             if (poligono && poligono.loteData) {
-                // Altera APENAS se a variável não estiver vazia
                 if (newAtv !== "") poligono.loteData.Atividade = newAtv;
                 if (newStat !== "") poligono.loteData.Status = newStat;
                 if (newZon !== "") poligono.loteData.Zoneamento = newZon;
