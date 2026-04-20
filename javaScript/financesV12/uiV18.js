@@ -636,20 +636,21 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
     if (projecao !== 'competencia'){
         ordem.push('Caixa Inicial', 'Caixa Final');
     } else {
-        ordem.push('Rodape')
+        ordem.push('Rodape');
     }
         
     ordem.forEach(classe => {
-        // Insere o cabeçalho expansível antes dos itens de developer
+        // Insere o controle expansível extremamente discreto antes dos itens
         if (classe === extrasDev[0]) {
             const rowGroup = tbody.insertRow();
             rowGroup.id = 'dre_grupo_dev';
-            rowGroup.dataset.type = 'header-group';
+            rowGroup.className = 'linha-toggle-dev';
             rowGroup.style.cursor = 'pointer';
             rowGroup.onclick = () => toggleLinha('dre_grupo_dev');
 
             const cellIcon = rowGroup.insertCell();
-            cellIcon.innerHTML = `<span class="expand-btn">[+]</span> Movimentações Extras (Dev)`;
+            // Apenas o ícone de [+] com cor suave, sem texto
+            cellIcon.innerHTML = `<span class="expand-btn" style="color: #ccc; font-weight: normal; font-size: 11px; margin-left: 10px;" title="Mostrar/Ocultar Movimentações Dev">[+]</span>`;
 
             colunas.forEach(() => rowGroup.insertCell());
             rowGroup.insertCell();
@@ -657,7 +658,6 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
 
         const row = tbody.insertRow();
 
-        // Associa as linhas extras ao grupo e as oculta por padrão
         if (extrasDev.includes(classe)) {
             row.classList.add('parent-dre_grupo_dev', 'hidden');
         }
@@ -683,7 +683,6 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
         if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe)) {
             criarLinhaEspacadora(tbody, colunas);
             
-            // Oculta o espaçador junto com os itens dev
             if (classe === 'Outros') {
                 const lastRow = tbody.lastElementChild;
                 if (lastRow) lastRow.classList.add('parent-dre_grupo_dev', 'hidden');
