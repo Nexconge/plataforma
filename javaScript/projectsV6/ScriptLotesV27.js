@@ -829,6 +829,14 @@ class MapaLotesManager {
         const newAtv = getValSeguro("dropAltMassaAtv");
         const newStat = getValSeguro("dropAltMassaStat");
         const newZon = getValSeguro("dropAltMassaZon");
+        
+        // Captura e converte o novo Valor M2
+        const rawValM2 = getValSeguro("inputAltMassaValM2");
+        let newValM2 = 0;
+        if (rawValM2 && rawValM2 !== "-") {
+            let digits = rawValM2.toString().replace(/\D/g, ''); 
+            newValM2 = (parseInt(digits, 10) / 100) || 0;
+        }
 
         this.selectedIds.forEach(id => {
             const poligono = this.polygons[id];
@@ -836,6 +844,14 @@ class MapaLotesManager {
                 if (newAtv !== "") poligono.loteData.Atividade = newAtv;
                 if (newStat !== "") poligono.loteData.Status = newStat;
                 if (newZon !== "") poligono.loteData.Zoneamento = newZon;
+                
+                // Atualiza o Valor M2 e recalcula o Valor Total com base na Área do lote
+                if (newValM2 > 0) {
+                    poligono.loteData.ValorM2 = newValM2;
+                    if (poligono.loteData.Área && poligono.loteData.Área > 0) {
+                        poligono.loteData.Valor = poligono.loteData.Área * newValM2;
+                    }
+                }
             }
         });
 
