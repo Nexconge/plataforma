@@ -1,10 +1,8 @@
-// uiV09.js Refatorado
 
 // ------ Estado Global ------
 let graficosAtuais = { saldoCaixa: null, acumulado: null, mensal: null };
 let chartJsPromise = null;
 const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const MAX_MESES_FLUXO = 6;
 
 const EstadoData = {
     minDataDisponivel: null, // 'MM-YYYY'
@@ -216,16 +214,16 @@ function configurarFiltros(appCache, anosDisp, callback) {
     // 2. Listeners Comuns
     const btnARealizar = document.getElementById('btnARealizar');
     const btnRealizado = document.getElementById('btnRealizado');
+    const btnPorCompetencia = document.getElementById('btnPorCompetencia');
 
     const setProj = (t) => {
         appCache.projecao = t;
-        const divCG = document.getElementById('groupCapitalGiro');
-        if(divCG) divCG.style.display = (t === "arealizar") ? "none" : "";
         callback();
     };
 
     if(btnARealizar) btnARealizar.onclick = () => setProj("arealizar");
     if(btnRealizado) btnRealizado.onclick = () => setProj("realizado");
+    if(btnPorCompetencia) btnPorCompetencia.onclick = () => setProj("competencia");
     
     el.conta.onchange = callback;
     
@@ -255,7 +253,7 @@ function configurarFiltros(appCache, anosDisp, callback) {
             const anoSelecionado = el.anoSelect.value;
             const modoAtual = el.modo.value;
             
-            // MAGIA AQUI: Converte "2026" para o formato de range que o sistema novo espera
+            //Converte "2026" para o formato de range que o sistema novo espera
             sincronizarEstadoComSelectAntigo(anoSelecionado, modoAtual);
             
             callback();
@@ -311,7 +309,6 @@ function resetarSelecaoPeloModo(modo, usaNovo = true) {
         sincronizarEstadoComSelectAntigo(ano, modo);
     }
 }
-
 function atualizarOpcoesAnoSelect(dummy, minAno, maxAno, modo, projecao) {
     const usaNovo = usarNovoRangePicker(EstadoData.userTypeAtual);
     
@@ -374,7 +371,7 @@ function renderizarComponenteFiltro() {
         ? EstadoData.selecaoInicio 
         : `${EstadoData.selecaoInicio} até ${EstadoData.selecaoFim}`;
     
-    btn.textContent = `${textoPeriodo} ▼`;
+    btn.textContent = `${textoPeriodo}`;
     
     // Remove dropdown anterior se existir
     const oldDrop = document.getElementById('globalDateDropdown');
@@ -536,7 +533,6 @@ function tratarCliqueData(chave, modo) {
     const drop = document.getElementById('globalDateDropdown');
     if (drop.style.display === 'block') montarGridCalendario(drop);
 }
-
 function obterFiltrosAtuais() {
     const el = { modo: document.getElementById('modoSelect'), proj: document.getElementById('projSelect'), conta: document.getElementById('contaSelect') };
     
@@ -565,7 +561,6 @@ function obterFiltrosAtuais() {
         colunas 
     };
 }
-
 function atualizarFiltroContas(select, pMap, cMap, pSel) {
     const permitidas = new Set();
     pSel.forEach(id => pMap.get(String(id))?.contas.forEach(c => permitidas.add(c)));
@@ -579,29 +574,40 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
     }
 }
 
-
-// ------ Tabelas (Renderização) ------
+// ------ Renderização ------
 function atualizarVisualizacoes(dados, colunas, colunasPlaceholder, cache) {
+    const projecao = cache.projecao;
     const limpar = id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; };
     const idsTabelas = ['tabelaMatriz', 'tabelaCustos', 'tabelaCapitalGiro', 'resumoFluxoCaixa'];
     idsTabelas.forEach(limpar);
 
-    renderizarDRE(dados.matrizDRE, colunas, cache.userType);
+    renderizarDRE(dados.matrizDRE, colunas, projecao, cache.userType);
     renderizarDetalhamento(cache.categoriasMap, dados.matrizDetalhamento, colunas, dados.entradasESaidas, cache.userType);
-    renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
     
-    renderizarGraficos(dados, colunas);
-    renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, cache.projecao);
-    renderizarFluxoDiarioResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+    const mostrarCapitalGiro = projecao === 'realizado';
+    const mostrarFluxoDiario = projecao === 'realizado' || projecao === 'arealizar';
+    
+    const styleDisplay = (id, show) => { const el = document.getElementById(id); if(el) el.style.display = show ? '' : 'none'; };
 
-    // Adiciona as colunas vazias nas tabelas que possuem estrutura de colunas temporais
+    styleDisplay('tabelaCapitalGiro', mostrarCapitalGiro);
+    if (mostrarCapitalGiro) renderizarCapitalGiro(dados.matrizCapitalGiro, colunas, dados.dadosEstoque);
+
+    styleDisplay('graficos-content', mostrarFluxoDiario);
+    styleDisplay('tabelaFluxoDiario', mostrarFluxoDiario);
+    styleDisplay('resumoFluxoCaixa', mostrarFluxoDiario);
+
+    if (mostrarFluxoDiario) {
+        renderizarGraficos(dados, colunas);
+        renderizarFluxoDiario(dados.fluxoDeCaixa, colunas, dados.matrizDRE['Caixa Inicial']?.TOTAL || 0, projecao);
+        renderizarDREResumido(dados.matrizDRE['Caixa Inicial'], dados.matrizDRE['Caixa Final'], dados.entradasESaidas, colunas);
+    }
+
     if (colunasPlaceholder && colunasPlaceholder.length > 0) {
-        renderizarColunasPlaceholder(colunasPlaceholder, idsTabelas);
+        renderizarColunasPlaceholder(colunasPlaceholder, !mostrarFluxoDiario ? ['tabelaMatriz', 'tabelaCustos'] : idsTabelas);
     }
 }
-
-// 1. DRE
-function renderizarDRE(matriz, colunas, userType) {
+// DRE
+function renderizarDRE(matriz, colunas, projecao, userType) {
     const tabela = document.getElementById('tabelaMatriz');
 
     if (!tabela) {
@@ -623,19 +629,52 @@ function renderizarDRE(matriz, colunas, userType) {
         '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
-    if (userType?.toLowerCase() === 'developer') ordem.push('Entrada de Transferência', 'Saída de Transferência', 'Outros');
-    ordem.push('Caixa Inicial', 'Caixa Final');
-
+    
+    const extrasDev = ['Entrada de Transferência', 'Saída de Transferência', 'Outros'];
+    if (userType?.toLowerCase() === 'developer') ordem.push(...extrasDev);
+    
+    if (projecao !== 'competencia'){
+        ordem.push('Caixa Inicial', 'Caixa Final');
+    } else {
+        ordem.push('Rodape')
+    }
+        
     ordem.forEach(classe => {
+        // Insere o cabeçalho expansível antes dos itens de developer
+        if (classe === extrasDev[0]) {
+            const rowGroup = tbody.insertRow();
+            rowGroup.id = 'dre_grupo_dev';
+            rowGroup.dataset.type = 'header-group';
+            rowGroup.style.cursor = 'pointer';
+            rowGroup.onclick = () => toggleLinha('dre_grupo_dev');
+
+            const cellIcon = rowGroup.insertCell();
+            cellIcon.innerHTML = `<span class="expand-btn">[+]</span> Movimentações Extras (Dev)`;
+
+            colunas.forEach(() => rowGroup.insertCell());
+            rowGroup.insertCell();
+        }
+
         const row = tbody.insertRow();
-        row.insertCell().textContent = classe;
+
+        // Associa as linhas extras ao grupo e as oculta por padrão
+        if (extrasDev.includes(classe)) {
+            row.classList.add('parent-dre_grupo_dev', 'hidden');
+        }
+
+        const classeText = classe === 'Rodape' ? '' : classe;
+
+        row.insertCell().textContent = classeText;
         colunas.forEach(c => row.insertCell().textContent = formatarValor(matriz[classe]?.[c] || 0));
         row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
 
         // Lógica de Estilo via Data Attributes
-        if (['(=) Receita Líquida', '(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe) || classe.includes('Transferência')) {
+        if (['(=) Receita Líquida', 'Outros'].includes(classe) || classe.includes('Transferência')) {
             row.dataset.type = 'total';
-        } else if (['Caixa Inicial', 'Caixa Final'].includes(classe)) {
+            if (extrasDev.includes(classe)) row.dataset.indent = '1';
+        } else if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
+            row.dataset.type = 'total-negrito';
+        } else if (['Caixa Inicial', 'Caixa Final', 'Rodape'].includes(classe)) {
             row.dataset.type = 'saldo';
         } else {
             row.dataset.indent = '1';
@@ -643,11 +682,17 @@ function renderizarDRE(matriz, colunas, userType) {
         
         if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe)) {
             criarLinhaEspacadora(tbody, colunas);
+            
+            // Oculta o espaçador junto com os itens dev
+            if (classe === 'Outros') {
+                const lastRow = tbody.lastElementChild;
+                if (lastRow) lastRow.classList.add('parent-dre_grupo_dev', 'hidden');
+            }
         }
     });
 }
 
-// 2. Detalhamento
+// Detalhamento
 function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     const tabela = document.getElementById('tabelaCustos');
 
@@ -677,7 +722,7 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     const render = (c) => renderDrillDown(c, dadosOrg[c], tbody, catMap, colunas);
     
     prioridade.forEach(c => { if(dadosOrg[c]) render(c); });
-    Object.keys(dadosOrg).filter(c => !prioridade.includes(c)).forEach(render);
+    Object.keys(dadosOrg).filter(c => !prioridade.includes(c)).sort((a, b) => a.localeCompare(b)).forEach(render);
 
     criarLinhaEspacadora(tbody, colunas);
 
@@ -693,6 +738,9 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
     });
 }
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
+    const temDadosNoPeriodo = colunas.some(col => dados[col]);
+    if (!temDadosNoPeriodo) return;
+
     const idBase = `classe_${sanitizeId(classe)}`;
     
     // Nível 0: Classe
@@ -700,15 +748,19 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     rC.dataset.type = 'header-group';
     rC.id = idBase;
     rC.onclick = () => toggleLinha(idBase);
-    rC.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+    
+    const cellC = rC.insertCell();
+    cellC.innerHTML = `<span class="expand-btn">[+]</span> ${classe}`;
+    cellC.title = classe;
     
     let totC = 0;
     colunas.forEach(col => { const v = dados[col]?.total || 0; totC += v; rC.insertCell().textContent = formatarValor(v); });
     rC.insertCell().textContent = formatarValor(totC);
 
-    // Constrói árvore
     const arvore = {};
     Object.keys(dados).forEach(per => {
+        if (!colunas.includes(per)) return; 
+        
         const dpts = dados[per].departamentos;
         for (const dep in dpts) {
             if (!arvore[dep]) arvore[dep] = {};
@@ -719,38 +771,52 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
         }
     });
 
-    // Renderiza Níveis
-    Object.keys(arvore).sort().forEach(dep => {
+    Object.keys(arvore).sort((a, b) => a.localeCompare(b)).forEach(dep => {
         const idDep = `${idBase}_dp_${sanitizeId(dep)}`;
         const rD = tbody.insertRow();
         rD.className = `parent-${idBase} hidden`;
         rD.dataset.indent = '1';
         rD.id = idDep;
-        rD.onclick = () => toggleLinha(idDep);
-        rD.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${dep}`;
 
+        rD.onclick = () => toggleLinha(idDep);
+        
+        const cellD = rD.insertCell();
+        cellD.innerHTML = `<span class="expand-btn">[+]</span> ${dep}`;
+        cellD.title = dep;
+        
         let totD = 0;
         colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.total || 0; totD += v; rD.insertCell().textContent = formatarValor(v); });
         rD.insertCell().textContent = formatarValor(totD);
 
-        Object.keys(arvore[dep]).sort().forEach(cat => {
+        Object.keys(arvore[dep]).sort((a, b) => {
+            const nomeA = catMap.get(a) || 'Desconhecida';
+            const nomeB = catMap.get(b) || 'Desconhecida';
+            return nomeA.localeCompare(nomeB);
+        }).forEach(cat => {
             const idCat = `${idDep}_cat_${sanitizeId(cat)}`;
             const rCat = tbody.insertRow();
             rCat.className = `parent-${idDep} hidden`;
             rCat.dataset.indent = '2';
             rCat.id = idCat;
             rCat.onclick = (e) => { e.stopPropagation(); toggleLinha(idCat); };
-            rCat.insertCell().innerHTML = `<span class="expand-btn">[+]</span> ${catMap.get(cat) || 'Desconhecida'}`;
+            
+            const cellCat = rCat.insertCell();
+            const nomeCat = catMap.get(cat) || 'Desconhecida';
+            cellCat.innerHTML = `<span class="expand-btn">[+]</span> ${nomeCat}`;
+            cellCat.title = nomeCat;
 
             let totCat = 0;
             colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.total || 0; totCat += v; rCat.insertCell().textContent = formatarValor(v); });
             rCat.insertCell().textContent = formatarValor(totCat);
 
-            Array.from(arvore[dep][cat]).sort().forEach(forn => {
+            Array.from(arvore[dep][cat]).sort((a, b) => a.localeCompare(b)).forEach(forn => {
                 const rF = tbody.insertRow();
                 rF.className = `parent-${idCat} hidden`;
                 rF.dataset.indent = 'lancamento';
-                rF.insertCell().textContent = forn;
+                
+                const cellF = rF.insertCell();
+                cellF.textContent = forn;
+                cellF.title = forn;
                 
                 let totF = 0;
                 colunas.forEach(col => { const v = dados[col]?.departamentos[dep]?.categorias[cat]?.fornecedores[forn]?.total || 0; totF += v; rF.insertCell().textContent = formatarValor(v); });
@@ -760,7 +826,7 @@ function renderDrillDown(classe, dados, tbody, catMap, colunas) {
     });
 }
 
-// 3. Capital de Giro
+// Capital de Giro
 function renderizarCapitalGiro(matriz, colunas, estoque) {
     const t = document.getElementById('tabelaCapitalGiro');
     // Verifica se os elementos necessários existem antes de continuar
@@ -1024,25 +1090,16 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
     
     if (!colunas || !colunas.length) return;
 
-    // 1. Detecta se estamos no modo Anual (strings de 4 dígitos)
     const isAnual = colunas[0].length === 4;
-
     const dados = [];
     const colSet = new Set(colunas);
     
-    // 2. Filtragem dos dados
     fluxo.forEach(x => {
-        // Extrai partes da data do lançamento (DD/MM/AAAA)
         const parts = x.data.split('/');
         const mes = parts[1];
         const ano = parts[2];
-        
-        // Chave usada para ordenação e display (sempre MM-AAAA)
         const k = `${mes}-${ano}`;
         
-        // Lógica de inclusão:
-        // Se for Anual: Verifica se o ANO (2026) está nas colunas
-        // Se for Mensal: Verifica se a chave completa (05-2026) está nas colunas
         if (isAnual) {
             if (colSet.has(ano)) dados.push({...x, k});
         } else {
@@ -1050,12 +1107,22 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
         }
     });
 
-    const tbody = tb.createTBody();
-    
-    // 3. Cabeçalho
     const thead = tb.createTHead();
-    const trH = thead.insertRow();
+
+    const trFiltro = thead.insertRow();
+    trFiltro.className = 'tabela-FD-header-filtros';
+    const thFiltro = document.createElement('th');
+    thFiltro.colSpan = 4;
+    thFiltro.className = 'th-filtro-fluxo';
+    thFiltro.innerHTML = `
+        <div class="filtro-fluxo-container">
+            <input type="text" id="inputFiltroFluxo" class="input-filtro-tabela" placeholder="Buscar lançamento...">
+        </div>
+    `;
+    trFiltro.appendChild(thFiltro);
     
+    const trH = thead.insertRow();
+    trH.className = 'tabela-FD-header-dados';
     const thData = document.createElement('th');
     thData.innerHTML = `Data`;
     trH.appendChild(thData);
@@ -1064,21 +1131,59 @@ function renderizarFluxoDiario(fluxo, colunas, saldoIni, projecao) {
         const th = document.createElement('th'); th.textContent = t; trH.appendChild(th);
     });
 
-    // 4. Definição dos Limites Visuais (Para a função renderFD funcionar corretamente)
-    // A função renderFD exige o formato MM-AAAA para calcular a ordem cronológica.
-    let iniVis, fimVis;
+    const tbody = tb.createTBody();
 
-    if (isAnual) {
-        // Se é 2026 a 2028, transformamos em "01-2026" a "12-2028"
-        iniVis = `01-${colunas[0]}`;
-        fimVis = `12-${colunas[colunas.length - 1]}`;
-    } else {
-        iniVis = colunas[0];
-        fimVis = colunas[colunas.length - 1];
-    }
+    let iniVis = isAnual ? `01-${colunas[0]}` : colunas[0];
+    let fimVis = isAnual ? `12-${colunas[colunas.length - 1]}` : colunas[colunas.length - 1];
 
-    // Renderiza passando os limites convertidos
     renderFD(tbody, dados, saldoIni, iniVis, fimVis);
+    atualizarZebrado(tbody);
+
+    let tfoot = tb.querySelector('tfoot');
+    if (!tfoot) tfoot = tb.createTFoot();
+    tfoot.innerHTML = `
+        <tr class="tabela-FD-footer">
+            <td colspan="2" id="labelTotalFiltro" style="text-align: right; padding-right: 16px;"></td>
+            <td id="containerTotalFiltro" style="text-align: right; padding-right: 16px;"></td>
+            <td></td>
+        </tr>
+    `;
+
+    const inputFiltro = document.getElementById('inputFiltroFluxo');
+    if (inputFiltro) {
+        inputFiltro.addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const linhas = tbody.querySelectorAll('tr');
+            let total = 0;
+            const temFiltro = termo.length > 0;
+            
+            
+            linhas.forEach(linha => {
+                if (linha.querySelector('td')?.colSpan > 1 || linha.textContent.includes('Saldo Inicial')) return;
+                
+                const textoLinha = linha.textContent.toLowerCase();
+                if (textoLinha.includes(termo)) {
+                    linha.style.display = '';
+                    if (temFiltro && linha.dataset.valor) {
+                        total += parseFloat(linha.dataset.valor);
+                    }
+                } else {
+                    linha.style.display = 'none';
+                }
+            });
+            atualizarZebrado(tbody);
+            const containerTotal = document.getElementById('containerTotalFiltro');
+            const labelTotal = document.getElementById('labelTotalFiltro');
+
+            if (temFiltro) {
+                labelTotal.innerHTML = 'TOTAL FILTRADO:';
+                containerTotal.innerHTML = `<strong class="valor-total-filtro">${formatarValor(total, 2)}</strong>`;
+            } else {
+                labelTotal.innerHTML = '&nbsp;';
+                containerTotal.innerHTML = '&nbsp;';
+            }
+        });
+    }
 }
 function renderFD(tbody, itens, baseSaldo, ini, fim) {
     tbody.innerHTML = '';
@@ -1094,11 +1199,12 @@ function renderFD(tbody, itens, baseSaldo, ini, fim) {
     itens.forEach(x => { if(compKeys(x.k, ini) < 0) s += x.valor; });
 
     const rS = tbody.insertRow();
-    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td><b>${formatarValor(s, 2)}</b></td>`;
+    rS.innerHTML = `<td></td><td><b>Saldo Inicial</b></td><td></td><td style="text-align:right"><b>${formatarValor(s, 2)}</b></td>`;
 
     visiveis.forEach(i => {
         s += i.valor;
         const r = tbody.insertRow();
+        r.dataset.valor = i.valor; 
         const obs = i.obs ? ` <span class="tooltip-target" data-tooltip="${i.obs}">ℹ️</span>` : '';
         r.innerHTML = `<td>${i.data}</td><td>${i.descricao}${obs}</td><td style="text-align:right">${formatarValor(i.valor, 2)}</td><td style="text-align:right">${formatarValor(s, 2)}</td>`;
     });
@@ -1108,9 +1214,25 @@ function compKeys(a, b) {
     const [ma, aa] = a.split('-'), [mb, ab] = b.split('-');
     return aa !== ab ? aa - ab : ma - mb;
 }
+function atualizarZebrado(tbody) {
+    let indexVisivel = 0;
+    const linhas = tbody.querySelectorAll('tr');
+    
+    linhas.forEach(linha => {
+        if (linha.style.display !== 'none') {
+            // indexVisivel % 2 === 0 garante que a PRIMEIRA linha visível (0) receba a cor cinza
+            if (indexVisivel % 2 === 0) {
+                linha.classList.add('linha-zebrada');
+            } else {
+                linha.classList.remove('linha-zebrada');
+            }
+            indexVisivel++;
+        }
+    });
+}
 
-// ------ Fluxo Diário Resumido -----
-function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
+// ------ DRE Resumido -----
+function renderizarDREResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) { 
     const tabela = document.getElementById('resumoFluxoCaixa');
     if (!tabela) return;
 
@@ -1195,7 +1317,6 @@ function renderizarFluxoDiarioResumido(linhaCaixaIni, linhaCaixaFim, es, colunas
 
     tabela.innerHTML = htmlHeader + htmlBody;
 }
-
 // ------ Placeholders para colunas sem dados ------
 /**
  * Insere colunas vazias antes da coluna TOTAL, mantendo a formatação visual.
