@@ -557,7 +557,6 @@ class MapaLotesManager {
             if (!el) return;
 
             if (isComplex && el.tagName === "SELECT") {
-                // Nova Lógica: Busca especificamente a opção vazia (BLANK) do Bubble
                 let blankSet = false;
                 for (let i = 0; i < el.options.length; i++) {
                     if (el.options[i].value.includes("BLANK") || el.options[i].text.trim() === "") {
@@ -566,7 +565,7 @@ class MapaLotesManager {
                         break;
                     }
                 }
-                if (!blankSet) el.value = "null";
+                if (!blankSet) el.value = ""; 
             } else if (isComplex) {
                 el.value = "null";
             } else {
@@ -600,28 +599,39 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (!el) return;
             
+            const setBlank = () => {
+                let blankSet = false;
+                for (let i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value.includes("BLANK") || el.options[i].text.trim() === "") {
+                        el.value = el.options[i].value;
+                        blankSet = true;
+                        break;
+                    }
+                }
+                if (!blankSet) el.value = "";
+            };
+
             if (val === undefined || val === null || val === "undefined" || val === "") {
-                el.value = "null"; 
+                setBlank(); 
             } else {
-                // Nova Lógica para Option Sets: Compara pelo texto de exibição e não pelo ID interno
                 let optionFound = false;
                 for (let i = 0; i < el.options.length; i++) {
-                    // Ignora diferenças de maiúsculas/minúsculas para evitar erros de digitação no BD
                     if (el.options[i].text.trim().toLowerCase() === val.toString().trim().toLowerCase()) {
-                        el.value = el.options[i].value; // Injeta o slug/ID correto que o Bubble quer
+                        el.value = el.options[i].value; 
                         optionFound = true;
                         break;
                     }
                 }
                 
-                // Fallback de segurança caso seja "Vários" ou texto customizado
                 if (!optionFound) {
-                    el.value = JSON.stringify(val); 
+                    setBlank();
                 }
             }
             
-            el.dispatchEvent(new Event("change", { bubbles: true }));
-            if (window.jQuery) window.jQuery(el).trigger('change');
+            try {
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+                if (window.jQuery) window.jQuery(el).trigger('change');
+            } catch(e) {}
         };
 
         if (this.selectedIds.size === 0) {
@@ -810,12 +820,9 @@ class MapaLotesManager {
             const el = document.getElementById(id);
             if (!el) return "";
 
-            // Se for Dropdown (Option Set), pega o texto visível para evitar o bug de ID/acentuação
             if (el.tagName === "SELECT" && el.selectedIndex >= 0) {
                 let text = el.options[el.selectedIndex].text.trim();
                 if (!text || text.includes("...") || text.toLowerCase().includes("selecione")) return "";
-                
-                // Formatação: Primeira Maiúscula
                 return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
             }
 
@@ -830,7 +837,7 @@ class MapaLotesManager {
         const newStat = getValSeguro("dropAltMassaStat");
         const newZon = getValSeguro("dropAltMassaZon");
         
-        // Captura e converte o novo Valor M2
+        // Converte a string de texto com máscara (ex: R$ 1.500,00) para número (1500)
         const rawValM2 = getValSeguro("inputAltMassaValM2");
         let newValM2 = 0;
         if (rawValM2 && rawValM2 !== "-") {
@@ -845,7 +852,6 @@ class MapaLotesManager {
                 if (newStat !== "") poligono.loteData.Status = newStat;
                 if (newZon !== "") poligono.loteData.Zoneamento = newZon;
                 
-                // Atualiza o Valor M2 e recalcula o Valor Total com base na Área do lote
                 if (newValM2 > 0) {
                     poligono.loteData.ValorM2 = newValM2;
                     if (poligono.loteData.Área && poligono.loteData.Área > 0) {
