@@ -640,7 +640,6 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
     }
         
     ordem.forEach(classe => {
-        // Insere o controle expansível extremamente discreto antes dos itens
         if (classe === extrasDev[0]) {
             const rowGroup = tbody.insertRow();
             rowGroup.id = 'dre_grupo_dev';
@@ -649,7 +648,6 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
             rowGroup.onclick = () => toggleLinha('dre_grupo_dev');
 
             const cellIcon = rowGroup.insertCell();
-            // Apenas o ícone de [+] com cor suave, sem texto
             cellIcon.innerHTML = `<span class="expand-btn" style="color: #ccc; font-weight: normal; font-size: 11px; margin-left: 10px;" title="Mostrar/Ocultar Movimentações Dev">[+]</span>`;
 
             colunas.forEach(() => rowGroup.insertCell());
@@ -668,7 +666,6 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
         colunas.forEach(c => row.insertCell().textContent = formatarValor(matriz[classe]?.[c] || 0));
         row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
 
-        // Lógica de Estilo via Data Attributes
         if (['(=) Receita Líquida', 'Outros'].includes(classe) || classe.includes('Transferência')) {
             row.dataset.type = 'total';
             if (extrasDev.includes(classe)) row.dataset.indent = '1';
@@ -682,11 +679,6 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
         
         if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe)) {
             criarLinhaEspacadora(tbody, colunas);
-            
-            if (classe === 'Outros') {
-                const lastRow = tbody.lastElementChild;
-                if (lastRow) lastRow.classList.add('parent-dre_grupo_dev', 'hidden');
-            }
         }
     });
 }
