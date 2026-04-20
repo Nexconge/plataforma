@@ -323,6 +323,14 @@ class MapaLotesManager {
             });
             valorM2El.addEventListener('blur', () => { notifyBubble(valorM2El); notifyBubble(valorTotalEl); });
         }
+
+        const inputAltMassaValM2 = document.getElementById("inputAltMassaValM2");
+        if (inputAltMassaValM2) {
+            inputAltMassaValM2.addEventListener('input', () => {
+                applyMask(inputAltMassaValM2, 'money');
+            });
+            inputAltMassaValM2.addEventListener('blur', () => notifyBubble(inputAltMassaValM2));
+        }
     }
 
     _handleFilterChange() {
