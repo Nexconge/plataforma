@@ -57,17 +57,7 @@ class MapaLotesManager {
                     lote.Cliente = "";
                 }
             });
-
-            // Oculta visualmente o campo Cliente e suas possíveis labels no Bubble
-            const style = document.createElement('style');
-            style.innerHTML = `
-                #cliente2 { display: none !important; }
-                /* Oculta label caso exista e o container dele caso use estrutura padrão */
-                label[for="cliente2"], #cliente2 + label { display: none !important; }
-            `;
-            document.head.appendChild(style);
         }
-        // ------------------------------------------
 
         this._renderLotes(this.allLotes);
         
