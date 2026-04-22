@@ -1,8 +1,8 @@
-import { iniciarMapa } from './ScriptLotesV30.js';
+import { iniciarMapa } from './ScriptLotesV31.js';
 import { abrirEPreencherModalProposta } from './ScriptPropostaV03.js';
 
-function inicializarApp(empreendimentosJSON, projectsUrl, username) {
-    const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl);
+function inicializarApp(empreendimentosJSON, projectsUrl, username, userModifyers) {
+    const mapaManager = iniciarMapa(empreendimentosJSON, projectsUrl, userModifyers);
 
     //Funcao exposta para ser chamada pelo workflow do Bubble
     window.mapaExcluirLotes = () => {

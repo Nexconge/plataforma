@@ -1,9 +1,10 @@
 class MapaLotesManager {
-    constructor(mapId, url) {
+    constructor(mapId, url, userModifyers) {
         this.mapId = mapId;
         this.urlAPI = url;
         this.map = null;
-        
+        this.isExterno = userModifyers && userModifyers.includes("Projects_externo");
+
         this.selectedIds = new Set();
         this.allLotes = [];
         this.polygons = {}; 
@@ -42,9 +43,34 @@ class MapaLotesManager {
             return;
         }
 
+        // --- NOVA LÓGICA: MASCARAMENTO EXTERNO ---
+        if (this.isExterno) {
+            this.allLotes.forEach(lote => {
+                // Mascara 'Vendido' como 'Reservado'
+                if (lote.Status === "Vendido") {
+                    lote.Status = "Reservado";
+                }
+                // Oculta valores e clientes de lotes reservados
+                if (lote.Status === "Reservado") {
+                    lote.Valor = 0;
+                    lote.ValorM2 = 0;
+                    lote.Cliente = "";
+                }
+            });
+
+            // Oculta visualmente o campo Cliente e suas possíveis labels no Bubble
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #cliente2 { display: none !important; }
+                /* Oculta label caso exista e o container dele caso use estrutura padrão */
+                label[for="cliente2"], #cliente2 + label { display: none !important; }
+            `;
+            document.head.appendChild(style);
+        }
+        // ------------------------------------------
+
         this._renderLotes(this.allLotes);
         
-        // Chama o filtro inicial
         this._handleFilterChange();
     }
 
@@ -343,8 +369,7 @@ class MapaLotesManager {
 
         const isZona = this.filters.zonaColorMode;
         
-        // Definição das categorias e cores (baseado no seu _getLoteColor)
-        const items = isZona ? [
+        let items = isZona ? [
             { label: "Comercial", color: "#9fbfdf" },
             { label: "Residencial", color: "#dad2b4" },
             { label: "Equipamento Público", color: "#f0c9ad" },
@@ -355,6 +380,11 @@ class MapaLotesManager {
             { label: "Reservado", color: "#f0c9ad" },
             { label: "Indisponível", color: "#c7c7c7" }
         ];
+
+        // Se for modo externo, oculta a opção Vendido da legenda
+        if (this.isExterno && !isZona) {
+            items = items.filter(item => item.label !== "Vendido");
+        }
 
         let html = `<h4 style="margin:0 0 8px; font-weight:bold; border-bottom:1px solid #eee; padding-bottom:4px;">${isZona ? "Atividade" : "Situação"}</h4>`;
         
@@ -676,7 +706,7 @@ class MapaLotesManager {
         setInput("area2", totalArea > 0 ? formatArea(totalArea) : "");
         setInput("frente2", this.selectedIds.size === 1 && totalFrente > 0 ? formatMeters(totalFrente) : (isMulti ? "-" : ""));
         setInput("lateral2", this.selectedIds.size === 1 && totalLateral > 0 ? formatMeters(totalLateral) : (isMulti ? "-" : ""));
-        setInput("valor_metro2", totalArea > 0 ? formatMoney(totalValor / totalArea) : formatMoney(0));
+        setInput("valor_metro2", (totalArea > 0 && totalValor > 0) ? formatMoney(totalValor / totalArea) : "");
         setInput("valor_total2", totalValor > 0 ? formatMoney(totalValor) : "");
         setInput("cliente2", clienteValor, isMulti);
         
@@ -886,7 +916,7 @@ class MapaLotesManager {
 }
 
 export function iniciarMapa(empreendimentosJSON, urlAPI) {
-    const mapaManager = new MapaLotesManager('meuMapa', urlAPI);
+    const mapaManager = new MapaLotesManager('meuMapa', urlAPI, userModifyers);
     mapaManager.init(empreendimentosJSON);
     return mapaManager;
 }
