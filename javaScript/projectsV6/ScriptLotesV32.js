@@ -915,7 +915,7 @@ class MapaLotesManager {
     }
 }
 
-export function iniciarMapa(empreendimentosJSON, urlAPI) {
+export function iniciarMapa(empreendimentosJSON, urlAPI, userModifyers) {
     const mapaManager = new MapaLotesManager('meuMapa', urlAPI, userModifyers);
     mapaManager.init(empreendimentosJSON);
     return mapaManager;
