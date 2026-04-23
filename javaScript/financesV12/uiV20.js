@@ -630,22 +630,27 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
     ];
     
+    const isDev = userType?.toLowerCase() === 'developer';
     const extrasDev = ['Entrada de Transferência', 'Saída de Transferência', 'Outros'];
-    if (userType?.toLowerCase() === 'developer') ordem.push(...extrasDev);
+    if (isDev) ordem.push(...extrasDev);
     
-    if (projecao !== 'competencia'){
+    if (projecao !== 'competencia') {
         ordem.push('Caixa Inicial', 'Caixa Final');
     } else {
         ordem.push('Rodape');
     }
         
     ordem.forEach(classe => {
-        if (classe === extrasDev[0]) {
+        if (isDev && classe === extrasDev[0]) {
             const rowGroup = tbody.insertRow();
             rowGroup.id = 'dre_grupo_dev';
             rowGroup.className = 'linha-toggle-dev';
             rowGroup.style.cursor = 'pointer';
-            rowGroup.onclick = () => toggleLinha('dre_grupo_dev');
+            rowGroup.onclick = function() { 
+                toggleLinha('dre_grupo_dev');
+                const btn = this.querySelector('.expand-btn');
+                if (btn) btn.textContent = btn.textContent.includes('+') ? '[-]' : '[+]';
+            };
 
             const cellIcon = rowGroup.insertCell();
             cellIcon.innerHTML = `<span class="expand-btn" style="color: #ccc; font-weight: normal; font-size: 11px; margin-left: 10px;" title="Mostrar/Ocultar Movimentações Dev">[+]</span>`;
@@ -677,8 +682,18 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
             row.dataset.indent = '1';
         }
         
-        if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 'Outros'].includes(classe)) {
+        if (classe === '(+/-) Geração de Caixa Operacional') {
             criarLinhaEspacadora(tbody, colunas);
+        } else if (classe === '(=) Movimentação de Caixa Mensal') {
+            if (!isDev) {
+                criarLinhaEspacadora(tbody, colunas);
+            }
+        } else if (classe === 'Outros') {
+            criarLinhaEspacadora(tbody, colunas);
+            const espacadora = tbody.lastElementChild;
+            if (espacadora) {
+                espacadora.classList.add('parent-dre_grupo_dev', 'hidden');
+            }
         }
     });
 }
