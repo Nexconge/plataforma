@@ -4,16 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página Principal</title>
     <link rel="icon" type="image/png" href="../pngs/favicon.png">
     <link rel="stylesheet" href="../styleSheet/homepageV01.css">
+    <title>Nexcon</title>
 </head>
 
 <body>
 
-    <section id="header">
-        <div id="header-container">
-            <nav id="nav">
+    <div id="root">
+
+        <nav id="nav">
+            <div class="nav-container">
                 <div id="nav-inicio">
                     <img src="../pngs/logo.png" alt="Logo da Plataforma" id="logo">
                 </div>
@@ -26,71 +27,90 @@
                     </ul>
                 </div>
                 <div id="nav-final">
-                    <button class="btn-blue">Plataforma Nexcon</button>
+                    <button class="btn-blue">Plataforma</button>
+                    <button class="btn-blue">Fale Conosco</button>
                 </div>
-            </nav>
-        </div>
-    </section>
-
-    <section id="hero">
-        <div class="container">
-            <div id="hero-container">
-                <div id="hero-esquerda">
-                    <div class="eyebrow">Gestão Financeira Especializada</div>
-                    <h1 class="hero-title">Transforme sua <em>gestão financeira</em> em estratégia</h1>
-                    <p class="hero-desc">Aliamos técnica financeira, de gestão e fiscal para elaborar diagnósticos
-                        detalhados e entregar soluções sólidas para regularização fiscal e planejamento tributário
-                        eficiente.</p>
-                    <div class="hero-btns">
-                        <button class="btn-blue">Fale conosco</button>
-                        <button class="btn-ghost">Nossos serviços</button>
+            </div>
+        </nav>
+    
+        <section id="hero">
+            <div class="container">
+                <div id="hero-container">
+                    <div id="hero-esquerda">
+                        <div class="eyebrow">BPO Financeiro | Automação | Gestão Financeira</div>
+                        <h1 class="hero-title">Transforme sua <em>gestão financeira</em> em estratégia</h1>
+                        <p class="hero-desc">Aliamos técnica financeira, de gestão e fiscal para elaborar diagnósticos
+                            detalhados e entregar soluções sólidas para regularização fiscal e planejamento tributário
+                            eficiente.</p>
+                        <div class="hero-btns">
+                            <button class="btn-blue">Fale conosco</button>
+                            <button class="btn-ghost">Nossos serviços</button>
+                        </div>
+                        <div class="hero-stats">
+                                <div class="hero-stat">
+                                    <div class="stat-n">R$50M+</div>
+                                    <div class="stat-l">Recuperados para clientes</div>
+                                </div>
+                                <div class="hero-stat">
+                                    <div class="stat-n">500+</div>
+                                    <div class="stat-l">Empresas atendidas</div>
+                                </div>
+                                <div class="hero-stat">
+                                    <div class="stat-n">98%</div>
+                                    <div class="stat-l">Taxa de aprovação</div>
+                                </div>
+                            </div>
                     </div>
-                    <!-- <div class="hero-stats">
-                            <div class="hero-stat">
-                                <div class="stat-n">R$50M+</div>
-                                <div class="stat-l">Recuperados para clientes</div>
-                            </div>
-                            <div class="hero-stat">
-                                <div class="stat-n">500+</div>
-                                <div class="stat-l">Empresas atendidas</div>
-                            </div>
-                            <div class="hero-stat">
-                                <div class="stat-n">98%</div>
-                                <div class="stat-l">Taxa de aprovação</div>
-                            </div>
-                        </div> -->
-                </div>
-                <div id="hero-direita">
-                    <div class="hero-card-ttl">Por que fazer uma revisão tributária?</div>
-                    <ul class="checklist">
-                        <li><span class="check-ico">✓</span>Identificação de créditos fiscais não aproveitados em PIS,
-                            COFINS, ICMS e IPI</li>
-                        <li><span class="check-ico">✓</span>Correção de erros na apuração que podem gerar autuações e
-                            multas</li>
-                        <li><span class="check-ico">✓</span>Recuperação de valores pagos indevidamente nos últimos 5
-                            anos</li>
-                        <li><span class="check-ico">✓</span>Regularização de parcelamentos e débitos em dívida ativa com
-                            descontos</li>
-                        <li><span class="check-ico">✓</span>Planejamento fiscal preventivo alinhado à legislação vigente
-                        </li>
-                    </ul>
-                    <div class="hero-card-foot">
-                        <div class="trust-note"><strong>Diagnóstico gratuito</strong> · Sigilo total garantido</div>
-                        <a href="#cta" class="btn btn-gold" style="padding:10px 20px;font-size:13px;">Iniciar →</a>
+                    <div id="hero-direita">
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+        
+        <section id="dores">
+            <div class="container">
+                <div class="text-titulo">
+                    <h2>A burocracia do financeiro está tomando o seu tempo?</h2>
+                </div>
+                <div id="grid-dores">
+                    <div class="card-dores"></div>
+                    <div class="card-dores"></div>
+                    <div class="card-dores"></div>
+                </div>
+                <div class="text-action">
+                    <button class="btn-blue">Quero resolver isso!</button>
+                </div>
+            </div>
+        </section>
+        
+        <section id="processo">
+    
+        </section>
+    
+        <section id="servicos">
+            <div class="container">
+    
+            </div>
+        </section>
+    
+        <section id="quem-somos">
+            <div class="container">
+    
+            </div>
+        </section>
+    
+        <section id="faq">
+            <div class="container">
+    
+            </div>
+        </section>
 
-    <section id="servicos">
-        <div class="container">
+    </div>
 
-        </div>
-    </section>
+
 
 </body>
 
-<script src="script.js"></script>
+<!-- <script src="script.js"></script> -->
 
 </html>
