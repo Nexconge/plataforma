@@ -1,16 +1,17 @@
-/* * {
-    outline: 1px solid red !important;
-} */
+* {outline: 1px solid green !important;}
 
 /* --------------------------------------------------
 1.1.  VARIÁVEIS GLOBAIS e CONFIGURAÇÕES MACRO
 -------------------------------------------------- */
+/* #region */
 
 :root {
 
     /* MEDIDAS */
+    --maxWidth: 1200px;
     --headerHeight: 64px;
-    --borderRadiusPadrao: 4px;
+    --borderRadiusPadrao: 12px;
+    --gapPadrao: 24px;
 
     /* CORES */
     --azulPrincipal: #1772cb;
@@ -33,30 +34,59 @@ body {
     font-family: Nunito, sans-serif;
     margin: 0;
     padding: 0;
-    padding-top: var(--headerHeight);
-    background: var(--cinzaMedio);
-    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
-    background-size: 128px 128px;
+    background-color: var(--cinzaClaro);
 }
+/* #endregion */
+
 
 /* --------------------------------------------------
 1.2.  CONFIGURAÇÕES CLASSES
 -------------------------------------------------- */
+/* #region */
 
 .container {
+    max-width: var(--maxWidth);
+    height: 100%;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: calc(100vh - var(--headerHeight));
-    max-width: 1440px;
+    gap: var(--gapPadrao);
     margin: 0 auto;
+    padding: var(--gapPadrao);
+}
+
+.text-titulo {
+    width: 100%;
+    text-align: center;
+}
+
+#grid-dores {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: var(--gapPadrao);
+}
+
+.card-dores {
+    width: 350px;
+    height: 250px;
+    background-color: var(--white);
+    border-radius: var(--borderRadiusPadrao);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.card-dores:hover {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
 }
 
 .btn-blue {
     cursor: pointer;
     background: var(--azulPrincipal);
     border: none;
-    border-radius: var(--borderRadiusPadrao);
+    border-radius: calc(var(--borderRadiusPadrao) / 3);
     height: 32px;
     padding: 8px 16px;
     text-decoration: none;
@@ -68,7 +98,7 @@ body {
     cursor: pointer;
     background: var(--white);
     border: 1px solid var(--azulPrincipal);
-    border-radius: var(--borderRadiusPadrao);
+    border-radius: calc(var(--borderRadiusPadrao) / 3);
     height: 32px;
     padding: 8px 16px;
     text-decoration: none;
@@ -76,20 +106,10 @@ body {
     font-size: 14px;
 }
 
-/* .eyebrow {
-    color: var(--azulPrincipal);
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-} */
-
 .eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    /* background: var(--azulClaro); */
-    /* border: 1px solid var(--azulEscuro); */
     color: var(--azulEscuro);
     font-size: 10px;
     font-weight: 400;
@@ -99,55 +119,62 @@ body {
     border-radius: 100px;
     animation: fadeDown .7s var(--ease) both;
 }
-
-.eyebrow::before {
-    content: '◆';
-    font-size: 7px;
-}
+/* #endregion */
 
 
 /* -------------------------------------------------- 
 2.1.  HEADER SECTION
 -------------------------------------------------- */
+/* #region */
 
-#header-container {
+#nav {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: var(--headerHeight);
+    background-color: var(--white);
     display: flex;
     justify-content: center;
-    z-index: 1000;
-    background: var(--white);
+    z-index: 999;
+    box-sizing: border-box;
+    backdrop-filter: blur(14px);
+    transition: background var(--t) var(--ease);
     border-bottom: 1px solid var(--azulPrincipal);
 }
 
-#nav {
+.nav-container {
     width: 100%;
-    max-width: 1440px;
-
-    height: var(--headerHeight);
+    max-width: var(--maxWidth);
+    padding-left: var(--gapPadrao);
+    padding-right: var(--gapPadrao);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 999;
-    padding: 0 12px;
-    box-sizing: border-box;
-    /* backdrop-filter: blur(14px); */
-    /* transition: background var(--t) var(--ease); */
+    z-index: 1000;
 }
 
-#nav-inicio,
-#nav-links,
-#nav-final {
+#nav-inicio {
+    width: 300px;
     display: flex;
-    align-items: center;
-    height: var(--headerHeight);
+    flex-direction: row;
 }
 
 #logo {
     height: calc(var(--headerHeight) - 24px);
+}
+
+#nav-final {
+    width: 300px;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 24px;
+}
+
+#nav-links {
+    height: var(--headerHeight);
+    display: flex;
+    align-items: center;
 }
 
 #nav-links ul {
@@ -161,47 +188,47 @@ body {
 #nav-links a {
     text-decoration: none;
     color: var(--azulEscuro);
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
     font-weight: 400;
-    font-size: 10px;
+    font-size: 14px;
 }
+/* #endregion */
+
 
 /* -------------------------------------------------- 
 2.2.  HERO SECTION 
 -------------------------------------------------- */
+/* #region */
+
+#hero {
+    height: 100vh;
+    background-color: var(--white);
+}
 
 #hero-container {
-    padding: 32px 32px;
-    gap: 64px;
+    width: 100%;
+    height: 100%;
     display: flex;
-    justify-content: center;
+    flex-direction: row;
     align-items: center;
-    height: 600px;
-    max-width: 1440px;
-    margin: 0 auto;
 }
 
 #hero-esquerda {
+    max-height: 800px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     max-width: 540px;
     height: 100%;
     padding: 12px 12px;
-    border-radius: calc(var(--borderRadiusPadrao) * 3);
+    border-radius: var(--borderRadiusPadrao);
     background: var(--white);
 }
 
 #hero-direita {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    max-width: 540px;
-    height: 100%;
-    padding: 12px 12px;
-    border-radius: calc(var(--borderRadiusPadrao) * 3);
-    background: var(--white);
 }
+/* #endregion */
+
 
 /* -------------------------------------------------- 
 2.3.  SERVIÇOS SECTION 
