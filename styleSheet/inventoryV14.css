@@ -11,7 +11,8 @@
    CONTROLES
 ========================================================= */
 label {
-    margin-right: 5px;
+    height: 19px;
+    font-size: 14px;
 }
 
 label[for="empresaSelect"],
@@ -22,19 +23,20 @@ label[for="filialSelect"] {
 }
 
 .custom-select {
-    width: 300px;
-    height: 30px;
+    width: 276px;
+    height: 44px;
+    padding: 4px;
     border: 1px solid #C7C7C7;
     border-radius: 4px;
     background-color: white;
-    text-align: center;
     font-family: var(--font);
+    font-size: 14px;
+    text-align: center;
     appearance: none;
     -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23999999' stroke-width='3' d='m6 10l6 6l6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
-    padding-right: 25px;
 }
 
 .multiSelectCustom {
