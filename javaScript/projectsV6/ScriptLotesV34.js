@@ -181,8 +181,8 @@ class MapaLotesManager {
             
             //Se for uma quadra desenha apenas o marcador central com tooltip, sem polígono
             if (lote.isQuadra) {
-                const tempPoly = L.polygon(finalCoords);
-                const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
+                const centerCoords = this._calcularCentroTooltip(finalCoords);
+                const marker = L.marker(centerCoords, { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Lote, {
                     permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
                 });
@@ -902,6 +902,40 @@ class MapaLotesManager {
 
         this.allLotes = this.allLotes.filter(l => !this.selectedIds.has(l._id));
         this._clearForm();
+    }
+
+    _calcularCentroTooltip(coords) {
+        let minLng = Infinity, maxLng = -Infinity;
+
+        coords.forEach(p => {
+            if (p[1] < minLng) minLng = p[1];
+            if (p[1] > maxLng) maxLng = p[1];
+        });
+
+        const midLng = (minLng + maxLng) / 2;
+        let interseccoesLat = [];
+
+        for (let i = 0; i < coords.length - 1; i++) {
+            const [lat1, lng1] = coords[i];
+            const [lat2, lng2] = coords[i + 1];
+
+            if ((lng1 <= midLng && lng2 >= midLng) || (lng2 <= midLng && lng1 >= midLng)) {
+                if (lng1 !== lng2) {
+                    const latInterseccao = lat1 + (lat2 - lat1) * ((midLng - lng1) / (lng2 - lng1));
+                    interseccoesLat.push(latInterseccao);
+                } else {
+                    interseccoesLat.push(lat1, lat2);
+                }
+            }
+        }
+
+        if (interseccoesLat.length === 0) return L.polygon(coords).getBounds().getCenter();
+
+        const maxLat = Math.max(...interseccoesLat);
+        const minLat = Math.min(...interseccoesLat);
+        const midLat = (maxLat + minLat) / 2;
+
+        return [midLat, midLng];
     }
 }
 
