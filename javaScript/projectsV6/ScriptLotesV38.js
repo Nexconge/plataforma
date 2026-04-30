@@ -908,20 +908,21 @@ class MapaLotesManager {
         let minLng = Infinity, maxLng = -Infinity;
 
         coords.forEach(p => {
-            if (p[1] < minLng) minLng = p[1];
-            if (p[1] > maxLng) maxLng = p[1];
+            const lng = p[1];
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
         });
 
-        const midLng = (minLng + maxLng) / 2;
+        const midLngInitial = (minLng + maxLng) / 2;
         let interseccoesLat = [];
 
         for (let i = 0; i < coords.length - 1; i++) {
             const [lat1, lng1] = coords[i];
             const [lat2, lng2] = coords[i + 1];
 
-            if ((lng1 <= midLng && lng2 >= midLng) || (lng2 <= midLng && lng1 >= midLng)) {
+            if ((lng1 <= midLngInitial && lng2 >= midLngInitial) || (lng2 <= midLngInitial && lng1 >= midLngInitial)) {
                 if (lng1 !== lng2) {
-                    const latInterseccao = lat1 + (lat2 - lat1) * ((midLng - lng1) / (lng2 - lng1));
+                    const latInterseccao = lat1 + (lat2 - lat1) * ((midLngInitial - lng1) / (lng2 - lng1));
                     interseccoesLat.push(latInterseccao);
                 } else {
                     interseccoesLat.push(lat1, lat2);
@@ -935,7 +936,29 @@ class MapaLotesManager {
         const minLat = Math.min(...interseccoesLat);
         const midLat = (maxLat + minLat) / 2;
 
-        return [midLat, midLng];
+        let interseccoesLng = [];
+
+        for (let i = 0; i < coords.length - 1; i++) {
+            const [lat1, lng1] = coords[i];
+            const [lat2, lng2] = coords[i + 1];
+
+            if ((lat1 <= midLat && lat2 >= midLat) || (lat2 <= midLat && lat1 >= midLat)) {
+                if (lat1 !== lat2) {
+                    const lngInterseccao = lng1 + (lng2 - lng1) * ((midLat - lat1) / (lat2 - lat1));
+                    interseccoesLng.push(lngInterseccao);
+                } else {
+                    interseccoesLng.push(lng1, lng2);
+                }
+            }
+        }
+
+        if (interseccoesLng.length === 0) return [midLat, midLngInitial];
+
+        const maxLngFinal = Math.max(...interseccoesLng);
+        const minLngFinal = Math.min(...interseccoesLng);
+        const midLngFinal = (maxLngFinal + minLngFinal) / 2;
+
+        return [midLat, midLngFinal];
     }
 }
 
