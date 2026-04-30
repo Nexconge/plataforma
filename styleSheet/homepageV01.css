@@ -1,4 +1,4 @@
-* {outline: 1px solid green !important;}
+/* * {outline: 1px solid green !important;} */
 
 /* --------------------------------------------------
 1.1.  VARIÁVEIS GLOBAIS e CONFIGURAÇÕES MACRO
@@ -15,12 +15,17 @@
 
     /* CORES */
     --azulPrincipal: #1772cb;
-    --azulClaro: #b0cbe0;
+    --azulClaro: #e8f2fc;
     --azulEscuro: #06498d;
     --cinzaClaro: #f7f7f7;
     --cinzaMedio: #cccccc;
     --cinzaEscuro: grey;
+    --cinzaBorder: #e2e6ec;
+    --cinzaBorderHover: #b6cceb;
     --white: #ffffff;
+    --text: #1a1f2e;
+    --textMuted: #8a95a3;
+    --textSub: #5a6470;
 
 }
 
@@ -30,12 +35,21 @@
     box-sizing: border-box;
 }
 
+html,
 body {
-    font-family: Nunito, sans-serif;
     margin: 0;
     padding: 0;
+    background-color: var(--white);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+}
+
+.bg-muted {
     background-color: var(--cinzaClaro);
 }
+
 /* #endregion */
 
 
@@ -50,9 +64,16 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--gapPadrao);
     margin: 0 auto;
-    padding: var(--gapPadrao);
+    padding: 80px var(--gapPadrao);
+    gap: var(--gapPadrao);
+}
+
+h1 {
+    font-family: Oswald, sans-serif;
+    font-size: 64px;
+    font-weight: 700;
+    color: var(--text);
 }
 
 .text-titulo {
@@ -60,7 +81,8 @@ body {
     text-align: center;
 }
 
-#grid-dores {
+#grid-dores,
+#grid-servicos {
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -68,30 +90,54 @@ body {
     gap: var(--gapPadrao);
 }
 
-.card-dores {
+
+.card-dores,
+.card-servicos {
     width: 350px;
     height: 250px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
     background-color: var(--white);
     border-radius: var(--borderRadiusPadrao);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
     transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
-.card-dores:hover {
+.card-servicos {
+    height: 500px;
+}
+
+.card-dores:hover,
+.card-servicos:hover {
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
     transform: translateY(-4px);
 }
 
 .btn-blue {
+    height: 40px;
+    padding: 8px 16px;
     cursor: pointer;
     background: var(--azulPrincipal);
     border: none;
     border-radius: calc(var(--borderRadiusPadrao) / 3);
-    height: 32px;
-    padding: 8px 16px;
-    text-decoration: none;
-    color: var(--white);
+    font-family: Nunito, sans-serif;
     font-size: 14px;
+    color: var(--white);
+    text-decoration: none;
+    transition: transform 100ms ease;
+}
+
+.btn-blue:hover {
+    background-color: var(--azulEscuro);
+    transition: background 200ms ease;
+}
+
+.btn-blue:active {
+    background-color: var(--azulEscuro);
+    transform: translateY(2px);
+    transition: transform 100ms ease;
+    box-shadow: 0 0 0 3px var(--azulClaro);
 }
 
 .btn-ghost {
@@ -119,6 +165,7 @@ body {
     border-radius: 100px;
     animation: fadeDown .7s var(--ease) both;
 }
+
 /* #endregion */
 
 
@@ -131,23 +178,21 @@ body {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
     width: 100%;
     height: var(--headerHeight);
-    background-color: var(--white);
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--cinzaBorder);
+    z-index: 999;
     display: flex;
     justify-content: center;
-    z-index: 999;
-    box-sizing: border-box;
-    backdrop-filter: blur(14px);
-    transition: background var(--t) var(--ease);
-    border-bottom: 1px solid var(--azulPrincipal);
 }
 
 .nav-container {
     width: 100%;
     max-width: var(--maxWidth);
-    padding-left: var(--gapPadrao);
-    padding-right: var(--gapPadrao);
+    padding: var(--gapPadrao);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -157,7 +202,7 @@ body {
 #nav-inicio {
     width: 300px;
     display: flex;
-    flex-direction: row;
+    justify-content: flex-start;
 }
 
 #logo {
@@ -167,31 +212,27 @@ body {
 #nav-final {
     width: 300px;
     display: flex;
-    flex-direction: row-reverse;
-    gap: 24px;
-}
-
-#nav-links {
-    height: var(--headerHeight);
-    display: flex;
-    align-items: center;
+    justify-content: flex-end;
 }
 
 #nav-links ul {
     display: flex;
     list-style: none;
-    gap: 64px;
-    margin: 0;
-    padding: 0;
+    gap: 40px;
 }
 
 #nav-links a {
     text-decoration: none;
-    color: var(--azulEscuro);
-    /* text-transform: uppercase; */
-    font-weight: 400;
+    color: var(--textSub);
+    font-weight: 500;
     font-size: 14px;
+    transition: color 0.2s;
 }
+
+#nav-links a:hover {
+    color: var(--azulEscuro);
+}
+
 /* #endregion */
 
 
@@ -225,8 +266,6 @@ body {
     background: var(--white);
 }
 
-#hero-direita {
-}
 /* #endregion */
 
 
@@ -234,12 +273,23 @@ body {
 2.3.  SERVIÇOS SECTION 
 -------------------------------------------------- */
 
-/* #servicos-container {
+.icon-wrap {
+    width: 52px;
+    height: 52px;
+    background: var(--azulClaro);
+    border-radius: var(--borderRadiusPadrao);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    max-width: 1440px;
-    height: calc(100vh - var(--headerHeight));
-    margin: 0 auto;
-    background: var(--white);
-} */
+    justify-content: center;
+    margin-bottom: 22px;
+}
+
+.icon-wrap svg {
+    width: 24px;
+    height: 24px;
+    stroke: var(--azulPrincipal);
+    stroke-width: 1.8;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
