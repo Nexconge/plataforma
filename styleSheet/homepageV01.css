@@ -1,4 +1,6 @@
-* {outline: 1px solid green !important;}
+* {
+    /* outline: 1px solid green !important; */
+}
 
 /* --------------------------------------------------
 1.1.  VARIÁVEIS GLOBAIS e CONFIGURAÇÕES MACRO
@@ -213,16 +215,20 @@ h1 {
     justify-content: flex-end;
 }
 
+#nav-links {
+    width: 100%;
+    padding: 0px calc(var(--gapPadrao)*3);
+}
+
 #nav-links ul {
     display: flex;
+    justify-content: space-between;
     list-style: none;
-    gap: 40px;
 }
 
 #nav-links a {
     text-decoration: none;
     color: var(--textSub);
-    font-weight: 500;
     font-size: 14px;
     transition: color 0.2s;
 }
