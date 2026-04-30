@@ -184,7 +184,7 @@ class MapaLotesManager {
                 const centerCoords = this._calcularCentroTooltip(finalCoords);
                 const marker = L.marker(centerCoords, { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Lote, {
-                    permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
+                    permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 15] // Aumente o 15 (eixo Y) para descer mais, ou diminua para subir
                 });
 
                 marker.loteData = lote; 
@@ -192,7 +192,7 @@ class MapaLotesManager {
                 this.quadraMarkers.push(marker);
             
             // Se o lote for inativo, desenha o poligono sem interatividade
-            } else if (lote.Inativo) {
+            }else if (lote.Inativo) {
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
                     weight: 0.6,
