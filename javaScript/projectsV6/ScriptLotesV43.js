@@ -184,7 +184,7 @@ class MapaLotesManager {
                 const centerCoords = this._calcularCentroTooltip(finalCoords);
                 const marker = L.marker(centerCoords, { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Lote, {
-                    permanent: true, direction: "center", className: "quadra-tooltip", offset: [-10, 20] // Aumente o 15 (eixo Y) para descer mais, ou diminua para subir
+                    permanent: true, direction: "center", className: "quadra-tooltip", offset: [-15, 20] // Aumente o 15 (eixo Y) para descer mais, ou diminua para subir
                 });
 
                 marker.loteData = lote; 
