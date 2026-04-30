@@ -183,19 +183,14 @@ class MapaLotesManager {
             if (lote.isQuadra) {
                 const centerCoords = this._calcularCentroTooltip(finalCoords);
                 const marker = L.marker(centerCoords, { opacity: 0, interactive: false });
-                
-                //direction center e offset 0 cravam o texto no meio
                 marker.bindTooltip(lote.Lote, {
-                    permanent: true, 
-                    direction: "center", 
-                    className: "quadra-tooltip", 
-                    offset: [0, 0] 
+                    permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 15] // Aumente o 15 (eixo Y) para descer mais, ou diminua para subir
                 });
 
                 marker.loteData = lote; 
                 marker.addTo(this.map);
                 this.quadraMarkers.push(marker);
-
+            
             // Se o lote for inativo, desenha o poligono sem interatividade
             }else if (lote.Inativo) {
                 const polygon = L.polygon(finalCoords, {
@@ -912,39 +907,30 @@ class MapaLotesManager {
     _calcularCentroTooltip(coords) {
         let minLng = Infinity, maxLng = -Infinity;
 
-        // 1. Linhas Vermelhas: Encontra os pontos mais à esquerda e direita (Longitude)
         coords.forEach(p => {
-            const lng = p[1];
-            if (lng < minLng) minLng = lng;
-            if (lng > maxLng) maxLng = lng;
+            if (p[1] < minLng) minLng = p[1];
+            if (p[1] > maxLng) maxLng = p[1];
         });
 
-        // 2. Linha O exato meio horizontal
         const midLng = (minLng + maxLng) / 2;
         let interseccoesLat = [];
 
-        // 3. Encontra onde a linha cruza as linhas do polígono
         for (let i = 0; i < coords.length - 1; i++) {
             const [lat1, lng1] = coords[i];
             const [lat2, lng2] = coords[i + 1];
 
-            // Verifica se a linha do polígono cruza a nossa linha azul (midLng)
             if ((lng1 <= midLng && lng2 >= midLng) || (lng2 <= midLng && lng1 >= midLng)) {
                 if (lng1 !== lng2) {
-                    // Cálculo da latitude exata da intersecção usando interpolação linear
                     const latInterseccao = lat1 + (lat2 - lat1) * ((midLng - lng1) / (lng2 - lng1));
                     interseccoesLat.push(latInterseccao);
                 } else {
-                    // Caso raro da linha da quadra ser perfeitamente reta e em cima da linha azul
                     interseccoesLat.push(lat1, lat2);
                 }
             }
         }
 
-        // Fallback de segurança
         if (interseccoesLat.length === 0) return L.polygon(coords).getBounds().getCenter();
 
-        // 4. Acha o ponto mais alto e o mais baixo e pega o meio exato deles
         const maxLat = Math.max(...interseccoesLat);
         const minLat = Math.min(...interseccoesLat);
         const midLat = (maxLat + minLat) / 2;
