@@ -1,4 +1,4 @@
-/* * {outline: 1px solid green !important;} */
+* {outline: 1px solid green !important;}
 
 /* --------------------------------------------------
 1.1.  VARIÁVEIS GLOBAIS e CONFIGURAÇÕES MACRO
@@ -60,10 +60,8 @@ body {
 
 .container {
     max-width: var(--maxWidth);
-    height: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
     margin: 0 auto;
     padding: 80px var(--gapPadrao);
     gap: var(--gapPadrao);
@@ -242,8 +240,10 @@ h1 {
 /* #region */
 
 #hero {
-    height: 100vh;
-    background-color: var(--white);
+    min-height: 100vh;
+    padding-top: var(--headerHeight);
+    display: flex;
+    align-items: center;
 }
 
 #hero-container {
@@ -262,8 +262,13 @@ h1 {
     max-width: 540px;
     height: 100%;
     padding: 12px 12px;
+    gap: var(--gapPadrao);
     border-radius: var(--borderRadiusPadrao);
-    background: var(--white);
+}
+
+#hero-direita {
+    width: 600px;
+    height: 600px;
 }
 
 /* #endregion */
