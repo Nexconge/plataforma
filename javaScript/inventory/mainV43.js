@@ -170,6 +170,8 @@ function atualizarDashboards() {
 }
 
 function renderizarDashboards(dados) {
+    //Preenche o select de meses disponíveis para filtro com base nos dados atuais
+    popularFiltroMesesDisponiveis(dados);
     // --------------------------------------------------------
     // 1. Lógica Dinâmica: Mais Vendidos (Filtro de Mês)
     // --------------------------------------------------------
@@ -336,4 +338,60 @@ function aplicarLogicaDeFiltro() {
 
         linha.style.display = deveExibir ? "" : "none";
     });
+}
+
+function popularFiltroMesesDisponiveis(dados) {
+    const selectMes = document.getElementById("mesFiltro");
+    if (!selectMes) return;
+
+    // 1. Extrair todos os meses únicos disponíveis nos dados de vendas
+    const mesesUnicos = new Set();
+    
+    // Varre todos os produtos vendidos
+    dados.maisVendidos.forEach(item => {
+        if (item.vendasPorMes) {
+            // Pega as chaves do dicionário de meses (ex: "2024-05", "2024-04")
+            Object.keys(item.vendasPorMes).forEach(mes => mesesUnicos.add(mes));
+        }
+    });
+
+    // 2. Ordenar os meses (do mais recente pro mais antigo)
+    const mesesOrdenados = Array.from(mesesUnicos).sort((a, b) => b.localeCompare(a));
+
+    // 3. Montar as opções do Select
+    selectMes.innerHTML = ""; // Limpa opções anteriores
+
+    // Opção padrão (Total)
+    const optTodos = document.createElement("option");
+    optTodos.value = "";
+    optTodos.text = "Todos os Meses (Total)";
+    selectMes.appendChild(optTodos);
+
+    // Adiciona os meses encontrados formatados (Opcional: formatar "2024-05" para "Mai/2024")
+    mesesOrdenados.forEach(mes => {
+        const opt = document.createElement("option");
+        opt.value = mes;
+        
+        // Exemplo de formatação visual (se o formato for YYYY-MM)
+        try {
+            const [ano, numMes] = mes.split('-');
+            const dataObj = new Date(ano, parseInt(numMes) - 1);
+            const mesFormatado = dataObj.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '');
+            // Capitaliza a primeira letra (ex: mai de 2024 -> Mai de 2024)
+            opt.text = mesFormatado.charAt(0).toUpperCase() + mesFormatado.slice(1);
+        } catch {
+            opt.text = mes; // Fallback se der erro
+        }
+        
+        selectMes.appendChild(opt);
+    });
+
+    // 4. Se o usuário já tinha um mês selecionado antes de atualizar os dados, mantê-lo selecionado
+    if (EstadoApp.mesFiltroVendas && mesesUnicos.has(EstadoApp.mesFiltroVendas)) {
+        selectMes.value = EstadoApp.mesFiltroVendas;
+    } else {
+        // Se o mês selecionado não existe mais nos dados novos, reseta
+        EstadoApp.mesFiltroVendas = "";
+        selectMes.value = "";
+    }
 }
