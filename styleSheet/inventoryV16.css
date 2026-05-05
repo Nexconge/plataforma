@@ -346,3 +346,50 @@ body.app-loading::after {
     animation: spin 2s linear infinite;
     margin: auto;
 }
+
+/* =========================================================
+   CONTROLES E WRAPPERS (NOVOS)
+========================================================= */
+
+/* Limita o tamanho da tabela e cria rolagem interna (vertical e horizontal) */
+.table-wrapper {
+    max-height: 600px; 
+    overflow-y: auto;
+    overflow-x: auto;
+    border-bottom: 1px solid #ddd; /* Acabamento da borda quando scrollar */
+    border-radius: 0 0 8px 8px; 
+}
+
+/* Fixa o cabeçalho no topo durante o scroll vertical */
+.table-wrapper thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Container de botões/filtros acima das tabelas */
+.tabela-controles {
+    display: none; /* Começa invisível, será ativado pelo JS */
+    align-items: flex-end;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+    padding-right: 5px;
+}
+
+/* Caixa padronizada dos filtros */
+.filtro-box {
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start; 
+    background-color: var(--bg-light, #F7F7F7); 
+    padding: 10px 15px; 
+    border-radius: 8px; 
+    border: 1px solid #ddd; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.filtro-box label {
+    color: #555; 
+    font-weight: bold; 
+    margin-bottom: 5px;
+}

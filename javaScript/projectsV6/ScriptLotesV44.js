@@ -181,10 +181,10 @@ class MapaLotesManager {
             
             //Se for uma quadra desenha apenas o marcador central com tooltip, sem polígono
             if (lote.isQuadra) {
-                const tempPoly = L.polygon(finalCoords);
-                const marker = L.marker(tempPoly.getBounds().getCenter(), { opacity: 0, interactive: false });
+                const centerCoords = this._calcularCentroTooltip(finalCoords);
+                const marker = L.marker(centerCoords, { opacity: 0, interactive: false });
                 marker.bindTooltip(lote.Lote, {
-                    permanent: true, direction: "bottom", className: "quadra-tooltip", offset: [-6, 1.5]
+                    permanent: true, direction: "center", className: "quadra-tooltip", offset: [-15, 25] // Aumente o 15 (eixo Y) para descer mais, ou diminua para subir
                 });
 
                 marker.loteData = lote; 
@@ -192,7 +192,7 @@ class MapaLotesManager {
                 this.quadraMarkers.push(marker);
             
             // Se o lote for inativo, desenha o poligono sem interatividade
-            } else if (lote.Inativo) {
+            }else if (lote.Inativo) {
                 const polygon = L.polygon(finalCoords, {
                     color: "black",
                     weight: 0.6,
@@ -902,6 +902,63 @@ class MapaLotesManager {
 
         this.allLotes = this.allLotes.filter(l => !this.selectedIds.has(l._id));
         this._clearForm();
+    }
+
+    _calcularCentroTooltip(coords) {
+        let minLng = Infinity, maxLng = -Infinity;
+
+        coords.forEach(p => {
+            const lng = p[1];
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+        });
+
+        const midLngInitial = (minLng + maxLng) / 2;
+        let interseccoesLat = [];
+
+        for (let i = 0; i < coords.length - 1; i++) {
+            const [lat1, lng1] = coords[i];
+            const [lat2, lng2] = coords[i + 1];
+
+            if ((lng1 <= midLngInitial && lng2 >= midLngInitial) || (lng2 <= midLngInitial && lng1 >= midLngInitial)) {
+                if (lng1 !== lng2) {
+                    const latInterseccao = lat1 + (lat2 - lat1) * ((midLngInitial - lng1) / (lng2 - lng1));
+                    interseccoesLat.push(latInterseccao);
+                } else {
+                    interseccoesLat.push(lat1, lat2);
+                }
+            }
+        }
+
+        if (interseccoesLat.length === 0) return L.polygon(coords).getBounds().getCenter();
+
+        const maxLat = Math.max(...interseccoesLat);
+        const minLat = Math.min(...interseccoesLat);
+        const midLat = (maxLat + minLat) / 2;
+
+        let interseccoesLng = [];
+
+        for (let i = 0; i < coords.length - 1; i++) {
+            const [lat1, lng1] = coords[i];
+            const [lat2, lng2] = coords[i + 1];
+
+            if ((lat1 <= midLat && lat2 >= midLat) || (lat2 <= midLat && lat1 >= midLat)) {
+                if (lat1 !== lat2) {
+                    const lngInterseccao = lng1 + (lng2 - lng1) * ((midLat - lat1) / (lat2 - lat1));
+                    interseccoesLng.push(lngInterseccao);
+                } else {
+                    interseccoesLng.push(lng1, lng2);
+                }
+            }
+        }
+
+        if (interseccoesLng.length === 0) return [midLat, midLngInitial];
+
+        const maxLngFinal = Math.max(...interseccoesLng);
+        const minLngFinal = Math.min(...interseccoesLng);
+        const midLngFinal = (maxLngFinal + minLngFinal) / 2;
+
+        return [midLat, midLngFinal];
     }
 }
 

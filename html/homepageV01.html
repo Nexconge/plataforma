@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="../pngs/favicon.png">
     <link rel="stylesheet" href="../styleSheet/homepageV01.css">
+    <link href="https://fonts.googleapis.com/css?family=Inter" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Oswald' rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet'>
     <title>Nexcon</title>
 </head>
 
@@ -20,19 +23,19 @@
                 </div>
                 <div id="nav-links">
                     <ul>
-                        <li><a href="#">Início</a></li>
-                        <li><a href="#">Nossos serviços</a></li>
-                        <li><a href="#">Sobre nós</a></li>
-                        <li><a href="#">Fale conosco</a></li>
+                        <li><a href="#hero">Início</a></li>
+                        <li><a href="#servicos">Serviços</a></li>
+                        <li><a href="#processo">Como funciona</a></li>
+                        <li><a href="#quem-somos">Sobre nós</a></li>
+                        <li><a href="#faq">FAQ</a></li>
                     </ul>
                 </div>
                 <div id="nav-final">
                     <button class="btn-blue">Plataforma</button>
-                    <button class="btn-blue">Fale Conosco</button>
                 </div>
             </div>
         </nav>
-    
+
         <section id="hero">
             <div class="container">
                 <div id="hero-container">
@@ -44,66 +47,246 @@
                             eficiente.</p>
                         <div class="hero-btns">
                             <button class="btn-blue">Fale conosco</button>
-                            <button class="btn-ghost">Nossos serviços</button>
                         </div>
                         <div class="hero-stats">
-                                <div class="hero-stat">
-                                    <div class="stat-n">R$50M+</div>
-                                    <div class="stat-l">Recuperados para clientes</div>
-                                </div>
-                                <div class="hero-stat">
-                                    <div class="stat-n">500+</div>
-                                    <div class="stat-l">Empresas atendidas</div>
-                                </div>
-                                <div class="hero-stat">
-                                    <div class="stat-n">98%</div>
-                                    <div class="stat-l">Taxa de aprovação</div>
-                                </div>
+                            <div class="hero-stat">
+                                <div class="stat-n">R$50M+</div>
+                                <div class="stat-l">Recuperados para clientes</div>
                             </div>
+                            <div class="hero-stat">
+                                <div class="stat-n">500+</div>
+                                <div class="stat-l">Empresas atendidas</div>
+                            </div>
+                            <div class="hero-stat">
+                                <div class="stat-n">98%</div>
+                                <div class="stat-l">Taxa de aprovação</div>
+                            </div>
+                        </div>
                     </div>
                     <div id="hero-direita">
+                        <div class="img-placeholder">
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
-        
-        <section id="dores">
+
+        <section id="dores" class="bg-muted">
             <div class="container">
                 <div class="text-titulo">
-                    <h2>A burocracia do financeiro está tomando o seu tempo?</h2>
+                    <span class="step-label">O Cenário Atual</span>
+                    <h2>A ineficiência administrativa está comprometendo seus resultados?</h2>
+                    <p class="section-subtitle">Falhas em rotinas básicas geram passivos ocultos e corroem a margem de
+                        lucro
+                        operacional.</p>
                 </div>
                 <div id="grid-dores">
-                    <div class="card-dores"></div>
-                    <div class="card-dores"></div>
-                    <div class="card-dores"></div>
+                    <div class="card-dores">
+                        <div class="icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <h3>Perda de tempo</h3>
+                        <p>Processos manuais demorados e ineficientes.</p>
+                    </div>
+                    <div class="card-dores">
+                        <div class="icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <line x1="12" y1="1" x2="12" y2="23" />
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                            </svg>
+                        </div>
+                        <h3>Perda de recursos</h3>
+                        <p>Custo elevado com erro humano e ineficiência.</p>
+                    </div>
+                    <div class="card-dores">
+                        <div class="icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                        </div>
+                        <h3>Riscos legais</h3>
+                        <p>Conformidade fiscal e riscos de auditoria.</p>
+                    </div>
                 </div>
                 <div class="text-action">
                     <button class="btn-blue">Quero resolver isso!</button>
                 </div>
             </div>
         </section>
-        
+
         <section id="processo">
-    
-        </section>
-    
-        <section id="servicos">
             <div class="container">
-    
+                <div class="text-titulo">
+                    <span class="step-label">Nossa Metodologia</span>
+                    <h2>Como estruturamos a sua operação</h2>
+                </div>
+                <div class="process-steps">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Diagnóstico Financeiro e Fiscal</h3>
+                            <p>Análise minuciosa do balanço patrimonial, identificação de gargalos operacionais e
+                                auditoria prévia.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Saneamento e Conciliação</h3>
+                            <p>Implementação de rotinas de conciliação bancária rigorosas (base zero) para garantir
+                                integridade absoluta
+                                dos dados.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Planejamento Tributário</h3>
+                            <p>Mapeamento e aplicação de benefícios fiscais cabíveis, viabilizando recuperação de
+                                créditos e correção
+                                monetária.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
-    
+
+        <section id="servicos" class="bg-muted">
+            <div class="container">
+                <div class="text-titulo">
+                    <span class="step-label">Portfólio de Serviços</span>
+                    <h2>Soluções sob medida para o seu negócio</h2>
+                </div>
+                <div id="grid-servicos">
+                    <div class="card card-servicos">
+                        <div class="icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <line x1="3" y1="9" x2="21" y2="9" />
+                                <line x1="9" y1="21" x2="9" y2="9" />
+                            </svg>
+                        </div>
+                        <h3>BPO Financeiro Integral</h3>
+                        <p>Terceirização completa do seu departamento financeiro. Assumimos a responsabilidade pela
+                            rotina de contas a
+                            pagar, contas a receber, emissão de notas e conciliação bancária diária via integração de
+                            APIs, entregando
+                            relatórios gerenciais precisos.</p>
+                        <div class="mt-auto">
+                            <button class="btn-ghost w-100" onclick="window.location.href='formulario.html'">Solicitar
+                                proposta</button>
+                        </div>
+                    </div>
+                    <div class="card card-servicos">
+                        <div class="icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                        </div>
+                        <h3>Recuperação e Benefícios Fiscais</h3>
+                        <p>Análise técnica voltada para a otimização da carga tributária. Realizamos levantamento de
+                            créditos passíveis
+                            de restituição ou compensação (PIS, COFINS, IRRF, CSLL) e orientamos sobre a aplicabilidade
+                            de programas
+                            federais como o PERSE.</p>
+                        <div class="mt-auto">
+                            <button class="btn-ghost w-100" onclick="window.location.href='formulario.html'">Falar com
+                                especialista</button>
+                        </div>
+                    </div>
+                    <div class="card card-servicos">
+                        <div class="icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                                <polyline points="2 17 12 22 22 17" />
+                                <polyline points="2 12 12 17 22 12" />
+                            </svg>
+                        </div>
+                        <h3>Controladoria e Dashboards</h3>
+                        <p>Implementação de painéis de controle e estruturação de orçamentos (base zero). Fornecemos
+                            visibilidade de
+                            dados em tempo real para fundamentar as tomadas de decisão da diretoria com segurança
+                            institucional.</p>
+                        <div class="mt-auto">
+                            <button class="btn-ghost w-100" onclick="window.location.href='formulario.html'">Agendar
+                                reunião</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="quem-somos">
             <div class="container">
-    
+                <div class="split-text">
+                    <span class="step-label">Sobre a Nexcon</span>
+                    <h2>Excelência técnica aliada à inovação</h2>
+                    <p>A Nexcon nasceu com o propósito de elevar o padrão da gestão financeira corporativa. Acreditamos
+                        que a
+                        administração financeira não deve ser apenas um registro do passado, mas o alicerce para o
+                        crescimento futuro.
+                    </p>
+                    <p>Nossa equipe é formada por especialistas que unem profundo conhecimento jurídico-administrativo
+                        com o domínio de
+                        tecnologias de automação. Isso nos permite entregar análises rigorosas e soluções ágeis,
+                        reduzindo a burocracia
+                        e garantindo total conformidade legal aos nossos parceiros.</p>
+                </div>
+                <div class="split-image">
+                    <div class="placeholder-box"></div>
+                </div>
             </div>
         </section>
-    
-        <section id="faq">
+
+        <section id="faq" class="bg-muted">
             <div class="container">
-    
+                <div class="text-titulo">
+                    <span class="step-label">Dúvidas Frequentes</span>
+                    <h2>Perguntas Recentes</h2>
+                </div>
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <h4>Como é feita a transição para o BPO Financeiro da Nexcon?</h4>
+                        <p>A transição ocorre de forma estruturada. Iniciamos com um levantamento de dados e processos
+                            atuais,
+                            parametrizamos nosso sistema com as regras de negócio da sua empresa e realizamos testes de
+                            conciliação antes da assunção total da operação.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>É possível corrigir saldos patrimoniais retroativos para uso futuro?</h4>
+                        <p>Sim. Procedemos com a auditoria dos balanços anteriores, aplicando as devidas correções
+                            monetárias
+                            conforme a legislação vigente, permitindo a apuração e o aproveitamento legal de créditos
+                            fiscais
+                            acumulados.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4>A consultoria atende empresas de quais portes?</h4>
+                        <p>Atendemos desde operações estruturadas que buscam otimização tributária até empresas em fase
+                            de
+                            expansão que necessitam de uma controladoria profissional e painéis de dados gerenciais
+                            precisos.
+                        </p>
+                    </div>
+                </div>
             </div>
         </section>
+
+        <footer>
+            <div class="container">
+                <p>&copy; 2026 Nexcon. Todos os direitos reservados.</p>
+            </div>
+        </footer>
 
     </div>
 
