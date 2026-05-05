@@ -1,17 +1,44 @@
 // uiV10.js
 
+function alternarVisibilidadeFiltros(visivel) {
+    const controlesSaldos = document.getElementById("controlesMaioresSaldos");
+    const controlesVendas = document.getElementById("controlesMaisVendidos");
+    const display = visivel ? "flex" : "none";
+    
+    if (controlesSaldos) controlesSaldos.style.display = display;
+    if (controlesVendas) controlesVendas.style.display = display;
+}
+
 export function popularFiltroMesesDisponiveis(dados, mesSelecionadoAtual) {
     const selectMes = document.getElementById("mesFiltro");
     if (!selectMes) return mesSelecionadoAtual;
 
     const mesesUnicos = new Set();
+    
+    // DEBUG: Verifica o que exatamente está chegando na primeira posição para vermos a estrutura
+    if (dados.maisVendidos.length > 0) {
+        console.log("Exemplo de item mais vendido:", dados.maisVendidos[0]); 
+    }
+
     dados.maisVendidos.forEach(item => {
-        if (item.vendasPorMes) {
+        // Se `vendasPorMes` for um objeto direto
+        if (item.vendasPorMes && typeof item.vendasPorMes === 'object') {
             Object.keys(item.vendasPorMes).forEach(mes => mesesUnicos.add(mes));
+        } 
+        // Caso o Bubble/Python tenha transformado em string, tentamos fazer o parse
+        else if (item.vendasPorMes && typeof item.vendasPorMes === 'string') {
+            try {
+                const mesesObj = JSON.parse(item.vendasPorMes);
+                Object.keys(mesesObj).forEach(mes => mesesUnicos.add(mes));
+            } catch (e) {
+                console.warn("Falha ao ler vendasPorMes do item", item.nome);
+            }
         }
     });
 
     const mesesOrdenados = Array.from(mesesUnicos).sort((a, b) => b.localeCompare(a));
+    console.log("Meses encontrados e ordenados:", mesesOrdenados); // DEBUG
+
     selectMes.innerHTML = ""; 
 
     const optTodos = document.createElement("option");
@@ -43,6 +70,9 @@ export function popularFiltroMesesDisponiveis(dados, mesSelecionadoAtual) {
 }
 
 export function renderizarDashboards(dados, estadoApp) {
+    // 1. Mostrar os filtros pois agora temos dados
+    alternarVisibilidadeFiltros(true);
+
     const novoMes = popularFiltroMesesDisponiveis(dados, estadoApp.mesFiltroVendas);
     estadoApp.mesFiltroVendas = novoMes; 
 
@@ -50,8 +80,15 @@ export function renderizarDashboards(dados, estadoApp) {
     let listaVendas = [...dados.maisVendidos];
     if (estadoApp.mesFiltroVendas && estadoApp.mesFiltroVendas !== "") {
         listaVendas = listaVendas.map(item => {
-            const qtdNoMes = (item.vendasPorMes && item.vendasPorMes[estadoApp.mesFiltroVendas]) 
-                ? item.vendasPorMes[estadoApp.mesFiltroVendas] : 0;
+            let dicionarioMeses = item.vendasPorMes;
+            // Proteção extra caso venha como string JSON
+            if(typeof dicionarioMeses === 'string') {
+                try { dicionarioMeses = JSON.parse(dicionarioMeses); } catch(e){ dicionarioMeses = {}; }
+            }
+
+            const qtdNoMes = (dicionarioMeses && dicionarioMeses[estadoApp.mesFiltroVendas]) 
+                ? dicionarioMeses[estadoApp.mesFiltroVendas] : 0;
+                
             return { ...item, quantidade: qtdNoMes, valorTotal: qtdNoMes * item.valorUnitario };
         }).filter(item => item.quantidade > 0); 
     }
@@ -85,6 +122,9 @@ export function renderizarDashboards(dados, estadoApp) {
 }
 
 export function renderizarPlaceholders() {
+    // 2. Esconder os filtros enquanto espera
+    alternarVisibilidadeFiltros(false);
+
     gerarTabelaDetalhada("tabelaMaisVendidos", "Produtos Mais Movimentados", [], "Aguardando seleção...");
     gerarTabelaDetalhada("tabelaMaioresSaldos", "Maiores Saldos", [], "Aguardando seleção...");
     gerarTabelaRecomendacao("tabelaRecomendacaoCompra", [], "Aguardando seleção...");

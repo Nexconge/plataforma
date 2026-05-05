@@ -2,7 +2,7 @@ import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV05.js';
 import { extrairDadosRelatorio } from './processingV19.js';
 import { 
     preencherSelect, renderizarDashboards,  renderizarPlaceholders,  limparTabelas,  renderizarTagNoHTML, aplicarLogicaDeFiltro 
-} from './uiV10.js';
+} from './uiV11.js';
 
 const EstadoApp = {
     cadastrosRaw: [],
