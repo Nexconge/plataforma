@@ -1,4 +1,136 @@
-// uiV07.js
+// uiV10.js
+
+export function popularFiltroMesesDisponiveis(dados, mesSelecionadoAtual) {
+    const selectMes = document.getElementById("mesFiltro");
+    if (!selectMes) return mesSelecionadoAtual;
+
+    const mesesUnicos = new Set();
+    dados.maisVendidos.forEach(item => {
+        if (item.vendasPorMes) {
+            Object.keys(item.vendasPorMes).forEach(mes => mesesUnicos.add(mes));
+        }
+    });
+
+    const mesesOrdenados = Array.from(mesesUnicos).sort((a, b) => b.localeCompare(a));
+    selectMes.innerHTML = ""; 
+
+    const optTodos = document.createElement("option");
+    optTodos.value = "";
+    optTodos.text = "Todos os Meses (Total)";
+    selectMes.appendChild(optTodos);
+
+    mesesOrdenados.forEach(mes => {
+        const opt = document.createElement("option");
+        opt.value = mes;
+        try {
+            const [ano, numMes] = mes.split('-');
+            const dataObj = new Date(ano, parseInt(numMes) - 1);
+            const mesFormatado = dataObj.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '');
+            opt.text = mesFormatado.charAt(0).toUpperCase() + mesFormatado.slice(1);
+        } catch {
+            opt.text = mes; 
+        }
+        selectMes.appendChild(opt);
+    });
+
+    if (mesSelecionadoAtual && mesesUnicos.has(mesSelecionadoAtual)) {
+        selectMes.value = mesSelecionadoAtual;
+        return mesSelecionadoAtual;
+    } else {
+        selectMes.value = "";
+        return ""; 
+    }
+}
+
+export function renderizarDashboards(dados, estadoApp) {
+    const novoMes = popularFiltroMesesDisponiveis(dados, estadoApp.mesFiltroVendas);
+    estadoApp.mesFiltroVendas = novoMes; 
+
+    // Mais Vendidos
+    let listaVendas = [...dados.maisVendidos];
+    if (estadoApp.mesFiltroVendas && estadoApp.mesFiltroVendas !== "") {
+        listaVendas = listaVendas.map(item => {
+            const qtdNoMes = (item.vendasPorMes && item.vendasPorMes[estadoApp.mesFiltroVendas]) 
+                ? item.vendasPorMes[estadoApp.mesFiltroVendas] : 0;
+            return { ...item, quantidade: qtdNoMes, valorTotal: qtdNoMes * item.valorUnitario };
+        }).filter(item => item.quantidade > 0); 
+    }
+    listaVendas.sort((a, b) => b.quantidade - a.quantidade);
+    
+    gerarTabelaDetalhada(
+        "tabelaMaisVendidos",
+        estadoApp.mesFiltroVendas ? `Mais Movimentados (${estadoApp.mesFiltroVendas})` : "Produtos Mais Movimentados (Total)",
+        listaVendas
+    );
+
+    // Maiores Saldos
+    let listaSaldos = [...dados.maioresSaldos];
+    listaSaldos.sort((a, b) => {
+        if (estadoApp.ordenacaoSaldos === 'valor') return b.valorTotal - a.valorTotal;
+        return b.quantidade - a.quantidade;
+    });
+
+    gerarTabelaDetalhada(
+        "tabelaMaioresSaldos",
+        `Maiores Estoques (Por ${estadoApp.ordenacaoSaldos === 'valor' ? 'Valor Financeiro' : 'Quantidade'})`,
+        listaSaldos
+    );
+
+    // MRP
+    let listaMRP = [...dados.recomendacaoCompra];
+    listaMRP.sort((a, b) => b.vendaMedia - a.vendaMedia);
+    gerarTabelaRecomendacao("tabelaRecomendacaoCompra", listaMRP);
+    
+    aplicarLogicaDeFiltro(estadoApp.filtrosAtivos); 
+}
+
+export function renderizarPlaceholders() {
+    gerarTabelaDetalhada("tabelaMaisVendidos", "Produtos Mais Movimentados", [], "Aguardando seleção...");
+    gerarTabelaDetalhada("tabelaMaioresSaldos", "Maiores Saldos", [], "Aguardando seleção...");
+    gerarTabelaRecomendacao("tabelaRecomendacaoCompra", [], "Aguardando seleção...");
+}
+
+export function limparTabelas() {
+    renderizarPlaceholders();
+}
+
+export function renderizarTagNoHTML(tipo, termo, callbackRemocao) {
+    const container = document.getElementById("tag-container");
+    const input = document.getElementById("tag-input");
+
+    const tag = document.createElement("div");
+    tag.className = `tag ${tipo === 'inc' ? 'tag-inc' : 'tag-exc'}`;
+    tag.innerHTML = `<b>${tipo}:</b>${termo} <span class="remove-btn">&times;</span>`;
+
+    tag.querySelector(".remove-btn").onclick = () => {
+        tag.remove();
+        callbackRemocao(tipo, termo);
+    };
+
+    container.insertBefore(tag, input);
+}
+
+export function aplicarLogicaDeFiltro(filtrosAtivos) {
+    const tabela = document.getElementById("tabelaRecomendacaoCompra");
+    if (!tabela) return;
+
+    const linhas = tabela.querySelectorAll("tbody tr");
+    const filtrosInc = filtrosAtivos.filter(f => f.tipo === 'inc');
+    const filtrosExc = filtrosAtivos.filter(f => f.tipo === 'exc');
+
+    linhas.forEach(linha => {
+        const nomeProduto = linha.cells[0]?.innerText.toLowerCase() || "";
+        let deveExibir = true;
+
+        if (filtrosInc.length > 0) deveExibir = filtrosInc.some(f => nomeProduto.includes(f.termo.toLowerCase()));
+        if (filtrosExc.length > 0) {
+            const matchesExc = filtrosExc.some(f => nomeProduto.includes(f.termo.toLowerCase()));
+            if (matchesExc) deveExibir = false;
+        }
+
+        linha.style.display = deveExibir ? "" : "none";
+    });
+}
 
 // Função para preencher Selects
 export function preencherSelect(idElemento, dados, placeholder = "Selecione...") {
