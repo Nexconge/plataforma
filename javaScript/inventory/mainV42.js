@@ -1,6 +1,6 @@
-// mainV32.js
+// mainV42.js
 import { buscarDadosEstoque, buscarRelatoriosDisponiveis } from './apiV05.js';
-import { extrairDadosRelatorio } from './processingV18.js';
+import { extrairDadosRelatorio } from './processingV19.js';
 import { gerarTabelaDetalhada, gerarTabelaRecomendacao, preencherSelect } from './uiV09.js';
 
 // --- ESTADO & CACHE ---
@@ -10,7 +10,20 @@ const EstadoApp = {
     filialSelecionada: null,
     cacheDatas: {},
     cacheRelatorios: {},
-    filtrosAtivos: []
+    filtrosAtivos: [],
+    ordenacaoSaldos: 'quantidade', // 'quantidade' ou 'valorTotal'
+    mesFiltroVendas: null // Ex: "2024-05"
+};
+
+// Funções para alternar visões via UI
+window.alterarOrdenacaoSaldos = function(tipo) {
+    EstadoApp.ordenacaoSaldos = tipo; // 'quantidade' ou 'valor'
+    atualizarDashboards();
+};
+
+window.filtrarVendasPorMes = function(mes) {
+    EstadoApp.mesFiltroVendas = mes; // null (para total) ou string do mês
+    atualizarDashboards();
 };
 
 // --- FUNÇÃO PRINCIPAL DE INICIALIZAÇÃO ---
@@ -147,27 +160,75 @@ async function carregarRelatorioFinal(idCadastro, data) {
     }
 }
 
+function atualizarDashboards() {
+    const dataSelecionada = document.getElementById("dataSelect").value;
+    const chaveCache = `${EstadoApp.empresaSelecionada}_${dataSelecionada}`;
+    
+    if (EstadoApp.cacheRelatorios[chaveCache]) {
+        renderizarDashboards(EstadoApp.cacheRelatorios[chaveCache]);
+    }
+}
+
 function renderizarDashboards(dados) {
-    // Usamos sempre a tabela detalhada. 
-    // Se o dado for antigo (sem valorUnitario), as colunas extras ficarão em branco.
+    // --------------------------------------------------------
+    // 1. Lógica Dinâmica: Mais Vendidos (Filtro de Mês)
+    // --------------------------------------------------------
+    let listaVendas = [...dados.maisVendidos];
+
+    if (EstadoApp.mesFiltroVendas && EstadoApp.mesFiltroVendas !== "") {
+        // Se um mês foi selecionado, recalculamos as quantidades baseadas apenas naquele mês
+        listaVendas = listaVendas.map(item => {
+            const qtdNoMes = (item.vendasPorMes && item.vendasPorMes[EstadoApp.mesFiltroVendas]) 
+                ? item.vendasPorMes[EstadoApp.mesFiltroVendas] 
+                : 0;
+            
+            return {
+                ...item,
+                quantidade: qtdNoMes,
+                valorTotal: qtdNoMes * item.valorUnitario // Recalcula o valor total vendido no mês
+            };
+        }).filter(item => item.quantidade > 0); // Oculta quem não vendeu no mês
+    }
+
+    // Ordena do maior pro menor e pega o Top 15
+    listaVendas.sort((a, b) => b.quantidade - a.quantidade);
+    const topVendas = listaVendas.slice(0, 15);
+
     gerarTabelaDetalhada(
         "tabelaMaisVendidos",
-        "Produtos Mais Movimentados",
-        dados.maisVendidos
+        EstadoApp.mesFiltroVendas ? `Mais Movimentados (${EstadoApp.mesFiltroVendas})` : "Produtos Mais Movimentados (Total)",
+        topVendas
     );
+
+    // --------------------------------------------------------
+    // 2. Lógica Dinâmica: Maiores Saldos (Ordenação)
+    // --------------------------------------------------------
+    let listaSaldos = [...dados.maioresSaldos];
+
+    listaSaldos.sort((a, b) => {
+        if (EstadoApp.ordenacaoSaldos === 'valor') {
+            return b.valorTotal - a.valorTotal; // Ordena pela fortuna parada em estoque
+        }
+        return b.quantidade - a.quantidade; // Ordena por unidades (Padrão)
+    });
+    
+    // Pega o Top 15 da ordenação escolhida
+    const topSaldos = listaSaldos.slice(0, 15);
 
     gerarTabelaDetalhada(
         "tabelaMaioresSaldos",
-        "Maiores Saldos",
-        dados.maioresSaldos
+        `Maiores Estoques (Por ${EstadoApp.ordenacaoSaldos === 'valor' ? 'Valor Financeiro' : 'Quantidade'})`,
+        topSaldos
     );
 
-    gerarTabelaRecomendacao(
-        "tabelaRecomendacaoCompra",
-        dados.recomendacaoCompra
-    );
-
-    aplicarLogicaDeFiltro();
+    // --------------------------------------------------------
+    // 3. Recomendação MRP e Filtros de Exclusão/Inclusão
+    // --------------------------------------------------------
+    let listaMRP = [...dados.recomendacaoCompra];
+    listaMRP.sort((a, b) => b.vendaMedia - a.vendaMedia);
+    
+    gerarTabelaRecomendacao("tabelaRecomendacaoCompra", listaMRP.slice(0, 15));
+    aplicarLogicaDeFiltro(); // Aplica suas tags
 }
 
 // --- FUNÇÕES VISUAIS ---
