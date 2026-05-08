@@ -55,6 +55,7 @@ class MapaLotesManager {
                     lote.Valor = 0;
                     lote.ValorM2 = 0;
                     lote.Cliente = "";
+                    lote.Corretor = "";
                 }
             });
         }
@@ -598,7 +599,9 @@ class MapaLotesManager {
             } catch (e) {}
         };
 
-        const textIds = ["quadra_lote2", "area2", "cliente2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2", "selectedCount2"];
+        const textIds = ["quadra_lote2", "area2", "cliente2", "corretor2",
+             "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2",
+              "idsLotes2", "selectedCount2"];
         const complexIds = ["atividade2", "status2", "zona2"];
 
         textIds.forEach(id => resetEl(id, false));
@@ -673,6 +676,9 @@ class MapaLotesManager {
             if (lote.Cliente && typeof lote.Cliente === 'string' && lote.Cliente.trim() !== "") {
                 listaClientes.push(lote.Cliente);
             }
+            if (lote.Corretor && typeof lote.Corretor === 'string' && lote.Corretor.trim() !== "") {
+                listaCorretores.push(lote.Corretor);
+            }
             nomes.push(lote.Lote);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);
@@ -684,6 +690,7 @@ class MapaLotesManager {
         const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
         const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
+        const corretorValor = isMulti ? `Corretores: ${listaCorretores.join(", ")}` : (listaCorretores[0] || "");
 
         const formatArea = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²";
         const formatMoney = (num) => "R$ " + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -699,10 +706,9 @@ class MapaLotesManager {
         setInput("valor_metro2", (totalArea > 0 && totalValor > 0) ? formatMoney(totalValor / totalArea) : "");
         setInput("valor_total2", totalValor > 0 ? formatMoney(totalValor) : "");
         setInput("cliente2", clienteValor, isMulti);
-        
+        setInput("corretor2", corretorValor, isMulti);
         setInput("idsLotes2", idsLotesString);
         setInput("selectedCount2", qtdSelecionada);
-
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
@@ -766,7 +772,8 @@ class MapaLotesManager {
             Lateral: getNum("lateral2"),
             ValorM2: getNum("valor_metro2"),
             Valor: getNum("valor_total2"),
-            Zoneamento: getLabelFormatado("zona2")
+            Zoneamento: getLabelFormatado("zona2"),
+            Corretor: getVal("corretor2")
         });
         
         this._updateMapVisuals();
