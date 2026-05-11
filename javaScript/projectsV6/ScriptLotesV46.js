@@ -664,7 +664,8 @@ class MapaLotesManager {
         const isMulti = this.selectedIds.size > 1;
 
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        let nomes = [], listaClientes = [], statusSet = new Set(), attSet = new Set(), zonaSet = new Set();
+        // Adicionada a declaração do array listaCorretores abaixo:
+        let nomes = [], listaClientes = [], listaCorretores = [], statusSet = new Set(), attSet = new Set(), zonaSet = new Set();
 
         this.selectedIds.forEach(id => {
             const lote = this.polygons[id].loteData;
