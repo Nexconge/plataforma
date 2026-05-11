@@ -27,6 +27,7 @@ window.filtrarVendasPorMes = function(mes) {
 
 window.iniciarAplicacao = function (textoCadastros) {
     console.log("Iniciando aplicação...");
+    console.log("Texto bruto recebido para cadastros:", textoCadastros);
     try {
         let jsonString = textoCadastros.trim();
         if (!jsonString.startsWith("[")) jsonString = `[${jsonString}]`;
