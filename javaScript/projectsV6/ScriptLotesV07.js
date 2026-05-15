@@ -1,4 +1,4 @@
-import { buscarLotesPaginados } from './apiV03.js';
+import { buscarLotesPaginados } from './apiV04.js';
 
 class MapaLotesManager {
     constructor(mapId, url, userModifyers) {
@@ -114,7 +114,6 @@ class MapaLotesManager {
             const isClean = this._isSimplePolygon(cleanCoords);
 
             if (!isClean) {
-                // console.log(`Corrigindo lote quebrado: ${lote.Lote}`);
                 finalCoords = this._organizarPontosRadialmente(cleanCoords);
             }
 
@@ -355,7 +354,6 @@ class MapaLotesManager {
                 ? idsEmpreendimentos 
                 : this.empreendimentosLista.map(e => e.id);
 
-            console.log(`[Mapa Debug] Processando ${idsParaProcessar.length} empreendimentos.`);
 
             const novosDadosCarregados = await this._assegurarDadosEmCache(idsParaProcessar);
             
@@ -393,9 +391,8 @@ class MapaLotesManager {
         // Se não houver nenhum polígono visível, não tenta centralizar
         if (poligonosVisiveis.length === 0) return;
 
-        // LÓGICA RESTAURADA: Centraliza se for a primeira vez OU se o filtro de empreendimento mudou
+        //Centraliza se for a primeira vez OU se o filtro de empreendimento mudou
         if (!this.hasLoadedOnce || prevEmpStr !== newEmpStr) {
-            console.log("[Mapa Debug] Alteração de filtro ou primeira carga detectada. Centralizando...");
             this._centralizeView();
             this.hasLoadedOnce = true;
         }
@@ -443,23 +440,16 @@ class MapaLotesManager {
     async _assegurarDadosEmCache(idsEmpreendimentos) {
         let houveMudanca = false;
         
-        for (const idEmp of idsEmpreendimentos) {
-            if (!idEmp) continue;
+        // Dispara a busca para TODOS os empreendimentos faltantes simultaneamente
+        const promessasDeBusca = idsEmpreendimentos.map(async (idEmp) => {
+            if (!idEmp) return;
             
             if (!this.lotesCache[idEmp]) {
-                // SE JÁ EXISTE UMA REQUISIÇÃO ROLANDO PARA ESSE ID, APENAS AGUARDE-A
-                if (this.lotesFetchPromises[idEmp]) {
-                    console.log(`[Mapa Debug] Requisição já em andamento para ${idEmp}. Aguardando conclusão...`);
-                    await this.lotesFetchPromises[idEmp];
-                    houveMudanca = true; 
-                    continue; 
+                if (!this.lotesFetchPromises[idEmp]) {
+                    console.log(`[Mapa Debug] Disparando busca paralela para: ${idEmp}`);
+                    this.lotesFetchPromises[idEmp] = buscarLotesPaginados(this.urlAPI, idEmp);
                 }
 
-                console.log(`[Mapa Debug] Buscando dados faltantes do empreendimento: ${idEmp}`);
-                
-                // SALVA A PROMISE NO CONTROLE
-                this.lotesFetchPromises[idEmp] = buscarLotesPaginados(this.urlAPI, idEmp);
-                
                 try {
                     const lotes = await this.lotesFetchPromises[idEmp];
                     
@@ -472,18 +462,21 @@ class MapaLotesManager {
                         });
                     }
 
-                    // Apenas para garantir que não vamos duplicar caso a matriz já tenha recebido dados por outro fluxo
+                    // Impede duplicidade
                     if (!this.lotesCache[idEmp]) {
                         this.lotesCache[idEmp] = lotes;
                         this.allLotes = this.allLotes.concat(lotes);
                         houveMudanca = true;
                     }
                 } finally {
-                    // Limpa a promise concluída do controle
                     delete this.lotesFetchPromises[idEmp];
                 }
             }
-        }
+        });
+
+        // Aguarda todas as buscas paralelas terminarem juntas
+        await Promise.all(promessasDeBusca);
+        
         return houveMudanca;
     }
 
