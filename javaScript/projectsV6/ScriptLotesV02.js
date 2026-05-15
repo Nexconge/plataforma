@@ -1,4 +1,4 @@
-import { buscarLotesPaginados } from './apiV01.js';
+import { buscarLotesPaginados } from './apiV02.js';
 
 class MapaLotesManager {
     constructor(mapId, url, userModifyers) {

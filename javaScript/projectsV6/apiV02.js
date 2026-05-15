@@ -8,7 +8,7 @@ export async function buscarLotesPaginados(urlBase, idEmpreendimento) {
     while (pagina <= totalPaginas) {
         try {
             const params = new URLSearchParams({ 
-                idEmpreendimento: idEmpreendimento, 
+                empreendimentoID: idEmpreendimento, 
                 pagina: pagina.toString() 
             });
             
