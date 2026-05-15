@@ -446,7 +446,6 @@ class MapaLotesManager {
             
             if (!this.lotesCache[idEmp]) {
                 if (!this.lotesFetchPromises[idEmp]) {
-                    console.log(`[Mapa Debug] Disparando busca paralela para: ${idEmp}`);
                     this.lotesFetchPromises[idEmp] = buscarLotesPaginados(this.urlAPI, idEmp);
                 }
 

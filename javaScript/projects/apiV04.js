@@ -1,5 +1,4 @@
 export async function buscarLotesPaginados(urlBase, idEmpreendimento) {
-    console.log(`[API Debug] Iniciando busca OTIMIZADA para ID: ${idEmpreendimento}`);
     
     // 1. Busca APENAS a primeira página para descobrir o total
     const params = new URLSearchParams({ empreendimentoID: idEmpreendimento, pagina: "1" });
@@ -12,7 +11,6 @@ export async function buscarLotesPaginados(urlBase, idEmpreendimento) {
     // O BUBBLE PRECISA DEVOLVER ESSA VARIÁVEL:
     const totalPaginas = respostaBubble.total_paginas || 1; 
 
-    console.log(`[API Debug] ID ${idEmpreendimento} tem ${totalPaginas} páginas. Baixando o resto em paralelo...`);
 
     // 2. Se tiver mais páginas, dispara TODAS de uma vez simultaneamente!
     if (totalPaginas > 1) {
@@ -36,6 +34,5 @@ export async function buscarLotesPaginados(urlBase, idEmpreendimento) {
         });
     }
     
-    console.log(`[API Debug] Finalizado para ${idEmpreendimento}. Total Lotes: ${todosLotes.length}`);
     return todosLotes;
 }
