@@ -345,6 +345,9 @@ class MapaLotesManager {
         document.body.classList.add('app-loading');
 
         try {
+            // 1. Guarda o estado do filtro de empreendimentos ANTES de atualizar
+            const prevEmpStr = this.filters.empreendimentos ? this.filters.empreendimentos.join() : "";
+
             let { idsEmpreendimentos, outrosFiltros } = this._capturarDadosDosFiltros();
             
             // Lógica: Se o filtro estiver vazio, busca todos os IDs conhecidos na lista
@@ -360,6 +363,7 @@ class MapaLotesManager {
                 this._renderLotes(this.allLotes);
             }
 
+            // 2. Atualiza os filtros com os novos valores
             this.filters = {
                 ...outrosFiltros,
                 empreendimentos: idsEmpreendimentos, // O filtro visual permanece o que o usuário selecionou
@@ -369,8 +373,11 @@ class MapaLotesManager {
             this._atualizarElementosVisuais();
             this._validarSelecaoAtual();
             
-            // Tenta centralizar. A função interna garantirá que isso ocorra apenas uma vez.
-            this._ajustarCamera();
+            // 3. Captura o novo estado do filtro
+            const newEmpStr = this.filters.empreendimentos.join();
+
+            // 4. Passa o estado anterior e o novo para decidir se deve centralizar
+            this._ajustarCamera(prevEmpStr, newEmpStr);
 
         } catch (error) {
             console.error("[Mapa Debug] Falha na sincronização:", error);
@@ -379,6 +386,20 @@ class MapaLotesManager {
         }
     }
 
+    _ajustarCamera(prevEmpStr, newEmpStr) {
+        // Verifica se existem polígonos de fato renderizados no mapa
+        const poligonosVisiveis = Object.values(this.polygons).filter(p => this.map.hasLayer(p));
+        
+        // Se não houver nenhum polígono visível, não tenta centralizar
+        if (poligonosVisiveis.length === 0) return;
+
+        // LÓGICA RESTAURADA: Centraliza se for a primeira vez OU se o filtro de empreendimento mudou
+        if (!this.hasLoadedOnce || prevEmpStr !== newEmpStr) {
+            console.log("[Mapa Debug] Alteração de filtro ou primeira carga detectada. Centralizando...");
+            this._centralizeView();
+            this.hasLoadedOnce = true;
+        }
+    }
 
     _capturarDadosDosFiltros() {
         const getCleanVal = (id) => {
@@ -482,17 +503,6 @@ class MapaLotesManager {
 
         if (mudou) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
-    }
-
-    _ajustarCamera() {
-        // Verifica se existem polígonos de fato renderizados no mapa
-        const poligonosVisiveis = Object.values(this.polygons).filter(p => this.map.hasLayer(p));
-        
-        if (poligonosVisiveis.length > 0 && !this.mapaJaCentralizou) {
-            console.log("[Mapa Debug] Primeira carga de lotes detectada. Centralizando...");
-            this._centralizeView();
-            this.mapaJaCentralizou = true; // Trava a centralização automática
-        }
     }
 
     _updateMapVisuals() {
