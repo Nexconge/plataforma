@@ -1,4 +1,4 @@
-import { buscarLotesPaginados } from './apiV02.js';
+import { buscarLotesPaginados } from './apiV03.js';
 
 class MapaLotesManager {
     constructor(mapId, url, userModifyers) {
@@ -360,7 +360,7 @@ class MapaLotesManager {
 
             this._atualizarElementosVisuais();
             this._validarSelecaoAtual();
-            this._ajustarCamera(idsEmpreendimentos);
+            this._ajustarCamera();
 
         } catch (error) {
             console.error("[Mapa Debug] Falha na sincronização:", error);
@@ -368,6 +368,7 @@ class MapaLotesManager {
             document.body.classList.remove('app-loading');
         }
     }
+
 
     _capturarDadosDosFiltros() {
         const getCleanVal = (id) => {
@@ -450,12 +451,10 @@ class MapaLotesManager {
         if (this.selectedIds.size === 0) this._clearForm();
     }
 
-    _ajustarCamera(idsEmpreendimentos) {
-        const hashAtual = idsEmpreendimentos.join();
-        if (!this.hasLoadedOnce || this.lastFilterHash !== hashAtual) {
+    _ajustarCamera() {
+        if (!this.hasLoadedOnce) {
             this._centralizeView();
             this.hasLoadedOnce = true;
-            this.lastFilterHash = hashAtual;
         }
     }
 

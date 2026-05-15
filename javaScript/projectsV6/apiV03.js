@@ -1,11 +1,11 @@
 export async function buscarLotesPaginados(urlBase, idEmpreendimento) {
     let pagina = 1;
-    let totalPaginas = 1;
     let todosLotes = [];
+    let temMaisPaginas = true;
 
     console.log(`[API Debug] Iniciando busca paginada para o empreendimento ID: ${idEmpreendimento}`);
 
-    while (pagina <= totalPaginas) {
+    while (temMaisPaginas) {
         try {
             const params = new URLSearchParams({ 
                 empreendimentoID: idEmpreendimento, 
@@ -26,16 +26,18 @@ export async function buscarLotesPaginados(urlBase, idEmpreendimento) {
             const respostaBubble = data.response || data;
             
             const lotesPagina = respostaBubble.lotes || [];
-            const pagAtual = respostaBubble.pagina || pagina;
-            totalPaginas = respostaBubble.total_paginas || 1;
 
-            console.log(`[API Debug] Sucesso - Página ${pagAtual} de ${totalPaginas}. Lotes na página: ${lotesPagina.length}`);
+            console.log(`[API Debug] Sucesso - Página ${pagina}. Lotes na página: ${lotesPagina.length}`);
 
             if (lotesPagina.length > 0) {
                 todosLotes = todosLotes.concat(lotesPagina);
             }
 
-            pagina++;
+            if (lotesPagina.length === 50) {
+                pagina++;
+            } else {
+                temMaisPaginas = false;
+            }
         } catch (error) {
             console.error(`[API Debug] Exceção ao buscar lotes do empreendimento ${idEmpreendimento}:`, error);
             break;
