@@ -344,9 +344,16 @@ class MapaLotesManager {
         document.body.classList.add('app-loading');
 
         try {
-            const { idsEmpreendimentos, outrosFiltros } = this._capturarDadosDosFiltros();
+            let { idsEmpreendimentos, outrosFiltros } = this._capturarDadosDosFiltros();
             
-            const novosDadosCarregados = await this._assegurarDadosEmCache(idsEmpreendimentos);
+            // Lógica: Se o filtro estiver vazio, busca todos os IDs conhecidos na lista
+            const idsParaProcessar = idsEmpreendimentos.length > 0 
+                ? idsEmpreendimentos 
+                : this.empreendimentosLista.map(e => e.id);
+
+            console.log(`[Mapa Debug] Processando ${idsParaProcessar.length} empreendimentos.`);
+
+            const novosDadosCarregados = await this._assegurarDadosEmCache(idsParaProcessar);
             
             if (novosDadosCarregados) {
                 this._renderLotes(this.allLotes);
@@ -354,12 +361,14 @@ class MapaLotesManager {
 
             this.filters = {
                 ...outrosFiltros,
-                empreendimentos: idsEmpreendimentos,
+                empreendimentos: idsEmpreendimentos, // O filtro visual permanece o que o usuário selecionou
                 zonaColorMode: document.getElementById("zona")?.checked || false 
             };
 
             this._atualizarElementosVisuais();
             this._validarSelecaoAtual();
+            
+            // Tenta centralizar. A função interna garantirá que isso ocorra apenas uma vez.
             this._ajustarCamera();
 
         } catch (error) {
@@ -411,9 +420,12 @@ class MapaLotesManager {
 
     async _assegurarDadosEmCache(idsEmpreendimentos) {
         let houveMudanca = false;
+        
         for (const idEmp of idsEmpreendimentos) {
+            if (!idEmp) continue;
+            
             if (!this.lotesCache[idEmp]) {
-                console.log(`[Mapa Debug] Carregando dados para o Empreendimento: ${idEmp}`);
+                console.log(`[Mapa Debug] Buscando dados faltantes do empreendimento: ${idEmp}`);
                 const lotes = await buscarLotesPaginados(this.urlAPI, idEmp);
                 
                 if (this.isExterno) {
@@ -452,9 +464,13 @@ class MapaLotesManager {
     }
 
     _ajustarCamera() {
-        if (!this.hasLoadedOnce) {
+        // Verifica se existem polígonos de fato renderizados no mapa
+        const poligonosVisiveis = Object.values(this.polygons).filter(p => this.map.hasLayer(p));
+        
+        if (poligonosVisiveis.length > 0 && !this.mapaJaCentralizou) {
+            console.log("[Mapa Debug] Primeira carga de lotes detectada. Centralizando...");
             this._centralizeView();
-            this.hasLoadedOnce = true;
+            this.mapaJaCentralizou = true; // Trava a centralização automática
         }
     }
 
