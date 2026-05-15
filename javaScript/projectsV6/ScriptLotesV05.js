@@ -10,6 +10,7 @@ class MapaLotesManager {
         this.selectedIds = new Set();
         this.allLotes = [];
         this.lotesCache = {}; // Adicionado: Controle de cache por ID de empreendimento
+        this.lotesFetchPromises = {}; // ADICIONADO: Controle de requisições em andamento
         this.polygons = {}; 
         this.quadraMarkers = [];
         this.empreendimentosLista = [];
@@ -425,21 +426,41 @@ class MapaLotesManager {
             if (!idEmp) continue;
             
             if (!this.lotesCache[idEmp]) {
-                console.log(`[Mapa Debug] Buscando dados faltantes do empreendimento: ${idEmp}`);
-                const lotes = await buscarLotesPaginados(this.urlAPI, idEmp);
-                
-                if (this.isExterno) {
-                    lotes.forEach(l => {
-                        if (l.Status === "Vendido") l.Status = "Reservado";
-                        if (l.Status === "Reservado") {
-                            l.Valor = 0; l.ValorM2 = 0; l.Cliente = ""; l.Corretor = "";
-                        }
-                    });
+                // SE JÁ EXISTE UMA REQUISIÇÃO ROLANDO PARA ESSE ID, APENAS AGUARDE-A
+                if (this.lotesFetchPromises[idEmp]) {
+                    console.log(`[Mapa Debug] Requisição já em andamento para ${idEmp}. Aguardando conclusão...`);
+                    await this.lotesFetchPromises[idEmp];
+                    houveMudanca = true; 
+                    continue; 
                 }
 
-                this.lotesCache[idEmp] = lotes;
-                this.allLotes = this.allLotes.concat(lotes);
-                houveMudanca = true;
+                console.log(`[Mapa Debug] Buscando dados faltantes do empreendimento: ${idEmp}`);
+                
+                // SALVA A PROMISE NO CONTROLE
+                this.lotesFetchPromises[idEmp] = buscarLotesPaginados(this.urlAPI, idEmp);
+                
+                try {
+                    const lotes = await this.lotesFetchPromises[idEmp];
+                    
+                    if (this.isExterno) {
+                        lotes.forEach(l => {
+                            if (l.Status === "Vendido") l.Status = "Reservado";
+                            if (l.Status === "Reservado") {
+                                l.Valor = 0; l.ValorM2 = 0; l.Cliente = ""; l.Corretor = "";
+                            }
+                        });
+                    }
+
+                    // Apenas para garantir que não vamos duplicar caso a matriz já tenha recebido dados por outro fluxo
+                    if (!this.lotesCache[idEmp]) {
+                        this.lotesCache[idEmp] = lotes;
+                        this.allLotes = this.allLotes.concat(lotes);
+                        houveMudanca = true;
+                    }
+                } finally {
+                    // Limpa a promise concluída do controle
+                    delete this.lotesFetchPromises[idEmp];
+                }
             }
         }
         return houveMudanca;
