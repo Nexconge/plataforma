@@ -1,3 +1,5 @@
+import { buscarLotesPaginados } from './apiV01.js';
+
 class MapaLotesManager {
     constructor(mapId, url, userModifyers) {
         this.mapId = mapId;
@@ -7,10 +9,10 @@ class MapaLotesManager {
 
         this.selectedIds = new Set();
         this.allLotes = [];
+        this.lotesCache = {}; // Adicionado: Controle de cache por ID de empreendimento
         this.polygons = {}; 
         this.quadraMarkers = [];
-        this.empreendimentosLista = []; // Adicione esta linha
-        // Controle de "Debounce" para evitar tremedeira
+        this.empreendimentosLista = [];
         this.filterDebounceTimer = null;
 
         this.filters = {
@@ -34,69 +36,7 @@ class MapaLotesManager {
 
         this._initMap();
         this._setupEventListeners();
-        
-        this.allLotes = await this._fetchLotesPermitidos();
-
-        if (!this.allLotes.length) {
-            console.warn("Nenhum lote encontrado.");
-            document.body.classList.remove('app-loading'); 
-            return;
-        }
-
-        // --- NOVA LÓGICA: MASCARAMENTO EXTERNO ---
-        if (this.isExterno) {
-            this.allLotes.forEach(lote => {
-                // Mascara 'Vendido' como 'Reservado'
-                if (lote.Status === "Vendido") {
-                    lote.Status = "Reservado";
-                }
-                // Oculta valores e clientes de lotes reservados
-                if (lote.Status === "Reservado") {
-                    lote.Valor = 0;
-                    lote.ValorM2 = 0;
-                    lote.Cliente = "";
-                    lote.Corretor = "";
-                }
-            });
-        }
-
-        this._renderLotes(this.allLotes);
-        
         this._handleFilterChange();
-    }
-
-    // --- 1. Dados ---
-    async _fetchLotesPermitidos() {
-        const urlBase = this.urlAPI;
-        let todosOsLotes = [];
-        let cursor = 0;
-        const limit = 100; 
-
-        console.log("Iniciando busca dos lotes...");
-        
-        while (true) {
-            try {
-                const params = new URLSearchParams({ cursor: cursor, limit: limit.toString() });
-                const response = await fetch(`${urlBase}?${params.toString()}`);
-
-                if (!response.ok) break;
-
-                const data = await response.json();
-                const novosLotes = data.response.results || [];
-
-                if (novosLotes.length > 0) {
-                    todosOsLotes = todosOsLotes.concat(novosLotes);
-                }
-
-                if (!data.response.remaining || data.response.remaining === 0) break;
-                cursor += novosLotes.length;
-
-            } catch (error) {
-                console.error("Erro ao buscar lotes:", error);
-                break;
-            }
-        }
-        return todosOsLotes;
     }
 
     // --- 2. Mapa ---
@@ -343,14 +283,13 @@ class MapaLotesManager {
     }
 
     _handleFilterChange() {
-        // 1. Cancela a execução anterior se ela ainda não aconteceu
         if (this.filterDebounceTimer) {
             clearTimeout(this.filterDebounceTimer);
         }
 
-        // 2. Define uma nova execução para daqui a 500ms
-        this.filterDebounceTimer = setTimeout(() => {
-            this._executarFiltroReal();
+        // Alterado para suportar função async
+        this.filterDebounceTimer = setTimeout(async () => {
+            await this._executarFiltroReal();
             this.filterDebounceTimer = null;
         }, 100); 
     }
@@ -390,92 +329,134 @@ class MapaLotesManager {
         this.legendContainer.innerHTML = html;
     }
 
-    _executarFiltroReal() {
+    _handleFilterChange() {
+        if (this.filterDebounceTimer) {
+            clearTimeout(this.filterDebounceTimer);
+        }
+
+        this.filterDebounceTimer = setTimeout(async () => {
+            await this._sincronizarFiltrosEMapa();
+            this.filterDebounceTimer = null;
+        }, 100); 
+    }
+
+    async _sincronizarFiltrosEMapa() {
+        document.body.classList.add('app-loading');
+
+        try {
+            const { idsEmpreendimentos, outrosFiltros } = this._capturarDadosDosFiltros();
+            
+            const novosDadosCarregados = await this._assegurarDadosEmCache(idsEmpreendimentos);
+            
+            if (novosDadosCarregados) {
+                this._renderLotes(this.allLotes);
+            }
+
+            this.filters = {
+                ...outrosFiltros,
+                empreendimentos: idsEmpreendimentos,
+                zonaColorMode: document.getElementById("zona")?.checked || false 
+            };
+
+            this._atualizarElementosVisuais();
+            this._validarSelecaoAtual();
+            this._ajustarCamera(idsEmpreendimentos);
+
+        } catch (error) {
+            console.error("[Mapa Debug] Falha na sincronização:", error);
+        } finally {
+            document.body.classList.remove('app-loading');
+        }
+    }
+
+    _capturarDadosDosFiltros() {
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return "";
             let val = el.value ? el.value.replace(/"/g, '') : "";
-            if (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) return "";
-            return val.trim();
+            return (val.startsWith("BLANK") || val.startsWith("PLACEHOLDER")) ? "" : val.trim();
         };
 
         const getMultiVal = (id) => {
             const el = document.getElementById(id);
             if (!el) return [];
-            
             if (el.tagName === "DIV" && el.classList.contains("select2-MultiDropdown")) {
                 return el.innerText.split('\n')
-                    .map(linha => linha.trim())
-                    .filter(linha => linha.startsWith('×'))
-                    .map(linha => linha.substring(1).trim());
+                    .map(l => l.trim())
+                    .filter(l => l.startsWith('×'))
+                    .map(l => l.substring(1).trim());
             }
-            
             const val = getCleanVal(id);
             return val ? [val] : [];
         };
 
-        const prevEmpStr = this.filters.empreendimentos ? this.filters.empreendimentos.join() : "";
-
-        // 1. Captura os valores brutos do multiDropdown
-        let valoresBrutos = getMultiVal("empreendimentoSelect");
-        
-        // 2. Lógica Original Restaurada: Extrai o ID usando split caso tenha __LOOKUP__
-        let valoresLimpos = valoresBrutos.map(v => {
-            if (v.includes('__LOOKUP__')) {
-                return v.split('__LOOKUP__')[1].trim(); 
-            }
-            return v.trim();
-        });
-
-        // 3. Mapeamento Inteligente: Garante que o filtro armazene sempre o ID
-        const idsFiltro = [];
-        valoresLimpos.forEach(val => {
-            if (!val) return;
-            
-            // Procura no JSON pelo ID ou pelo Nome
+        const valoresBrutos = getMultiVal("empreendimentoSelect");
+        const idsEmpreendimentos = [...new Set(valoresBrutos.map(v => {
+            const val = v.includes('__LOOKUP__') ? v.split('__LOOKUP__')[1].trim() : v.trim();
             const emp = this.empreendimentosLista.find(e => e.id === val || e.nome === val);
-            
-            if (emp) {
-                // Se achou no JSON, pega o ID limpo com certeza
-                idsFiltro.push(emp.id); 
-            } else {
-                // Fallback: Se não achou no JSON, usa o valor capturado (pode ser um ID válido que faltou no JSON)
-                idsFiltro.push(val); 
+            return emp ? emp.id : val;
+        }))];
+
+        return {
+            idsEmpreendimentos,
+            outrosFiltros: {
+                quadras: getMultiVal("selectQuadra"),
+                status: getMultiVal("selectStatus"),
+                Atividades: getMultiVal("selectAtividade"),
+                zoneamentos: getMultiVal("selectZoneamento")
             }
-        });
-
-        const zonaEl = document.getElementById("zona");
-        
-        this.filters = {
-            empreendimentos: [...new Set(idsFiltro)],
-            quadras: getMultiVal("selectQuadra"),
-            status: getMultiVal("selectStatus"),
-            Atividades: getMultiVal("selectAtividade"),
-            zoneamentos: getMultiVal("selectZoneamento"),
-            zonaColorMode: zonaEl ? zonaEl.checked : false 
         };
+    }
 
+    async _assegurarDadosEmCache(idsEmpreendimentos) {
+        let houveMudanca = false;
+        for (const idEmp of idsEmpreendimentos) {
+            if (!this.lotesCache[idEmp]) {
+                console.log(`[Mapa Debug] Carregando dados para o Empreendimento: ${idEmp}`);
+                const lotes = await buscarLotesPaginados(this.urlAPI, idEmp);
+                
+                if (this.isExterno) {
+                    lotes.forEach(l => {
+                        if (l.Status === "Vendido") l.Status = "Reservado";
+                        if (l.Status === "Reservado") {
+                            l.Valor = 0; l.ValorM2 = 0; l.Cliente = ""; l.Corretor = "";
+                        }
+                    });
+                }
+
+                this.lotesCache[idEmp] = lotes;
+                this.allLotes = this.allLotes.concat(lotes);
+                houveMudanca = true;
+            }
+        }
+        return houveMudanca;
+    }
+
+    _atualizarElementosVisuais() {
         this._updateLegenda();
         this._updateMapVisuals();
-        
-        let changed = false;
+    }
+
+    _validarSelecaoAtual() {
+        let mudou = false;
         this.selectedIds.forEach(id => {
             if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
                 this.selectedIds.delete(id);
-                changed = true;
+                mudou = true;
             }
         });
 
-        if (changed) this._fillForm();
+        if (mudou) this._fillForm();
         if (this.selectedIds.size === 0) this._clearForm();
+    }
 
-        // Centraliza na primeira carga ou quando o filtro principal de empreendimento muda
-        if (!this.hasLoadedOnce || prevEmpStr !== this.filters.empreendimentos.join()) {
+    _ajustarCamera(idsEmpreendimentos) {
+        const hashAtual = idsEmpreendimentos.join();
+        if (!this.hasLoadedOnce || this.lastFilterHash !== hashAtual) {
             this._centralizeView();
             this.hasLoadedOnce = true;
+            this.lastFilterHash = hashAtual;
         }
-
-        document.body.classList.remove('app-loading');
     }
 
     _updateMapVisuals() {
