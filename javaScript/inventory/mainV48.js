@@ -32,7 +32,8 @@ window.iniciarAplicacao = function (textoCadastros) {
         if (!jsonString.startsWith("[")) jsonString = `[${jsonString}]`;
         
         EstadoApp.cadastrosRaw = JSON.parse(jsonString);
-        const listaEmpresas = EstadoApp.cadastrosRaw.map(c => ({ id: c.id, nome: c.cadastro }));
+        
+        const listaEmpresas = EstadoApp.cadastrosRaw.map(c => ({ id: c.id, nome: c.estoque }));
 
         preencherSelect("empresaSelect", listaEmpresas, "Selecione a Empresa");
         renderizarPlaceholders();
