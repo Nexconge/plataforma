@@ -1,4 +1,4 @@
-import { iniciarMapa } from './ScriptLotesV09.js';
+import { iniciarMapa } from './ScriptLotesV10.js';
 import { abrirEPreencherModalProposta } from './ScriptPropostaV03.js';
 
 function inicializarApp(empreendimentosJSON, projectsUrl, username, userModifyers) {
@@ -16,8 +16,6 @@ function inicializarApp(empreendimentosJSON, projectsUrl, username, userModifyer
             abrirEPreencherModalProposta(mapaManager, username);
         });
     }
-
-    // --- NOVA ABORDAGEM: Delegação de Eventos para a Máscara ---
     document.body.addEventListener('input', (e) => {
         if (e.target && e.target.id === "inputAltMassaValM2") {
             let el = e.target;

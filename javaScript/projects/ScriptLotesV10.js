@@ -92,81 +92,39 @@ class MapaLotesManager {
             try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
             if (!Array.isArray(coords) || coords.length === 0) return;
 
-            // Remove duplicatas consecutivas E remove o último ponto se for igual ao primeiro
-            let cleanCoords = coords.filter((item, index, arr) => {
-                if (index === 0) return true;
-                const prev = arr[index - 1];
-                return item[0] !== prev[0] || item[1] !== prev[1];
-            });
-            // Se o último for igual ao primeiro, remove para evitar falso positivo na verificação
-            if (cleanCoords.length > 2) {
-                const first = cleanCoords[0];
-                const last = cleanCoords[cleanCoords.length - 1];
-                if (first[0] === last[0] && first[1] === last[1]) {
-                    cleanCoords.pop();
-                }
+            let cleanCoords = coords.filter((item, index, arr) => index === 0 || item[0] !== arr[index - 1][0] || item[1] !== arr[index - 1][1]);
+            
+            if (cleanCoords.length > 2 && cleanCoords[0][0] === cleanCoords[cleanCoords.length - 1][0] && cleanCoords[0][1] === cleanCoords[cleanCoords.length - 1][1]) {
+                cleanCoords.pop();
             }
 
-            // 2. VERIFICAÇÃO INTELIGENTE
-            let finalCoords = cleanCoords;
-            const isClean = this._isSimplePolygon(cleanCoords);
-
-            if (!isClean) {
-                finalCoords = this._organizarPontosRadialmente(cleanCoords);
-            }
-
-            // Adiciona o primeiro ponto ao final novamente para fechar o desenho no mapa (opcional no Leaflet, mas bom para garantir)
+            let finalCoords = this._isSimplePolygon(cleanCoords) ? cleanCoords : this._organizarPontosRadialmente(cleanCoords);
             finalCoords.push(finalCoords[0]);
             
-            //Se for uma quadra desenha apenas o marcador central com tooltip, sem polígono
             if (lote.isQuadra) {
-                const centerCoords = this._calcularCentroTooltip(finalCoords);
-                const marker = L.marker(centerCoords, { opacity: 0, interactive: false });
-                marker.bindTooltip(lote.Lote, {
-                    permanent: true, direction: "center", className: "quadra-tooltip", offset: [-15, 25] // Aumente o 15 (eixo Y) para descer mais, ou diminua para subir
-                });
-
+                const marker = L.marker(this._calcularCentroTooltip(finalCoords), { opacity: 0, interactive: false });
+                marker.bindTooltip(lote.Lote, { permanent: true, direction: "center", className: "quadra-tooltip", offset: [-15, 25] });
                 marker.loteData = lote; 
                 marker.addTo(this.map);
                 this.quadraMarkers.push(marker);
-            
-            // Se o lote for inativo, desenha o poligono sem interatividade
-            }else if (lote.Inativo) {
-                const polygon = L.polygon(finalCoords, {
-                    color: "black",
-                    weight: 0.6,
-                    fillOpacity: 1,
-                    fillColor: "#c7c7c7",
-                    interactive: false
-                });
-                
-                polygon.loteData = lote;
-                polygon.addTo(this.map);
-                this.polygons[lote._id] = polygon;
-
-            // Caso contrário, desenha o polígono normalmente com interatividade
             } else {
+                // Removemos a duplicação do polígono: a única diferença do inativo é a interatividade e eventos
                 const polygon = L.polygon(finalCoords, {
-                    color: "black",
-                    weight: 0.6,
-                    fillOpacity: 1,
-                    fillColor: "#c7c7c7"
+                    color: "black", weight: 0.6, fillOpacity: 1, fillColor: "#c7c7c7",
+                    interactive: !lote.Inativo
                 });
 
-                polygon.bindTooltip(`${lote.Lote}<br>
-                    Status: ${lote.Status || "Desconhecido"}<br>
-                    Área: ${lote.Área ? lote.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A"}<br>
-                    ValorM2: ${lote.ValorM2 ? "R$ " + lote.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}<br>
-                    ValorTotal: ${lote.Valor ? "R$ " + lote.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}`,
-                    { permanent: false });
-                polygon.loteData = lote; 
-                
-                polygon.on('click', (e) => {
-                    L.DomEvent.stopPropagation(e);
-                    this._handlePolygonClick(polygon);
-                });
-
+                polygon.loteData = lote;
                 this.polygons[lote._id] = polygon;
+                polygon.addTo(this.map);
+
+                if (!lote.Inativo) {
+                    polygon.bindTooltip("", { permanent: false });
+                    polygon.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        this._handlePolygonClick(polygon);
+                    });
+                }
             }
         });
     }
@@ -174,25 +132,17 @@ class MapaLotesManager {
     // --- 4. Filtros ---
     _setupEventListeners() {
         const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade", "selectZoneamento"];
-        
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (!el) return;
-
             if (el.tagName === "DIV") {
-                const observer = new MutationObserver(() => {
-                    this._handleFilterChange();
-                });
-                observer.observe(el, { childList: true, subtree: true, characterData: true });
+                new MutationObserver(() => this._handleFilterChange()).observe(el, { childList: true, subtree: true, characterData: true });
             } else {
                 el.addEventListener("change", this._handleFilterChange);
             }
         });
 
-        document.getElementById("buttonAlterar")?.addEventListener('click', () => {
-            this._atualizarPoligonoSelecionado();
-        });
-        
+        document.getElementById("buttonAlterar")?.addEventListener('click', () => this._atualizarPoligonoSelecionado());
         this.map.on('click', () => this._clearForm());
 
         const checkExist = setInterval(() => {
@@ -200,9 +150,7 @@ class MapaLotesManager {
             if (zonaCheck) {
                 const novoElemento = zonaCheck.cloneNode(true);
                 zonaCheck.parentNode.replaceChild(novoElemento, zonaCheck);
-                novoElemento.addEventListener('change', (e) => {
-                    this._handleFilterChange();
-                });
+                novoElemento.addEventListener('change', () => this._handleFilterChange());
                 clearInterval(checkExist);
             }
         }, 500); 
@@ -210,78 +158,47 @@ class MapaLotesManager {
         const areaEl = document.getElementById("area2");
         const valorTotalEl = document.getElementById("valor_total2");
         const valorM2El = document.getElementById("valor_metro2");
-        const frenteEl = document.getElementById("frente2");
-        const lateralEl = document.getElementById("lateral2");
 
-        // Função universal para extrair apenas os centavos/decimais matemáticos
-        const parseNum = (val) => {
-            if (!val || val === "-") return 0;
-            let digits = val.toString().replace(/\D/g, ''); // Pega SÓ números
-            return (parseInt(digits, 10) / 100) || 0; // Transforma em decimal (ex: 1234 -> 12.34)
-        };
-
-        // Formatadores com sufixos/prefixos
-        const formatters = {
-            area: (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²",
-            money: (num) => "R$ " + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            meters: (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m"
-        };
-
-        // Aplica a máscara e devolve o valor numérico
         const applyMask = (el, type) => {
             if (!el) return 0;
             let digits = el.value.replace(/\D/g, '');
-            if (!digits) { 
-                el.value = ''; 
-                return 0; 
-            }
+            if (!digits) { el.value = ''; return 0; }
             let num = (parseInt(digits, 10) / 100);
-            el.value = formatters[type](num);
+            el.value = this._formatByType(num, type);
             return num;
         };
 
-        // Avisa o Bubble apenas quando a digitação terminar
-        const notifyBubble = (el) => {
-            if (!el) return;
-            el.dispatchEvent(new Event("change", { bubbles: true }));
-            if (window.jQuery) window.jQuery(el).trigger('change');
-        };
-
-        // Regra para Frente e Lateral (Só máscara, sem cálculos)
-        [frenteEl, lateralEl].forEach(el => {
+        ["frente2", "lateral2"].forEach(id => {
+            const el = document.getElementById(id);
             if (!el) return;
             el.addEventListener('input', () => applyMask(el, 'meters'));
-            el.addEventListener('blur', () => notifyBubble(el));
+            el.addEventListener('blur', () => this._triggerChange(el));
         });
 
-        // Regra 1: Alterar Área -> Máscara Área + Atualiza M2 (visualmente)
         if (areaEl) {
             areaEl.addEventListener('input', () => {
                 const a = applyMask(areaEl, 'area');
-                const t = parseNum(valorTotalEl?.value);
-                if (a > 0 && valorM2El) valorM2El.value = formatters.money(t / a);
+                if (a > 0 && valorM2El) valorM2El.value = this._formatByType(this._parseNum(valorTotalEl?.value) / a, 'money');
             });
-            areaEl.addEventListener('blur', () => { notifyBubble(areaEl); notifyBubble(valorM2El); });
+            areaEl.addEventListener('blur', () => { this._triggerChange(areaEl); this._triggerChange(valorM2El); });
         }
 
-        // Regra 2: Alterar Valor Total -> Máscara Dinheiro + Atualiza M2 (visualmente)
         if (valorTotalEl) {
             valorTotalEl.addEventListener('input', () => {
                 const t = applyMask(valorTotalEl, 'money');
-                const a = parseNum(areaEl?.value);
-                if (a > 0 && valorM2El) valorM2El.value = formatters.money(t / a);
+                const a = this._parseNum(areaEl?.value);
+                if (a > 0 && valorM2El) valorM2El.value = this._formatByType(t / a, 'money');
             });
-            valorTotalEl.addEventListener('blur', () => { notifyBubble(valorTotalEl); notifyBubble(valorM2El); });
+            valorTotalEl.addEventListener('blur', () => { this._triggerChange(valorTotalEl); this._triggerChange(valorM2El); });
         }
 
-        // Regra 3: Alterar Valor M2 -> Máscara Dinheiro + Atualiza Valor Total (visualmente)
         if (valorM2El) {
             valorM2El.addEventListener('input', () => {
                 const m2 = applyMask(valorM2El, 'money');
-                const a = parseNum(areaEl?.value);
-                if (a > 0 && valorTotalEl) valorTotalEl.value = formatters.money(a * m2);
+                const a = this._parseNum(areaEl?.value);
+                if (a > 0 && valorTotalEl) valorTotalEl.value = this._formatByType(a * m2, 'money');
             });
-            valorM2El.addEventListener('blur', () => { notifyBubble(valorM2El); notifyBubble(valorTotalEl); });
+            valorM2El.addEventListener('blur', () => { this._triggerChange(valorM2El); this._triggerChange(valorTotalEl); });
         }
     }
 
@@ -330,17 +247,6 @@ class MapaLotesManager {
         });
 
         this.legendContainer.innerHTML = html;
-    }
-
-    _handleFilterChange() {
-        if (this.filterDebounceTimer) {
-            clearTimeout(this.filterDebounceTimer);
-        }
-
-        this.filterDebounceTimer = setTimeout(async () => {
-            await this._sincronizarFiltrosEMapa();
-            this.filterDebounceTimer = null;
-        }, 100); 
     }
 
     async _sincronizarFiltrosEMapa() {
@@ -556,8 +462,15 @@ class MapaLotesManager {
                 poly.setStyle({ weight: 0.6, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.55 });
             }
 
-            const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desc.");
-            poly.getTooltip()?.setContent(`${data.Lote} - ${txtStatus}`);
+            const labelStatus = this.filters.zonaColorMode ? "Atividade" : "Status";
+            const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desconhecido");
+
+            poly.getTooltip()?.setContent(`${data.Lote}<br>
+                ${labelStatus}: ${txtStatus}<br>
+                Área: ${data.Área ? data.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A"}<br>
+                ValorM2: ${data.ValorM2 ? "R$ " + data.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}<br>
+                ValorTotal: ${data.Valor ? "R$ " + data.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}`
+            );
         });
     }
 
@@ -600,93 +513,44 @@ class MapaLotesManager {
             if (!el) return;
 
             if (isComplex && el.tagName === "SELECT") {
-                let blankSet = false;
-                for (let i = 0; i < el.options.length; i++) {
-                    if (el.options[i].value.includes("BLANK") || el.options[i].text.trim() === "") {
-                        el.value = el.options[i].value;
-                        blankSet = true;
-                        break;
-                    }
-                }
-                if (!blankSet) el.value = ""; 
-            } else if (isComplex) {
-                el.value = "null";
+                this._setSelectToBlank(el);
             } else {
-                el.value = "";
+                el.value = isComplex ? "null" : "";
             }
-            
-            try {
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-                if (window.jQuery) window.jQuery(el).trigger('change');
-            } catch (e) {}
+            this._triggerChange(el);
         };
 
-        const textIds = ["quadra_lote2", "area2", "cliente2", "corretor2",
-             "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2",
-              "idsLotes2", "selectedCount2"];
-        const complexIds = ["atividade2", "status2", "zona2"];
-
-        textIds.forEach(id => resetEl(id, false));
-        complexIds.forEach(id => resetEl(id, true));
+        ["quadra_lote2", "area2", "cliente2", "corretor2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2", "selectedCount2"].forEach(id => resetEl(id, false));
+        ["atividade2", "status2", "zona2"].forEach(id => resetEl(id, true));
     }
 
     _fillForm() {
-        const setInput = (id, val, disable = false) => {
+        if (this.selectedIds.size === 0) return this._clearForm();
+
+        const setInput = (id, val) => {
             const el = document.getElementById(id);
             if (el) { 
                 el.value = (val === undefined || val === null) ? "" : val; 
-                el.dispatchEvent(new Event("change", { bubbles: true })); 
-                if (window.jQuery) window.jQuery(el).trigger('change');
+                this._triggerChange(el);
             }
         };
         
-        const setBubbleDropdown = (id, val, disable = false) => {
+        const setBubbleDropdown = (id, val) => {
             const el = document.getElementById(id);
             if (!el) return;
             
-            const setBlank = () => {
-                let blankSet = false;
-                for (let i = 0; i < el.options.length; i++) {
-                    if (el.options[i].value.includes("BLANK") || el.options[i].text.trim() === "") {
-                        el.value = el.options[i].value;
-                        blankSet = true;
-                        break;
-                    }
-                }
-                if (!blankSet) el.value = "";
-            };
-
-            if (val === undefined || val === null || val === "undefined" || val === "") {
-                setBlank(); 
+            if (!val || val === "undefined") {
+                this._setSelectToBlank(el);
             } else {
-                let optionFound = false;
-                for (let i = 0; i < el.options.length; i++) {
-                    if (el.options[i].text.trim().toLowerCase() === val.toString().trim().toLowerCase()) {
-                        el.value = el.options[i].value; 
-                        optionFound = true;
-                        break;
-                    }
-                }
-                
-                if (!optionFound) {
-                    setBlank();
-                }
+                const opt = Array.from(el.options).find(o => o.text.trim().toLowerCase() === val.toString().trim().toLowerCase());
+                if (opt) el.value = opt.value;
+                else this._setSelectToBlank(el);
             }
-            
-            try {
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-                if (window.jQuery) window.jQuery(el).trigger('change');
-            } catch(e) {}
+            this._triggerChange(el);
         };
 
-        if (this.selectedIds.size === 0) {
-            this._clearForm();
-            return;
-        }
         const isMulti = this.selectedIds.size > 1;
-
         let totalArea = 0, totalFrente = 0, totalLateral = 0, totalValor = 0;
-        // Adicionada a declaração do array listaCorretores abaixo:
         let nomes = [], listaClientes = [], listaCorretores = [], statusSet = new Set(), attSet = new Set(), zonaSet = new Set();
 
         this.selectedIds.forEach(id => {
@@ -696,12 +560,9 @@ class MapaLotesManager {
             totalLateral += (lote.Lateral || 0);
             totalValor += (lote.Valor || 0);
             
-            if (lote.Cliente && typeof lote.Cliente === 'string' && lote.Cliente.trim() !== "") {
-                listaClientes.push(lote.Cliente);
-            }
-            if (lote.Corretor && typeof lote.Corretor === 'string' && lote.Corretor.trim() !== "") {
-                listaCorretores.push(lote.Corretor);
-            }
+            if (lote.Cliente?.trim()) listaClientes.push(lote.Cliente);
+            if (lote.Corretor?.trim()) listaCorretores.push(lote.Corretor);
+            
             nomes.push(lote.Lote);
             statusSet.add(lote.Status);
             attSet.add(lote.Atividade);
@@ -712,26 +573,18 @@ class MapaLotesManager {
         const statusList = cleanList(statusSet);
         const attList = cleanList(attSet);
         const zonaList = cleanList(zonaSet);
-        const clienteValor = isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || "");
-        const corretorValor = isMulti ? `Corretores: ${listaCorretores.join(", ")}` : (listaCorretores[0] || "");
-
-        const formatArea = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²";
-        const formatMoney = (num) => "R$ " + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const formatMeters = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m";
-
-        const idsLotesString = Array.from(this.selectedIds).join(",");
-        const qtdSelecionada = this.selectedIds.size;
 
         setInput("quadra_lote2", nomes.length > 1 ? `Lotes: ${nomes.join(", ")}` : nomes[0]);
-        setInput("area2", totalArea > 0 ? formatArea(totalArea) : "");
-        setInput("frente2", this.selectedIds.size === 1 && totalFrente > 0 ? formatMeters(totalFrente) : (isMulti ? "-" : ""));
-        setInput("lateral2", this.selectedIds.size === 1 && totalLateral > 0 ? formatMeters(totalLateral) : (isMulti ? "-" : ""));
-        setInput("valor_metro2", (totalArea > 0 && totalValor > 0) ? formatMoney(totalValor / totalArea) : "");
-        setInput("valor_total2", totalValor > 0 ? formatMoney(totalValor) : "");
-        setInput("cliente2", clienteValor, isMulti);
-        setInput("corretor2", corretorValor, isMulti);
-        setInput("idsLotes2", idsLotesString);
-        setInput("selectedCount2", qtdSelecionada);
+        setInput("area2", totalArea > 0 ? this._formatByType(totalArea, 'area') : "");
+        setInput("frente2", !isMulti && totalFrente > 0 ? this._formatByType(totalFrente, 'meters') : (isMulti ? "-" : ""));
+        setInput("lateral2", !isMulti && totalLateral > 0 ? this._formatByType(totalLateral, 'meters') : (isMulti ? "-" : ""));
+        setInput("valor_metro2", (totalArea > 0 && totalValor > 0) ? this._formatByType(totalValor / totalArea, 'money') : "");
+        setInput("valor_total2", totalValor > 0 ? this._formatByType(totalValor, 'money') : "");
+        setInput("cliente2", isMulti ? `Clientes: ${listaClientes.join(", ")}` : (listaClientes[0] || ""));
+        setInput("corretor2", isMulti ? `Corretores: ${listaCorretores.join(", ")}` : (listaCorretores[0] || ""));
+        setInput("idsLotes2", Array.from(this.selectedIds).join(","));
+        setInput("selectedCount2", this.selectedIds.size);
+        
         setBubbleDropdown("status2", statusList.length === 1 ? statusList[0] : (statusList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
@@ -989,6 +842,32 @@ class MapaLotesManager {
         const midLngFinal = (maxLngFinal + minLngFinal) / 2;
 
         return [midLat, midLngFinal];
+    }
+
+    _triggerChange(el) {
+        if (!el) return;
+        try {
+            el.dispatchEvent(new Event("change", { bubbles: true }));
+            if (window.jQuery) window.jQuery(el).trigger('change');
+        } catch (e) {}
+    }
+
+    _setSelectToBlank(el) {
+        const blankOpt = Array.from(el.options).find(o => o.value.includes("BLANK") || o.text.trim() === "");
+        el.value = blankOpt ? blankOpt.value : "";
+    }
+
+    _parseNum(val) {
+        if (!val || val === "-") return 0;
+        return (parseInt(val.toString().replace(/\D/g, ''), 10) / 100) || 0;
+    }
+
+    _formatByType(num, type) {
+        const opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+        if (type === 'area') return num.toLocaleString('pt-BR', opts) + " m²";
+        if (type === 'money') return "R$ " + num.toLocaleString('pt-BR', opts);
+        if (type === 'meters') return num.toLocaleString('pt-BR', opts) + " m";
+        return num;
     }
 }
 
