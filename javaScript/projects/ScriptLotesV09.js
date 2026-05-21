@@ -153,9 +153,10 @@ class MapaLotesManager {
                     fillColor: "#c7c7c7"
                 });
 
-                polygon.bindTooltip(`${lote.Lote}\n Status: ${lote.Status || "Desconhecido"}
-                    Área: ${lote.Área ? lote.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A"}
-                    ValorM2: ${lote.ValorM2 ? "R$ " + lote.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}
+                polygon.bindTooltip(`${lote.Lote}<br>
+                    Status: ${lote.Status || "Desconhecido"}<br>
+                    Área: ${lote.Área ? lote.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A"}<br>
+                    ValorM2: ${lote.ValorM2 ? "R$ " + lote.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}<br>
                     ValorTotal: ${lote.Valor ? "R$ " + lote.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}`,
                     { permanent: false });
                 polygon.loteData = lote; 
