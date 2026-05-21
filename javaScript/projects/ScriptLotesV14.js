@@ -307,6 +307,10 @@ class MapaLotesManager {
         const labelStatus = this.filters.zonaColorMode ? "Atividade" : "Status";
         const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desconhecido");
 
+        // Pega as cores do lote ('stroke' é mais escura e legível no fundo branco)
+        const theme = this._getLoteColor(data);
+        const corTextoStatus = theme.stroke; 
+
         const areaFormatada = data.Área ? data.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A";
         const valM2Formatado = data.ValorM2 ? "R$ " + data.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
         const valTotalFormatado = data.Valor ? "R$ " + data.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
@@ -316,7 +320,7 @@ class MapaLotesManager {
                 <strong class="tooltip-title">Lote ${data.Lote}</strong>
                 <div class="tooltip-row">
                     <span class="tooltip-label">${labelStatus}:</span> 
-                    <span class="tooltip-value">${txtStatus}</span>
+                    <span class="tooltip-value" style="color: ${corTextoStatus}; font-weight: bold;">${txtStatus}</span>
                 </div>
                 <div class="tooltip-row">
                     <span class="tooltip-label">Área:</span> 
