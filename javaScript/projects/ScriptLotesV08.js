@@ -98,7 +98,6 @@ class MapaLotesManager {
                 const prev = arr[index - 1];
                 return item[0] !== prev[0] || item[1] !== prev[1];
             });
-
             // Se o último for igual ao primeiro, remove para evitar falso positivo na verificação
             if (cleanCoords.length > 2) {
                 const first = cleanCoords[0];
@@ -109,7 +108,6 @@ class MapaLotesManager {
             }
 
             // 2. VERIFICAÇÃO INTELIGENTE
-            // Agora a verificação só vai falhar se houver cruzamento REAL no meio do lote
             let finalCoords = cleanCoords;
             const isClean = this._isSimplePolygon(cleanCoords);
 
@@ -155,7 +153,11 @@ class MapaLotesManager {
                     fillColor: "#c7c7c7"
                 });
 
-                polygon.bindTooltip(`${lote.Lote} - ${lote.Status || "Desconhecido"}`, { permanent: false });
+                polygon.bindTooltip(`${lote.Lote}\n Status: ${lote.Status || "Desconhecido"}
+                    Área: ${lote.Área ? lote.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A"}
+                    ValorM2: ${lote.ValorM2 ? "R$ " + lote.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}
+                    ValorTotal: ${lote.Valor ? "R$ " + lote.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}`,
+                    { permanent: false });
                 polygon.loteData = lote; 
                 
                 polygon.on('click', (e) => {
