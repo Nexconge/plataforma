@@ -207,11 +207,10 @@ class MapaLotesManager {
             clearTimeout(this.filterDebounceTimer);
         }
 
-        // Alterado para suportar função async
         this.filterDebounceTimer = setTimeout(async () => {
-            await this._executarFiltroReal();
+            await this._sincronizarFiltrosEMapa();
             this.filterDebounceTimer = null;
-        }, 100); 
+        }, 100);
     }
 
     _updateLegenda() {
