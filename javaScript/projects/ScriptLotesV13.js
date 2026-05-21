@@ -87,8 +87,8 @@ class MapaLotesManager {
     //INICIALIZAÇÃO DA PAGINA
     _initMap() {
         this.map = L.map(this.mapId).setView([-27.093791, -52.6215887], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.map);
 
         // --- ADIÇÃO: Estilos da Legenda ---
@@ -120,6 +120,8 @@ class MapaLotesManager {
             const fontSize = 14 * (z / 15);
             document.querySelectorAll(".quadra-tooltip").forEach(el => el.style.fontSize = fontSize + "px");
         });
+
+        this._atualizarTamanhoMapa();
     }
     _setupEventListeners() {
         const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade", "selectZoneamento"];
@@ -665,6 +667,22 @@ class MapaLotesManager {
         } else {
             this.map.flyTo(this.map.options.center, this.map.options.zoom);
         }
+    }
+    _atualizarTamanhoMapa() {
+        const container = document.getElementById(this.mapId);
+        if (!container) return;
+
+        // O ResizeObserver detecta qualquer mudança no tamanho da div do mapa
+        const resizeObserver = new ResizeObserver(() => {
+            if (this.map) {
+                // O setTimeout com 0ms garante que o DOM terminou de atualizar antes de recalcular
+                setTimeout(() => {
+                    this.map.invalidateSize();
+                }, 0);
+            }
+        });
+
+        resizeObserver.observe(container);
     }
 
     //4.Alteração de dados
