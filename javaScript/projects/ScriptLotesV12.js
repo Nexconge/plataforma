@@ -1,6 +1,8 @@
 import { buscarLotesPaginados } from './apiV04.js';
 
 class MapaLotesManager {
+
+    //INCIALIZAÇÃO DO OBJETO
     constructor(mapId, url, userModifyers) {
         this.mapId = mapId;
         this.urlAPI = url;
@@ -27,7 +29,6 @@ class MapaLotesManager {
         this._handleFilterChange = this._handleFilterChange.bind(this);
         this._handlePolygonClick = this._handlePolygonClick.bind(this);
     }
-
     async init(empreendimentosJSON) {
         try {
             this.empreendimentosLista = JSON.parse(empreendimentosJSON || "[]");
@@ -40,7 +41,50 @@ class MapaLotesManager {
         this._handleFilterChange();
     }
 
-    // --- 2. Mapa ---
+    //CONTROLE DE DADOS
+    async _assegurarDadosEmCache(idsEmpreendimentos) {
+        let houveMudanca = false;
+        
+        // Dispara a busca para TODOS os empreendimentos faltantes simultaneamente
+        const promessasDeBusca = idsEmpreendimentos.map(async (idEmp) => {
+            if (!idEmp) return;
+            
+            if (!this.lotesCache[idEmp]) {
+                if (!this.lotesFetchPromises[idEmp]) {
+                    this.lotesFetchPromises[idEmp] = buscarLotesPaginados(this.urlAPI, idEmp);
+                }
+
+                try {
+                    const lotes = await this.lotesFetchPromises[idEmp];
+                    
+                    if (this.isExterno) {
+                        lotes.forEach(l => {
+                            if (l.Status === "Vendido") l.Status = "Reservado";
+                            if (l.Status === "Reservado") {
+                                l.Valor = 0; l.ValorM2 = 0; l.Cliente = ""; l.Corretor = "";
+                            }
+                        });
+                    }
+
+                    // Impede duplicidade
+                    if (!this.lotesCache[idEmp]) {
+                        this.lotesCache[idEmp] = lotes;
+                        this.allLotes = this.allLotes.concat(lotes);
+                        houveMudanca = true;
+                    }
+                } finally {
+                    delete this.lotesFetchPromises[idEmp];
+                }
+            }
+        });
+
+        // Aguarda todas as buscas paralelas terminarem juntas
+        await Promise.all(promessasDeBusca);
+        
+        return houveMudanca;
+    }
+
+    //INICIALIZAÇÃO DA PAGINA
     _initMap() {
         this.map = L.map(this.mapId).setView([-27.093791, -52.6215887], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -77,59 +121,6 @@ class MapaLotesManager {
             document.querySelectorAll(".quadra-tooltip").forEach(el => el.style.fontSize = fontSize + "px");
         });
     }
-
-    // --- 3. Renderização ---
-    _renderLotes(lotes) {
-        Object.values(this.polygons).forEach(p => p.remove());
-        this.polygons = {};
-
-        this.quadraMarkers.forEach(m => m.remove());
-        this.quadraMarkers = [];
-
-        lotes.forEach(lote => {
-            if (!lote.Coordenadas) return;
-            let coords;
-            try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
-            if (!Array.isArray(coords) || coords.length === 0) return;
-
-            let cleanCoords = coords.filter((item, index, arr) => index === 0 || item[0] !== arr[index - 1][0] || item[1] !== arr[index - 1][1]);
-            
-            if (cleanCoords.length > 2 && cleanCoords[0][0] === cleanCoords[cleanCoords.length - 1][0] && cleanCoords[0][1] === cleanCoords[cleanCoords.length - 1][1]) {
-                cleanCoords.pop();
-            }
-
-            let finalCoords = this._isSimplePolygon(cleanCoords) ? cleanCoords : this._organizarPontosRadialmente(cleanCoords);
-            finalCoords.push(finalCoords[0]);
-            
-            if (lote.isQuadra) {
-                const marker = L.marker(this._calcularCentroTooltip(finalCoords), { opacity: 0, interactive: false });
-                marker.bindTooltip(lote.Lote, { permanent: true, direction: "center", className: "quadra-tooltip", offset: [-15, 25] });
-                marker.loteData = lote; 
-                marker.addTo(this.map);
-                this.quadraMarkers.push(marker);
-            } else {
-                // Removemos a duplicação do polígono: a única diferença do inativo é a interatividade e eventos
-                const polygon = L.polygon(finalCoords, {
-                    color: "black", weight: 0.6, fillOpacity: 1, fillColor: "#c7c7c7",
-                    interactive: !lote.Inativo
-                });
-
-                polygon.loteData = lote;
-                this.polygons[lote._id] = polygon;
-                polygon.addTo(this.map);
-
-                if (!lote.Inativo) {
-                    polygon.bindTooltip("", { permanent: false });
-                    polygon.on('click', (e) => {
-                        L.DomEvent.stopPropagation(e);
-                        this._handlePolygonClick(polygon);
-                    });
-                }
-            }
-        });
-    }
-
-    // --- 4. Filtros ---
     _setupEventListeners() {
         const ids = ["empreendimentoSelect", "selectQuadra", "selectStatus", "selectAtividade", "selectZoneamento"];
         ids.forEach(id => {
@@ -202,6 +193,147 @@ class MapaLotesManager {
         }
     }
 
+
+    //REDERIZAÇÃO
+    _renderLotes(lotes) {
+        Object.values(this.polygons).forEach(p => p.remove());
+        this.polygons = {};
+
+        this.quadraMarkers.forEach(m => m.remove());
+        this.quadraMarkers = [];
+
+        lotes.forEach(lote => {
+            if (!lote.Coordenadas) return;
+            let coords;
+            try { coords = JSON.parse(lote.Coordenadas); } catch { return; }
+            if (!Array.isArray(coords) || coords.length === 0) return;
+
+            let cleanCoords = coords.filter((item, index, arr) => index === 0 || item[0] !== arr[index - 1][0] || item[1] !== arr[index - 1][1]);
+            
+            if (cleanCoords.length > 2 && cleanCoords[0][0] === cleanCoords[cleanCoords.length - 1][0] && cleanCoords[0][1] === cleanCoords[cleanCoords.length - 1][1]) {
+                cleanCoords.pop();
+            }
+
+            let finalCoords = this._isSimplePolygon(cleanCoords) ? cleanCoords : this._organizarPontosRadialmente(cleanCoords);
+            finalCoords.push(finalCoords[0]);
+            
+            if (lote.isQuadra) {
+                const marker = L.marker(this._calcularCentroTooltip(finalCoords), { opacity: 0, interactive: false });
+                marker.bindTooltip(lote.Lote, { permanent: true, direction: "center", className: "quadra-tooltip", offset: [-15, 25] });
+                marker.loteData = lote; 
+                marker.addTo(this.map);
+                this.quadraMarkers.push(marker);
+            } else {
+                // Removemos a duplicação do polígono: a única diferença do inativo é a interatividade e eventos
+                const polygon = L.polygon(finalCoords, {
+                    color: "black", weight: 0.6, fillOpacity: 1, fillColor: "#c7c7c7",
+                    interactive: !lote.Inativo
+                });
+
+                polygon.loteData = lote;
+                this.polygons[lote._id] = polygon;
+                polygon.addTo(this.map);
+
+                if (!lote.Inativo) {
+                    polygon.bindTooltip("", { permanent: false, className: "lote-tooltip", direction: "auto" });
+                    
+                    polygon.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        this._handlePolygonClick(polygon);
+                    });
+                }
+            }
+        });
+    }
+    _isSimplePolygon(coords) {
+        // Função auxiliar para verificar intersecção de dois segmentos (p1-q1 e p2-q2)
+        const onSegment = (p, q, r) => {
+            return q[0] <= Math.max(p[0], r[0]) && q[0] >= Math.min(p[0], r[0]) &&
+                   q[1] <= Math.max(p[1], r[1]) && q[1] >= Math.min(p[1], r[1]);
+        };
+
+        const orientation = (p, q, r) => {
+            const val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+            if (val === 0) return 0; // Colinear
+            return (val > 0) ? 1 : 2; // Horário ou Anti-horário
+        };
+
+        const doIntersect = (p1, q1, p2, q2) => {
+            const o1 = orientation(p1, q1, p2);
+            const o2 = orientation(p1, q1, q2);
+            const o3 = orientation(p2, q2, p1);
+            const o4 = orientation(p2, q2, q1);
+
+            if (o1 !== o2 && o3 !== o4) return true;
+            
+            // Casos especiais (colineares)
+            if (o1 === 0 && onSegment(p1, p2, q1)) return true;
+            if (o2 === 0 && onSegment(p1, q2, q1)) return true;
+            if (o3 === 0 && onSegment(p2, p1, q2)) return true;
+            if (o4 === 0 && onSegment(p2, q1, q2)) return true;
+            return false;
+        };
+
+        const n = coords.length;
+        if (n < 4) return true; // Triângulos nunca se cruzam
+
+        // Testa cada segmento contra todos os outros não-adjacentes
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 2; j < n; j++) {
+                // Ignora o fechamento do último com o primeiro se forem vizinhos
+                if (i === 0 && j === n - 1) continue;
+                
+                // P1-Q1 é o segmento atual, P2-Q2 é o segmento de teste
+                if (doIntersect(coords[i], coords[(i + 1) % n], coords[j], coords[(j + 1) % n])) {
+                    return false; // ENCONTROU CRUZAMENTO! O polígono está quebrado.
+                }
+            }
+        }
+        return true; // Polígono limpo
+    }
+    _organizarPontosRadialmente(points) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        points.forEach(p => {
+            if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+            if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+        });
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
+    }
+    _buildTooltipHTML(data) {
+        const labelStatus = this.filters.zonaColorMode ? "Atividade" : "Status";
+        const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desconhecido");
+
+        const areaFormatada = data.Área ? data.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A";
+        const valM2Formatado = data.ValorM2 ? "R$ " + data.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
+        const valTotalFormatado = data.Valor ? "R$ " + data.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
+
+        return `
+            <div class="tooltip-content">
+                <strong class="tooltip-title">Lote ${data.Lote}</strong>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">${labelStatus}:</span> 
+                    <span class="tooltip-value">${txtStatus}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Área:</span> 
+                    <span class="tooltip-value">${areaFormatada}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Valor M²:</span> 
+                    <span class="tooltip-value">${valM2Formatado}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">Valor Total:</span> 
+                    <span class="tooltip-value destaque-valor">${valTotalFormatado}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    //CONTROLE DE INTERAÇÃO
+    //1. Mudança de filtros
     _handleFilterChange() {
         if (this.filterDebounceTimer) {
             clearTimeout(this.filterDebounceTimer);
@@ -212,42 +344,6 @@ class MapaLotesManager {
             this.filterDebounceTimer = null;
         }, 100);
     }
-
-    _updateLegenda() {
-        if (!this.legendContainer) return;
-
-        const isZona = this.filters.zonaColorMode;
-        
-        let items = isZona ? [
-            { label: "Comercial", color: "#9fbfdf" },
-            { label: "Residencial", color: "#dad2b4" },
-            { label: "Equipamento Público", color: "#f0c9ad" },
-            { label: "Área Verde / APP", color: "#88c4a6" }
-        ] : [
-            { label: "Disponível", color: "lightblue" },
-            { label: "Vendido", color: "ForestGreen" },
-            { label: "Reservado", color: "#f0c9ad" },
-            { label: "Indisponível", color: "#c7c7c7" }
-        ];
-
-        // Se for modo externo, oculta a opção Vendido da legenda
-        if (this.isExterno && !isZona) {
-            items = items.filter(item => item.label !== "Vendido");
-        }
-
-        let html = `<h4 style="margin:0 0 8px; font-weight:bold; border-bottom:1px solid #eee; padding-bottom:4px;">${isZona ? "Atividade" : "Situação"}</h4>`;
-        
-        items.forEach(item => {
-            html += `
-                <div class="legend-item">
-                    <i class="legend-color" style="background:${item.color};"></i>
-                    <span>${item.label}</span>
-                </div>`;
-        });
-
-        this.legendContainer.innerHTML = html;
-    }
-
     async _sincronizarFiltrosEMapa() {
         document.body.classList.add('app-loading');
 
@@ -291,21 +387,6 @@ class MapaLotesManager {
             document.body.classList.remove('app-loading');
         }
     }
-
-    _ajustarCamera(prevEmpStr, newEmpStr) {
-        // Verifica se existem polígonos de fato renderizados no mapa
-        const poligonosVisiveis = Object.values(this.polygons).filter(p => this.map.hasLayer(p));
-        
-        // Se não houver nenhum polígono visível, não tenta centralizar
-        if (poligonosVisiveis.length === 0) return;
-
-        //Centraliza se for a primeira vez OU se o filtro de empreendimento mudou
-        if (!this.hasLoadedOnce || prevEmpStr !== newEmpStr) {
-            this._centralizeView();
-            this.hasLoadedOnce = true;
-        }
-    }
-
     _capturarDadosDosFiltros() {
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
@@ -345,153 +426,7 @@ class MapaLotesManager {
         };
     }
 
-    async _assegurarDadosEmCache(idsEmpreendimentos) {
-        let houveMudanca = false;
-        
-        // Dispara a busca para TODOS os empreendimentos faltantes simultaneamente
-        const promessasDeBusca = idsEmpreendimentos.map(async (idEmp) => {
-            if (!idEmp) return;
-            
-            if (!this.lotesCache[idEmp]) {
-                if (!this.lotesFetchPromises[idEmp]) {
-                    this.lotesFetchPromises[idEmp] = buscarLotesPaginados(this.urlAPI, idEmp);
-                }
-
-                try {
-                    const lotes = await this.lotesFetchPromises[idEmp];
-                    
-                    if (this.isExterno) {
-                        lotes.forEach(l => {
-                            if (l.Status === "Vendido") l.Status = "Reservado";
-                            if (l.Status === "Reservado") {
-                                l.Valor = 0; l.ValorM2 = 0; l.Cliente = ""; l.Corretor = "";
-                            }
-                        });
-                    }
-
-                    // Impede duplicidade
-                    if (!this.lotesCache[idEmp]) {
-                        this.lotesCache[idEmp] = lotes;
-                        this.allLotes = this.allLotes.concat(lotes);
-                        houveMudanca = true;
-                    }
-                } finally {
-                    delete this.lotesFetchPromises[idEmp];
-                }
-            }
-        });
-
-        // Aguarda todas as buscas paralelas terminarem juntas
-        await Promise.all(promessasDeBusca);
-        
-        return houveMudanca;
-    }
-
-    _atualizarElementosVisuais() {
-        this._updateLegenda();
-        this._updateMapVisuals();
-    }
-
-    _validarSelecaoAtual() {
-        let mudou = false;
-        this.selectedIds.forEach(id => {
-            if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
-                this.selectedIds.delete(id);
-                mudou = true;
-            }
-        });
-
-        if (mudou) this._fillForm();
-        if (this.selectedIds.size === 0) this._clearForm();
-    }
-
-    _updateMapVisuals() {
-        const hasActiveFilters = !!(this.filters.quadras.length > 0 || this.filters.status.length > 0 || this.filters.Atividades.length > 0 || this.filters.zoneamentos.length > 0);
-
-        this.quadraMarkers.forEach(marker => {
-            const data = marker.loteData;
-            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
-                if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
-            } else {
-                if (!this.map.hasLayer(marker)) this.map.addLayer(marker);
-            }
-        });
-
-        Object.values(this.polygons).forEach(poly => {
-            const data = poly.loteData;
-
-            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
-                if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
-                return;
-            } else {
-                if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
-            }
-
-            let isMatch = true;
-            if (hasActiveFilters) {
-                if (this.filters.quadras.length > 0) {
-                    const filterQs = this.filters.quadras.map(q => q.replace(/\D/g, ''));
-                    const matchQ = data.Lote.match(/Q(\d+)/i);
-                    const lotQ = matchQ ? matchQ[1] : "";
-                    if (!filterQs.includes(lotQ)) isMatch = false;
-                }
-                if (this.filters.status.length > 0) {
-                    if (!this.filters.status.includes(data.Status)) isMatch = false;
-                }
-                if (this.filters.Atividades.length > 0) {
-                    if (!this.filters.Atividades.includes(data.Atividade)) isMatch = false;
-                }
-                if (this.filters.zoneamentos.length > 0) {
-                    if (!this.filters.zoneamentos.includes(data.Zoneamento)) isMatch = false;
-                }
-            }
-
-            const theme = this._getLoteColor(data);
-            const isSelected = this.selectedIds.has(data._id);
-
-            if (isSelected) {
-                poly.setStyle({ weight: 3, color: "blue", fillColor: "blue", fillOpacity: 0.7 });
-                poly.bringToFront();
-            } else if (!hasActiveFilters) {
-                poly.setStyle({ weight: 0.8, color: "black", fillColor: theme.fill, fillOpacity: 1 });
-            } else if (isMatch) {
-                poly.setStyle({ weight: 1.8, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
-                poly.bringToFront(); 
-            } else {
-                poly.setStyle({ weight: 0.6, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.55 });
-            }
-
-            const labelStatus = this.filters.zonaColorMode ? "Atividade" : "Status";
-            const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desconhecido");
-
-            poly.getTooltip()?.setContent(`${data.Lote}<br>
-                ${labelStatus}: ${txtStatus}<br>
-                Área: ${data.Área ? data.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A"}<br>
-                ValorM2: ${data.ValorM2 ? "R$ " + data.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}<br>
-                ValorTotal: ${data.Valor ? "R$ " + data.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A"}`
-            );
-        });
-    }
-
-    _getLoteColor(lote) {
-        const mode = this.filters.zonaColorMode ? lote.Atividade?.toLowerCase() : lote.Status?.toLowerCase();
-        
-        // Cores atualizadas: preenchimentos mantidos suaves, bordas bem mais escuras
-        const themes = {
-            "comercial": { fill: "#9fbfdf", stroke: "#3b6b9e" },
-            "residencial": { fill: "#dad2b4", stroke: "#8c8052" },
-            "equipamento público": { fill: "#f0c9ad", stroke: "#a86c42" },
-            "app": { fill: "#88c4a6", stroke: "#3d7a5b" },
-            "área verde": { fill: "#88c4a6", stroke: "#3d7a5b" },
-            "disponível": { fill: "lightblue", stroke: "#3a7387" }, 
-            "vendido": { fill: "ForestGreen", stroke: "#0a3d0a" },
-            "reservado": { fill: "#f0c9ad", stroke: "#a86c42" },
-            "indisponível": { fill: "#c7c7c7", stroke: "#666666" }
-        };
-        
-        return themes[mode] || { fill: "#c7c7c7", stroke: "#666666" };
-    }
-
+    //2.Selecão de lote e preenchimento do formulário
     _handlePolygonClick(polygon) {
         const id = polygon.loteData._id;
         if (this.selectedIds.has(id)) {
@@ -502,7 +437,6 @@ class MapaLotesManager {
         this._updateMapVisuals();
         this._fillForm();
     }
-
     _clearForm() {
         this.selectedIds.clear();
         this._updateMapVisuals();
@@ -522,7 +456,6 @@ class MapaLotesManager {
         ["quadra_lote2", "area2", "cliente2", "corretor2", "frente2", "lateral2", "valor_metro2", "valor_total2", "indice2", "idsLotes2", "selectedCount2"].forEach(id => resetEl(id, false));
         ["atividade2", "status2", "zona2"].forEach(id => resetEl(id, true));
     }
-
     _fillForm() {
         if (this.selectedIds.size === 0) return this._clearForm();
 
@@ -588,7 +521,133 @@ class MapaLotesManager {
         setBubbleDropdown("atividade2", attList.length === 1 ? attList[0] : (attList.length > 1 ? "Vários" : ""));
         setBubbleDropdown("zona2", zonaList.length === 1 ? zonaList[0] : (zonaList.length > 1 ? "Vários" : ""));
     }
+    _validarSelecaoAtual() {
+        let mudou = false;
+        this.selectedIds.forEach(id => {
+            if (!this.polygons[id] || !this.map.hasLayer(this.polygons[id])) {
+                this.selectedIds.delete(id);
+                mudou = true;
+            }
+        });
 
+        if (mudou) this._fillForm();
+        if (this.selectedIds.size === 0) this._clearForm();
+    }
+    getSelectedLotesData() {
+        return Array.from(this.selectedIds).map(id => this.polygons[id].loteData);
+    }
+
+    //3.Atualizações Visuais
+    _atualizarElementosVisuais() {
+        this._updateLegenda();
+        this._updateMapVisuals();
+    }
+    _updateMapVisuals() {
+        const hasActiveFilters = !!(this.filters.quadras.length > 0 || this.filters.status.length > 0 || this.filters.Atividades.length > 0 || this.filters.zoneamentos.length > 0);
+
+        this.quadraMarkers.forEach(marker => {
+            const data = marker.loteData;
+            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
+                if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
+            } else {
+                if (!this.map.hasLayer(marker)) this.map.addLayer(marker);
+            }
+        });
+
+        Object.values(this.polygons).forEach(poly => {
+            const data = poly.loteData;
+
+            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
+                if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
+                return;
+            } else {
+                if (!this.map.hasLayer(poly)) this.map.addLayer(poly);
+            }
+
+            let isMatch = true;
+            if (hasActiveFilters) {
+                if (this.filters.quadras.length > 0) {
+                    const filterQs = this.filters.quadras.map(q => q.replace(/\D/g, ''));
+                    const matchQ = data.Lote.match(/Q(\d+)/i);
+                    const lotQ = matchQ ? matchQ[1] : "";
+                    if (!filterQs.includes(lotQ)) isMatch = false;
+                }
+                if (this.filters.status.length > 0) {
+                    if (!this.filters.status.includes(data.Status)) isMatch = false;
+                }
+                if (this.filters.Atividades.length > 0) {
+                    if (!this.filters.Atividades.includes(data.Atividade)) isMatch = false;
+                }
+                if (this.filters.zoneamentos.length > 0) {
+                    if (!this.filters.zoneamentos.includes(data.Zoneamento)) isMatch = false;
+                }
+            }
+
+            const theme = this._getLoteColor(data);
+            const isSelected = this.selectedIds.has(data._id);
+
+            if (isSelected) {
+                poly.setStyle({ weight: 3, color: "blue", fillColor: "blue", fillOpacity: 0.7 });
+                poly.bringToFront();
+            } else if (!hasActiveFilters) {
+                poly.setStyle({ weight: 0.8, color: "black", fillColor: theme.fill, fillOpacity: 1 });
+            } else if (isMatch) {
+                poly.setStyle({ weight: 1.8, color: theme.stroke, fillColor: theme.fill, fillOpacity: 1 });
+                poly.bringToFront(); 
+            } else {
+                poly.setStyle({ weight: 0.6, color: "#e8e8e8", fillColor: theme.fill, fillOpacity: 0.55 });
+            }
+
+            poly.getTooltip()?.setContent(this._buildTooltipHTML(data));
+        });
+    }
+    _updateLegenda() {
+        if (!this.legendContainer) return;
+
+        const isZona = this.filters.zonaColorMode;
+        
+        let items = isZona ? [
+            { label: "Comercial", color: "#9fbfdf" },
+            { label: "Residencial", color: "#dad2b4" },
+            { label: "Equipamento Público", color: "#f0c9ad" },
+            { label: "Área Verde / APP", color: "#88c4a6" }
+        ] : [
+            { label: "Disponível", color: "lightblue" },
+            { label: "Vendido", color: "ForestGreen" },
+            { label: "Reservado", color: "#f0c9ad" },
+            { label: "Indisponível", color: "#c7c7c7" }
+        ];
+
+        // Se for modo externo, oculta a opção Vendido da legenda
+        if (this.isExterno && !isZona) {
+            items = items.filter(item => item.label !== "Vendido");
+        }
+
+        let html = `<h4 style="margin:0 0 8px; font-weight:bold; border-bottom:1px solid #eee; padding-bottom:4px;">${isZona ? "Atividade" : "Situação"}</h4>`;
+        
+        items.forEach(item => {
+            html += `
+                <div class="legend-item">
+                    <i class="legend-color" style="background:${item.color};"></i>
+                    <span>${item.label}</span>
+                </div>`;
+        });
+
+        this.legendContainer.innerHTML = html;
+    }
+    _ajustarCamera(prevEmpStr, newEmpStr) {
+        // Verifica se existem polígonos de fato renderizados no mapa
+        const poligonosVisiveis = Object.values(this.polygons).filter(p => this.map.hasLayer(p));
+        
+        // Se não houver nenhum polígono visível, não tenta centralizar
+        if (poligonosVisiveis.length === 0) return;
+
+        //Centraliza se for a primeira vez OU se o filtro de empreendimento mudou
+        if (!this.hasLoadedOnce || prevEmpStr !== newEmpStr) {
+            this._centralizeView();
+            this.hasLoadedOnce = true;
+        }
+    }
     _centralizeView() {
         const bounds = new L.LatLngBounds();
         let count = 0;
@@ -608,113 +667,7 @@ class MapaLotesManager {
         }
     }
 
-    _atualizarPoligonoSelecionado() {
-        if (this.selectedIds.size !== 1) return;
-
-        const [id] = this.selectedIds;
-        const poligono = this.polygons[id];
-        if(!poligono) return;
-
-        const getVal = id => document.getElementById(id)?.value || "";
-        
-        // Função para capturar o texto e formatar (Garante acentos e Maiúscula)
-        const getLabelFormatado = id => {
-            const el = document.getElementById(id);
-            if (!el || el.tagName !== "SELECT" || el.selectedIndex < 0) return "";
-            const text = el.options[el.selectedIndex].text.trim();
-            
-            // Ignora placeholders
-            if (!text || text.includes("...") || text.toLowerCase().includes("selecione")) return "";
-            
-            // Força Primeira letra Maiúscula e restante Minúscula
-            return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-        };
-
-        const getNum = (id) => {
-            let val = getVal(id);
-            if (!val || val === "-") return 0;
-            let digits = val.toString().replace(/\D/g, ''); 
-            return (parseInt(digits, 10) / 100) || 0;
-        };
-
-        Object.assign(poligono.loteData, {
-            Lote: getVal("quadra_lote2"),
-            Área: getNum("area2"),
-            Cliente: getVal("cliente2")?.replace(/"/g, '').trim() || "",
-            Status: getLabelFormatado("status2"), 
-            Atividade: getLabelFormatado("atividade2"),
-            Frente: getNum("frente2"),
-            Lateral: getNum("lateral2"),
-            ValorM2: getNum("valor_metro2"),
-            Valor: getNum("valor_total2"),
-            Zoneamento: getLabelFormatado("zona2"),
-            Corretor: getVal("corretor2")
-        });
-        
-        this._updateMapVisuals();
-    }
-
-
-    // Verifica se o polígono é "Simples" (não tem linhas se cruzando)
-    _isSimplePolygon(coords) {
-        // Função auxiliar para verificar intersecção de dois segmentos (p1-q1 e p2-q2)
-        const onSegment = (p, q, r) => {
-            return q[0] <= Math.max(p[0], r[0]) && q[0] >= Math.min(p[0], r[0]) &&
-                   q[1] <= Math.max(p[1], r[1]) && q[1] >= Math.min(p[1], r[1]);
-        };
-
-        const orientation = (p, q, r) => {
-            const val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
-            if (val === 0) return 0; // Colinear
-            return (val > 0) ? 1 : 2; // Horário ou Anti-horário
-        };
-
-        const doIntersect = (p1, q1, p2, q2) => {
-            const o1 = orientation(p1, q1, p2);
-            const o2 = orientation(p1, q1, q2);
-            const o3 = orientation(p2, q2, p1);
-            const o4 = orientation(p2, q2, q1);
-
-            if (o1 !== o2 && o3 !== o4) return true;
-            
-            // Casos especiais (colineares)
-            if (o1 === 0 && onSegment(p1, p2, q1)) return true;
-            if (o2 === 0 && onSegment(p1, q2, q1)) return true;
-            if (o3 === 0 && onSegment(p2, p1, q2)) return true;
-            if (o4 === 0 && onSegment(p2, q1, q2)) return true;
-            return false;
-        };
-
-        const n = coords.length;
-        if (n < 4) return true; // Triângulos nunca se cruzam
-
-        // Testa cada segmento contra todos os outros não-adjacentes
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 2; j < n; j++) {
-                // Ignora o fechamento do último com o primeiro se forem vizinhos
-                if (i === 0 && j === n - 1) continue;
-                
-                // P1-Q1 é o segmento atual, P2-Q2 é o segmento de teste
-                if (doIntersect(coords[i], coords[(i + 1) % n], coords[j], coords[(j + 1) % n])) {
-                    return false; // ENCONTROU CRUZAMENTO! O polígono está quebrado.
-                }
-            }
-        }
-        return true; // Polígono limpo
-    }
-
-    // Mantemos o método de correção radial que criamos antes
-    _organizarPontosRadialmente(points) {
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        points.forEach(p => {
-            if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
-            if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
-        });
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
-    }
-
+    //4.Alteração de dados
     aplicarAlteracaoEmMassa() {
         if (this.selectedIds.size === 0) return;
 
@@ -766,11 +719,6 @@ class MapaLotesManager {
         this._updateMapVisuals();
         this._fillForm(); 
     }
-
-    getSelectedLotesData() {
-        return Array.from(this.selectedIds).map(id => this.polygons[id].loteData);
-    }
-
     excluirLotesSelecionados() {
         if (this.selectedIds.size === 0) return;
 
@@ -785,7 +733,75 @@ class MapaLotesManager {
         this.allLotes = this.allLotes.filter(l => !this.selectedIds.has(l._id));
         this._clearForm();
     }
+    _atualizarPoligonoSelecionado() {
+        if (this.selectedIds.size !== 1) return;
 
+        const [id] = this.selectedIds;
+        const poligono = this.polygons[id];
+        if(!poligono) return;
+
+        const getVal = id => document.getElementById(id)?.value || "";
+        
+        // Função para capturar o texto e formatar (Garante acentos e Maiúscula)
+        const getLabelFormatado = id => {
+            const el = document.getElementById(id);
+            if (!el || el.tagName !== "SELECT" || el.selectedIndex < 0) return "";
+            const text = el.options[el.selectedIndex].text.trim();
+            
+            // Ignora placeholders
+            if (!text || text.includes("...") || text.toLowerCase().includes("selecione")) return "";
+            
+            // Força Primeira letra Maiúscula e restante Minúscula
+            return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+        };
+
+        const getNum = (id) => {
+            let val = getVal(id);
+            if (!val || val === "-") return 0;
+            let digits = val.toString().replace(/\D/g, ''); 
+            return (parseInt(digits, 10) / 100) || 0;
+        };
+
+        Object.assign(poligono.loteData, {
+            Lote: getVal("quadra_lote2"),
+            Área: getNum("area2"),
+            Cliente: getVal("cliente2")?.replace(/"/g, '').trim() || "",
+            Status: getLabelFormatado("status2"), 
+            Atividade: getLabelFormatado("atividade2"),
+            Frente: getNum("frente2"),
+            Lateral: getNum("lateral2"),
+            ValorM2: getNum("valor_metro2"),
+            Valor: getNum("valor_total2"),
+            Zoneamento: getLabelFormatado("zona2"),
+            Corretor: getVal("corretor2")
+        });
+        
+        this._updateMapVisuals();
+    }
+
+    //UTILITÁRIOS
+    _triggerChange(el) {
+        if (!el) return;
+        try {
+            el.dispatchEvent(new Event("change", { bubbles: true }));
+            if (window.jQuery) window.jQuery(el).trigger('change');
+        } catch (e) {}
+    }
+    _setSelectToBlank(el) {
+        const blankOpt = Array.from(el.options).find(o => o.value.includes("BLANK") || o.text.trim() === "");
+        el.value = blankOpt ? blankOpt.value : "";
+    }
+    _parseNum(val) {
+        if (!val || val === "-") return 0;
+        return (parseInt(val.toString().replace(/\D/g, ''), 10) / 100) || 0;
+    }
+    _formatByType(num, type) {
+        const opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+        if (type === 'area') return num.toLocaleString('pt-BR', opts) + " m²";
+        if (type === 'money') return "R$ " + num.toLocaleString('pt-BR', opts);
+        if (type === 'meters') return num.toLocaleString('pt-BR', opts) + " m";
+        return num;
+    }
     _calcularCentroTooltip(coords) {
         let minLng = Infinity, maxLng = -Infinity;
 
@@ -842,31 +858,23 @@ class MapaLotesManager {
 
         return [midLat, midLngFinal];
     }
-
-    _triggerChange(el) {
-        if (!el) return;
-        try {
-            el.dispatchEvent(new Event("change", { bubbles: true }));
-            if (window.jQuery) window.jQuery(el).trigger('change');
-        } catch (e) {}
-    }
-
-    _setSelectToBlank(el) {
-        const blankOpt = Array.from(el.options).find(o => o.value.includes("BLANK") || o.text.trim() === "");
-        el.value = blankOpt ? blankOpt.value : "";
-    }
-
-    _parseNum(val) {
-        if (!val || val === "-") return 0;
-        return (parseInt(val.toString().replace(/\D/g, ''), 10) / 100) || 0;
-    }
-
-    _formatByType(num, type) {
-        const opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-        if (type === 'area') return num.toLocaleString('pt-BR', opts) + " m²";
-        if (type === 'money') return "R$ " + num.toLocaleString('pt-BR', opts);
-        if (type === 'meters') return num.toLocaleString('pt-BR', opts) + " m";
-        return num;
+    _getLoteColor(lote) {
+        const mode = this.filters.zonaColorMode ? lote.Atividade?.toLowerCase() : lote.Status?.toLowerCase();
+        
+        // Cores atualizadas: preenchimentos mantidos suaves, bordas bem mais escuras
+        const themes = {
+            "comercial": { fill: "#9fbfdf", stroke: "#3b6b9e" },
+            "residencial": { fill: "#dad2b4", stroke: "#8c8052" },
+            "equipamento público": { fill: "#f0c9ad", stroke: "#a86c42" },
+            "app": { fill: "#88c4a6", stroke: "#3d7a5b" },
+            "área verde": { fill: "#88c4a6", stroke: "#3d7a5b" },
+            "disponível": { fill: "lightblue", stroke: "#3a7387" }, 
+            "vendido": { fill: "ForestGreen", stroke: "#0a3d0a" },
+            "reservado": { fill: "#f0c9ad", stroke: "#a86c42" },
+            "indisponível": { fill: "#c7c7c7", stroke: "#666666" }
+        };
+        
+        return themes[mode] || { fill: "#c7c7c7", stroke: "#666666" };
     }
 }
 

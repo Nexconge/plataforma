@@ -1,3 +1,6 @@
+/* =========================================================
+   1. VARIÁVEIS GLOBAIS E BASE
+========================================================= */
 :root {
   --primary: #1772CB;
   --primary-dark: #0052a3;
@@ -12,7 +15,9 @@ label {
   font-size: 16px;
 }
 
-/* Aplica estilo a todos os selects de filtro */
+/* =========================================================
+   2. FILTROS E SELECTS
+========================================================= */
 #empreendimentoSelect,
 #selectQuadra,
 #selectStatus,
@@ -26,8 +31,6 @@ label {
   font-family: 'Nunito', sans-serif;
   font-size: 16px;
   color: black;
-
-  /* Custom Arrow */
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -60,7 +63,88 @@ label {
   font-family: 'Nunito', sans-serif;
 }
 
-/* Tooltip da Quadra */
+/* =========================================================
+   3. CHECKBOX INTERRUPTOR (SWITCH)
+========================================================= */
+.switch-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 54px;
+}
+
+.switch-container:hover {
+  background-color: #f9f9f9;
+  border-color: #b3b3b3;
+}
+
+.switch-label {
+  font-family: var(--font_default), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #3d3d3d;
+  user-select: none;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+}
+
+.slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #e0e0e0;
+  transition: 0.3s;
+  border-radius: 32px; 
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.switch input:checked + .slider {
+  background-color: #2e71c6; 
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* =========================================================
+   4. TOOLTIPS DO MAPA
+========================================================= */
+/* Tooltip de Quadra */
 .quadra-tooltip {
   font-weight: 900;
   font-size: 20px !important;
@@ -79,110 +163,73 @@ label {
   display: none !important;
 }
 
-/* =========================================================
-   Checkbox estilo Interruptor
-========================================================= */
+/* Tooltip de Lote */
+.lote-tooltip {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  color: #333;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding: 12px;
+}
 
-/* A caixinha que envolve tudo */
-.switch-container {
+.lote-tooltip::before, 
+.lote-tooltip::after {
+  display: none;
+}
+
+.tooltip-content {
+  text-align: left;
+  min-width: 140px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tooltip-title {
+  display: block;
+  font-size: 15px;
+  color: #2c3e50;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.tooltip-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between; /* Empurra o texto para a esquerda e o botão para a direita */
-  padding: 8px 14px;
-  background-color: #ffffff;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 54px; /* Garante um bom espaço para as duas linhas de texto */
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.switch-container:hover {
-  background-color: #f9f9f9;
-  border-color: #b3b3b3;
+.tooltip-label {
+  font-weight: 600;
 }
 
-/* Estilo do texto */
-.switch-label {
-  font-family: var(--font_default), sans-serif;
+.tooltip-value {
+  color: #555;
+  text-align: right;
+}
+
+.destaque-valor {
+  color: #27ae60;
+  font-weight: bold;
   font-size: 14px;
-  font-weight: 600; /* Deixa o texto em Negrito */
-  line-height: 1.3; /* Espaçamento agradável entre as duas linhas */
-  color: #3d3d3d;
-  user-select: none;
-}
-
-/* O interruptor (Agora maior) */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 56px; /* Mais largo */
-  height: 32px; /* Mais alto */
-  flex-shrink: 0;
-}
-
-/* Esconde o checkbox nativo que pode estar causando o bug de alinhamento */
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  position: absolute;
-}
-
-/* Fundo do interruptor (Formato pílula redondinha) */
-.slider {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #e0e0e0;
-  transition: 0.3s;
-  border-radius: 32px; 
-}
-
-/* O "botão" branco que desliza (Agora é uma bolinha) */
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 24px;
-  width: 24px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-
-/* Cor quando ativado */
-.switch input:checked + .slider {
-  background-color: #2e71c6; 
-}
-
-/* Movimento do botão para a direita */
-.switch input:checked + .slider:before {
-  transform: translateX(24px);
 }
 
 /* =========================================================
-   LOADING
+   5. ESTADOS DE CARREGAMENTO (LOADING)
 ========================================================= */
-
 body.app-loading {
   cursor: wait;
   overflow: hidden;
-  /* Impede rolagem enquanto carrega */
 }
 
-/* Opcional: Remover opacidade da tabela já que teremos o overlay cinza */
 body.app-loading table,
 body.app-loading .container-graficos-abas {
   pointer-events: none;
 }
 
-/* SPINNER */
+/* Spinner Geral */
 body.app-loading::before {
   content: "";
   position: fixed;
@@ -190,7 +237,6 @@ body.app-loading::before {
   left: 50%;
   width: 24px;
   height: 24px;
-  /* Translate mantido aqui para fallback */
   transform: translate(-95px, -50%);
   border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
@@ -199,39 +245,22 @@ body.app-loading::before {
   z-index: 10001;
 }
 
-/* CAIXA DE TEXTO + OVERLAY DE FUNDO */
+/* Caixa de Texto + Overlay de Fundo */
 body.app-loading::after {
   content: "Carregando dados...";
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   background: var(--primary-dark, #333);
-  /* Fallback caso a var não carregue */
   color: white;
-
   padding: 15px 25px 15px 55px;
-
   border-radius: 8px;
   z-index: 10000;
   font-weight: bold;
-
-  /* Overlay via Box-Shadow */
-  box-shadow:
+  box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.2),
     0 0 0 100vmax rgba(0, 0, 0, 0.5);
-}
-
-/* ANIMAÇÃO CORRIGIDA (Mantém a posição) */
-@keyframes spin {
-  0% {
-    transform: translate(-95px, -50%) rotate(0deg);
-  }
-
-  100% {
-    transform: translate(-95px, -50%) rotate(360deg);
-  }
 }
 
 .loader {
@@ -242,4 +271,13 @@ body.app-loading::after {
   height: 100%;
   animation: spin 2s linear infinite;
   margin: auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-95px, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-95px, -50%) rotate(360deg);
+  }
 }
