@@ -428,6 +428,7 @@ function exibirTabelasVazias(){
     atualizarVisualizacoes(
         { matrizDRE: {}, matrizDetalhamento: {}, entradasESaidas: {}, matrizCapitalGiro: {}, fluxoDeCaixa: [], dadosEstoque: {} }, 
         colunasVazias, 
+        [], 
         appCache
     );
     document.body.classList.remove('loading');
