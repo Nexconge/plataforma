@@ -354,16 +354,11 @@ class MapaLotesManager {
         document.body.classList.add('app-loading');
 
         try {
-            // 1. Guarda o estado do filtro de empreendimentos ANTES de atualizar
             const prevEmpStr = this.filters.empreendimentos ? this.filters.empreendimentos.join() : "";
 
             let { idsEmpreendimentos, outrosFiltros } = this._capturarDadosDosFiltros();
             
-            // Lógica: Se o filtro estiver vazio, busca todos os IDs conhecidos na lista
-            const idsParaProcessar = idsEmpreendimentos.length > 0 
-                ? idsEmpreendimentos 
-                : this.empreendimentosLista.map(e => e.id);
-
+            const idsParaProcessar = idsEmpreendimentos;
 
             const novosDadosCarregados = await this._assegurarDadosEmCache(idsParaProcessar);
             
@@ -371,20 +366,17 @@ class MapaLotesManager {
                 this._renderLotes(this.allLotes);
             }
 
-            // 2. Atualiza os filtros com os novos valores
             this.filters = {
                 ...outrosFiltros,
-                empreendimentos: idsEmpreendimentos, // O filtro visual permanece o que o usuário selecionou
+                empreendimentos: idsEmpreendimentos, 
                 zonaColorMode: document.getElementById("zona")?.checked || false 
             };
 
             this._atualizarElementosVisuais();
             this._validarSelecaoAtual();
             
-            // 3. Captura o novo estado do filtro
             const newEmpStr = this.filters.empreendimentos.join();
 
-            // 4. Passa o estado anterior e o novo para decidir se deve centralizar
             this._ajustarCamera(prevEmpStr, newEmpStr);
 
         } catch (error) {
@@ -393,6 +385,7 @@ class MapaLotesManager {
             document.body.classList.remove('app-loading');
         }
     }
+
     _capturarDadosDosFiltros() {
         const getCleanVal = (id) => {
             const el = document.getElementById(id);
@@ -550,10 +543,11 @@ class MapaLotesManager {
     }
     _updateMapVisuals() {
         const hasActiveFilters = !!(this.filters.quadras.length > 0 || this.filters.status.length > 0 || this.filters.Atividades.length > 0 || this.filters.zoneamentos.length > 0);
+        const hasEmpreendimentoFilter = this.filters.empreendimentos.length > 0;
 
         this.quadraMarkers.forEach(marker => {
             const data = marker.loteData;
-            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
+            if (!hasEmpreendimentoFilter || !this.filters.empreendimentos.includes(data.Empreendimento)) {
                 if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
             } else {
                 if (!this.map.hasLayer(marker)) this.map.addLayer(marker);
@@ -563,7 +557,7 @@ class MapaLotesManager {
         Object.values(this.polygons).forEach(poly => {
             const data = poly.loteData;
 
-            if (this.filters.empreendimentos.length > 0 && !this.filters.empreendimentos.includes(data.Empreendimento)) {
+            if (!hasEmpreendimentoFilter || !this.filters.empreendimentos.includes(data.Empreendimento)) {
                 if (this.map.hasLayer(poly)) this.map.removeLayer(poly);
                 return;
             } else {
@@ -607,6 +601,7 @@ class MapaLotesManager {
             poly.getTooltip()?.setContent(this._buildTooltipHTML(data));
         });
     }
+    
     _updateLegenda() {
         if (!this.legendContainer) return;
 
