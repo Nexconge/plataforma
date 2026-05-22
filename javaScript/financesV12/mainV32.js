@@ -36,10 +36,12 @@ async function handleFiltroChange() {
         
         //Se não houver filtros válidos, exibe tabelas vazias e encerra o processo (evitando chamadas desnecessárias à API)
         if (!filtrosAtuais) {
+            exibirTabelasVazias();
             alternarEstadoCarregamento(false);
             return; 
         }
         if (!validarFiltros(filtrosAtuais)) {
+            exibirTabelasVazias();
             alternarEstadoCarregamento(false);
             return;
         }
