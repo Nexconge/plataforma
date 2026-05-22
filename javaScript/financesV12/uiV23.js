@@ -742,13 +742,11 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
 
     const extras = userType?.toLowerCase() === 'developer' ? ['(+) Entradas de Transferência', '(-) Saídas de Transferência'] : [];
     [...extras, '(+) Entradas', '(-) Saídas'].forEach(c => {
-        if (es[c]) {
-            const r = tbody.insertRow();
-            r.dataset.type = 'saldo';
-            r.insertCell().textContent = c;
-            colunas.forEach(col => r.insertCell().textContent = formatarValor(es[c][col] || 0));
-            r.insertCell().textContent = formatarValor(es[c].TOTAL || 0);
-        }
+        const r = tbody.insertRow();
+        r.dataset.type = 'saldo';
+        r.insertCell().textContent = c;
+        colunas.forEach(col => r.insertCell().textContent = formatarValor(es?.[c]?.[col] || 0));
+        r.insertCell().textContent = formatarValor(es?.[c]?.TOTAL || 0);
     });
 }
 function renderDrillDown(classe, dados, tbody, catMap, colunas) {
