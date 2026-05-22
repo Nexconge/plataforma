@@ -269,7 +269,8 @@ function configurarFiltros(appCache, anosDisp, callback) {
         .sort((a, b) => a[1].nome.localeCompare(b[1].nome))
         .forEach(([cod, { nome }]) => el.proj.appendChild(new Option(nome, cod)));
     
-    if (el.proj.options.length) el.proj.options[0].selected = true;
+    // Garante que os projetos comecem desmarcados
+    Array.from(el.proj.options).forEach(opt => opt.selected = false);
     
     // Atualiza contas e dispara fluxo inicial
     atualizarFiltroContas(el.conta, appCache.projetosMap, appCache.contasMap, getSelectItems(el.proj));
@@ -561,17 +562,24 @@ function obterFiltrosAtuais() {
         colunas 
     };
 }
+
 function atualizarFiltroContas(select, pMap, cMap, pSel) {
     const permitidas = new Set();
-    pSel.forEach(id => pMap.get(String(id))?.contas.forEach(c => permitidas.add(c)));
+    const temProjetoSelecionado = pSel && pSel.length > 0;
+
+    if (temProjetoSelecionado) {
+        pSel.forEach(id => pMap.get(String(id))?.contas.forEach(c => permitidas.add(c)));
+    }
+
     select.innerHTML = '';
     Array.from(cMap.entries()).sort((a,b) => a[1].descricao.localeCompare(b[1].descricao)).forEach(([k, v]) => {
-        if (permitidas.has(k)) select.appendChild(new Option(v.descricao, k));
+        // Carrega todas as contas se nenhum projeto estiver selecionado, ou filtra se houver
+        if (!temProjetoSelecionado || permitidas.has(k)) {
+            select.appendChild(new Option(v.descricao, k));
+        }
     });
-    //Seleciona tudo por padrão
-    if (select.options.length) {
-        Array.from(select.options).forEach(opt => opt.selected = true);
-    }
+    
+    Array.from(select.options).forEach(opt => opt.selected = false);
 }
 
 // ------ Renderização ------
