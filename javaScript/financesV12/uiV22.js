@@ -1280,8 +1280,8 @@ function renderizarDREResumido(linhaCaixaIni, linhaCaixaFim, es, colunas) {
         const vBalanco = vEntradas + vSaidas;
 
         // 3. Recuperação de Saldos (Direto dos objetos passados, sem cálculo manual)
-        const valSaldoIni = linhaCaixaIni[col] || 0;
-        const valSaldoFim = linhaCaixaFim[col] || 0;
+        const valSaldoIni = linhaCaixaIni?.[col] || 0;
+        const valSaldoFim = linhaCaixaFim?.[col] || 0;
 
         // --- 4. Formatação Visual ---
         const styleCell = isTotal ? 'font-weight:bold;' : '';
