@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:8000/api/ordens";
+export const API_URL = "https://backend-plataforma-producao.onrender.com/ordens-compra";
 
 export async function fetchOrdens() {
   const res = await fetch(API_URL);
