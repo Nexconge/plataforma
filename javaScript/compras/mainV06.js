@@ -1,4 +1,4 @@
-import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus } from './apiV01.js';
+import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus } from './apiV02.js';
 import { MAX_FILE_BYTES, COL_LABELS, emptyCot, nowStr, cardSummary, temAnexo, passaFiltros, temFiltroAtivo, detectarMudancas } from './processingV01.js';
 import { $, $$, fmtDate, fmtBRL, escapeHtml, switchTab, updateAprovarButton } from './uiV01.js';
 
@@ -343,13 +343,12 @@ function closeModal() {
 }
   
 window.initKanban = function() {
-  // Verificamos se o HTML principal já existe. Se não existir, abortamos.
   if (!$('#f-col')) {
       console.warn("HTML do Kanban ainda não foi carregado.");
       return;
   }
 
-  $('#f-col').addEventListener('change', updateAprovarButton);
+  $('#f-col').addEventListener('change', () => updateAprovarButton(workingVencedora));
   $('#btn-novo').addEventListener('click', () => openModal(null));
   $('#btn-fechar').addEventListener('click', closeModal);
   $('#btn-cancelar').addEventListener('click', closeModal);
@@ -370,8 +369,10 @@ window.initKanban = function() {
     };
 
     let method = 'POST';
+    let url = API_URL;
     if (editingId) {
       method = 'PUT';
+      url = `${API_URL}/${editingId}`;
       const c = cards.find(x => x.id == editingId);
       if (c) detectarMudancas(c, dados).forEach(ev => dados.historico.push({ ts: nowStr(), tipo: ev.tipo, texto: ev.texto }));
     } else {
@@ -385,8 +386,11 @@ window.initKanban = function() {
       historico: dados.historico.map(h => ({ data_hora: h.ts, tipo: h.tipo, texto: h.texto }))
     };
 
-    saveOrdemBubble(method, payload);
-    closeModal();
+    saveOrdem(method, url, payload).then(() => {
+      loadCards();
+      closeModal();
+      $('#btn-salvar').disabled = false;
+    });
   });
 
   $('#btn-aprovar').addEventListener('click', () => {
@@ -399,8 +403,10 @@ window.initKanban = function() {
   $('#btn-excluir').addEventListener('click', () => {
     if (!editingId) return;
     if (confirm('Tem certeza que deseja excluir esta ordem?')) {
-      deleteOrdemBubble(editingId);
-      closeModal();
+      deleteOrdem(editingId).then(() => {
+        loadCards();
+        closeModal();
+      });
     }
   });
 
@@ -422,3 +428,8 @@ window.initKanban = function() {
   
   console.log("Kanban inicializado com sucesso.");
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.initKanban();
+  loadCards();
+});
