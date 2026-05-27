@@ -9,6 +9,24 @@ function authHeaders(extra = {}) {
   };
 }
 
+export function waitForAuthToken(timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    if (window.AUTH_TOKEN && window.AUTH_TOKEN.length > 10) {
+      return resolve(window.AUTH_TOKEN);
+    }
+    const start = Date.now();
+    const iv = setInterval(() => {
+      if (window.AUTH_TOKEN && window.AUTH_TOKEN.length > 10) {
+        clearInterval(iv);
+        resolve(window.AUTH_TOKEN);
+      } else if (Date.now() - start > timeoutMs) {
+        clearInterval(iv);
+        reject(new Error('Token não foi disponibilizado a tempo'));
+      }
+    }, 100);
+  });
+}
+
 export async function fetchOrdens() {
   const res = await fetch(API_URL, { headers: authHeaders() });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

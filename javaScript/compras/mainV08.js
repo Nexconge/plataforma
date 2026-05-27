@@ -1,4 +1,4 @@
-import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus } from './apiV03.js';
+import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus, waitForAuthToken } from './apiV04.js';
 import { MAX_FILE_BYTES, COL_LABELS, emptyCot, nowStr, cardSummary, temAnexo, passaFiltros, temFiltroAtivo, detectarMudancas } from './processingV01.js';
 import { $, $$, fmtDate, fmtBRL, escapeHtml, switchTab, updateAprovarButton } from './uiV01.js';
 
@@ -35,6 +35,7 @@ async function loadCards() {
       })) : []
     }));
   } catch (e) {
+    console.error('Erro ao carregar ordens:', e);
     cards = [];
   }
 
@@ -429,10 +430,16 @@ window.initKanban = function() {
   console.log("Kanban inicializado com sucesso.");
 };
 
-function boot() {
+async function boot() {
   window.initKanban();
-  loadCards();
+  try {
+    await waitForAuthToken();   // ← espera o Bubble injetar o JWT
+    await loadCards();
+  } catch (e) {
+    console.error('Falha ao autenticar:', e);
+  }
 }
+
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
