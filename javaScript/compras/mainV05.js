@@ -1,6 +1,6 @@
 import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus } from './apiV01.js';
-import { MAX_FILE_BYTES, COL_LABELS, emptyCot, nowStr, cardSummary, temAnexo, passaFiltros, temFiltroAtivo, detectarMudancas } from './processing.js';
-import { $, $$, fmtDate, fmtBRL, escapeHtml, switchTab, updateAprovarButton } from './ui.js';
+import { MAX_FILE_BYTES, COL_LABELS, emptyCot, nowStr, cardSummary, temAnexo, passaFiltros, temFiltroAtivo, detectarMudancas } from './processingV01.js';
+import { $, $$, fmtDate, fmtBRL, escapeHtml, switchTab, updateAprovarButton } from './uiV01.js';
 
 let cards = [];
 let dragId = null;
