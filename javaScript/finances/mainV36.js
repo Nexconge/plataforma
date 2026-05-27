@@ -5,22 +5,18 @@ import { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, increment
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais,
      atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV24.js';
 
-// --- Cache da Aplicação ---
 let appCache = {
     userId: null,  
     userType: null,
-
-    dadosPorContaAno: new Map(),        // Cache de dados processados por conta e ano/tag (chave: "contaId|anoOuTag")
-    matrizesPorProjeto: new Map(),      // Cache de estoque por projeto (chave: codProj)
-    periodosPorConta: new Map(),        // Cache de metadados de datas por conta e projeção (chave: "contaId|projecao" -> { inicio, fim })
-    
+    dadosPorContaAno: new Map(),  // Dados processados por conta e ano/tag (chave: "contaId|anoOuTag")
+    matrizesPorProjeto: new Map(),// Dstoque por projeto (chave: codProj)
+    periodosPorConta: new Map(), // Metadados de datas por conta e projeção (chave: "contaId|projecao" -> { inicio, fim })
     categoriasMap: new Map(), //CODCategoria -> NomeCategoria
     classesMap: new Map(), //CODCategoria -> { classe: NomeClasse, categoria: NomeCategoria }
     projetosMap: new Map(), //CODProj -> { nome: NomeProjeto, contas: [codContas] }
     contasMap: new Map(), //CODConta -> { descricao: NomeConta, saldoIni: Valor }
     departamentosMap: new Map(), //CODDepto -> NomeDepto
     
-    // Estado atual
     projecao: "realizado",
     flagAnos: false
 };
