@@ -478,78 +478,85 @@
     $('#btn-salvar').disabled = false;
   }
 
-  // ==========================================
-  // EVENT LISTENERS E INICIALIZAÇÃO
-  // ==========================================
-  $('#f-col').addEventListener('change', updateAprovarButton);
-  $('#btn-novo').addEventListener('click', () => openModal(null));
-  $('#btn-fechar').addEventListener('click', closeModal);
-  $('#btn-cancelar').addEventListener('click', closeModal);
-  $('#modal-bg').addEventListener('click', e => { if (e.target === $('#modal-bg')) closeModal(); });
-
-  $$('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-
-  $('#btn-salvar').addEventListener('click', () => {
-    const titulo = $('#f-titulo').value.trim();
-    if (!titulo) return;
-    $('#btn-salvar').disabled = true;
-
-    const dados = {
-      titulo: titulo, tipo: $('#f-tipo').value, col: $('#f-col').value, resp: $('#f-resp').value.trim(),
-      prazo: $('#f-prazo').value, obs: $('#f-obs').value.trim(),
-      cotacoes: workingCotacoes.map(x => ({ fornecedor: x.fornecedor || '', valor: Number(x.valor) || 0, pagto: x.pagto || '', anexo: x.anexo || null })),
-      vencedora: workingVencedora, historico: workingHistorico.slice()
-    };
-
-    let method = 'POST';
-    if (editingId) {
-      method = 'PUT';
-      const c = cards.find(x => x.id == editingId);
-      if (c) detectarMudancas(c, dados).forEach(ev => dados.historico.push({ ts: nowStr(), tipo: ev.tipo, texto: ev.texto }));
-    } else {
-      dados.historico.push({ ts: nowStr(), tipo: 'criacao', texto: 'Ordem criada' });
+  window.initKanban = function() {
+    // Verificamos se o HTML principal já existe. Se não existir, abortamos.
+    if (!$('#f-col')) {
+        console.warn("HTML do Kanban ainda não foi carregado.");
+        return;
     }
 
-    const payload = {
-      id: editingId, // Importante para o PUT saber qual alterar
-      titulo: dados.titulo, tipo: dados.tipo, status: dados.col, responsavel: dados.resp, prazo: dados.prazo || null, observacoes: dados.obs,
-      cotacoes: dados.cotacoes.map((cot, index) => ({ fornecedor: cot.fornecedor, valor: cot.valor, condicao_pagamento: cot.pagto, anexo_nome: cot.anexo ? cot.anexo.name : null, anexo_dados: cot.anexo ? cot.anexo.dataUrl : null, vencedora: index === dados.vencedora })),
-      historico: dados.historico.map(h => ({ data_hora: h.ts, tipo: h.tipo, texto: h.texto }))
-    };
+    $('#f-col').addEventListener('change', updateAprovarButton);
+    $('#btn-novo').addEventListener('click', () => openModal(null));
+    $('#btn-fechar').addEventListener('click', closeModal);
+    $('#btn-cancelar').addEventListener('click', closeModal);
+    $('#modal-bg').addEventListener('click', e => { if (e.target === $('#modal-bg')) closeModal(); });
 
-    saveOrdemBubble(method, payload);
-    closeModal();
-  });
+    $$('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 
-  $('#btn-aprovar').addEventListener('click', () => {
-    if (workingVencedora < 0) return;
-    $('#f-col').value = 'contratado';
-    workingHistorico.push({ ts: nowStr(), tipo: 'aprovacao', texto: `Cotação aprovada — ordem movida para Contratado` });
-    $('#btn-salvar').click();
-  });
+    $('#btn-salvar').addEventListener('click', () => {
+      const titulo = $('#f-titulo').value.trim();
+      if (!titulo) return;
+      $('#btn-salvar').disabled = true;
 
-  $('#btn-excluir').addEventListener('click', () => {
-    if (!editingId) return;
-    if (confirm('Tem certeza que deseja excluir esta ordem?')) {
-      deleteOrdemBubble(editingId);
+      const dados = {
+        titulo: titulo, tipo: $('#f-tipo').value, col: $('#f-col').value, resp: $('#f-resp').value.trim(),
+        prazo: $('#f-prazo').value, obs: $('#f-obs').value.trim(),
+        cotacoes: workingCotacoes.map(x => ({ fornecedor: x.fornecedor || '', valor: Number(x.valor) || 0, pagto: x.pagto || '', anexo: x.anexo || null })),
+        vencedora: workingVencedora, historico: workingHistorico.slice()
+      };
+
+      let method = 'POST';
+      if (editingId) {
+        method = 'PUT';
+        const c = cards.find(x => x.id == editingId);
+        if (c) detectarMudancas(c, dados).forEach(ev => dados.historico.push({ ts: nowStr(), tipo: ev.tipo, texto: ev.texto }));
+      } else {
+        dados.historico.push({ ts: nowStr(), tipo: 'criacao', texto: 'Ordem criada' });
+      }
+
+      const payload = {
+        id: editingId, 
+        titulo: dados.titulo, tipo: dados.tipo, status: dados.col, responsavel: dados.resp, prazo: dados.prazo || null, observacoes: dados.obs,
+        cotacoes: dados.cotacoes.map((cot, index) => ({ fornecedor: cot.fornecedor, valor: cot.valor, condicao_pagamento: cot.pagto, anexo_nome: cot.anexo ? cot.anexo.name : null, anexo_dados: cot.anexo ? cot.anexo.dataUrl : null, vencedora: index === dados.vencedora })),
+        historico: dados.historico.map(h => ({ data_hora: h.ts, tipo: h.tipo, texto: h.texto }))
+      };
+
+      saveOrdemBubble(method, payload);
       closeModal();
-    }
-  });
+    });
 
-  // Filtros
-  $('#f-busca').addEventListener('input', e => { filters.busca = e.target.value; render(); });
-  $$('#chips-tipo .chip').forEach(ch => ch.addEventListener('click', () => { $$('#chips-tipo .chip').forEach(c => c.classList.remove('active')); ch.classList.add('active'); filters.tipo = ch.dataset.tipo; render(); }));
-  $('#f-resp-filter').addEventListener('change', e => { filters.resp = e.target.value; render(); });
-  $('#f-valor-min').addEventListener('input', e => { filters.valorMin = e.target.value; render(); });
-  $('#f-valor-max').addEventListener('input', e => { filters.valorMax = e.target.value; render(); });
-  $('#f-anexo').addEventListener('change', e => { filters.anexo = e.target.value; render(); });
-  $('#f-prazo-ate').addEventListener('input', e => { filters.prazoAte = e.target.value; render(); });
-  $('#btn-mais-filtros').addEventListener('click', () => $('#mais-filtros').classList.toggle('show'));
-  $('#btn-limpar').addEventListener('click', () => {
-    filters = { busca: '', tipo: '', resp: '', valorMin: '', valorMax: '', anexo: '', prazoAte: '' };
-    $('#f-busca').value = ''; $('#f-resp-filter').value = ''; $('#f-valor-min').value = ''; $('#f-valor-max').value = ''; $('#f-anexo').value = ''; $('#f-prazo-ate').value = '';
-    $$('#chips-tipo .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo === ''));
-    render();
-  });
+    $('#btn-aprovar').addEventListener('click', () => {
+      if (workingVencedora < 0) return;
+      $('#f-col').value = 'contratado';
+      workingHistorico.push({ ts: nowStr(), tipo: 'aprovacao', texto: `Cotação aprovada — ordem movida para Contratado` });
+      $('#btn-salvar').click();
+    });
+
+    $('#btn-excluir').addEventListener('click', () => {
+      if (!editingId) return;
+      if (confirm('Tem certeza que deseja excluir esta ordem?')) {
+        deleteOrdemBubble(editingId);
+        closeModal();
+      }
+    });
+
+    // Filtros
+    $('#f-busca').addEventListener('input', e => { filters.busca = e.target.value; render(); });
+    $$('#chips-tipo .chip').forEach(ch => ch.addEventListener('click', () => { $$('#chips-tipo .chip').forEach(c => c.classList.remove('active')); ch.classList.add('active'); filters.tipo = ch.dataset.tipo; render(); }));
+    $('#f-resp-filter').addEventListener('change', e => { filters.resp = e.target.value; render(); });
+    $('#f-valor-min').addEventListener('input', e => { filters.valorMin = e.target.value; render(); });
+    $('#f-valor-max').addEventListener('input', e => { filters.valorMax = e.target.value; render(); });
+    $('#f-anexo').addEventListener('change', e => { filters.anexo = e.target.value; render(); });
+    $('#f-prazo-ate').addEventListener('input', e => { filters.prazoAte = e.target.value; render(); });
+    $('#btn-mais-filtros').addEventListener('click', () => $('#mais-filtros').classList.toggle('show'));
+    $('#btn-limpar').addEventListener('click', () => {
+      filters = { busca: '', tipo: '', resp: '', valorMin: '', valorMax: '', anexo: '', prazoAte: '' };
+      $('#f-busca').value = ''; $('#f-resp-filter').value = ''; $('#f-valor-min').value = ''; $('#f-valor-max').value = ''; $('#f-anexo').value = ''; $('#f-prazo-ate').value = '';
+      $$('#chips-tipo .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo === ''));
+      render();
+    });
+    
+    console.log("Kanban inicializado com sucesso.");
+  };
 
 })();
