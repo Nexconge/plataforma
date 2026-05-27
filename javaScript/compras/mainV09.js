@@ -1,4 +1,4 @@
-import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus, waitForAuthToken } from './apiV04.js';
+import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus, waitForAuthToken } from './apiV05.js';
 import { MAX_FILE_BYTES, COL_LABELS, emptyCot, nowStr, cardSummary, temAnexo, passaFiltros, temFiltroAtivo, detectarMudancas } from './processingV01.js';
 import { $, $$, fmtDate, fmtBRL, escapeHtml, switchTab, updateAprovarButton } from './uiV01.js';
 
@@ -143,19 +143,33 @@ $$('.drop-zone').forEach(zone => {
     e.preventDefault();
     zone.classList.remove('drag-over');
     if (!dragId) return;
-    
+
     const newCol = zone.dataset.col;
     const card = cards.find(c => c.id == dragId);
-    
-    if (card && card.col !== newCol) {
-      card.historico = card.historico || [];
-      card.historico.push({
-        ts: nowStr(), tipo: 'status',
-        texto: `Status alterado de "${COL_LABELS[card.col]}" para "${COL_LABELS[newCol]}"`
-      });
-      card.col = newCol;
-      await updateOrdemStatus(dragId, newCol, card.historico);
+    if (!card || card.col === newCol) return;
+
+    const novoEvento = {
+      ts: nowStr(),
+      tipo: 'status',
+      texto: `Status alterado de "${COL_LABELS[card.col]}" para "${COL_LABELS[newCol]}"`
+    };
+
+    const colAnterior = card.col;
+    card.col = newCol;
+    card.historico = card.historico || [];
+    card.historico.push(novoEvento);
+    render();
+
+    try {
+      await updateOrdemStatus(dragId, newCol, novoEvento);
       await loadCards();
+    } catch (err) {
+      // Reverte em caso de erro
+      console.error('Falha ao atualizar status:', err);
+      card.col = colAnterior;
+      card.historico.pop();
+      render();
+      alert('Não foi possível mover a ordem. Tente novamente.');
     }
   });
 });
