@@ -1,4 +1,4 @@
-import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus } from './apiV02.js';
+import { API_URL, fetchOrdens, saveOrdem, deleteOrdem, updateOrdemStatus } from './apiV03.js';
 import { MAX_FILE_BYTES, COL_LABELS, emptyCot, nowStr, cardSummary, temAnexo, passaFiltros, temFiltroAtivo, detectarMudancas } from './processingV01.js';
 import { $, $$, fmtDate, fmtBRL, escapeHtml, switchTab, updateAprovarButton } from './uiV01.js';
 
@@ -429,7 +429,13 @@ window.initKanban = function() {
   console.log("Kanban inicializado com sucesso.");
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function boot() {
   window.initKanban();
   loadCards();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
