@@ -562,6 +562,10 @@ function obterFiltrosAtuais() {
 }
 
 function atualizarFiltroContas(select, pMap, cMap, pSel) {
+    const selecionadasAntes = new Set(
+        Array.from(select.selectedOptions).map(opt => opt.value)
+    );
+
     select.innerHTML = '';
     
     if (!pSel || pSel.length === 0) {
@@ -569,21 +573,25 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
     }
 
     const permitidas = new Set();
-    pSel.forEach(id => pMap.get(String(id))?.contas.forEach(c => permitidas.add(c)));
+
+    pSel.forEach(id => {
+        pMap.get(String(id))?.contas.forEach(c => permitidas.add(c));
+    });
 
     Array.from(cMap.entries())
         .sort((a, b) => a[1].descricao.localeCompare(b[1].descricao))
         .forEach(([k, v]) => {
             if (permitidas.has(k)) {
-                select.appendChild(new Option(v.descricao, k));
+                const option = new Option(v.descricao, k);
+
+                // Mantém selecionada se já estava antes
+                if (selecionadasAntes.has(k)) {
+                    option.selected = true;
+                }
+
+                select.appendChild(option);
             }
         });
-
-    Array.from(select.options).forEach(opt => {
-        if (!permitidas.has(opt.value)) {
-            opt.selected = false;
-        }
-    });
 }
 
 // ------ Renderização ------
