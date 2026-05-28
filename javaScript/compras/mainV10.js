@@ -347,6 +347,7 @@ function openModal(id) {
   updateAprovarButton(workingVencedora);
 
   $('#hist-count').textContent = workingHistorico.length ? `(${workingHistorico.length})` : '';
+  renderHistorico();
   switchTab('detalhes');
   $('#btn-excluir').classList.toggle('show', !!c);
   $('#modal-bg').classList.add('show');
@@ -369,7 +370,10 @@ window.initKanban = function() {
   $('#btn-cancelar').addEventListener('click', closeModal);
   $('#modal-bg').addEventListener('click', e => { if (e.target === $('#modal-bg')) closeModal(); });
 
-  $$('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+  $$('.tab').forEach(t => t.addEventListener('click', () => {
+    switchTab(t.dataset.tab);
+    if (t.dataset.tab === 'historico') renderHistorico();
+  }));
 
   $('#btn-salvar').addEventListener('click', () => {
     const titulo = $('#f-titulo').value.trim();
