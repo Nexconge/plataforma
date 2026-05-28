@@ -579,7 +579,11 @@ function atualizarFiltroContas(select, pMap, cMap, pSel) {
             }
         });
 
-    Array.from(select.options).forEach(opt => opt.selected = false);
+    Array.from(select.options).forEach(opt => {
+        if (!permitidas.has(opt.value)) {
+            opt.selected = false;
+        }
+    });
 }
 
 // ------ Renderização ------
