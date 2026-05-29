@@ -691,13 +691,14 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
         colunas.forEach(c => row.insertCell().textContent = formatarValor(matriz[classe]?.[c] || 0));
         row.insertCell().textContent = formatarValor(matriz[classe]?.TOTAL || 0);
 
-        if (['(=) Receita Líquida', 'Outros'].includes(classe) || classe.includes('Transferência')) {
-            row.dataset.type = 'total';
-            if (extrasDev.includes(classe)) row.dataset.indent = '1';
-        } else if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal'].includes(classe)) {
+        //Formatação Negrito para Totais e Subtotais
+        if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 
+            '(=) Receita Líquida', '(+) Receita Bruta'].includes(classe)) {
             row.dataset.type = 'total-negrito';
+        //Formatação Rodapé e Saldos Final e Inicial
         } else if (['Caixa Inicial', 'Caixa Final', 'Rodape'].includes(classe)) {
             row.dataset.type = 'saldo';
+        // Formatação para os itens de detalhe (com indentação)
         } else {
             row.dataset.indent = '1';
         }
