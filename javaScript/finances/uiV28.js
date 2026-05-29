@@ -693,7 +693,7 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
 
         //Formatação Negrito para Totais e Subtotais
         if (['(+/-) Geração de Caixa Operacional', '(=) Movimentação de Caixa Mensal', 
-            '(=) Receita Líquida', '(+) Receita Bruta'].includes(classe)) {
+            '(=) Receita Líquida'].includes(classe)) {
             row.dataset.type = 'total-negrito';
         //Formatação Rodapé e Saldos Final e Inicial
         } else if (['Caixa Inicial', 'Caixa Final', 'Rodape'].includes(classe)) {
