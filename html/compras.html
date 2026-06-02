@@ -5,7 +5,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ordens de compra — Kanban</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="../styleSheet/purchasingV01.css" />
+  <script type="module" src="../javaScript/compras/mainV10.js"></script>
 
 </head>
 
@@ -19,14 +24,14 @@
         <p class="subtitle">Arraste os cards entre colunas ou clique para abrir os detalhes</p>
       </div>
       <button id="btn-novo" class="btn btn-primary">
-        <i class="ti ti-plus" aria-hidden="true"></i>
+        <i class="fas fa-plus" aria-hidden="true"></i>
         Nova ordem
       </button>
     </header>
 
     <div id="filter-bar" class="filter-bar">
       <div class="search-wrap">
-        <i class="ti ti-search search-icon" aria-hidden="true"></i>
+        <i class="fas fa-search search-icon" aria-hidden="true"></i>
         <input id="f-busca" type="text" placeholder="Buscar título, fornecedor ou responsável..." />
       </div>
       <div id="chips-tipo" class="chips">
@@ -38,11 +43,11 @@
         <option value="">Todos responsáveis</option>
       </select>
       <button id="btn-mais-filtros" class="btn btn-ghost">
-        <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+        <i class="fas fa-sliders-h" aria-hidden="true"></i>
         Mais filtros
       </button>
       <button id="btn-limpar" class="btn btn-ghost btn-clear">
-        <i class="ti ti-x" aria-hidden="true"></i>
+        <i class="fas fa-times" aria-hidden="true"></i>
         Limpar
       </button>
     </div>
@@ -112,72 +117,95 @@
   <div id="modal-bg" class="modal-bg">
     <div class="modal">
 
-      <div class="modal-header">
-        <h2 id="modal-titulo">Nova ordem de compra</h2>
-        <button id="btn-fechar" class="btn-icon" aria-label="Fechar">
-          <i class="ti ti-x" aria-hidden="true"></i>
-        </button>
-      </div>
-
-      <div id="tabs" class="tabs">
-        <button class="tab active" data-tab="detalhes">Detalhes</button>
-        <button class="tab" data-tab="historico">
-          Histórico <span id="hist-count" class="hist-count"></span>
-        </button>
-      </div>
-
-      <div id="tab-detalhes">
-        <div class="form-grid">
-          <div class="full">
-            <label class="lbl">Descrição da ordem</label>
-            <input id="f-titulo" type="text" placeholder="Ex.: Compra de notebooks Dell" />
-          </div>
-          <div>
-            <label class="lbl">Tipo</label>
-            <select id="f-tipo">
-              <option value="material">Material</option>
-              <option value="servico">Serviço</option>
-            </select>
-          </div>
-          <div>
-            <label class="lbl">Status</label>
-            <select id="f-col">
-              <option value="orcamento">Em orçamento</option>
-              <option value="contratacao">Em contratação</option>
-              <option value="contratado">Contratado</option>
-            </select>
-          </div>
-          <div>
-            <label class="lbl">Responsável</label>
-            <input id="f-resp" type="text" placeholder="Ex.: Maria Silva" />
-          </div>
-          <div>
-            <label class="lbl">Prazo de entrega</label>
-            <input id="f-prazo" type="date" />
-          </div>
+      <div class="modal-top">
+        <div class="modal-header">
+          <h2 id="modal-titulo">Nova ordem de compra</h2>
+          <button id="btn-fechar" class="btn-icon" aria-label="Fechar">
+            <i class="fas fa-times" aria-hidden="true"></i>
+          </button>
         </div>
 
-        <div class="section">
-          <div class="section-title">Cotações</div>
-          <div id="cotacoes-wrap" class="cotacoes-wrap"></div>
-        </div>
-
-        <div class="section">
-          <label class="lbl">Observações</label>
-          <textarea id="f-obs" rows="3" placeholder="Notas, links, número do pedido, etc."></textarea>
+        <div id="tabs" class="tabs">
+          <button class="tab active" data-tab="detalhes">Detalhes</button>
+          <button class="tab" data-tab="historico">
+            Histórico <span id="hist-count" class="hist-count"></span>
+          </button>
         </div>
       </div>
 
-      <div id="tab-historico" class="tab-historico"></div>
+      <div class="modal-body">
+
+        <div id="tab-detalhes">
+          <div class="form-grid">
+            <div class="full">
+              <label class="lbl">Descrição da ordem</label>
+              <input id="f-titulo" type="text" placeholder="Ex.: Compra de notebooks Dell" />
+            </div>
+            <div class="full">
+              <label class="lbl">Empreendimento</label>
+              <input id="f-empreendimento" type="text" placeholder="WFI - Origens" />
+            </div>
+            <div>
+              <label class="lbl">Departamento</label>
+              <select id="f-departamento">
+                <option value="calcadas">Calçadas</option>
+                <option value="pavimentacao">Pavimentação</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Tipo</label>
+              <select id="f-tipo">
+                <option value="material">Material</option>
+                <option value="servico">Serviço</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Status</label>
+              <select id="f-col">
+                <option value="orcamento">Em orçamento</option>
+                <option value="contratacao">Em contratação</option>
+                <option value="contratado">Contratado</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Situação Financeira</label>
+              <select id="f-sit-financeira">
+                <option value="emAberto">Em Aberto</option>
+                <option value="pago">Pago</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Responsável</label>
+              <input id="f-resp" type="text" placeholder="Ex.: Maria Silva" />
+            </div>
+            <div>
+              <label class="lbl">Prazo de entrega</label>
+              <input id="f-prazo" type="date" />
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Cotações</div>
+            <div id="cotacoes-wrap" class="cotacoes-wrap"></div>
+          </div>
+
+          <div class="section">
+            <label class="lbl">Observações</label>
+            <textarea id="f-obs" rows="3" placeholder="Notas, links, número do pedido, etc."></textarea>
+          </div>
+        </div>
+
+        <div id="tab-historico" class="tab-historico"></div>
+      </div>
 
       <div class="modal-footer">
         <button id="btn-excluir" class="btn btn-danger">
-          <i class="ti ti-trash" aria-hidden="true"></i>
+          <i class="fas fa-trash" aria-hidden="true"></i>
           Excluir
         </button>
         <div class="modal-footer-right">
           <button id="btn-aprovar" class="btn btn-success" disabled>
-            <i class="ti ti-check" aria-hidden="true"></i>
+            <i class="fas fa-check" aria-hidden="true"></i>
             Aprovar cotação
           </button>
           <button id="btn-cancelar" class="btn">Cancelar</button>
@@ -186,5 +214,9 @@
       </div>
     </div>
   </div>
+
 </body>
+
+
+
 </html>
