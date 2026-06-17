@@ -303,6 +303,8 @@ class MapaLotesManager {
         const centerY = (minY + maxY) / 2;
         return points.sort((a, b) => Math.atan2(a[0] - centerX, a[1] - centerY) - Math.atan2(b[0] - centerX, b[1] - centerY));
     }
+    // ScriptLotesV15.js
+
     _buildTooltipHTML(data) {
         const labelStatus = this.filters.zonaColorMode ? "Atividade" : "Status";
         const txtStatus = this.filters.zonaColorMode ? (data.Atividade || "S/ Atividade") : (data.Status || "Desconhecido");
@@ -312,7 +314,10 @@ class MapaLotesManager {
         const corTextoStatus = theme.stroke; 
 
         const areaFormatada = data.Área ? data.Área.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m²" : "N/A";
-        const valM2Formatado = data.ValorM2 ? "R$ " + data.ValorM2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
+        
+        const valorM2Calculado = (data.Valor && data.Área && data.Área > 0) ? (data.Valor / data.Área) : 0;
+        const valM2Formatado = valorM2Calculado > 0 ? "R$ " + valorM2Calculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
+        
         const valTotalFormatado = data.Valor ? "R$ " + data.Valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "N/A";
 
         return `
