@@ -647,11 +647,11 @@ function renderizarDRE(matriz, colunas, projecao, userType) {
     const ordem = [
         '(+) Receita Bruta', '(-) Deduções', '(=) Receita Líquida', '(-) Custos', '(-) Despesas',
         '(+/-) IRPJ/CSLL', '(+/-) Geração de Caixa Operacional', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas',
-        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', '(=) Movimentação de Caixa Mensal'
+        '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', 'Outros', '(=) Movimentação de Caixa Mensal'
     ];
-    
+
     const isDev = userType?.toLowerCase() === 'developer';
-    const extrasDev = ['Entrada de Transferência', 'Saída de Transferência', 'Outros'];
+    const extrasDev = ['Entrada de Transferência', 'Saída de Transferência', 'Outros']; 
     if (isDev) ordem.push(...extrasDev);
     
     if (projecao !== 'competencia') {
@@ -745,7 +745,9 @@ function renderizarDetalhamento(catMap, dados, colunas, es, userType) {
         dadosOrg[classe][per] = v;
     });
 
-    const prioridade = ['(+) Receita Bruta', '(-) Deduções', '(-) Custos', '(-) Despesas', '(+/-) IRPJ/CSLL', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios'];
+    const prioridade = ['(+) Receita Bruta', '(-) Deduções', '(-) Custos',
+         '(-) Despesas', '(+/-) IRPJ/CSLL', '(+/-) Resultado Financeiro', '(+/-) Aportes/Retiradas', 
+         '(+/-) Investimentos', '(+/-) Empréstimos/Consórcios', 'Outros'];
     const render = (c) => renderDrillDown(c, dadosOrg[c], tbody, catMap, colunas);
     
     prioridade.forEach(c => { if(dadosOrg[c]) render(c); });

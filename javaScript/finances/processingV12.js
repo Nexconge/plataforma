@@ -771,17 +771,17 @@ function calcularLinhasDeTotalDRE(matrizDRE, colunasParaCalcular, saldoInicial) 
         matrizDRE['(+/-) Geração de Caixa Operacional'][coluna] = geracaoCaixa;
 
         const movNaoOperacional = getVal('(+/-) Resultado Financeiro') + getVal('(+/-) Aportes/Retiradas') 
-                                + getVal('(+/-) Investimentos') + getVal('(+/-) Empréstimos/Consórcios');
-        
+                        + getVal('(+/-) Investimentos') + getVal('(+/-) Empréstimos/Consórcios');
+
         const movimentacaoMensal = geracaoCaixa + movNaoOperacional;
         matrizDRE['(=) Movimentação de Caixa Mensal'][coluna] = movimentacaoMensal;
 
         matrizDRE['Caixa Inicial'][coluna] = saldoAcumulado;
-        
-        // Variação Total inclui transferências e outros ajustes
+
+        // "Outros" entra silenciosamente como ajuste no saldo final
         const variacaoTotal = movimentacaoMensal + getVal('Entrada de Transferência') 
                             + getVal('Saída de Transferência') + getVal('Outros');
-        
+
         saldoAcumulado += variacaoTotal;
         matrizDRE['Caixa Final'][coluna] = saldoAcumulado;
     });
