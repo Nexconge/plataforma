@@ -1,7 +1,7 @@
 // mainV25.js
 
 import { buscarTitulos, buscarValoresEstoque, buscarPeriodosComDados } from './apiV03.js';
-import { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, incrementarMes} from './processingV12.js';
+import { processarDadosDaConta, extrairDadosUnificados, mergeMatrizes, incrementarMes} from './processingV13.js';
 import { configurarFiltros, atualizarVisualizacoes, obterFiltrosAtuais,
      atualizarOpcoesAnoSelect, alternarEstadoCarregamento } from './uiV29.js';
 

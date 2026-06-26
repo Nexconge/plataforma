@@ -327,7 +327,7 @@ function processarRealizadoRealizar(AppCache, listaLancamentos, contaId, saldoIn
         // Categorização
         const codCat = lancamento.CODCategoria;
         const classeInfo = AppCache.classesMap.get(lancamento.CODCategoria);
-        const classe = classeInfo ? classeInfo.classe : 'Outros';
+        const classe = (classeInfo && classeInfo.classe && String(classeInfo.classe).trim() !== '') ? classeInfo.classe : 'Outros';
 
         // Fluxo Diário
         const isTransferencia = codCat.startsWith("0.01");
